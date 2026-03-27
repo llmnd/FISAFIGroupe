@@ -93,7 +93,27 @@ export async function brochureRoutes(app: FastifyInstance) {
 
         // Redirect to Cloudinary with download disposition headers
         reply.header('Content-Disposition', `attachment; filename="${brochure.name}"`);
-        return reply.redirect(brochure.fileUrl);
+        
+        // Fetch and stream file from Cloudinary
+        const fileResponse = await fetch(brochure.fileUrl);
+        if (!fileResponse.ok) {
+          throw new Error(`Cloudinary returned ${fileResponse.status}`);
+        }
+
+        const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
+        const contentLength = fileResponse.headers.get('content-length');
+        
+        reply.type(contentType);
+        if (contentLength) {
+          reply.header('Content-Length', contentLength);
+        }
+        
+        // Stream the response
+        if (fileResponse.body) {
+          return reply.send(fileResponse.body);
+        }
+        
+        throw new Error('No response body from Cloudinary');
       } catch (error) {
         console.error('Error downloading brochure:', error);
         return reply.status(500).send({
