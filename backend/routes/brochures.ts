@@ -188,7 +188,7 @@ export async function brochureRoutes(app: FastifyInstance) {
         // Save to database
         const brochure = await prisma.brochure.create({
           data: {
-            name: fileName.replace(/\.[^/.]+$/, ''),
+            name: fileName,
             fileUrl: url,
             published: false,
             type: 'document',

@@ -164,12 +164,15 @@ export default function FormationPage() {
         }
 
         try {
-          const response = await fetch(doc.fileUrl, { mode: 'no-cors' });
+          const response = await fetch(doc.fileUrl);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
           const blob = await response.blob();
           const downloadUrl = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = downloadUrl;
-          link.download = `${doc.name || 'document'}.pdf`;
+          link.download = doc.name || 'document';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
