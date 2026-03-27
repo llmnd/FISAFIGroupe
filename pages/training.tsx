@@ -164,12 +164,10 @@ export default function FormationPage() {
         }
 
         try {
-          // Add fl_attachment parameter to Cloudinary URL to force download
-          const downloadUrl = doc.fileUrl.includes('?') 
-            ? `${doc.fileUrl}&fl_attachment`
-            : `${doc.fileUrl}?fl_attachment`;
-
-          // Open in new tab/window for download
+          // Use backend download endpoint (no CORS issues, backend gère la sécurité)
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          const downloadUrl = `${backendUrl}/api/brochures/${doc.id}/download`;
+          
           const link = document.createElement('a');
           link.href = downloadUrl;
           link.download = doc.name || 'document';
@@ -179,7 +177,7 @@ export default function FormationPage() {
           document.body.removeChild(link);
         } catch (error) {
           console.error('Download error:', error);
-          // Fallback: open directly
+          // Fallback: try direct cloud link
           window.open(doc.fileUrl, '_blank');
         }
       };

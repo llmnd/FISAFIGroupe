@@ -1158,7 +1158,7 @@ export default function AdminDashboard() {
                             </button>
                           )}
                           <a 
-                            href={brochure.fileUrl} 
+                            href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brochures/${brochure.id}/download`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="btn-sm"
