@@ -4,8 +4,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install && npm run build && npm run build:backend && npm run prisma:generate
-    startCommand: npm run start:backend
+    buildCommand: npm install && npm run build:backend && npm run prisma:generate
+    startCommand: node dist/backend/server.js
     envVars:
       - key: NODE_ENV
         value: production
