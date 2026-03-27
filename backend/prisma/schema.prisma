@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Inscription {
+  id        Int     @id @default(autoincrement())
+  name      String
+  email     String  @unique
+  phone     String?
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+  status    String  @default("pending")
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Articles et Actualités
+model Article {
+  id        Int     @id @default(autoincrement())
+  title     String
+  slug      String  @unique
+  category  String  // "technique", "innovation", "evenement", "veille"
+  excerpt   String
+  content   String
+  image     String?
+  author    String?
+  published Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  publishedAt DateTime?
+
+  @@index([category])
+  @@index([slug])
+  @@index([published])
+  @@index([publishedAt])
+}
+
+// Formations
+model Formation {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  duration    String  // ex: "5 jours"
+  level       String  // "Débutant", "Intermédiaire", "Avancé"
+  description String
+  content     String?
+  objectives  String?
+  price       Float?
+  maxParticipants Int @default(20)
+  published   Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  sessions    SessionFormation[]
+  inscriptions InscriptionFormation[]
+
+  @@index([slug])
+  @@index([published])
+}
+
+// Sessions de Formation (Calendrier)
+model SessionFormation {
+  id          Int     @id @default(autoincrement())
+  formationId Int
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  capacity    Int     @default(20)
+  available   Int     @default(20)
+  status      String  @default("ouverte") // "ouverte", "complète", "annulée", "terminée"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  inscriptions InscriptionFormation[]
+
+  @@index([formationId])
+  @@index([startDate])
+  @@index([status])
+}
+
+// Inscriptions aux Formations
+model InscriptionFormation {
+  id          Int     @id @default(autoincrement())
+  sessionId   Int
+  session     SessionFormation @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  formationId Int
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  company     String?
+  status      String  @default("confirme") // "confirme", "liste_attente", "annule"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([sessionId, email])
+  @@index([sessionId])
+  @@index([formationId])
+  @@index([email])
+}
+
+// Brochures aux Formations
+model Brochure {
+  id        Int     @id @default(autoincrement())
+  name      String
+  description String?
+  fileUrl   String
+  fileSize  String?  // ex: "2.4 MB"
+  type      String  @default("PDF")
+  published Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published])
+}

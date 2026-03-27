@@ -1,0 +1,50 @@
+{
+  "name": "fisafi-vitrine",
+  "version": "1.0.0",
+  "description": "Site vitrine FISAFI - Ingénierie, Expertise et Formation",
+  "scripts": {
+    "dev": "next dev",
+    "dev:backend": "npm run build:backend && node dist/backend/server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "build": "next build",
+    "build:backend": "tsc --project tsconfig.backend.json",
+    "start": "next start",
+    "start:backend": "node dist/backend/server.js",
+    "lint": "next lint",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:reset": "prisma migrate reset --force",
+    "seed": "ts-node -P tsconfig.backend.json backend/seed.ts",
+    "create:admin": "ts-node -P tsconfig.backend.json backend/createAdmin.ts",
+    "admin": "ts-node -P tsconfig.backend.json backend/manageAdmin.ts",
+    "admin:list": "ts-node -P tsconfig.backend.json backend/manageAdmin.ts list",
+    "admin:create": "ts-node -P tsconfig.backend.json backend/manageAdmin.ts create",
+    "admin:delete": "ts-node -P tsconfig.backend.json backend/manageAdmin.ts delete",
+    "admin:reset": "ts-node -P tsconfig.backend.json backend/manageAdmin.ts reset",
+    "db:setup": "npm run prisma:migrate && npm run prisma:generate && npm run create:admin"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.4.2",
+    "@fastify/helmet": "^11.1.0",
+    "@fastify/jwt": "^7.2.4",
+    "@prisma/client": "^5.22.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.27.0",
+    "next": "^14.0.0",
+    "prisma": "^5.22.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
