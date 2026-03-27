@@ -51,6 +51,73 @@ export async function brochureRoutes(app: FastifyInstance) {
     }
   });
 
+  // Download brochure - MUST come before /brochures/:id
+  app.get<{ Params: { id: string } }>(
+    '/brochures/:id/download',
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const brochureId = parseInt(id);
+
+        const brochure = await prisma.brochure.findUnique({
+          where: { id: brochureId },
+        });
+
+        if (!brochure) {
+          return reply.status(404).send({
+            success: false,
+            error: 'Brochure not found',
+          });
+        }
+
+        // Check if published (public access) or user is authenticated admin
+        if (!brochure.published) {
+          try {
+            await request.jwtVerify();
+            const user = await prisma.user.findUnique({
+              where: { id: (request.user as any).id },
+            });
+            if (!user || user.role !== 'admin') {
+              return reply.status(403).send({
+                success: false,
+                error: 'Not authorized to download this brochure',
+              });
+            }
+          } catch {
+            return reply.status(403).send({
+              success: false,
+              error: 'Only published brochures can be downloaded',
+            });
+          }
+        }
+
+        // Fetch file from Cloudinary
+        const fileResponse = await fetch(brochure.fileUrl);
+        if (!fileResponse.ok) {
+          return reply.status(500).send({
+            success: false,
+            error: 'Failed to fetch file from storage',
+          });
+        }
+
+        // Set headers for download
+        const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
+        const buffer = await fileResponse.arrayBuffer();
+
+        reply.type(contentType);
+        reply.header('Content-Disposition', `attachment; filename="${brochure.name}"`);
+        reply.header('Cache-Control', 'public, max-age=3600');
+        reply.send(Buffer.from(buffer));
+      } catch (error) {
+        console.error('Error downloading brochure:', error);
+        return reply.status(500).send({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to download brochure',
+        });
+      }
+    }
+  );
+
   // Get single brochure
   app.get('/brochures/:id', async (request, reply) => {
     try {
@@ -210,71 +277,5 @@ export async function brochureRoutes(app: FastifyInstance) {
       }
     }
   );
-
-  // Download brochure
-  app.get<{ Params: { id: string } }>(
-    '/brochures/:id/download',
-    async (request, reply) => {
-      try {
-        const { id } = request.params;
-        const brochureId = parseInt(id);
-
-        const brochure = await prisma.brochure.findUnique({
-          where: { id: brochureId },
-        });
-
-        if (!brochure) {
-          return reply.status(404).send({
-            success: false,
-            error: 'Brochure not found',
-          });
-        }
-
-        // Check if published (public access) or user is authenticated admin
-        if (!brochure.published) {
-          try {
-            await request.jwtVerify();
-            const user = await prisma.user.findUnique({
-              where: { id: (request.user as any).id },
-            });
-            if (!user || user.role !== 'admin') {
-              return reply.status(403).send({
-                success: false,
-                error: 'Not authorized to download this brochure',
-              });
-            }
-          } catch {
-            return reply.status(403).send({
-              success: false,
-              error: 'Only published brochures can be downloaded',
-            });
-          }
-        }
-
-        // Fetch file from Cloudinary
-        const fileResponse = await fetch(brochure.fileUrl);
-        if (!fileResponse.ok) {
-          return reply.status(500).send({
-            success: false,
-            error: 'Failed to fetch file from storage',
-          });
-        }
-
-        // Set headers for download
-        const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
-        const buffer = await fileResponse.arrayBuffer();
-
-        reply.type(contentType);
-        reply.header('Content-Disposition', `attachment; filename="${brochure.name}"`);
-        reply.header('Cache-Control', 'public, max-age=3600');
-        reply.send(Buffer.from(buffer));
-      } catch (error) {
-        console.error('Error downloading brochure:', error);
-        return reply.status(500).send({
-          success: false,
-          error: error instanceof Error ? error.message : 'Failed to download brochure',
-        });
-      }
-    }
-  );
 }
+
