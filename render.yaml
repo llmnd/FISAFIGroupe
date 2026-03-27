@@ -20,11 +20,11 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: http://localhost:3000
+        value: https://fisafi.vercel.app
       - key: CLOUDINARY_CLOUD_NAME
-        sync: false
+        value: dcs9vkwe0
       - key: CLOUDINARY_UPLOAD_PRESET
-        sync: false
+        value: fisafi
     autoDeploy: true
 
 databases:
