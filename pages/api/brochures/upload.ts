@@ -44,20 +44,33 @@ export default async function handler(
 
     const { fileBuffer, fileName, name, description } = req.body;
 
+    console.log('🔍 Upload request received:', { 
+      hasBuffer: !!fileBuffer, 
+      fileName, 
+      name,
+      cloudinaryEnv: {
+        hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+        hasPreset: !!process.env.CLOUDINARY_UPLOAD_PRESET
+      }
+    });
+
     if (!fileBuffer || !fileName || !name) {
-      console.error('Missing required fields:', { hasBuffer: !!fileBuffer, hasFileName: !!fileName, hasName: !!name });
+      console.error('❌ Missing required fields:', { hasBuffer: !!fileBuffer, hasFileName: !!fileName, hasName: !!name });
       return res.status(400).json({ error: 'Missing required fields: fileBuffer, fileName, name' });
     }
+
+    console.log('✅ Credentials OK, starting upload...');
 
     // Convert base64 string to Buffer if needed
     let buffer: Buffer;
     if (typeof fileBuffer === 'string') {
+      console.log('📦 Converting base64 to buffer...');
       buffer = Buffer.from(fileBuffer, 'base64');
     } else {
       buffer = Buffer.from(fileBuffer);
     }
 
-    console.log('Starting brochure upload:', { fileName, name, bufferSize: buffer.length });
+    console.log('📤 Uploading to Cloudinary...', { fileName, bufferSize: buffer.length });
 
     // Upload to Cloudinary
     const uploadResponse = await CloudinaryService.uploadFile(
@@ -66,12 +79,9 @@ export default async function handler(
       'brochures'
     );
 
-    console.log('Cloudinary upload response:', {
+    console.log('✅ Cloudinary upload success:', {
       public_id: uploadResponse.public_id,
       secure_url: uploadResponse.secure_url,
-      format: uploadResponse.format,
-      size: uploadResponse.size,
-      bytes: uploadResponse.bytes,
     });
 
     // Ensure we have a valid URL
@@ -104,7 +114,11 @@ export default async function handler(
       },
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('❌ UPLOAD FAILED:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     return res.status(500).json({ error: `Upload failed: ${errorMessage}` });
   }
