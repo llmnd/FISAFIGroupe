@@ -19,28 +19,18 @@ export default async function handler(
       return res.status(400).json({ error: 'Filename parameter is required' });
     }
 
-    // Fetch the file from Cloudinary
-    const response = await fetch(url);
+    // Add download parameter to Cloudinary URL to force download
+    const downloadUrl = url.includes('?') 
+      ? `${url}&fl_attachment:${filename}` 
+      : `${url}?fl_attachment:${filename}`;
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch file' });
-    }
-
-    // Get the content type
-    const contentType = response.headers.get('content-type') || 'application/octet-stream';
-
-    // Set response headers for download
-    res.setHeader('Content-Type', contentType);
+    // Redirect to Cloudinary with download headers
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-
-    // Stream the file
-    const buffer = await response.arrayBuffer();
-    res.send(Buffer.from(buffer));
+    res.redirect(downloadUrl);
   } catch (error) {
     console.error('Download error:', error);
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'Failed to download file',
+      error: error instanceof Error ? error.message : 'Failed to process download',
     });
   }
 }
