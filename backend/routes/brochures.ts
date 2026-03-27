@@ -91,23 +91,9 @@ export async function brochureRoutes(app: FastifyInstance) {
           }
         }
 
-        // Fetch file from Cloudinary
-        const fileResponse = await fetch(brochure.fileUrl);
-        if (!fileResponse.ok) {
-          return reply.status(500).send({
-            success: false,
-            error: 'Failed to fetch file from storage',
-          });
-        }
-
-        // Set headers for download
-        const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
-        const buffer = await fileResponse.arrayBuffer();
-
-        reply.type(contentType);
+        // Redirect to Cloudinary with download disposition headers
         reply.header('Content-Disposition', `attachment; filename="${brochure.name}"`);
-        reply.header('Cache-Control', 'public, max-age=3600');
-        reply.send(Buffer.from(buffer));
+        return reply.redirect(brochure.fileUrl);
       } catch (error) {
         console.error('Error downloading brochure:', error);
         return reply.status(500).send({
