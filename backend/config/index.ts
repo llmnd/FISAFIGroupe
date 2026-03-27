@@ -14,7 +14,7 @@ export const config = {
   },
   server: {
     port: parseInt(process.env.BACKEND_PORT || '3001', 10),
-    host: process.env.BACKEND_HOST || 'localhost', // Use localhost for development
+    host: process.env.BACKEND_HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'),
     env: process.env.NODE_ENV || 'development',
   },
   jwt: {

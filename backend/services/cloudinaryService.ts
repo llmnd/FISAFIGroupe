@@ -3,9 +3,13 @@ const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || '';
 
 // Validate configuration
 if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-  console.warn(
-    'Warning: Cloudinary environment variables not configured. ' +
-    'Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET in .env.local'
+  const missingVars = [];
+  if (!CLOUDINARY_CLOUD_NAME) missingVars.push('CLOUDINARY_CLOUD_NAME');
+  if (!CLOUDINARY_UPLOAD_PRESET) missingVars.push('CLOUDINARY_UPLOAD_PRESET');
+  
+  console.error(
+    `❌ Cloudinary configuration incomplete. Missing: ${missingVars.join(', ')}. ` +
+    `Configure these in your environment (Vercel for frontend, Render for backend).`
   );
 }
 
