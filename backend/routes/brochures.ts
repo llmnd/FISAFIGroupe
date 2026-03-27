@@ -39,10 +39,14 @@ export async function brochureRoutes(app: FastifyInstance) {
         data: brochures,
       });
     } catch (error) {
-      console.error('Error fetching brochures for admin:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('❌ Error fetching brochures for admin:', {
+        errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return reply.status(500).send({
         success: false,
-        error: 'Failed to fetch brochures',
+        error: errorMessage || 'Failed to fetch brochures',
       });
     }
   });
