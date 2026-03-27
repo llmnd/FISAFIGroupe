@@ -9,7 +9,7 @@ if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
   
   console.error(
     `❌ Cloudinary configuration incomplete. Missing: ${missingVars.join(', ')}. ` +
-    `Configure these in your environment (Vercel for frontend, Render for backend).`
+    `Configure these as environment variables on Render backend: https://dashboard.render.com`
   );
 }
 

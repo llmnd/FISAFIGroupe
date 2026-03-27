@@ -371,7 +371,14 @@ export default function AdminDashboard() {
         const base64 = reader.result as string;
         const base64Data = base64.split(',')[1];
 
-        const res = await fetch('/api/brochures/upload', {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+        if (!backendUrl) {
+          setBrochureError('Backend URL not configured. Contact admin.');
+          setSubmittingBrochure(false);
+          return;
+        }
+
+        const res = await fetch(`${backendUrl}/brochures/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

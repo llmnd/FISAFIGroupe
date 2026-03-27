@@ -1,6 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CloudinaryService } from '@/backend/services/cloudinaryService';
-import { prisma } from '@/backend/lib/db';
 
 type ResponseData = {
   success?: boolean;
@@ -8,16 +6,6 @@ type ResponseData = {
   message?: string;
   error?: string;
 };
-
-// Middleware to verify admin token
-async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  // Token exists, simplified verification
-  return true;
-}
 
 export const config = {
   api: {
@@ -36,90 +24,40 @@ export default async function handler(
   }
 
   try {
-    // Verify admin authentication
-    const isAdmin = await verifyAdminToken(req);
-    if (!isAdmin) {
-      return res.status(401).json({ error: 'Unauthorized: Admin access required' });
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) {
+      return res.status(500).json({ error: 'Backend URL not configured' });
     }
 
-    const { fileBuffer, fileName, name, description } = req.body;
-
-    console.log('🔍 Upload request received:', { 
-      hasBuffer: !!fileBuffer, 
-      fileName, 
-      name,
-      cloudinaryEnv: {
-        hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
-        hasPreset: !!process.env.CLOUDINARY_UPLOAD_PRESET
-      }
-    });
-
-    if (!fileBuffer || !fileName || !name) {
-      console.error('❌ Missing required fields:', { hasBuffer: !!fileBuffer, hasFileName: !!fileName, hasName: !!name });
-      return res.status(400).json({ error: 'Missing required fields: fileBuffer, fileName, name' });
-    }
-
-    console.log('✅ Credentials OK, starting upload...');
-
-    // Convert base64 string to Buffer if needed
-    let buffer: Buffer;
-    if (typeof fileBuffer === 'string') {
-      console.log('📦 Converting base64 to buffer...');
-      buffer = Buffer.from(fileBuffer, 'base64');
-    } else {
-      buffer = Buffer.from(fileBuffer);
-    }
-
-    console.log('📤 Uploading to Cloudinary...', { fileName, bufferSize: buffer.length });
-
-    // Upload to Cloudinary
-    const uploadResponse = await CloudinaryService.uploadFile(
-      buffer,
-      fileName,
-      'brochures'
-    );
-
-    console.log('✅ Cloudinary upload success:', {
-      public_id: uploadResponse.public_id,
-      secure_url: uploadResponse.secure_url,
-    });
-
-    // Ensure we have a valid URL
-    const fileUrl = uploadResponse.secure_url || 
-                    uploadResponse.url || 
-                    `https://res.cloudinary.com/dcs9vkwe0/image/upload/${uploadResponse.public_id}.${uploadResponse.format}`;
-
-    console.log('Final file URL:', fileUrl);
-
-    // Save to database
-    const brochure = await prisma.brochure.create({
-      data: {
-        name,
-        description: description || null,
-        fileUrl: fileUrl,
-        fileSize: uploadResponse.bytes ? uploadResponse.bytes.toString() : (uploadResponse.size ? uploadResponse.size.toString() : null),
-        type: uploadResponse.format?.toUpperCase() || 'PDF',
-        published: false,
+    // Proxy request to backend
+    const response = await fetch(`${backendUrl}/brochures/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': req.headers.authorization || '',
       },
+      body: JSON.stringify(req.body),
     });
 
-    console.log('Brochure saved to database:', { id: brochure.id });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        success: false,
+        error: data.error || 'Backend error',
+      });
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Brochure uploaded successfully',
-      data: {
-        brochure,
-        cloudinaryId: uploadResponse.public_id,
-      },
+      data: data.data,
+      message: data.message,
     });
   } catch (error) {
-    console.error('❌ UPLOAD FAILED:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+    console.error('Proxy error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Proxy error',
     });
-    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-    return res.status(500).json({ error: `Upload failed: ${errorMessage}` });
   }
 }
