@@ -19,7 +19,7 @@ export default async function handler(
   if (req.method === 'GET') {
     try {
       // Proxy GET request to backend
-      const response = await fetch(`${backendUrl}/brochures`, {
+      const response = await fetch(`${backendUrl}/api/brochures`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
