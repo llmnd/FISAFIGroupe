@@ -5,7 +5,7 @@ import { hashPassword } from "../../../backend/utils/auth";
 // Middleware pour vérifier le token admin (simplifié)
 async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {
   const authHeader = req.headers.authorization;
-  return authHeader && authHeader.startsWith("Bearer ");
+  return typeof authHeader === 'string' && authHeader.startsWith("Bearer ");
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
