@@ -164,21 +164,19 @@ export default function FormationPage() {
         }
 
         try {
-          const response = await fetch(doc.fileUrl);
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const blob = await response.blob();
-          const downloadUrl = window.URL.createObjectURL(blob);
+          // Use proxy endpoint to download file
+          const encodedUrl = encodeURIComponent(doc.fileUrl);
+          const proxyUrl = `/api/download-file?url=${encodedUrl}&filename=${encodeURIComponent(doc.name)}`;
+          
           const link = document.createElement('a');
-          link.href = downloadUrl;
+          link.href = proxyUrl;
           link.download = doc.name || 'document';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          window.URL.revokeObjectURL(downloadUrl);
         } catch (error) {
           console.error('Download error:', error);
+          // Fallback: try direct link
           window.location.href = doc.fileUrl;
         }
       };
