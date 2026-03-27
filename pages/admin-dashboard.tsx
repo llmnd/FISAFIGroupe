@@ -38,6 +38,13 @@ interface Article {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  
+  // Helper para construir URLs com backend
+  const buildApiUrl = (endpoint: string) => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    return backendUrl ? `${backendUrl}${endpoint}` : endpoint;
+  };
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +103,7 @@ export default function AdminDashboard() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/users", {
+      const response = await fetch(buildApiUrl("/api/users"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -168,7 +175,7 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(buildApiUrl(`/api/users/${userId}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -188,7 +195,7 @@ export default function AdminDashboard() {
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/users/${userId}/toggle-active`, {
+      const response = await fetch(buildApiUrl(`/api/users/${userId}/toggle-active`), {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -275,7 +282,7 @@ export default function AdminDashboard() {
 
   const handlePublishArticle = async (articleId: number, currentPublished: boolean) => {
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ published: !currentPublished })
@@ -298,7 +305,7 @@ export default function AdminDashboard() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet article?')) return;
     
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "DELETE"
       });
 

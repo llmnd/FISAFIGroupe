@@ -43,6 +43,13 @@ interface Article {
 
 export default function DashboardPage() {
   const router = useRouter();
+  
+  // Helper para construir URLs com backend
+  const buildApiUrl = (endpoint: string) => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    return backendUrl ? `${backendUrl}${endpoint}` : endpoint;
+  };
+  
   const [user, setUser]         = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("inscriptions");
   const [loading, setLoading]   = useState(true);
@@ -99,7 +106,7 @@ export default function DashboardPage() {
   const fetchArticles = async () => {
     setLoadingArticles(true);
     try {
-      const res = await fetch("/api/articles?limit=100");
+      const res = await fetch(buildApiUrl("/api/articles?limit=100"));
       if (res.ok) {
         const data = await res.json();
         setArticles(data.data?.articles || []);
@@ -113,7 +120,7 @@ export default function DashboardPage() {
 
   const handlePublishArticle = async (articleId: number, currentPublished: boolean) => {
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ published: !currentPublished })
@@ -138,7 +145,7 @@ export default function DashboardPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet article?')) return;
     
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "DELETE"
       });
 
@@ -174,7 +181,7 @@ export default function DashboardPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/articles", {
+      const res = await fetch(buildApiUrl("/api/articles"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
