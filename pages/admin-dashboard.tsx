@@ -378,7 +378,7 @@ export default function AdminDashboard() {
           return;
         }
 
-        const res = await fetch(`${backendUrl}/brochures/upload`, {
+        const res = await fetch(`${backendUrl}/api/brochures/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
