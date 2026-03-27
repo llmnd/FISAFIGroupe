@@ -18,7 +18,19 @@ const app = Fastify({
 app.register(fastifyHelmet);
 
 app.register(fastifyCors, {
-  origin: config.cors.origin,
+  origin: (origin, callback) => {
+    const allowed = [
+      "http://localhost:3000",
+      "https://fisafi.vercel.app",
+      "https://fisafigroupe.onrender.com",
+      process.env.FRONTEND_URL
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
   credentials: true,
 });
 

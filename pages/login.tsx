@@ -51,11 +51,13 @@ export default function LoginPage() {
 
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const url = backendUrl ? `${backendUrl}${endpoint}` : endpoint;
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
