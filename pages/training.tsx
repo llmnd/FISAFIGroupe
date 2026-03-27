@@ -156,7 +156,7 @@ export default function FormationPage() {
       const buttonOpacity = isFileAvailable ? 1 : 0.6;
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-      const handleDownload = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const handleDownload = (e: React.MouseEvent<HTMLButtonElement>) => {
         if (!isFileAvailable) {
           e.preventDefault();
           alert('Fichier non disponible');
@@ -164,20 +164,23 @@ export default function FormationPage() {
         }
 
         try {
-          // Use proxy endpoint to download file
-          const encodedUrl = encodeURIComponent(doc.fileUrl);
-          const proxyUrl = `/api/download-file?url=${encodedUrl}&filename=${encodeURIComponent(doc.name)}`;
-          
+          // Add fl_attachment parameter to Cloudinary URL to force download
+          const downloadUrl = doc.fileUrl.includes('?') 
+            ? `${doc.fileUrl}&fl_attachment`
+            : `${doc.fileUrl}?fl_attachment`;
+
+          // Open in new tab/window for download
           const link = document.createElement('a');
-          link.href = proxyUrl;
+          link.href = downloadUrl;
           link.download = doc.name || 'document';
+          link.target = '_blank';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         } catch (error) {
           console.error('Download error:', error);
-          // Fallback: try direct link
-          window.location.href = doc.fileUrl;
+          // Fallback: open directly
+          window.open(doc.fileUrl, '_blank');
         }
       };
 
