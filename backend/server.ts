@@ -7,6 +7,7 @@ import { config } from './config';
 import { authRoutes } from './routes/auth';
 import { articleRoutes } from './routes/articles';
 import { formationRoutes } from './routes/formations';
+import { usersRoutes } from './routes/users';
 
 const app = Fastify({
   logger: {
@@ -50,6 +51,11 @@ app.register(async (fastify) => {
   await articleRoutes(fastify);
   await formationRoutes(fastify);
 }, { prefix: '/api/v1' });
+
+// Users routes (no v1 prefix for compatibility)
+app.register(async (fastify) => {
+  await usersRoutes(fastify);
+}, { prefix: '/api' });
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
