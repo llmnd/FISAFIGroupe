@@ -164,21 +164,18 @@ export default function FormationPage() {
         }
 
         try {
-          // Use backend download endpoint (no CORS issues, backend gère la sécurité)
+          // Use backend download endpoint
           const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           const downloadUrl = `${backendUrl}/api/brochures/${doc.id}/download`;
           
           const link = document.createElement('a');
           link.href = downloadUrl;
           link.download = doc.name || 'document';
-          link.target = '_blank';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         } catch (error) {
           console.error('Download error:', error);
-          // Fallback: try direct cloud link
-          window.open(doc.fileUrl, '_blank');
         }
       };
 
