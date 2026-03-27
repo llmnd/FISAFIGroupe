@@ -25,6 +25,28 @@ export async function brochureRoutes(app: FastifyInstance) {
     }
   });
 
+  // Get all brochures for admin (admin only)
+  app.get('/brochures/manage', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+
+      const brochures = await prisma.brochure.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return reply.send({
+        success: true,
+        data: brochures,
+      });
+    } catch (error) {
+      console.error('Error fetching brochures for admin:', error);
+      return reply.status(500).send({
+        success: false,
+        error: 'Failed to fetch brochures',
+      });
+    }
+  });
+
   // Get single brochure
   app.get('/brochures/:id', async (request, reply) => {
     try {
