@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../backend/lib/db";
-import { hashPassword } from "../../backend/utils/auth";
+import { prisma } from "@/backend/lib/db";
+import { hashPassword } from "@/backend/utils/auth";
 
 // Middleware pour vérifier le token admin
 async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {

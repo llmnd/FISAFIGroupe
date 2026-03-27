@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import Header from "@/components/Header";
+import CeoGreeting from "@/components/CeoGreeting";
+
 
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Check if user is logged in
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-
   // Scroll reveal
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,13 +26,6 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  // Lock scroll when menu open
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-  }, [menuOpen]);
-
-  const closeMenu = () => setMenuOpen(false);
-
   return (
     <>
       <Head>
@@ -52,59 +39,18 @@ export default function Home() {
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap"
           rel="stylesheet"
         />
+
       </Head>
 
-      {/* NAV */}
-      <nav>
-        <Link href="/" className="logo">Fi<span>SAFI</span> Groupe</Link>
-        <div className="nav-right">
-          <ul className="nav-links">
-            <li><Link href="/services">Services</Link></li>
-            <li><a href="#competences">Expertises</a></li>
-            <li><a href="#vision">Vision</a></li>
-            <li><Link href="/training">Formation</Link></li>
-            <li><Link href="/contact">Contact</Link></li>
-          </ul>
-          {isLoggedIn ? (
-            <Link href="/dashboard" className="nav-cta">Dashboard</Link>
-          ) : (
-            <Link href="/login" className="nav-cta">login</Link>
-          )}
-          <button
-            className={`hamburger${menuOpen ? " open" : ""}`}
-            aria-label="Menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span></span><span></span><span></span>
-          </button>
-        </div>
-      </nav>
+      <Header />
 
-      {/* Mobile Menu */}
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-        <Link href="/services" onClick={closeMenu}>Services</Link>
-        <Link href="/news" onClick={closeMenu}>Actualités</Link>
-        <a href="#vision" onClick={closeMenu}>Notre vision</a>
-        <Link href="/training" onClick={closeMenu}>Formation</Link>
-        <Link href="/contact" onClick={closeMenu}>Contact</Link>
-        <Link href={isLoggedIn ? "/dashboard" : "/login"} style={{ fontWeight: "600", color: "#1e40af" }}>
-          {isLoggedIn ? "Dashboard" : "Connexion"}
-        </Link>
-      </div>
-
-      {/* HERO */}
       <section className="hero">
-        {/* Animated background */}
         <div className="hero-bg" />
-
-        {/* Sweeping lines */}
         <div className="hero-lines">
           <div className="hero-line" />
           <div className="hero-line" />
           <div className="hero-line" />
         </div>
-
-        {/* Floating orbs */}
         <div className="hero-orbs">
           <div className="hero-orb" />
           <div className="hero-orb" />
@@ -119,6 +65,9 @@ export default function Home() {
         </div>
 
         <div className="hero-content">
+          {/* CEO GREETING */}
+          <CeoGreeting />
+
           <div className="hero-eyebrow">Ingénierie & Conseil Technologique</div>
           <h1 className="hero-title">
             L&apos;expertise qui<br />
@@ -128,7 +77,7 @@ export default function Home() {
             Réseaux, cybersécurité et conseil stratégique — FISAFI Groupe accompagne la transformation numérique de l&apos;Afrique.
           </p>
           <div className="hero-actions">
-            <Link href="/services" className="btn-primary">Nos services</Link>
+            <Link href="/services" className="btn-primary" style={{ textDecoration: "none" }}>Nos services</Link>
           </div>
         </div>
       </section>
@@ -184,7 +133,7 @@ export default function Home() {
         </div>
 
         <div className="services-cta reveal reveal-delay-4">
-          <Link href="/services" className="btn-primary">Voir tous nos services</Link>
+          <Link href="/services" className="btn-primary" style={{ textDecoration: "none" }}>Voir tous nos services</Link>
         </div>
       </section>
 
@@ -250,7 +199,7 @@ export default function Home() {
         </div>
 
         <div className="news-cta reveal reveal-delay-4">
-          <Link href="/news" className="btn-primary">Voir toutes les actualités</Link>
+          <Link href="/news" className="btn-primary" style={{ textDecoration: "none" }}>Voir toutes les actualités</Link>
         </div>
       </section>
 

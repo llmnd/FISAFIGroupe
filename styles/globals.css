@@ -432,10 +432,10 @@ nav {
   width: 36px; height: 36px; flex-shrink: 0;
   border: 0.5px solid rgba(255,255,255,0.2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
+  font-size: 14px; color: rgba(255,255,255,0.9);
 }
-.contact-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 2px; }
-.contact-value { font-size: 13px; color: rgba(255,255,255,0.85); }
+.contact-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.9); margin-bottom: 2px; }
+.contact-value { font-size: 13px; color: #fff; font-weight: 500; }
 .btn-contact {
   margin-top: 2rem; width: 100%;
   font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
@@ -599,7 +599,7 @@ footer {
 .footer-logo {
   font-family: 'Cormorant Garamond', serif;
   font-size: 18px; font-weight: 300; letter-spacing: 0.2em;
-  color: rgba(255,255,255,0.5); text-transform: uppercase;
+  color: rgba(255,255,255,0.95); text-transform: uppercase;
 }
 .footer-logo span { color: var(--orange); }
 .footer-links {
@@ -607,7 +607,7 @@ footer {
 }
 .footer-links a {
   font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: rgba(255,255,255,0.5); text-decoration: none;
+  color: rgba(255,255,255,0.85); text-decoration: none;
   transition: color 0.2s;
 }
 .footer-links a:hover { color: rgba(255,255,255,0.8); }
@@ -629,23 +629,23 @@ footer {
   border-top: 0.5px solid rgba(255,255,255,0.08);
   padding-top: 1.25rem;
 }
-.footer-copy { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.08em; }
+.footer-copy { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 0.08em; }
 
 /* ─── FOOTER ─── */
 .foot-logo {
   font-family: 'Cormorant Garamond', serif;
   font-size: 18px; font-weight: 300; letter-spacing: 0.2em;
-  color: rgba(255,255,255,0.5); text-transform: uppercase;
+  color: rgba(255,255,255,0.95); text-transform: uppercase;
 }
 .foot-logo span { color: var(--orange); }
-.foot-tagline { font-size: 11px; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
+.foot-tagline { font-size: 11px; color: rgba(255,255,255,0.85); letter-spacing: 0.05em; }
 .foot-bottom {
   display: flex; justify-content: space-between; align-items: center;
   border-top: 0.5px solid rgba(255,255,255,0.08);
   padding-top: 1.25rem;
 }
-.foot-copy { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.08em; }
-.foot-web { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; text-decoration: none; }
+.foot-copy { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 0.08em; }
+.foot-web { font-size: 10px; color: rgba(255,255,255,0.9); letter-spacing: 0.05em; text-decoration: none; }
 
 /* ─── ANIMATIONS ─── */
 @keyframes fadeUp {

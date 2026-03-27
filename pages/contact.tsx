@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Header from "@/components/Header";
 
 export default function Contact() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -20,10 +20,6 @@ export default function Contact() {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-  }, [menuOpen]);
 
   // Scroll reveal animation
   useEffect(() => {
@@ -41,8 +37,6 @@ export default function Contact() {
     document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
-
-  const closeMenu = () => setMenuOpen(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -74,43 +68,7 @@ export default function Contact() {
         />
       </Head>
 
-      {/* NAV */}
-      <nav>
-        <Link href="/" className="logo">Fi<span>SAFI</span> Groupe</Link>
-        <div className="nav-right">
-          <ul className="nav-links">
-            <li><Link href="/services">Services</Link></li>
-            <li><a href="/#competences">Expertises</a></li>
-            <li><a href="/#vision">Vision</a></li>
-            <li><Link href="/training">Formation</Link></li>
-            <li><Link href="/contact">Contact</Link></li>
-          </ul>
-          {isLoggedIn ? (
-            <Link href="/dashboard" className="nav-cta">Dashboard</Link>
-          ) : (
-            <Link href="/login" className="nav-cta">login</Link>
-          )}
-          <button
-            className={`hamburger${menuOpen ? " open" : ""}`}
-            aria-label="Menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span></span><span></span><span></span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile Menu */}
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-        <Link href="/services" onClick={closeMenu}>Services</Link>
-        <a href="/#competences" onClick={closeMenu}>Expertises</a>
-        <a href="/#vision" onClick={closeMenu}>Notre vision</a>
-        <Link href="/training" onClick={closeMenu}>Formation</Link>
-        <Link href="/contact" onClick={closeMenu}>Contact</Link>
-        <Link href={isLoggedIn ? "/dashboard" : "/login"} style={{ fontWeight: "600", color: "#1e40af" }}>
-          {isLoggedIn ? "Dashboard" : "Connexion"}
-        </Link>
-      </div>
+      <Header />
 
       {/* HERO */}
       <section className="hero">

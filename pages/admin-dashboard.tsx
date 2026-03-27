@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"users" | "articles">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures">("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
@@ -72,6 +72,15 @@ export default function AdminDashboard() {
   const [submittingArticle, setSubmittingArticle] = useState(false);
   const [articleError, setArticleError] = useState('');
   const [articleSuccess, setArticleSuccess] = useState('');
+  // Brochures
+  const [brochures, setBrochures] = useState<any[]>([]);
+  const [loadingBrochures, setLoadingBrochures] = useState(false);
+  const [showBrochureForm, setShowBrochureForm] = useState(false);
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
+  const [brochureFormData, setBrochureFormData] = useState({ name: '', description: '' });
+  const [submittingBrochure, setSubmittingBrochure] = useState(false);
+  const [brochureError, setBrochureError] = useState('');
+  const [brochureSuccess, setBrochureSuccess] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -97,6 +106,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeTab === "articles") {
       fetchArticles();
+    }
+    if (activeTab === "brochures") {
+      fetchBrochures();
     }
   }, [activeTab]);
 
@@ -318,6 +330,120 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       setArticleError('Erreur lors de la suppression');
+      console.error(err);
+    }
+  };
+
+  // Brochures Functions
+  const fetchBrochures = async () => {
+    setLoadingBrochures(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch('/api/brochures/manage', {
+        headers: { Authorization: `Bearer ${token || ''}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBrochures(data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching brochures:", err);
+    } finally {
+      setLoadingBrochures(false);
+    }
+  };
+
+  const handleSubmitBrochure = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBrochureError('');
+    setBrochureSuccess('');
+    
+    if (!brochureFormData.name || !brochureFile) {
+      setBrochureError('Veuillez sélectionner un fichier et entrer un nom');
+      return;
+    }
+
+    setSubmittingBrochure(true);
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const base64Data = base64.split(',')[1];
+
+        const res = await fetch('/api/brochures/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          },
+          body: JSON.stringify({
+            fileBuffer: base64Data,
+            fileName: brochureFile.name,
+            name: brochureFormData.name,
+            description: brochureFormData.description,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setBrochureSuccess('Brochure uploadée avec succès!');
+          setBrochureFormData({ name: '', description: '' });
+          setBrochureFile(null);
+          setShowBrochureForm(false);
+          await fetchBrochures();
+          setTimeout(() => setBrochureSuccess(''), 3000);
+        } else {
+          setBrochureError(data.error || 'Erreur lors de l\'upload');
+        }
+        setSubmittingBrochure(false);
+      };
+      reader.readAsDataURL(brochureFile);
+    } catch (err) {
+      console.error('Brochure submission error:', err);
+      setBrochureError('Erreur lors de l\'upload: ' + (err as Error).message);
+      setSubmittingBrochure(false);
+    }
+  };
+
+  const handlePublishBrochure = async (brochureId: string, currentPublished: boolean) => {
+    try {
+      const res = await fetch(buildApiUrl(`/api/brochures/${brochureId}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ published: !currentPublished }),
+      });
+
+      if (res.ok) {
+        setBrochureSuccess(!currentPublished ? 'Brochure publiée!' : 'Brochure dépubliée');
+        await fetchBrochures();
+        setTimeout(() => setBrochureSuccess(''), 3000);
+      } else {
+        setBrochureError('Erreur lors de la publication');
+      }
+    } catch (err) {
+      setBrochureError('Erreur lors de la publication');
+      console.error(err);
+    }
+  };
+
+  const handleDeleteBrochure = async (brochureId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette brochure?')) return;
+    
+    try {
+      const res = await fetch(buildApiUrl(`/api/brochures/${brochureId}`), {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setBrochureSuccess('Brochure supprimée');
+        await fetchBrochures();
+        setTimeout(() => setBrochureSuccess(''), 3000);
+      } else {
+        setBrochureError('Erreur lors de la suppression');
+      }
+    } catch (err) {
+      setBrochureError('Erreur lors de la suppression');
       console.error(err);
     }
   };
@@ -611,6 +737,12 @@ export default function AdminDashboard() {
             >
               Articles
             </button>
+            <button
+              onClick={() => { setActiveTab("brochures"); setSidebarOpen(false); }}
+              className={`sidebar-link${activeTab === "brochures" ? " active" : ""}`}
+            >
+              Brochures
+            </button>
             <a href="/dashboard" className="sidebar-link" style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "0.5px solid rgba(255,255,255,0.08)" }}>Retour Dashboard</a>
           </nav>
 
@@ -877,6 +1009,157 @@ export default function AdminDashboard() {
                             </button>
                           )}
                           <button className="btn-sm danger" onClick={() => handleDeleteArticle(article.id)}>
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Brochures Tab */}
+            {activeTab === "brochures" && (
+              <>
+                <div className="admin-header">
+                  <div className="admin-eyebrow">Documents</div>
+                  <h1 className="admin-title">Brochures</h1>
+                  <p className="admin-subtitle">Gérez les brochures et documents téléchargeables</p>
+                </div>
+
+                {!showBrochureForm && (
+                  <button className="btn-primary" style={{ marginBottom: "2rem" }} onClick={() => { setShowBrochureForm(true); setBrochureError(''); setBrochureSuccess(''); }}>
+                    Uploader une brochure
+                  </button>
+                )}
+
+                {/* Brochure Upload Form */}
+                {showBrochureForm && (
+                  <form className="article-form" onSubmit={handleSubmitBrochure}>
+                    {brochureError && (
+                      <div className="alert alert-error">
+                        <span>⚠ {brochureError}</span>
+                      </div>
+                    )}
+                    {brochureSuccess && (
+                      <div className="alert alert-success">
+                        <span>✓ {brochureSuccess}</span>
+                      </div>
+                    )}
+
+                    <div className="form-group">
+                      <label className="form-label">Nom de la brochure *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={brochureFormData.name}
+                        onChange={(e) => setBrochureFormData({...brochureFormData, name: e.target.value})}
+                        placeholder="Ex: Brochure Services 2025"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Description (optionnel)</label>
+                      <textarea
+                        className="form-textarea"
+                        value={brochureFormData.description}
+                        onChange={(e) => setBrochureFormData({...brochureFormData, description: e.target.value})}
+                        placeholder="Description de la brochure"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Fichier PDF ou Image *</label>
+                      <input
+                        type="file"
+                        className="form-input"
+                        accept=".pdf,.png,.jpg,.jpeg,.gif"
+                        onChange={(e) => setBrochureFile(e.target.files?.[0] || null)}
+                        required
+                      />
+                      {brochureFile && (
+                        <p style={{ fontSize: "12px", color: "var(--steel)", marginTop: "0.5rem" }}>
+                          Fichier sélectionné: {brochureFile.name} ({(brochureFile.size / 1024 / 1024).toFixed(2)}MB)
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="form-buttons">
+                      <button type="submit" className="btn-submit" disabled={submittingBrochure}>
+                        {submittingBrochure ? "Upload..." : "Uploader"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => setShowBrochureForm(false)}
+                        disabled={submittingBrochure}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Brochures List */}
+                {loadingBrochures ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">…</div>
+                    <p className="empty-text">Chargement des brochures...</p>
+                  </div>
+                ) : brochures.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">📄</div>
+                    <p className="empty-text">Aucune brochure pour le moment</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="admin-subtitle" style={{ marginBottom: "1.5rem" }}>
+                      {brochures.length} brochure{brochures.length > 1 ? 's' : ''} uploadée{brochures.length > 1 ? 's' : ''}
+                    </p>
+                    {brochures.map(brochure => (
+                      <div key={brochure.id} className="article-item">
+                        <div className="article-info">
+                          <div className="article-title">{brochure.name}</div>
+                          <div className="article-meta">
+                            <span className="article-badge">{brochure.type || 'PDF'}</span>
+                            <span>{new Date(brochure.createdAt).toLocaleDateString('fr-FR')}</span>
+                            <span>{brochure.published ? '✓ Publiée' : '✕ Non publiée'}</span>
+                            {brochure.fileSize && <span>{(parseInt(brochure.fileSize, 10) / 1024 / 1024).toFixed(2)}MB</span>}
+                          </div>
+                          {brochure.description && (
+                            <div className="article-excerpt">{brochure.description}</div>
+                          )}
+                        </div>
+                        <div className="article-actions">
+                          {!brochure.published && (
+                            <button 
+                              className="btn-publish"
+                              onClick={() => handlePublishBrochure(brochure.id, brochure.published)}
+                            >
+                              Publier
+                            </button>
+                          )}
+                          {brochure.published && (
+                            <button 
+                              className="btn-sm"
+                              onClick={() => handlePublishBrochure(brochure.id, brochure.published)}
+                              style={{ background: 'var(--steel)', color: '#fff', border: 'none' }}
+                            >
+                              Dépublier
+                            </button>
+                          )}
+                          <a 
+                            href={brochure.fileUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn-sm"
+                            style={{ background: 'var(--blue)', color: '#fff', border: 'none', textDecoration: 'none', display: 'inline-block' }}
+                          >
+                            Télécharger
+                          </a>
+                          <button className="btn-sm danger" onClick={() => handleDeleteBrochure(brochure.id)}>
                             Supprimer
                           </button>
                         </div>

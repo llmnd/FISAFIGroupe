@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
+import Header from "@/components/Header";
 
 export default function FormationPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -16,6 +16,27 @@ export default function FormationPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [brochures, setBrochures] = useState<any[]>([]);
+  const [loadingBrochures, setLoadingBrochures] = useState(true);
+
+  // Load brochures from API
+  useEffect(() => {
+    const fetchBrochures = async () => {
+      try {
+        const response = await fetch('/api/brochures');
+        if (response.ok) {
+          const data = await response.json();
+          setBrochures(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error loading brochures:', error);
+      } finally {
+        setLoadingBrochures(false);
+      }
+    };
+
+    fetchBrochures();
+  }, []);
 
   // Scroll reveal
   useEffect(() => {
@@ -33,16 +54,6 @@ export default function FormationPage() {
     document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
-
-  // Lock scroll when menu open
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-  }, [menuOpen]);
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
-  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -109,6 +120,99 @@ export default function FormationPage() {
     }
   };
 
+  // Helper: Format file size from bytes to readable format
+  const getFormattedFileSize = (bytes: number): string => {
+    if (bytes > 1024 * 1024) {
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    } else if (bytes > 1024) {
+      return (bytes / 1024).toFixed(0) + ' KB';
+    } else {
+      return bytes + ' B';
+    }
+  };
+
+  // Helper: Extract nested ternary into independent conditions for brochure rendering
+  const renderBrochuresList = () => {
+    const isLoading = loadingBrochures;
+    const isEmpty = brochures.length === 0;
+    
+    // Extracted: Independent condition statements instead of nested ternaries
+    if (isLoading) {
+      return <p style={{ textAlign: 'center', color: '#666', padding: '2rem 0' }}>Chargement des documents...</p>;
+    }
+    
+    if (isEmpty) {
+      return <p style={{ textAlign: 'center', color: '#666', padding: '2rem 0' }}>Aucun document disponible pour le moment.</p>;
+    }
+
+    // Render brochures list
+    return brochures.map((doc) => {
+      const fileSize = doc.fileSize ? parseInt(doc.fileSize, 10) : 0;
+      const displaySize = getFormattedFileSize(fileSize);
+      const isFileAvailable = !!doc.fileUrl;
+      
+      // Extracted: Button accessibility states as independent variables
+      const buttonCursor = isFileAvailable ? 'pointer' : 'not-allowed';
+      const buttonOpacity = isFileAvailable ? 1 : 0.6;
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+      const handleDownload = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (!isFileAvailable) {
+          e.preventDefault();
+          alert('Fichier non disponible');
+          return;
+        }
+
+        try {
+          const response = await fetch(doc.fileUrl, { mode: 'no-cors' });
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `${doc.name || 'document'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+          console.error('Download error:', error);
+          window.location.href = doc.fileUrl;
+        }
+      };
+
+      return (
+        <button
+          onClick={handleDownload}
+          key={doc.id}
+          className="atout-item"
+          style={{
+            cursor: buttonCursor,
+            opacity: buttonOpacity,
+            border: 'none',
+            background: 'none',
+            padding: isMobile ? '0.75rem 0' : '1rem 0',
+            textAlign: 'left',
+            fontFamily: 'inherit',
+            width: '100%',
+            minHeight: isMobile ? '2.5rem' : '3rem',
+            transition: 'opacity 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+          }}
+          disabled={!isFileAvailable}
+          title={isFileAvailable ? 'Cliquez pour télécharger' : 'Fichier non disponible'}
+        >
+          <div className="atout-dot" style={{ background: '#1e40af', flexShrink: 0 }} />
+          <div className="atout-text" style={{ flex: 1 }}>
+            <div style={{ fontWeight: '500', fontSize: isMobile ? '0.95rem' : '1rem' }}>{doc.name}</div>
+            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>📄 {displaySize}</div>
+          </div>
+        </button>
+      );
+    });
+  };
+
   return (
     <>
       <Head>
@@ -124,36 +228,7 @@ export default function FormationPage() {
         />
       </Head>
 
-      {/* NAV */}
-      <nav>
-        <a href="/" className="logo">Fi<span>SAFI</span> Groupe</a>
-        <div className="nav-right">
-          <ul className="nav-links">
-            <li><a href="/#services">Services</a></li>
-            <li><a href="/#competences">Expertises</a></li>
-            <li><a href="/#vision">Vision</a></li>
-            <li><a href="/training" className="active">Formation</a></li>
-            <li><a href="/#contact">Contact</a></li>
-          </ul>
-          <button className="nav-cta" onClick={() => scrollTo("inscription")}>S&apos;inscrire</button>
-          <button
-            className={`hamburger${menuOpen ? " open" : ""}`}
-            aria-label="Menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span></span><span></span><span></span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile Menu */}
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-        <a href="/#services">Services</a>
-        <a href="/#competences">Expertises</a>
-        <a href="/#vision">Notre vision</a>
-        <a href="/training" className="active">Formation</a>
-        <a href="/#contact">Contact</a>
-      </div>
+      <Header />
 
       {/* HERO */}
       <section className="hero">
@@ -184,7 +259,7 @@ export default function FormationPage() {
             Réseaux, cybersécurité, infrastructure IT — Des formations professionnelles conçues pour développer l&apos;expertise technologique de vos équipes.
           </p>
           <div className="hero-actions">
-            <button className="btn-primary" onClick={() => scrollTo("catalogue")}>Voir le catalogue</button>
+            <button className="btn-primary" onClick={() => document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth" })}>Voir le catalogue</button>
           </div>
         </div>
       </section>
@@ -266,21 +341,7 @@ export default function FormationPage() {
             Accédez à notre documentation complète sur les formations : catalogues détaillés, programmes pédagogiques, tarifs et modalités d&apos;inscription.
           </p>
           <div className="atouts-list">
-            {[
-              { title: "Brochure Formations 2025", size: "2.4 MB" },
-              { title: "Programmes Détaillés", size: "1.8 MB" },
-              { title: "Guide Certification", size: "1.2 MB" },
-              { title: "Tarifs &amp; Inscriptions", size: "890 KB" },
-              { title: "Testimonials Participants", size: "1.5 MB" },
-            ].map((doc) => (
-              <a href="#" key={doc.title} className="atout-item" style={{ cursor: "pointer", textDecoration: "none" }}>
-                <div className="atout-dot" style={{ background: "#1e40af" }} />
-                <div className="atout-text">
-                  <div style={{ fontWeight: "500" }}>{doc.title}</div>
-                  <div style={{ fontSize: "0.85rem", color: "#666" }}>📄 {doc.size}</div>
-                </div>
-              </a>
-            ))}
+            {renderBrochuresList()}
           </div>
         </div>
       </section>

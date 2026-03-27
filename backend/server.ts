@@ -7,7 +7,9 @@ import { config } from './config';
 import { authRoutes } from './routes/auth';
 import { articleRoutes } from './routes/articles';
 import { formationRoutes } from './routes/formations';
+import { sessionRoutes } from './routes/sessions';
 import { usersRoutes } from './routes/users';
+import { brochureRoutes } from './routes/brochures';
 
 const app = Fastify({
   logger: {
@@ -15,17 +17,21 @@ const app = Fastify({
   },
 });
 
-// Register plugins
-app.register(fastifyHelmet);
-
+// Register CORS first, before other plugins
 app.register(fastifyCors, {
   origin: [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://fisafi.vercel.app",
     "https://fisafigroupe.onrender.com"
   ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 });
+
+// Register other plugins
+app.register(fastifyHelmet);
 
 app.register(fastifyJwt, {
   secret: config.jwt.secret,
@@ -52,10 +58,12 @@ app.register(async (fastify) => {
   await formationRoutes(fastify);
 }, { prefix: '/api/v1' });
 
-// Auth & Users routes (no v1 prefix for frontend compatibility)
+// Auth & Users & Articles routes (no v1 prefix for frontend compatibility)
 app.register(async (fastify) => {
   await authRoutes(fastify);
   await usersRoutes(fastify);
+  await articleRoutes(fastify);
+  await brochureRoutes(fastify);
 }, { prefix: '/api' });
 
 // Error handler
