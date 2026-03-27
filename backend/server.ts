@@ -52,8 +52,9 @@ app.register(async (fastify) => {
   await formationRoutes(fastify);
 }, { prefix: '/api/v1' });
 
-// Users routes (no v1 prefix for compatibility)
+// Auth & Users routes (no v1 prefix for frontend compatibility)
 app.register(async (fastify) => {
+  await authRoutes(fastify);
   await usersRoutes(fastify);
 }, { prefix: '/api' });
 
