@@ -1,7 +1,7 @@
 // backend/routes/brochures.ts
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/db';
-import { uploadFileToCloudinary } from '../services/cloudinaryService';
+import { CloudinaryService } from '../services/cloudinaryService';
 
 export async function brochureRoutes(app: FastifyInstance) {
   // Get all brochures (published only)
@@ -133,7 +133,7 @@ export async function brochureRoutes(app: FastifyInstance) {
           where: { id: (request.user as any).id },
         });
 
-        if (!user || !user.isAdmin) {
+        if (!user || user.role !== 'admin') {
           return reply.status(403).send({
             success: false,
             error: 'Only admins can upload brochures',
@@ -150,11 +150,12 @@ export async function brochureRoutes(app: FastifyInstance) {
         });
 
         // Upload to Cloudinary
-        const url = await uploadFileToCloudinary(
+        const uploadResponse = await CloudinaryService.uploadFile(
           Buffer.from(fileBuffer, 'base64'),
           fileName,
-          folder
+          folder as 'brochures' | 'articles' | 'images'
         );
+        const url = uploadResponse.secure_url || uploadResponse.url;
 
         console.log('📤 Cloudinary upload success:', { url });
 
