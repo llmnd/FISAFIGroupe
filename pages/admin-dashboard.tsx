@@ -26,6 +26,37 @@ interface Article {
   author?: string;
 }
 
+interface SessionFormation {
+  id: number;
+  formationId: number;
+  endDate: string;
+  startDate: string;
+  location: string;
+  capacity: number;
+  available: number;
+  status?: "ouverte" | "complète" | "fermée" | "annulée";
+}
+
+interface Formation {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface InscriptionFormation {
+  id: number;
+  sessionId: number;
+  formationId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  status: "confirme" | "liste_attente" | "annule" | "demande_en_attente";
+  createdAt: string;
+  formation?: Formation;
+  session?: SessionFormation;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const buildApiUrl = (ep: string) => {
@@ -33,14 +64,129 @@ export default function AdminDashboard() {
     return b ? `${b}${ep}` : ep;
   };
 
+  // Helper functions to extract nested ternaries
+  const getTabLabel = (tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions"): string => {
+    const labels: Record<string, string> = {
+      users: "Gestion Utilisateurs",
+      articles: "Articles",
+      brochures: "Brochures",
+      inscriptions: "Inscriptions",
+      sessions: "Sessions"
+    };
+    return labels[tab] || "";
+  };
+
+  const getSessionStatusColor = (status: string | undefined): string => {
+    if (status === "ouverte") return "#16a34a";
+    if (status === "complète") return "#dc2626";
+    return "#7a8ea8";
+  };
+
+  const getPublishedStatus = (published: boolean): { className: string; text: string } => ({
+    className: published ? "pub-on" : "pub-off",
+    text: published ? "Publié" : "Brouillon"
+  });
+
+  const getBrochureStatus = (published: boolean): { className: string; text: string } => ({
+    className: published ? "pub-on" : "pub-off",
+    text: published ? "Publiée" : "Non publiée"
+  });
+
+  const getSeedingButtonStyle = (isInProgress: boolean) => ({
+    padding: '0.5rem 1rem',
+    backgroundColor: isInProgress ? '#ccc' : 'var(--blue)',
+    color: 'white' as const,
+    border: 'none' as const,
+    borderRadius: '4px',
+    cursor: isInProgress ? 'not-allowed' : 'pointer' as const,
+    fontSize: '12px',
+    fontWeight: 500
+  });
+
+  const renderPublishButton = (articleId: number, isPublished: boolean) => {
+    if (!isPublished) {
+      return (
+        <button className="sheet-btn primary" onClick={() => handlePublishArticle(articleId, isPublished)}>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          Publier l'article
+        </button>
+      );
+    }
+    return (
+      <button className="sheet-btn orange-btn" onClick={() => handlePublishArticle(articleId, isPublished)}>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        Dépublier
+      </button>
+    );
+  };
+
+  const renderPublishBrochureButton = (brochureId: string, isPublished: boolean) => {
+    if (isPublished) {
+      return (
+        <button className="sheet-btn orange-btn" onClick={() => handlePublishBrochure(brochureId, isPublished)}>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          Dépublier
+        </button>
+      );
+    }
+    return (
+      <button className="sheet-btn primary" onClick={() => handlePublishBrochure(brochureId, isPublished)}>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        Publier
+      </button>
+    );
+  };
+
+  const renderContentList = (loading: boolean, items: any[], emptyIcon: string, emptyText: string, renderItem: (item: any) => React.ReactNode) => {
+    if (loading) {
+      return <div className="empty"><div style={{ width:24,height:24,border:"1.5px solid rgba(30,64,175,0.15)",borderTopColor:"var(--blue)",borderRadius:"50%",animation:"spin 0.7s linear infinite" }}/></div>;
+    }
+    if (items.length===0) {
+      return <div className="empty"><div className="empty-icon">{emptyIcon}</div><p className="empty-text">{emptyText}</p></div>;
+    }
+    return items.map(renderItem);
+  };
+
+  const renderInscriptionActions = (inscription: any) => {
+    if (inscription.status === "liste_attente" || inscription.status === "demande_en_attente") {
+      return (
+        <>
+          <button className="sheet-btn primary" onClick={() => { console.log("Accepting:", inscription.id); handleAcceptInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Accepter la demande
+          </button>
+          <button className="sheet-btn orange-btn" onClick={() => { console.log("Rejecting waitlist:", inscription.id); handleRejectInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            Rejeter la demande
+          </button>
+        </>
+      );
+    }
+    if (inscription.status === "confirme") {
+      return (
+        <button className="sheet-btn danger" onClick={() => { console.log("Rejecting confirmed:", inscription.id); handleRejectInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          Annuler l'inscription
+        </button>
+      );
+    }
+    return null;
+  };
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions">("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
+
+  // Inscriptions management
+  const [inscriptions, setInscriptions] = useState<InscriptionFormation[]>([]);
+  const [loadingInscriptions, setLoadingInscriptions] = useState(false);
+  const [filterInscriptionStatus, setFilterInscriptionStatus] = useState<"all" | "liste_attente" | "confirme" | "annule">("all");
+  const [actionSheetInscription, setActionSheetInscription] = useState<InscriptionFormation | null>(null);
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -65,6 +211,27 @@ export default function AdminDashboard() {
   const [submittingBrochure, setSubmittingBrochure] = useState(false);
   const [brochureError, setBrochureError] = useState("");
   const [brochureSuccess, setBrochureSuccess] = useState("");
+
+  // Sessions management
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [sessions, setSessions] = useState<SessionFormation[]>([]);
+  const [actionSheetSession, setActionSheetSession] = useState<SessionFormation | null>(null);
+  const [loadingFormations, setLoadingFormations] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [showSessionForm, setShowSessionForm] = useState(false);
+  const [sessionFormData, setSessionFormData] = useState({
+    formationId: "",
+    startDate: "",
+    endDate: "",
+    location: "",
+    capacity: "20",
+  });
+  const [submittingSession, setSubmittingSession] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const [sessionSuccess, setSessionSuccess] = useState("");
+
+  // Seed sessions
+  
   const [actionSheetBrochure, setActionSheetBrochure] = useState<any | null>(null);
 
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
@@ -89,6 +256,11 @@ export default function AdminDashboard() {
       fetchArticles();
     } else if (activeTab === "brochures") {
       fetchBrochures();
+    } else if (activeTab === "inscriptions") {
+      fetchInscriptions();
+    } else if (activeTab === "sessions") {
+      fetchFormations();
+      fetchSessions();
     }
   }, [activeTab]);
 
@@ -98,6 +270,200 @@ export default function AdminDashboard() {
       const r = await fetch(buildApiUrl("/api/users"), { headers: { Authorization: `Bearer ${token}` } });
       if (r.ok) setUsers(await r.json());
     } catch {}
+  };
+
+  const fetchInscriptions = async () => {
+    setLoadingInscriptions(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found");
+        showToast("Non authentifié", "err");
+        setLoadingInscriptions(false);
+        return;
+      }
+      const query = filterInscriptionStatus !== "all" ? `?status=${filterInscriptionStatus}` : "";
+      const url = buildApiUrl(`/api/inscriptions-manage${query}`);
+      console.log("Fetching inscriptions from:", url);
+      const r = await fetch(url, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setInscriptions(data.data || []);
+      } else {
+        const errText = await r.text();
+        console.error("Fetch inscriptions error:", r.status, errText);
+        showToast(`Erreur ${r.status}: ${r.statusText}`, "err");
+      }
+    } catch (err) {
+      console.error("Error fetching inscriptions:", err);
+      showToast("Erreur réseau", "err");
+    } finally {
+      setLoadingInscriptions(false);
+    }
+  };
+
+  const handleAcceptInscription = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Non authentifié", "err");
+        return;
+      }
+      const body = { id, action: "accept" };
+      console.log("Sending PATCH body:", body);
+      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+      if (r.ok) {
+        showToast("Inscription acceptée");
+        setActionSheetInscription(null);
+        await fetchInscriptions();
+      } else {
+        const errText = await r.text();
+        console.error("Accept inscription error:", r.status, errText);
+        showToast(`Erreur ${r.status}: ${errText}`, "err");
+      }
+    } catch (err) {
+      console.error("Accept error:", err);
+      showToast("Erreur réseau", "err");
+    }
+  };
+
+  const handleRejectInscription = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Non authentifié", "err");
+        return;
+      }
+      const body = { id, action: "reject" };
+      console.log("Sending PATCH body:", body);
+      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+      if (r.ok) {
+        showToast("Inscription rejetée");
+        setActionSheetInscription(null);
+        await fetchInscriptions();
+      } else {
+        const errText = await r.text();
+        console.error("Reject inscription error:", r.status, errText);
+        showToast(`Erreur ${r.status}: ${errText}`, "err");
+      }
+    } catch (err) {
+      console.error("Reject error:", err);
+      showToast("Erreur réseau", "err");
+    }
+  };
+
+  const handleSeedSessions = async () => {
+    // removed seed functionality
+  };
+
+  const fetchFormations = async () => {
+    setLoadingFormations(true);
+    try {
+      const r = await fetch("/api/formations?limit=100");
+      if (r.ok) {
+        const data = await r.json();
+        setFormations(data.data?.formations || []);
+      }
+    } catch (err) {
+      console.error("Error fetching formations:", err);
+    } finally {
+      setLoadingFormations(false);
+    }
+  };
+
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const token = localStorage.getItem("token");
+      const r = await fetch(buildApiUrl("/api/sessions"), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setSessions(data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching sessions:", err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const handleDeleteSession = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Non authentifié", "err");
+        return;
+      }
+      const r = await fetch(buildApiUrl(`/api/sessions/${id}`), {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.ok) {
+        showToast("Session supprimée");
+        setActionSheetSession(null);
+        await fetchSessions();
+      } else {
+        const errText = await r.text();
+        console.error("Delete session error:", r.status, errText);
+        showToast(`Erreur ${r.status}: ${errText}`, "err");
+      }
+    } catch (err) {
+      console.error("Delete session exception:", err);
+      showToast("Erreur réseau", "err");
+    }
+  };
+
+  const handleCreateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSessionError("");
+    setSessionSuccess("");
+    
+    if (!sessionFormData.formationId || !sessionFormData.startDate || !sessionFormData.endDate || !sessionFormData.location) {
+      setSessionError("Tous les champs obligatoires doivent être remplis");
+      return;
+    }
+
+    setSubmittingSession(true);
+    try {
+      const token = localStorage.getItem("token");
+      const r = await fetch(buildApiUrl("/api/sessions"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          formationId: parseInt(sessionFormData.formationId),
+          startDate: new Date(sessionFormData.startDate).toISOString(),
+          endDate: new Date(sessionFormData.endDate).toISOString(),
+          location: sessionFormData.location,
+          capacity: parseInt(sessionFormData.capacity),
+        })
+      });
+      if (r.ok) {
+        setSessionSuccess("Session créée avec succès!");
+        setSessionFormData({ formationId: "", startDate: "", endDate: "", location: "", capacity: "20" });
+        setShowSessionForm(false);
+        await fetchSessions();
+        setTimeout(() => setSessionSuccess(""), 3000);
+      } else {
+        const errText = await r.text();
+        setSessionError(errText || "Erreur lors de la création");
+      }
+    } catch (err) {
+      setSessionError((err as Error).message);
+    } finally {
+      setSubmittingSession(false);
+    }
   };
 
   const filteredUsers = users.filter(u => {
@@ -620,9 +986,9 @@ export default function AdminDashboard() {
             <div className="mob-menu-email">{currentUser.email}</div>
           </div>
         </div>
-        {(["users","articles","brochures"] as const).map(tab => (
+        {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
           <button key={tab} className={`mob-nav-link${activeTab===tab?" active":""}`} onClick={() => { setActiveTab(tab); setNavOpen(false); }}>
-            {tab==="users"?"Gestion Utilisateurs":tab==="articles"?"Articles":"Brochures"}
+            {getTabLabel(tab)}
           </button>
         ))}
         <a href="/dashboard" className="mob-nav-link">Retour Dashboard</a>
@@ -646,9 +1012,9 @@ export default function AdminDashboard() {
             </div>
           </div>
           <nav className="sidebar-nav">
-            {(["users","articles","brochures"] as const).map(tab => (
+            {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
               <button key={tab} className={`sidebar-link${activeTab===tab?" active":""}`} onClick={() => setActiveTab(tab)}>
-                {tab==="users"?"Gestion Utilisateurs":tab==="articles"?"Articles":"Brochures"}
+                {getTabLabel(tab)}
               </button>
             ))}
             <a href="/dashboard" className="sidebar-link" style={{ marginTop:"1rem",paddingTop:"1rem",borderTop:"0.5px solid rgba(255,255,255,0.08)",display:"block" }}>Retour Dashboard</a>
@@ -668,6 +1034,8 @@ export default function AdminDashboard() {
           </header>
 
           <div className="admin-content">
+
+            {/* Seed Sessions Utility removed */}
 
             {/* ═══ USERS ═══ */}
             {activeTab==="users" && (<>
@@ -823,21 +1191,23 @@ export default function AdminDashboard() {
                 <button className="btn-add" onClick={() => { setShowArticleForm(true); setArticleError(""); setArticleSuccess(""); }}>+ Nouvel article</button>
               )}
 
-              {loadingArticles
-                ? <div className="empty"><div style={{ width:24,height:24,border:"1.5px solid rgba(30,64,175,0.15)",borderTopColor:"var(--blue)",borderRadius:"50%",animation:"spin 0.7s linear infinite" }}/></div>
-                : articles.length===0
-                  ? <div className="empty"><div className="empty-icon">📝</div><p className="empty-text">Aucun article pour le moment</p></div>
-                  : articles.map(a => (
-                    <div key={a.id} className="content-card" onClick={() => setActionSheetArticle(a)}>
-                      <div className="content-card-title">{a.title}</div>
-                      <div className="content-card-meta">
-                        <span className="cat-badge">{a.category}</span>
-                        <span className={a.published?"pub-on":"pub-off"}>{a.published?"Publié":"Brouillon"}</span>
-                        <span className="content-date">{new Date(a.createdAt).toLocaleDateString("fr-FR")}</span>
-                      </div>
-                      <div className="content-card-excerpt">{a.excerpt}</div>
+              {renderContentList(
+                loadingArticles,
+                articles,
+                "📝",
+                "Aucun article pour le moment",
+                (a) => (
+                  <div key={a.id} className="content-card" onClick={() => setActionSheetArticle(a)}>
+                    <div className="content-card-title">{a.title}</div>
+                    <div className="content-card-meta">
+                      <span className="cat-badge">{a.category}</span>
+                      <span className={getPublishedStatus(a.published).className}>{getPublishedStatus(a.published).text}</span>
+                      <span className="content-date">{new Date(a.createdAt).toLocaleDateString("fr-FR")}</span>
                     </div>
-                  ))}
+                    <div className="content-card-excerpt">{a.excerpt}</div>
+                  </div>
+                )
+              )}
 
               {!showArticleForm && <button className="fab" onClick={() => { setShowArticleForm(true); setArticleError(""); setArticleSuccess(""); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -885,26 +1255,157 @@ export default function AdminDashboard() {
                 <button className="btn-add" onClick={() => { setShowBrochureForm(true); setBrochureError(""); setBrochureSuccess(""); }}>+ Uploader une brochure</button>
               )}
 
-              {loadingBrochures
-                ? <div className="empty"><div style={{ width:24,height:24,border:"1.5px solid rgba(30,64,175,0.15)",borderTopColor:"var(--blue)",borderRadius:"50%",animation:"spin 0.7s linear infinite" }}/></div>
-                : brochures.length===0
-                  ? <div className="empty"><div className="empty-icon">📄</div><p className="empty-text">Aucune brochure pour le moment</p></div>
-                  : brochures.map(b => (
-                    <div key={b.id} className="content-card" onClick={() => setActionSheetBrochure(b)}>
-                      <div className="content-card-title">{b.name}</div>
-                      <div className="content-card-meta">
-                        <span className="cat-badge">{b.type||"PDF"}</span>
-                        <span className={b.published?"pub-on":"pub-off"}>{b.published?"Publiée":"Non publiée"}</span>
-                        {b.fileSize && <span className="content-date">{(parseInt(b.fileSize,10)/1024/1024).toFixed(2)} MB</span>}
-                        <span className="content-date">{new Date(b.createdAt).toLocaleDateString("fr-FR")}</span>
-                      </div>
-                      {b.description && <div className="content-card-excerpt">{b.description}</div>}
+              {renderContentList(
+                loadingBrochures,
+                brochures,
+                "📄",
+                "Aucune brochure pour le moment",
+                (b) => (
+                  <div key={b.id} className="content-card" onClick={() => setActionSheetBrochure(b)}>
+                    <div className="content-card-title">{b.name}</div>
+                    <div className="content-card-meta">
+                      <span className="cat-badge">{b.type||"PDF"}</span>
+                      <span className={getBrochureStatus(b.published).className}>{getBrochureStatus(b.published).text}</span>
+                      {b.fileSize && <span className="content-date">{(Number.parseInt(b.fileSize,10)/1024/1024).toFixed(2)} MB</span>}
+                      <span className="content-date">{new Date(b.createdAt).toLocaleDateString("fr-FR")}</span>
                     </div>
-                  ))}
+                    {b.description && <div className="content-card-excerpt">{b.description}</div>}
+                  </div>
+                )
+              )}
 
               {!showBrochureForm && <button className="fab" onClick={() => { setShowBrochureForm(true); setBrochureError(""); setBrochureSuccess(""); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>}
+            </>)}
+
+            {/* ═══ INSCRIPTIONS ═══ */}
+            {activeTab==="inscriptions" && (<>
+              <div className="admin-header">
+                <div className="admin-eyebrow">Gestion</div>
+                <h1 className="admin-title">Inscriptions aux formations</h1>
+                <p className="admin-sub">Acceptez ou rejetez les demandes d'inscription</p>
+              </div>
+
+              <div className="filter-row">
+                <select value={filterInscriptionStatus} onChange={e => setFilterInscriptionStatus(e.target.value as any)}>
+                  <option value="all">Tous les statuts</option>
+                  <option value="liste_attente">En attente</option>
+                  <option value="confirme">Confirmés</option>
+                  <option value="annule">Annulés</option>
+                </select>
+              </div>
+
+              {renderContentList(
+                loadingInscriptions,
+                inscriptions,
+                "◎",
+                "Aucune inscription",
+                (inscription) => (
+                  <div key={inscription.id} className="content-card" onClick={() => setActionSheetInscription(inscription)}>
+                    <div className="content-card-title">{inscription.firstName} {inscription.lastName}</div>
+                    <div className="content-card-meta">
+                      <span className="cat-badge">{inscription.formation?.name || "Formation"}</span>
+                      <span className={inscription.status==="confirme"?"pub-on":"pub-off"}>{inscription.status}</span>
+                      <span className="content-date">{inscription.session?.location || "Lieu"}</span>
+                      <span className="content-date">{new Date(inscription.session?.startDate||inscription.createdAt).toLocaleDateString("fr-FR")}</span>
+                    </div>
+                  </div>
+                )
+              )}
+            </>)}
+
+            {/* ═══ SESSIONS ═══ */}
+            {activeTab==="sessions" && (<>
+              <div className="admin-header">
+                <div className="admin-eyebrow">Gestion</div>
+                <h1 className="admin-title">Sessions de Formation</h1>
+                <p className="admin-sub">Créez et gérez les sessions de formation</p>
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <button className="btn-add" onClick={() => { setShowSessionForm(true); setSessionError(""); setSessionSuccess(""); }}>+ Créer une session</button>
+              </div>
+
+              {sessionSuccess && <div className="alert alert-ok">✓ {sessionSuccess}</div>}
+              {sessionError && <div className="alert alert-err">⚠ {sessionError}</div>}
+
+              {showSessionForm && (
+                <div style={{ padding: "1.5rem", backgroundColor: "rgba(245,244,240,0.5)", border: "0.5px solid var(--line)", borderRadius: "6px", marginBottom: "1.5rem" }}>
+                  <h3 style={{ marginBottom: "1rem", fontSize: "14px", fontWeight: 500 }}>Formulaire de création</h3>
+                  <form onSubmit={handleCreateSession}>
+                    <div className="form-row-grid">
+                      <div className="form-group">
+                        <label className="form-label">Formation *</label>
+                        <select className="form-input" value={sessionFormData.formationId} onChange={e => setSessionFormData({...sessionFormData, formationId: e.target.value})} required>
+                          <option value="">Sélectionner une formation</option>
+                          {formations.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Capacité *</label>
+                        <input type="number" className="form-input" value={sessionFormData.capacity} onChange={e => setSessionFormData({...sessionFormData, capacity: e.target.value})} min="1" required/>
+                      </div>
+                    </div>
+                    <div className="form-row-grid">
+                      <div className="form-group">
+                        <label className="form-label">Date début *</label>
+                        <input type="datetime-local" className="form-input" value={sessionFormData.startDate} onChange={e => setSessionFormData({...sessionFormData, startDate: e.target.value})} required/>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Date fin *</label>
+                        <input type="datetime-local" className="form-input" value={sessionFormData.endDate} onChange={e => setSessionFormData({...sessionFormData, endDate: e.target.value})} required/>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Lieu *</label>
+                      <input type="text" className="form-input" value={sessionFormData.location} onChange={e => setSessionFormData({...sessionFormData, location: e.target.value})} placeholder="Dakar, N'djamena, etc." required/>
+                    </div>
+                    <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                      <button type="submit" className="btn-primary-fill" disabled={submittingSession}>
+                        {submittingSession ? "Création..." : "Créer la session"}
+                      </button>
+                      <button type="button" className="btn-cancel-fill" onClick={() => setShowSessionForm(false)} disabled={submittingSession}>
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              <h3 style={{ fontSize: "13px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--steel)", marginTop: "2rem", marginBottom: "1rem" }}>Sessions existantes</h3>
+              {(() => {
+                if (loadingSessions) {
+                  return <div className="empty"><div style={{ width:24,height:24,border:"1.5px solid rgba(30,64,175,0.15)",borderTopColor:"var(--blue)",borderRadius:"50%",animation:"spin 0.7s linear infinite" }}/></div>;
+                }
+                if (sessions.length === 0) {
+                  return <div className="empty"><div className="empty-icon">📅</div><p className="empty-text">Aucune session créée</p></div>;
+                }
+                return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
+                      {sessions.map(session => {
+                        const formation = formations.find(f => f.id === session.formationId);
+                        return (
+                                  <div key={session.id} className="content-card" onClick={() => setActionSheetSession(session)} style={{ padding: "1rem", border: "0.5px solid var(--line)", borderRadius: "6px", backgroundColor: "var(--white)" }}>
+                            <div style={{ fontWeight: 500, marginBottom: "0.5rem" }}>{formation?.name || "Formation"}</div>
+                            <div style={{ fontSize: "12px", color: "var(--steel)", marginBottom: "0.5rem" }}>
+                              📍 {session.location}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "var(--steel)", marginBottom: "0.5rem" }}>
+                              📅 {new Date(session.startDate).toLocaleDateString('fr-FR')} - {new Date(session.endDate).toLocaleDateString('fr-FR')}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "var(--steel)" }}>
+                              Capacité: {session.available}/{session.capacity}
+                            </div>
+                            {session.status && (
+                              <div style={{ fontSize: "11px", color: getSessionStatusColor(session.status), marginTop: "0.5rem", textTransform: "uppercase", fontWeight: 500 }}>
+                                Status: {session.status}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>;
+              })()}
             </>)}
 
           </div>
@@ -917,6 +1418,8 @@ export default function AdminDashboard() {
           { id:"users", label:"Utilisateurs", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
           { id:"articles", label:"Articles", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
           { id:"brochures", label:"Brochures", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> },
+          { id:"inscriptions", label:"Inscriptions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="10.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg> },
+          { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
         ] as const).map(t => (
           <button key={t.id} className={`tab-btn${activeTab===t.id?" active":""}`} onClick={() => setActiveTab(t.id)}>
             <div className="tab-active-line"/>
@@ -965,15 +1468,7 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetArticle.category} · {new Date(actionSheetArticle.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            {!actionSheetArticle.published
-              ? <button className="sheet-btn primary" onClick={() => handlePublishArticle(actionSheetArticle.id, actionSheetArticle.published)}>
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                  Publier l'article
-                </button>
-              : <button className="sheet-btn orange-btn" onClick={() => handlePublishArticle(actionSheetArticle.id, actionSheetArticle.published)}>
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                  Dépublier
-                </button>}
+            {renderPublishButton(actionSheetArticle.id, actionSheetArticle.published)}
             <div className="sheet-divider"/>
             <button className="sheet-btn danger" onClick={() => { if(confirm("Supprimer cet article ?")) handleDeleteArticle(actionSheetArticle.id); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -998,15 +1493,7 @@ export default function AdminDashboard() {
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Télécharger
             </a>
-            {!actionSheetBrochure.published
-              ? <button className="sheet-btn primary" onClick={() => handlePublishBrochure(actionSheetBrochure.id, actionSheetBrochure.published)}>
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                  Publier
-                </button>
-              : <button className="sheet-btn orange-btn" onClick={() => handlePublishBrochure(actionSheetBrochure.id, actionSheetBrochure.published)}>
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                  Dépublier
-                </button>}
+            {renderPublishBrochureButton(actionSheetBrochure.id, actionSheetBrochure.published)}
             <div className="sheet-divider"/>
             <button className="sheet-btn danger" onClick={() => { if(confirm("Supprimer cette brochure ?")) handleDeleteBrochure(actionSheetBrochure.id); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -1014,6 +1501,57 @@ export default function AdminDashboard() {
             </button>
           </div>
           <button className="sheet-cancel" onClick={() => setActionSheetBrochure(null)}>Annuler</button>
+        </div>
+      </>)}
+
+      {/* Inscription action sheet */}
+      {actionSheetInscription && (<>
+        <div className="sheet-backdrop" onClick={() => setActionSheetInscription(null)}/>
+        <div className="sheet">
+          <div className="sheet-handle"/>
+          <div className="sheet-head">
+            <div className="sheet-title">{actionSheetInscription.firstName} {actionSheetInscription.lastName}</div>
+            <div className="sheet-sub">{actionSheetInscription.formation?.name} · {new Date(actionSheetInscription.createdAt).toLocaleDateString("fr-FR")}</div>
+          </div>
+          <div className="sheet-actions">
+            <div style={{ padding:"0.75rem 0", fontSize:"12px", color:"var(--steel)", lineHeight:"1.6" }}>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Email:</strong> {actionSheetInscription.email}</div>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Téléphone:</strong> {actionSheetInscription.phone}</div>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Statut:</strong> <span style={{ textTransform:"capitalize" }}>{actionSheetInscription.status}</span></div>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Session:</strong> {actionSheetInscription.session?.location} - {new Date(actionSheetInscription.session?.startDate||"").toLocaleDateString("fr-FR")}</div>
+            </div>
+            <div className="sheet-divider"/>
+            {actionSheetInscription.status!=="annule" && (
+              <>
+                {renderInscriptionActions(actionSheetInscription)}
+              </>
+            )}
+          </div>
+          <button className="sheet-cancel" onClick={() => setActionSheetInscription(null)}>Fermer</button>
+        </div>
+      </>)}
+
+      {/* Session action sheet */}
+      {actionSheetSession && (<>
+        <div className="sheet-backdrop" onClick={() => setActionSheetSession(null)}/>
+        <div className="sheet">
+          <div className="sheet-handle"/>
+          <div className="sheet-head">
+            <div className="sheet-title">Session · {formations.find(f => f.id === actionSheetSession.formationId)?.name || 'Formation'}</div>
+            <div className="sheet-sub">{new Date(actionSheetSession.startDate).toLocaleDateString('fr-FR')} · {actionSheetSession.location}</div>
+          </div>
+          <div className="sheet-actions">
+            <div style={{ padding:"0.75rem 0", fontSize:"12px", color:"var(--steel)", lineHeight:"1.6" }}>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Capacité:</strong> {actionSheetSession.capacity}</div>
+              <div style={{ marginBottom:"0.4rem" }}><strong style={{ color:"var(--ink)" }}>Disponible:</strong> {actionSheetSession.available}</div>
+            </div>
+            <div className="sheet-divider"/>
+            <button className="sheet-btn danger" onClick={() => { if(confirm('Supprimer cette session ?')) { handleDeleteSession(actionSheetSession.id); } }}>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Supprimer la session
+            </button>
+          </div>
+          <button className="sheet-cancel" onClick={() => setActionSheetSession(null)}>Annuler</button>
         </div>
       </>)}
 

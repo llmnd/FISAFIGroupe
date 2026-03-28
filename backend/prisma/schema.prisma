@@ -120,7 +120,7 @@ model InscriptionFormation {
   email       String
   phone       String
   company     String?
-  status      String  @default("confirme") // "confirme", "liste_attente", "annule"
+  status      String  @default("liste_attente") // "confirme", "liste_attente", "annule"
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

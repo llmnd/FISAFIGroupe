@@ -127,6 +127,39 @@ export async function sessionRoutes(app: FastifyInstance) {
     }
   });
 
+  // Create session (protected)
+  app.post('/sessions', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+
+      const { formationId, startDate, endDate, location, capacity } = request.body as {
+        formationId: number;
+        startDate: string;
+        endDate: string;
+        location: string;
+        capacity: number;
+      };
+
+      const created = await prisma.sessionFormation.create({
+        data: {
+          formationId,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          location,
+          capacity,
+          available: capacity,
+          status: 'ouverte',
+        },
+        include: { formation: true },
+      });
+
+      return reply.send({ success: true, data: created });
+    } catch (error) {
+      console.error('Create session error:', error);
+      return reply.status(500).send({ success: false, error: 'Failed to create session' });
+    }
+  });
+
   // Update session (protected)
   app.put('/sessions/:id', async (request, reply) => {
     try {

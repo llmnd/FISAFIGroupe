@@ -185,7 +185,7 @@ export async function formationRoutes(app: FastifyInstance) {
       let session = await prisma.sessionFormation.findFirst({
         where: {
           formationId: parseInt(formationId),
-          status: 'en_attente',
+          status: 'ouverte',
         },
       });
 
@@ -198,7 +198,7 @@ export async function formationRoutes(app: FastifyInstance) {
             location: 'À déterminer',
             capacity: 100,
             available: 100,
-            status: 'en_attente',
+            status: 'ouverte',
           },
         });
       }
@@ -227,7 +227,7 @@ export async function formationRoutes(app: FastifyInstance) {
           lastName,
           email,
           phone,
-          status: 'demande_en_attente',
+          status: 'liste_attente',
         },
         include: {
           formation: { select: { name: true } },

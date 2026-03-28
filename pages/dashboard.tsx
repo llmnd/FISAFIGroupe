@@ -12,6 +12,57 @@ interface User {
   role: "user" | "admin";
 }
 
+interface SessionFormation {
+  id: number;
+  formationId: number;
+  startDate: string;
+  endDate: string;
+  location: string;
+  capacity: number;
+  available: number;
+  status: "ouverte" | "complète" | "fermée";
+}
+
+interface Formation {
+  id: number;
+  name: string;
+  slug: string;
+  duration: string;
+  level: string;
+  description: string;
+  content?: string;
+  objectives?: string;
+  price?: number;
+  published: boolean;
+  sessions?: SessionFormation[];
+}
+
+interface InscriptionFormation {
+  id: number;
+  sessionId: number;
+  formationId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  status: "confirme" | "liste_attente" | "annule";
+  createdAt: string;
+  formation?: { name: string };
+  session?: { startDate: string; location: string };
+}
+
+interface Article {
+  id: number;
+  title: string;
+  category: string;
+  excerpt: string;
+  content: string;
+  published: boolean;
+  createdAt: string;
+  image?: string;
+  author?: string;
+}
+
 type TabId = "inscriptions" | "formations" | "inscriptions-manage" | "users" | "articles";
 
 interface TabType {
@@ -29,18 +80,6 @@ const ALL_TABS: TabType[] = [
   { id: "articles",            label: "Articles",               icon: "◆", admin: true },
 ];
 
-interface Article {
-  id: number;
-  title: string;
-  category: string;
-  excerpt: string;
-  content: string;
-  published: boolean;
-  createdAt: string;
-  image?: string;
-  author?: string;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   
@@ -54,6 +93,27 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabId>("inscriptions");
   const [loading, setLoading]   = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Formations & inscriptions
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [loadingFormations, setLoadingFormations] = useState(false);
+  const [userInscriptions, setUserInscriptions] = useState<InscriptionFormation[]>([]);
+  const [loadingInscriptions, setLoadingInscriptions] = useState(false);
+  const [showInscriptionModal, setShowInscriptionModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
+  const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
+  const [inscriptionData, setInscriptionData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    company: '',
+  });
+  const [submittingInscription, setSubmittingInscription] = useState(false);
+  const [inscriptionError, setInscriptionError] = useState('');
+  const [inscriptionSuccess, setInscriptionSuccess] = useState('');
+
+  // Articles
   const [showArticleForm, setShowArticleForm] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
@@ -100,8 +160,147 @@ export default function DashboardPage() {
   useEffect(() => {
     if (activeTab === "articles" && user?.role === "admin") {
       fetchArticles();
+    } else if (activeTab === "formations") {
+      fetchFormations();
+    } else if (activeTab === "inscriptions" && user) {
+      fetchUserInscriptions();
     }
   }, [activeTab, user]);
+
+  const fetchFormations = async () => {
+    setLoadingFormations(true);
+    try {
+      const res = await fetch("/api/formations?limit=100");
+      if (res.ok) {
+        const data = await res.json();
+        setFormations(data.data?.formations || []);
+      }
+    } catch (err) {
+      console.error("Error fetching formations:", err);
+    } finally {
+      setLoadingFormations(false);
+    }
+  };
+
+  const fetchUserInscriptions = async () => {
+    setLoadingInscriptions(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!user?.email) {
+        setUserInscriptions([]);
+        setLoadingInscriptions(false);
+        return;
+      }
+
+      const res = await fetch("/api/my-inscriptions", {
+        headers: { 
+          'x-user-email': user.email,
+          'Authorization': `Bearer ${token || ""}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Remove cancelled inscriptions from the user's personal view
+        const list: InscriptionFormation[] = (data.data || []).filter((insc: InscriptionFormation) => insc.status !== 'annule');
+        setUserInscriptions(list);
+      } else {
+        console.error('Error fetching inscriptions:', res.status);
+        setUserInscriptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching user inscriptions:", err);
+      setUserInscriptions([]);
+    } finally {
+      setLoadingInscriptions(false);
+    }
+  };
+
+  const handleInscriptionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInscriptionError("");
+    setInscriptionSuccess("");
+
+    if (!inscriptionData.firstName || !inscriptionData.lastName || !inscriptionData.email || !inscriptionData.phone) {
+      setInscriptionError("Tous les champs obligatoires doivent être remplis");
+      return;
+    }
+
+    if (!selectedSession || !selectedFormation) {
+      setInscriptionError("Sélection invalide");
+      return;
+    }
+
+    setSubmittingInscription(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/inscriptions-formations"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: selectedSession.id,
+          formationId: selectedFormation.id,
+          ...inscriptionData,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setInscriptionSuccess(`Inscription confirmée! ${data.message}`);
+        setInscriptionData({ firstName: '', lastName: '', email: '', phone: '', company: '' });
+        setShowInscriptionModal(false);
+        await fetchUserInscriptions();
+        setTimeout(() => setInscriptionSuccess(""), 3000);
+      } else {
+        setInscriptionError(data.error || "Erreur lors de l'inscription");
+      }
+    } catch (err) {
+      setInscriptionError("Erreur lors de l'inscription");
+      console.error(err);
+    } finally {
+      setSubmittingInscription(false);
+    }
+  };
+
+  const handleCancelInscription = async (inscriptionId: number) => {
+    if (!confirm('Confirmer l\'annulation de cette inscription ?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(buildApiUrl(`/api/inscriptions/${inscriptionId}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token || ''}` },
+      });
+
+      if (res.ok) {
+        setInscriptionSuccess('Inscription annulée');
+        await fetchUserInscriptions();
+        await fetchFormations();
+        setTimeout(() => setInscriptionSuccess(''), 3000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setInscriptionError(data?.error || "Erreur lors de l'annulation");
+        setTimeout(() => setInscriptionError(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      setInscriptionError("Erreur lors de l'annulation");
+      setTimeout(() => setInscriptionError(''), 3000);
+    }
+  };
+
+  const openInscriptionModal = (formation: Formation, session: SessionFormation) => {
+    setSelectedFormation(formation);
+    setSelectedSession(session);
+    setInscriptionData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      email: user?.email || '',
+      phone: '',
+      company: '',
+    });
+    setInscriptionError("");
+    setInscriptionSuccess("");
+    setShowInscriptionModal(true);
+  };
 
   const fetchArticles = async () => {
     setLoadingArticles(true);
@@ -236,6 +435,9 @@ export default function DashboardPage() {
   const firstInitial = user.firstName?.[0] ?? "";
   const lastInitial = user.lastName?.[0] ?? "";
   const initials = (firstInitial + lastInitial).toUpperCase() || (user.email?.[0] ?? "U").toUpperCase();
+
+  // Sessions the current user is already registered to (by sessionId)
+  const registeredSessionIds = new Set<number>(userInscriptions.filter(i => i.status !== 'annule').map(i => i.sessionId));
 
   return (
     <>
@@ -540,10 +742,59 @@ export default function DashboardPage() {
                 <div className="page-eyebrow">Espace personnel</div>
                 <h1 className="page-title">Mes inscriptions</h1>
                 <p className="page-sub">Retrouvez toutes vos inscriptions aux formations FISAFI</p>
-                <div className="empty-box">
-                  <div className="empty-icon">◈</div>
-                  <div className="empty-text">Aucune inscription pour le moment</div>
-                </div>
+                {inscriptionError && (
+                  <div className="alert alert-error" style={{ marginTop: '1rem' }}>
+                    <span className="alert-icon">⚠</span>
+                    <span>{inscriptionError}</span>
+                  </div>
+                )}
+                {inscriptionSuccess && (
+                  <div className="alert alert-success" style={{ marginTop: '1rem' }}>
+                    <span className="alert-icon">✓</span>
+                    <span>{inscriptionSuccess}</span>
+                  </div>
+                )}
+                
+                {loadingInscriptions ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">⟳</div>
+                    <div className="empty-text">Chargement de vos inscriptions...</div>
+                  </div>
+                ) : userInscriptions.length === 0 ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">◈</div>
+                    <div className="empty-text">Aucune inscription pour le moment</div>
+                  </div>
+                ) : (
+                  <div>
+                    {userInscriptions.map(inscription => (
+                      <div key={inscription.id} className="article-item">
+                        <div className="article-info">
+                          <div className="article-title">{inscription.formation?.name || 'Formation'}</div>
+                          <div className="article-meta">
+                            <span className="article-badge">{inscription.status}</span>
+                            <span>📍 {inscription.session?.location || 'Lieu non spécifié'}</span>
+                            <span>📅 {new Date(inscription.session?.startDate || inscription.createdAt).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                          <div className="article-excerpt">
+                            Inscrit le {new Date(inscription.createdAt).toLocaleDateString('fr-FR')} • {inscription.email}
+                          </div>
+                        </div>
+                        <div className="article-actions">
+                          {inscription.status !== 'annule' && (
+                            <button
+                              className="btn-small"
+                              onClick={() => handleCancelInscription(inscription.id)}
+                              style={{ background: 'transparent', border: '0.5px solid rgba(220,38,38,0.12)', color: '#991b1b' }}
+                            >
+                              Annuler
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
@@ -553,21 +804,56 @@ export default function DashboardPage() {
                 <div className="page-eyebrow">Catalogue</div>
                 <h1 className="page-title">Formations disponibles</h1>
                 <p className="page-sub">Choisissez votre parcours de formation</p>
-                <div className="card-grid">
-                  {[
-                    { num:"01", name:"Administration Réseaux", desc:"Maîtrisez la conception et la gestion d'infrastructures réseaux d'entreprise." },
-                    { num:"02", name:"Infrastructure IT", desc:"Déploiement, audit et maintenance de systèmes d'information performants." },
-                    { num:"03", name:"Cybersécurité", desc:"Protection des données et mise en œuvre de solutions de cyberdéfense." },
-                    { num:"04", name:"Certifications Pro", desc:"Préparez-vous aux certifications reconnues dans le domaine des télécoms." },
-                  ].map(f => (
-                    <div key={f.num} className="formation-card">
-                      <div className="formation-num">{f.num}</div>
-                      <div className="formation-name">{f.name}</div>
-                      <div className="formation-desc">{f.desc}</div>
-                      <button className="formation-btn">S&apos;inscrire</button>
-                    </div>
-                  ))}
-                </div>
+                
+                {loadingFormations ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">⟳</div>
+                    <div className="empty-text">Chargement des formations...</div>
+                  </div>
+                ) : formations.length === 0 ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">◉</div>
+                    <div className="empty-text">Aucune formation disponible</div>
+                  </div>
+                ) : (
+                  <div className="card-grid">
+                    {formations.map((formation, idx) => (
+                      <div key={formation.id} className="formation-card">
+                        <div className="formation-num">{String(idx + 1).padStart(2, '0')}</div>
+                        <div className="formation-name">{formation.name}</div>
+                        <div className="formation-desc">{formation.description}</div>
+                        
+                        {/* Sessions disponibles */}
+                        {formation.sessions && formation.sessions.length > 0 ? (
+                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>
+                            <div style={{ marginBottom: '0.75rem', fontWeight: 500, color: 'var(--ink)' }}>Sessions:</div>
+                            {formation.sessions.map(session => (
+                              <div key={session.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(30,64,175,0.02)', borderRadius: '3px' }}>
+                                <div>{new Date(session.startDate).toLocaleDateString('fr-FR')}</div>
+                                <div style={{ fontSize: '11px', marginTop: '2px' }}>{session.location}</div>
+                                <div style={{ fontSize: '11px', marginTop: '2px', color: session.available > 0 ? 'var(--steel)' : '#991b1b' }}>
+                                  {session.available > 0 ? `${session.available}/${session.capacity} places` : 'Complète'}
+                                </div>
+                                <button 
+                                  className="formation-btn" 
+                                  onClick={() => openInscriptionModal(formation, session)}
+                                  disabled={session.available === 0 || registeredSessionIds.has(session.id)}
+                                  style={{ marginTop: '0.5rem', width: '100%', opacity: session.available === 0 || registeredSessionIds.has(session.id) ? 0.5 : 1, cursor: session.available === 0 || registeredSessionIds.has(session.id) ? 'not-allowed' : 'pointer' }}
+                                >
+                                  {registeredSessionIds.has(session.id) ? 'Déjà inscrit' : (session.available === 0 ? 'Complète' : "S'inscrire")}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>
+                            Aucune session disponible
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
@@ -827,6 +1113,100 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal d'inscription */}
+      {showInscriptionModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(11, 24, 41, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }} onClick={() => setShowInscriptionModal(false)}>
+          <div style={{ backgroundColor: 'var(--white)', borderRadius: '6px', padding: '2rem', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', fontWeight: 300, marginBottom: '0.5rem' }}>
+              Inscription • {selectedFormation?.name}
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--steel)', marginBottom: '1.5rem' }}>
+              {selectedSession && `${new Date(selectedSession.startDate).toLocaleDateString('fr-FR')} • ${selectedSession.location}`}
+            </p>
+
+            {inscriptionError && (
+              <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(220,38,38,0.1)', color: '#991b1b', borderRadius: '3px', fontSize: '13px', border: '0.5px solid rgba(220,38,38,0.3)' }}>
+                ⚠ {inscriptionError}
+              </div>
+            )}
+
+            <form onSubmit={handleInscriptionSubmit}>
+              <div className="form-group">
+                <label className="form-label">Prénom *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={inscriptionData.firstName}
+                  onChange={e => setInscriptionData({ ...inscriptionData, firstName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Nom *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={inscriptionData.lastName}
+                  onChange={e => setInscriptionData({ ...inscriptionData, lastName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email *</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={inscriptionData.email}
+                  onChange={e => setInscriptionData({ ...inscriptionData, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Téléphone *</label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  value={inscriptionData.phone}
+                  onChange={e => setInscriptionData({ ...inscriptionData, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Entreprise (optionnel)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={inscriptionData.company}
+                  onChange={e => setInscriptionData({ ...inscriptionData, company: e.target.value })}
+                />
+              </div>
+
+              <div className="form-buttons" style={{ marginTop: '1.5rem' }}>
+                <button
+                  type="submit"
+                  className="btn-submit"
+                  disabled={submittingInscription}
+                >
+                  {submittingInscription ? "Inscription..." : "Confirmer l'inscription"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowInscriptionModal(false)}
+                  disabled={submittingInscription}
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

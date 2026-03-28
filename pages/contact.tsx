@@ -6,7 +6,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 
 export default function Contact() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,12 +15,6 @@ export default function Contact() {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-
-  // Scroll reveal animation
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -73,16 +66,13 @@ export default function Contact() {
       {/* HERO */}
       <section className="hero">
         <div className="hero-bg" />
-        <div className="hero-lines">
-          <div className="hero-line" />
-          <div className="hero-line" />
-          <div className="hero-line" />
-        </div>
-        <div className="hero-orbs">
-          <div className="hero-orb" />
-          <div className="hero-orb" />
-        </div>
         <div className="hero-overlay" />
+
+        {/* Badge — "Contact" au lieu de "Dakar · Sénégal" */}
+        <div className="hero-badge">
+          <div className="hero-badge-label">Page</div>
+          <div className="hero-badge-value">Contact</div>
+        </div>
 
         <div className="hero-content">
           <div className="hero-eyebrow">Contactez-nous</div>
@@ -102,25 +92,36 @@ export default function Contact() {
       <section className="section" id="contact-form">
         <div className="section-eyebrow reveal">Nous sommes à votre écoute</div>
         <h2 className="section-title reveal reveal-delay-1">Amenez votre<br />vision</h2>
+
         <div className="contact-grid">
+          {/* Infos */}
           <div className="contact-info reveal">
             <div className="contact-item">
-              <div className="contact-label">TÉLÉPHONE</div>
-              <a href="tel:+212" className="contact-value">+212 [Votre numéro]</a>
+              <div className="contact-label">Téléphone Sénégal</div>
+              <a href="tel:+221788965939" className="contact-value">+221 78 896 59 39</a>
             </div>
             <div className="contact-item">
-              <div className="contact-label">EMAIL</div>
-              <a href="mailto:contact@fisafi.ma" className="contact-value">contact@fisafi.ma</a>
+              <div className="contact-label">Téléphone Tchad</div>
+              <a href="tel:+23566088384" className="contact-value">+235 66 08 83 84</a>
             </div>
             <div className="contact-item">
-              <div className="contact-label">ADRESSE</div>
+              <div className="contact-label">Email</div>
+              <a href="mailto:contact@fisafigroupe.com" className="contact-value">contact@fisafigroupe.com</a>
+            </div>
+            <div className="contact-item">
+              <div className="contact-label">Adresse</div>
               <div className="contact-value contact-address">
-                [Votre adresse]<br />
-                [Ville], [Code postal]
+                Liberté 6 Extension<br />
+                Dakar, Sénégal
               </div>
+            </div>
+            <div className="contact-item">
+              <div className="contact-label">Site web</div>
+              <a href="https://www.fisafigroupe.com" className="contact-value">www.fisafigroupe.com</a>
             </div>
           </div>
 
+          {/* Formulaire */}
           <form onSubmit={handleSubmit} className="contact-form reveal reveal-delay-1">
             <div className="form-field">
               <input
@@ -169,10 +170,10 @@ export default function Contact() {
                 className="form-input form-select"
               >
                 <option value="">Sujet</option>
-                <option value="engineering">Ingénierie</option>
-                <option value="expertise">Expertise & Conseil</option>
-                <option value="training">Formation</option>
-                <option value="import-export">Import-Export</option>
+                <option value="reseaux">Réseaux & Télécommunications</option>
+                <option value="it">Informatique & Infrastructures IT</option>
+                <option value="cyber">Sécurité & Cybersécurité</option>
+                <option value="conseil">Conseil & Accompagnement Stratégique</option>
                 <option value="other">Autre</option>
               </select>
               <div className="form-line" />
@@ -187,7 +188,7 @@ export default function Contact() {
                 rows={5}
                 required
                 className="form-input form-textarea"
-              ></textarea>
+              />
               <div className="form-line" />
             </div>
 
@@ -216,7 +217,7 @@ export default function Contact() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2026 FISAFI Groupe. Tous droits réservés.</p>
+          <p>&copy; 2025 FISAFI Groupe. Tous droits réservés.</p>
         </div>
       </footer>
     </>

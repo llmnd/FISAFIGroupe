@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Header from "@/components/Header";
 
 export default function Services() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -31,34 +24,39 @@ export default function Services() {
 
   const services = [
     {
-      title: 'Ingénierie',
+      title: "Réseaux & Télécommunications",
       items: [
-        'Études techniques (télécoms, réseaux, infrastructures)',
-        'Conception et déploiement',
+        "Conception, déploiement et modernisation d'infrastructures réseaux",
+        "Études techniques télécoms et dimensionnement",
+        "Intégration de solutions de communication unifiée",
+        "Maintenance et supervision des infrastructures",
       ],
     },
     {
-      title: 'Expertise & Conseil',
+      title: "Informatique & Infrastructures IT",
       items: [
-        'Audit technique',
-        'Assistance à maîtrise d\'ouvrage',
-        'Stratégie et transformation digitale',
+        "Audit, déploiement et maintenance de systèmes d'information",
+        "Virtualisation et cloud computing",
+        "Administration de serveurs et bases de données",
+        "Support technique et infogérance",
       ],
     },
     {
-      title: 'Formation',
+      title: "Sécurité & Cybersécurité",
       items: [
-        'Formations techniques spécialisées',
-        'Certifications professionnelles',
-        'Formations sur mesure',
+        "Audit de sécurité et tests d'intrusion",
+        "Mise en œuvre de solutions de cyberdéfense",
+        "Protection des données et conformité RGPD",
+        "Sensibilisation et formation à la sécurité",
       ],
     },
     {
-      title: 'Import – Export & Négoce',
+      title: "Conseil & Accompagnement Stratégique",
       items: [
-        'Fourniture d\'équipements techniques',
-        'Commerce général',
-        'Solutions d\'approvisionnement international',
+        "Études et diagnostics numériques",
+        "Assistance à maîtrise d'ouvrage (AMO)",
+        "Transformation digitale et stratégie IT",
+        "Formations techniques spécialisées",
       ],
     },
   ];
@@ -83,16 +81,13 @@ export default function Services() {
       {/* HERO */}
       <section className="hero">
         <div className="hero-bg" />
-        <div className="hero-lines">
-          <div className="hero-line" />
-          <div className="hero-line" />
-          <div className="hero-line" />
-        </div>
-        <div className="hero-orbs">
-          <div className="hero-orb" />
-          <div className="hero-orb" />
-        </div>
         <div className="hero-overlay" />
+
+        {/* Badge */}
+        <div className="hero-badge">
+          <div className="hero-badge-label">Expertise</div>
+          <div className="hero-badge-value">Nos Services</div>
+        </div>
 
         <div className="hero-content">
           <div className="hero-eyebrow">Nos solutions</div>
@@ -101,7 +96,7 @@ export default function Services() {
             <em>à la mesure</em> de vos besoins
           </h1>
           <p className="hero-sub">
-            Ingénierie, expertise, formation et solutions commerciales pour transformer votre infrastructure.
+            Ingénierie, expertise, cybersécurité et conseil stratégique pour transformer votre infrastructure numérique.
           </p>
         </div>
       </section>
@@ -111,17 +106,20 @@ export default function Services() {
       {/* SERVICES SECTION */}
       <section className="section" id="services-list">
         <div className="section-eyebrow reveal">Nos offres complètes</div>
-        <h2 className="section-title reveal reveal-delay-1">Nos <br />services</h2>
+        <h2 className="section-title reveal reveal-delay-1">Nos<br />services</h2>
 
-        <div className="services-detailed reveal reveal-delay-2">
+        <div className="services-detailed">
           {services.map((service, index) => (
-            <div key={index} className="service-detail-card">
+            <div
+              key={index}
+              className={`service-detail-card reveal${index > 0 ? ` reveal-delay-${index}` : ""}`}
+            >
               <div className="service-detail-header">
                 <h3 className="service-detail-title">{service.title}</h3>
               </div>
               <ul className="service-detail-items">
-                {service.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="service-detail-item">
+                {service.items.map((item, i) => (
+                  <li key={i} className="service-detail-item">
                     <span className="service-detail-dot" />
                     {item}
                   </li>
@@ -130,27 +128,25 @@ export default function Services() {
             </div>
           ))}
         </div>
+
+        <div className="services-cta reveal reveal-delay-4" style={{ textAlign: "center", marginTop: "3rem" }}>
+          <Link href="/contact" className="btn-primary" style={{ textDecoration: "none" }}>
+            Discuter de votre projet
+          </Link>
+        </div>
       </section>
 
       <div className="divider" />
 
       {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-logo">Fi<span>SAFI</span></div>
-          <div className="footer-links">
-            <Link href="/#services">Services</Link>
-            <Link href="/#competences">Expertises</Link>
-            <a href="/#vision">Vision</a>
-            <Link href="/training">Formation</Link>
-            <Link href="/contact">Contact</Link>
-          </div>
-          <div className="footer-cta">
-            <Link href="/contact" className="btn-small">Nous contacter</Link>
-          </div>
+      <footer>
+        <div>
+          <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
+          <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
         </div>
-        <div className="footer-bottom">
-          <p>&copy; 2026 FISAFI Groupe. Tous droits réservés.</p>
+        <div className="foot-bottom">
+          <div className="foot-copy">© 2025 FISAFI Groupe. Tous droits réservés.</div>
+          <a href="https://www.fisafigroupe.com" className="foot-web">fisafigroupe.com</a>
         </div>
       </footer>
     </>

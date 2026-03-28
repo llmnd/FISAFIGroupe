@@ -70,6 +70,55 @@ async function seedFormations() {
       }
     }
 
+    // Seed sessions for each formation
+    console.log('🌱 Seeding sessions...');
+    
+    const formationSlugs = formations.map(f => f.slug);
+    const allFormations = await prisma.formation.findMany({
+      where: { slug: { in: formationSlugs } },
+    });
+
+    for (const formation of allFormations) {
+      // Check if sessions already exist
+      const existingSessionsCount = await prisma.sessionFormation.count({
+        where: { formationId: formation.id },
+      });
+
+      if (existingSessionsCount === 0) {
+        // Create 2 sessions for each formation
+        const now = new Date();
+        const sessions = [
+          {
+            formationId: formation.id,
+            startDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+            endDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
+            location: 'Paris',
+            capacity: formation.maxParticipants,
+            available: formation.maxParticipants,
+            status: 'ouverte',
+          },
+          {
+            formationId: formation.id,
+            startDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            endDate: new Date(now.getTime() + 35 * 24 * 60 * 60 * 1000), // 35 days from now
+            location: 'Lyon',
+            capacity: formation.maxParticipants,
+            available: formation.maxParticipants,
+            status: 'ouverte',
+          },
+        ];
+
+        for (const session of sessions) {
+          const createdSession = await prisma.sessionFormation.create({
+            data: session,
+          });
+          console.log(`✅ Created session for ${formation.name}: ${createdSession.startDate.toLocaleDateString('fr-FR')} at ${session.location}`);
+        }
+      } else {
+        console.log(`⏭️  Sessions already exist for ${formation.name}`);
+      }
+    }
+
     console.log('🌱 Seeding completed!');
     await prisma.$disconnect();
   } catch (error) {

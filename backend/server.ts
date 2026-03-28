@@ -10,6 +10,8 @@ import { formationRoutes } from './routes/formations';
 import { sessionRoutes } from './routes/sessions';
 import { usersRoutes } from './routes/users';
 import { brochureRoutes } from './routes/brochures';
+import { inscriptionsRoutes } from './routes/inscriptions';
+import { seedRoutes } from './routes/seed';
 
 const app = Fastify({
   logger: {
@@ -63,7 +65,11 @@ app.register(async (fastify) => {
   await authRoutes(fastify);
   await usersRoutes(fastify);
   await articleRoutes(fastify);
+  await formationRoutes(fastify);
   await brochureRoutes(fastify);
+  await sessionRoutes(fastify);
+  await inscriptionsRoutes(fastify);
+  await seedRoutes(fastify);
 }, { prefix: '/api' });
 
 // Error handler

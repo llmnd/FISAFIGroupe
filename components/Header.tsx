@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -34,7 +35,26 @@ export default function Header() {
     <>
       <nav className="h-nav">
         <Link href="/" className="h-logo">
-          Fi<span>SAFI</span>&nbsp;Groupe
+          {/* Logo image */}
+          <Image
+            src="/logo.jpeg"
+            alt="FiSAFi Groupe"
+            width={42}
+            height={42}
+            className="h-logo-img"
+            priority
+          />
+
+          {/* Séparateur vertical */}
+          <div className="h-logo-divider" />
+
+          {/* Texte */}
+          <div className="h-logo-text">
+            <div className="h-logo-name">
+              Fi<strong>SAFI</strong>&nbsp;Groupe
+            </div>
+            <div className="h-logo-tagline">Ingénierie &amp; Conseil Technologique</div>
+          </div>
         </Link>
 
         <div className="h-right">
