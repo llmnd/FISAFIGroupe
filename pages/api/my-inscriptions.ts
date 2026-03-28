@@ -1,7 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Reuse PrismaClient across lambda invocations to avoid exhausting DB connections
+declare global {
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined;
+}
+
+const prisma: PrismaClient = global.__prisma ?? new PrismaClient();
+if (!global.__prisma) global.__prisma = prisma;
 
 type ResponseData = {
   success?: boolean;
