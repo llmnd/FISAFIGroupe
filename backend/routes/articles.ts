@@ -50,6 +50,35 @@ export async function articleRoutes(app: FastifyInstance) {
     }
   });
 
+  // Get all articles for admin management (protected)
+  app.get('/articles/manage', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+
+      const articles = await prisma.article.findMany({
+        orderBy: [
+          { publishedAt: 'desc' },
+          { createdAt: 'desc' }
+        ],
+      });
+
+      return reply.send({
+        success: true,
+        data: articles,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('❌ Error fetching articles for admin:', {
+        errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return reply.status(500).send({
+        success: false,
+        error: errorMessage || 'Failed to fetch articles',
+      });
+    }
+  });
+
   // Get article by ID or slug
   app.get('/articles/:id', async (request, reply) => {
     try {
@@ -112,20 +141,30 @@ export async function articleRoutes(app: FastifyInstance) {
       });
     } catch (error) {
       console.error('Create article error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return reply.status(500).send({
         success: false,
-        error: 'Failed to create article',
+        error: errorMessage || 'Failed to create article',
       });
     }
   });
 
   // Update article (protected)
-  app.patch('/articles/:id', async (request, reply) => {
+  app.put('/articles/:id', async (request, reply) => {
     try {
       await request.jwtVerify();
 
       const { id } = request.params as { id: string };
       const updates = request.body as any;
+
+      // If publishing, set publishedAt to now
+      if (updates.published === true) {
+        updates.publishedAt = new Date();
+      }
+      // If unpublishing, clear publishedAt
+      else if (updates.published === false) {
+        updates.publishedAt = null;
+      }
 
       const article = await prisma.article.update({
         where: { id: parseInt(id) },

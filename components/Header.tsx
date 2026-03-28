@@ -1,59 +1,92 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);
 
-  // Lock scroll when menu open
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-  }, [menuOpen]);
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+  }, [mobileOpen]);
 
-  const closeMenu = () => setMenuOpen(false);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node)) {
+        setDesktopMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const closeMobile = () => setMobileOpen(false);
 
   return (
     <>
-      {/* NAV */}
-      <nav>
-        <Link href="/" className="logo">Fi<span>SAFI</span> Groupe</Link>
-        <div className="nav-right">
-          <ul className="nav-links">
-            <li><Link href="/services">Services</Link></li>
-            <li><a href="#competences">Expertises</a></li>
-            <li><a href="#vision">Vision</a></li>
-            <li><Link href="/training">Formation</Link></li>
+      <nav className="h-nav">
+        <Link href="/" className="h-logo">
+          Fi<span>SAFI</span>&nbsp;Groupe
+        </Link>
+
+        <div className="h-right">
+          <ul className="h-primary">
+            <li><Link href="/">Accueil</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          {/* nav-cta (login/dashboard) removed — accessible via hamburger menu */}
+
+          <div className="h-dd-wrap" ref={desktopMenuRef}>
+            <button
+              className={`h-dd-btn${desktopMenuOpen ? " open" : ""}`}
+              aria-label="Plus de pages"
+              aria-expanded={desktopMenuOpen}
+              onClick={() => setDesktopMenuOpen((v) => !v)}
+            >
+              <span /><span /><span />
+            </button>
+            <div className={`h-dropdown${desktopMenuOpen ? " open" : ""}`}>
+              <Link href="/services" onClick={() => setDesktopMenuOpen(false)}>Services</Link>
+              <Link href="/news" onClick={() => setDesktopMenuOpen(false)}>Actualités</Link>
+              <a href="#vision" onClick={() => setDesktopMenuOpen(false)}>Vision</a>
+              <Link href="/training" onClick={() => setDesktopMenuOpen(false)}>Formation</Link>
+            </div>
+          </div>
+
+          <Link href={isLoggedIn ? "/dashboard" : "/login"} className="h-cta">
+            {isLoggedIn ? "Dashboard" : "Connexion"}
+          </Link>
+
           <button
-            className={`hamburger${menuOpen ? " open" : ""}`}
+            className={`h-mob-btn${mobileOpen ? " open" : ""}`}
             aria-label="Menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
           >
-            <span></span><span></span><span></span>
+            <span /><span /><span />
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu — "Accueil" added first, login/dashboard kept here */}
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-        <Link href="/" onClick={closeMenu}>Accueil</Link>
-        <Link href="/services" onClick={closeMenu}>Services</Link>
-        <Link href="/news" onClick={closeMenu}>Actualités</Link>
-        <a href="#vision" onClick={closeMenu}>Notre vision</a>
-        <Link href="/training" onClick={closeMenu}>Formation</Link>
-        <Link href="/contact" onClick={closeMenu}>Contact</Link>
-        <Link href={isLoggedIn ? "/dashboard" : "/login"} style={{ fontWeight: "600", color: "#1e40af" }} onClick={closeMenu}>
+      <div className={`h-mobile-menu${mobileOpen ? " open" : ""}`}>
+        <Link href="/" onClick={closeMobile}>Accueil</Link>
+        <Link href="/services" onClick={closeMobile}>Services</Link>
+        <Link href="/news" onClick={closeMobile}>Actualités</Link>
+        <a href="#vision" onClick={closeMobile}>Vision</a>
+        <Link href="/training" onClick={closeMobile}>Formation</Link>
+        <Link href="/contact" onClick={closeMobile}>Contact</Link>
+        <Link
+          href={isLoggedIn ? "/dashboard" : "/login"}
+          className="h-mob-cta"
+          onClick={closeMobile}
+        >
           {isLoggedIn ? "Dashboard" : "Connexion"}
         </Link>
       </div>

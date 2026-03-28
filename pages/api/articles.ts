@@ -1,83 +1,94 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 type ResponseData = {
   success?: boolean;
   data?: any;
   message?: string;
   error?: string;
+  pagination?: any;
 };
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) {
+    return res.status(500).json({ error: 'Backend URL not configured' });
+  }
+
   if (req.method === 'GET') {
     try {
-      const { category, limit = 10, offset = 0 } = req.query;
+      // Build query string from request params
+      const { category, limit, offset, page } = req.query;
+      const queryParams = new URLSearchParams();
+      if (category && category !== 'tous') queryParams.append('category', category as string);
+      if (limit) queryParams.append('limit', limit as string);
+      if (offset) queryParams.append('offset', offset as string);
+      if (page) queryParams.append('page', page as string);
 
-      const where: any = { published: true };
-      if (category && category !== 'tous') {
-        where.category = category;
-      }
-
-      const articles = await prisma.article.findMany({
-        where,
-        take: parseInt(limit as string),
-        skip: parseInt(offset as string),
-        orderBy: { publishedAt: 'desc' },
+      // Proxy GET request to backend
+      const response = await fetch(`${backendUrl}/api/articles?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      const total = await prisma.article.count({ where });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: data.error || 'Backend error',
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        data: { articles, total },
+        data: data.data,
       });
     } catch (error) {
-      console.error('Error fetching articles:', error);
-      return res.status(500).json({ error: 'Erreur lors de la récupération des articles' });
+      console.error('Proxy error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Proxy error',
+      });
     }
   }
 
   if (req.method === 'POST') {
     try {
-      const { title, category, excerpt, content, image, author } = req.body;
+      // Proxy POST request to backend
+      const response = await fetch(`${backendUrl}/api/articles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.authorization || '',
+        },
+        body: JSON.stringify(req.body),
+      });
 
-      if (!title || !category || !excerpt || !content) {
-        return res.status(400).json({ error: 'Champs obligatoires manquants' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: data.error || 'Backend error',
+        });
       }
 
-      // Génère un slug à partir du titre
-      const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .substring(0, 50);
-
-      const article = await prisma.article.create({
-        data: {
-          title,
-          slug,
-          category,
-          excerpt,
-          content,
-          image: image || null,
-          author: author || null,
-          published: false,
-        },
-      });
-
-      return res.status(201).json({
+      return res.status(response.status).json({
         success: true,
-        data: article,
-        message: 'Article créé avec succès',
+        data: data.data,
+        message: data.message,
       });
     } catch (error) {
-      console.error('Error creating article:', error);
-      return res.status(500).json({ error: 'Erreur lors de la création de l\'article' });
+      console.error('Proxy error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Proxy error',
+      });
     }
   }
 

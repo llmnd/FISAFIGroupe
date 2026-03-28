@@ -156,6 +156,9 @@ export default function CeoGreeting() {
     };
   }, []);
 
+  // Ne JAMAIS ouvrir automatiquement - seulement au clic
+  // Précédemment: suppression du sessionStorage qui forçait l'ouverture automatique
+
   return (
     <>
       {/* Trigger */}

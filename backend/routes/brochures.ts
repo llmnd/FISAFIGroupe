@@ -161,14 +161,26 @@ export async function brochureRoutes(app: FastifyInstance) {
       const brochureId = parseInt(id);
       const { published, name, description, type } = request.body as any;
 
+      const dataToUpdate: any = {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(type && { type }),
+      };
+
+      // If publishing, set publishedAt to now
+      if (published === true) {
+        dataToUpdate.published = true;
+        dataToUpdate.publishedAt = new Date();
+      }
+      // If unpublishing, clear publishedAt
+      else if (published === false) {
+        dataToUpdate.published = false;
+        dataToUpdate.publishedAt = null;
+      }
+
       const updatedBrochure = await prisma.brochure.update({
         where: { id: brochureId },
-        data: {
-          ...(published !== undefined && { published }),
-          ...(name && { name }),
-          ...(description !== undefined && { description }),
-          ...(type && { type }),
-        },
+        data: dataToUpdate,
       });
 
       return reply.send({

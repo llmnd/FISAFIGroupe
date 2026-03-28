@@ -1,7 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 type ResponseData = {
   success?: boolean;
@@ -14,72 +11,106 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) {
+    return res.status(500).json({ error: 'Backend URL not configured' });
+  }
+
   const { id } = req.query;
-  const articleId = parseInt(id as string);
 
   if (req.method === 'GET') {
     try {
-      const article = await prisma.article.findUnique({
-        where: { id: articleId },
+      const response = await fetch(`${backendUrl}/api/articles/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (!article) {
-        return res.status(404).json({ error: 'Article non trouvé' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: data.error || 'Backend error',
+        });
       }
 
       return res.status(200).json({
         success: true,
-        data: article,
+        data: data.data,
       });
     } catch (error) {
-      console.error('Error fetching article:', error);
-      return res.status(500).json({ error: 'Erreur lors de la récupération de l\'article' });
+      console.error('Proxy error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Proxy error',
+      });
     }
   }
 
   if (req.method === 'PUT') {
     try {
-      const { title, category, excerpt, content, image, author, published, publishedAt } = req.body;
-
-      const article = await prisma.article.update({
-        where: { id: articleId },
-        data: {
-          ...(title && { title }),
-          ...(category && { category }),
-          ...(excerpt && { excerpt }),
-          ...(content && { content }),
-          ...(image !== undefined && { image }),
-          ...(author !== undefined && { author }),
-          ...(published !== undefined && { published }),
-          ...(published && publishedAt === undefined && { publishedAt: new Date() }),
-          ...(publishedAt && { publishedAt: new Date(publishedAt) }),
+      const response = await fetch(`${backendUrl}/api/articles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.authorization || '',
         },
+        body: JSON.stringify(req.body),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: data.error || 'Backend error',
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        data: article,
-        message: 'Article mis à jour avec succès',
+        data: data.data,
+        message: data.message,
       });
     } catch (error) {
-      console.error('Error updating article:', error);
-      return res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'article' });
+      console.error('Proxy error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Proxy error',
+      });
     }
   }
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.article.delete({
-        where: { id: articleId },
+      const response = await fetch(`${backendUrl}/api/articles/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': req.headers.authorization || '',
+        },
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: data.error || 'Backend error',
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        message: 'Article supprimé avec succès',
+        message: data.message,
       });
     } catch (error) {
-      console.error('Error deleting article:', error);
-      return res.status(500).json({ error: 'Erreur lors de la suppression de l\'article' });
+      console.error('Proxy error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Proxy error',
+      });
     }
   }
 
