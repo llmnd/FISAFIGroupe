@@ -142,23 +142,42 @@ export default function AdminDashboard() {
 
   const fetchArticles = async () => {
     setLoadingArticles(true);
-    try {
-      const token = localStorage.getItem("token");
-      const r = await fetch("/api/articles/manage", { headers: { Authorization: `Bearer ${token || ""}` } });
-      if (r.ok) { 
-        const d = await r.json();
-        const articleList = Array.isArray(d.data) ? d.data : (d.data?.data || []);
-        setArticles(articleList);
-      } else {
-        console.error("Error fetching articles:", r.status);
-        setArticles([]);
+    const token = localStorage.getItem("token");
+    
+    // List of endpoints to try, in order of preference
+    const endpoints = [
+      "/api/fetch-articles-admin",
+      "/api/admin/articles", 
+      "/api/articles/manage",
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`📡 Trying endpoint: ${endpoint}`);
+        const r = await fetch(endpoint, { 
+          headers: { Authorization: `Bearer ${token || ""}` },
+          method: "GET"
+        });
+        
+        if (r.ok) { 
+          const d = await r.json();
+          const articleList = Array.isArray(d.data) ? d.data : (d.data?.data || []);
+          console.log(`✅ Success with ${endpoint}, got ${articleList.length} articles`);
+          setArticles(articleList);
+          setLoadingArticles(false);
+          return;
+        }
+        
+        console.warn(`⚠️ ${endpoint} returned ${r.status}, trying next...`);
+      } catch (err) {
+        console.warn(`⚠️ ${endpoint} failed:`, err);
       }
-    } catch (err) {
-      console.error("Fetch articles error:", err);
-      setArticles([]);
-    } finally { 
-      setLoadingArticles(false); 
     }
+    
+    // All endpoints failed
+    console.error("❌ All article endpoints failed");
+    setArticles([]);
+    setLoadingArticles(false);
   };
 
   const handleSubmitArticle = async (e: React.FormEvent) => {
