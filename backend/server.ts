@@ -73,26 +73,28 @@ app.register(async (fastify) => {
 }, { prefix: '/api' });
 
 // Error handler
-app.setErrorHandler((error, request, reply) => {
+app.setErrorHandler((error: unknown, request, reply) => {
   console.error('API Error:', error);
 
-  if (error.statusCode === 401) {
+  const err = error as { statusCode?: number; message?: string };
+
+  if (err.statusCode === 401) {
     return reply.status(401).send({
       success: false,
       error: 'Unauthorized',
     });
   }
 
-  if (error.statusCode === 403) {
+  if (err.statusCode === 403) {
     return reply.status(403).send({
       success: false,
       error: 'Forbidden',
     });
   }
 
-  return reply.status(error.statusCode || 500).send({
+  return reply.status(err.statusCode || 500).send({
     success: false,
-    error: error.message || 'Internal server error',
+    error: err.message || 'Internal server error',
   });
 });
 

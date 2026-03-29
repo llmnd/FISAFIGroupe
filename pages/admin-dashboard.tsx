@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 
@@ -251,6 +251,92 @@ export default function AdminDashboard() {
     setLoading(false);
   }, [router]);
 
+  // Persist tab selection in URL and localStorage, and restore on mount
+  useEffect(() => {
+    const VALID_TABS = ["users", "articles", "brochures", "inscriptions", "sessions"] as const;
+    try {
+      // Try URL param first
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("tab");
+      if (q && VALID_TABS.includes(q as any)) {
+        handleSetActiveTab(q as any);
+      } else {
+        // Fallback to localStorage
+        const stored = localStorage.getItem("adminActiveTab");
+        if (stored && VALID_TABS.includes(stored as any)) handleSetActiveTab(stored as any);
+      }
+    } catch (e) {
+      // ignore (e.g., during SSR) -- component is client only
+    }
+  }, []);
+
+  // Sync activeTab to URL (shallow) and localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("adminActiveTab", activeTab);
+      router.replace({ pathname: router.pathname, query: { ...router.query, tab: activeTab } }, undefined, { shallow: true });
+    } catch (e) {
+      // ignore
+    }
+  }, [activeTab]);
+
+  // Scroll position persistence per tab
+  const currentTabRef = useRef(activeTab);
+  const saveScrollForTab = (tab: string) => {
+    try {
+      sessionStorage.setItem(`adminScroll_${tab}`, String(window.scrollY || 0));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const restoreScrollForTab = (tab: string) => {
+    try {
+      const v = sessionStorage.getItem(`adminScroll_${tab}`);
+      if (v !== null) {
+        const y = parseInt(v) || 0;
+        window.requestAnimationFrame(() => window.scrollTo(0, y));
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Save previous tab scroll before switching
+  const handleSetActiveTab = (tab: typeof activeTab) => {
+    try {
+      saveScrollForTab(currentTabRef.current);
+    } catch {}
+    currentTabRef.current = tab;
+    setActiveTab(tab);
+  };
+
+  // restore scroll when activeTab changes
+  useEffect(() => {
+    restoreScrollForTab(activeTab);
+  }, [activeTab]);
+
+  // Save on unload
+  useEffect(() => {
+    const onBeforeUnload = () => saveScrollForTab(currentTabRef.current);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
+
+  // Save scroll when navigating away via next/router
+  useEffect(() => {
+    const onRouteChangeStart = (url: string) => {
+      try {
+        // if leaving this page, persist scroll
+        if (!url.includes(router.pathname)) {
+          saveScrollForTab(currentTabRef.current);
+        }
+      } catch (e) {}
+    };
+    router.events.on('routeChangeStart', onRouteChangeStart);
+    return () => router.events.off('routeChangeStart', onRouteChangeStart);
+  }, [router.events]);
+
   useEffect(() => {
     if (activeTab === "articles") {
       fetchArticles();
@@ -358,6 +444,32 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error("Reject error:", err);
+      showToast("Erreur réseau", "err");
+    }
+  };
+
+  const handleDeleteInscription = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Non authentifié", "err");
+        return;
+      }
+      const r = await fetch(buildApiUrl(`/api/inscriptions-manage/${id}`), {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.ok) {
+        showToast("Inscription supprimée");
+        setActionSheetInscription(null);
+        await fetchInscriptions();
+      } else {
+        const errText = await r.text().catch(() => "");
+        console.error("Delete inscription error:", r.status, errText);
+        showToast(`Erreur ${r.status}: ${errText || r.statusText}`, "err");
+      }
+    } catch (err) {
+      console.error("Delete inscription exception:", err);
       showToast("Erreur réseau", "err");
     }
   };
@@ -987,7 +1099,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
-          <button key={tab} className={`mob-nav-link${activeTab===tab?" active":""}`} onClick={() => { setActiveTab(tab); setNavOpen(false); }}>
+          <button key={tab} className={`mob-nav-link${activeTab===tab?" active":""}`} onClick={() => { handleSetActiveTab(tab); setNavOpen(false); }}>
             {getTabLabel(tab)}
           </button>
         ))}
@@ -1013,7 +1125,7 @@ export default function AdminDashboard() {
           </div>
           <nav className="sidebar-nav">
             {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
-              <button key={tab} className={`sidebar-link${activeTab===tab?" active":""}`} onClick={() => setActiveTab(tab)}>
+              <button key={tab} className={`sidebar-link${activeTab===tab?" active":""}`} onClick={() => handleSetActiveTab(tab)}>
                 {getTabLabel(tab)}
               </button>
             ))}
@@ -1421,7 +1533,7 @@ export default function AdminDashboard() {
           { id:"inscriptions", label:"Inscriptions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="10.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg> },
           { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
         ] as const).map(t => (
-          <button key={t.id} className={`tab-btn${activeTab===t.id?" active":""}`} onClick={() => setActiveTab(t.id)}>
+          <button key={t.id} className={`tab-btn${activeTab===t.id?" active":""}`} onClick={() => handleSetActiveTab(t.id)}>
             <div className="tab-active-line"/>
             {t.icon}
             {t.label}
@@ -1524,6 +1636,15 @@ export default function AdminDashboard() {
             {actionSheetInscription.status!=="annule" && (
               <>
                 {renderInscriptionActions(actionSheetInscription)}
+              </>
+            )}
+            {(actionSheetInscription.status==="annule" || actionSheetInscription.status==="liste_attente" || actionSheetInscription.status==="demande_en_attente") && (
+              <>
+                <div className="sheet-divider"/>
+                <button className="sheet-btn danger" onClick={() => { if(confirm('Supprimer cette inscription ?')) { handleDeleteInscription(actionSheetInscription.id); } }}>
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  Supprimer
+                </button>
               </>
             )}
           </div>

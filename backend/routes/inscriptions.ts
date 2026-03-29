@@ -235,4 +235,40 @@ export async function inscriptionsRoutes(app: FastifyInstance) {
       return reply.code(500).send({ success: false, error: error.message });
     }
   });
+
+  // DELETE (admin) - permanently remove inscriptions that are cancelled/rejected
+  app.delete('/inscriptions-manage/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await request.jwtVerify();
+      const tokenPayload = request.user as any;
+      // Fetch full user record from DB to check role (tokens do not include role)
+      const dbUser = tokenPayload?.id ? await prisma.user.findUnique({ where: { id: tokenPayload.id } }) : null;
+      if (!dbUser || dbUser.role !== 'admin') {
+        return reply.code(403).send({ success: false, error: 'Forbidden' });
+      }
+
+      const { id } = request.params as { id: string };
+      const inscriptionId = parseInt(id) || 0;
+
+      const inscription = await prisma.inscriptionFormation.findUnique({ where: { id: inscriptionId } });
+      if (!inscription) {
+        return reply.code(404).send({ success: false, error: 'Inscription not found' });
+      }
+
+      // Only allow permanent deletion for inscriptions that are cancelled or not confirmed
+      // (safe to remove from DB when they haven't consumed a confirmed spot)
+      const allowedStatuses = ['annule', 'liste_attente', 'demande_en_attente'];
+      if (!allowedStatuses.includes(inscription.status)) {
+        return reply.code(400).send({ success: false, error: `Can only delete inscriptions with status: ${allowedStatuses.join(', ')}` });
+      }
+
+      await prisma.inscriptionFormation.delete({ where: { id: inscriptionId } });
+
+      return reply.send({ success: true, message: 'Inscription permanently deleted' });
+    } catch (error: any) {
+      console.error('Admin delete inscription error:', error);
+      if (error.name === 'UnauthorizedError') return reply.code(401).send({ success: false, error: 'Unauthorized' });
+      return reply.code(500).send({ success: false, error: error.message });
+    }
+  });
 }

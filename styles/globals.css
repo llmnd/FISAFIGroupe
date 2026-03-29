@@ -272,9 +272,22 @@ nav { margin: 0; padding: 0; }
 }
 .btn-ghost:hover { color: #fff; }
 /* Badge supprimé — remplacé par la signature intégrée */
-.hero-badge { display: none; }
-.hero-badge-label { display: none; }
-.hero-badge-value { display: none; }
+.hero-badge {
+  position: absolute; top: calc(74px + 1.75rem); right: 1.75rem; z-index: 3;
+  border: 0.5px solid rgba(255,255,255,0.12);
+  padding: 0.7rem 1.1rem;
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px);
+  opacity: 0; animation: fadeIn 1.2s 1.4s forwards;
+}
+.hero-badge-label {
+  font-size: 7px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 4px;
+}
+.hero-badge-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px; color: rgba(255,255,255,0.7); font-style: italic;
+}
 
 /* ── Signature CEO — ancrée en bas du hero ── */
 .hero-signature {
@@ -658,6 +671,9 @@ nav { margin: 0; padding: 0; }
 .contact-info .contact-label { color: var(--steel); }
 .contact-info .contact-value { line-height: 1.6; font-size: 13px; color: var(--ink); text-decoration: none; }
 .contact-info .contact-value:hover { color: var(--blue); text-decoration: none; }
+
+/* Sur la section contact de la homepage (fond bleu-deep), forcer gold */
+.contact-section .contact-value { color: var(--gold); }
 .contact-address { font-family: 'Outfit', sans-serif; }
 .contact-form { display: flex; flex-direction: column; gap: 2rem; }
 .form-field { display: flex; flex-direction: column; gap: 0; position: relative; }
@@ -704,12 +720,12 @@ footer { background: var(--ink); padding: 2rem 1.5rem; display: flex; flex-direc
 .footer-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 0.5px solid rgba(255,255,255,0.08); padding-top: 1.25rem; }
 .footer-copy { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 0.08em; }
 .foot-logo { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; letter-spacing: 0.2em; color: rgba(255,255,255,0.95); text-transform: uppercase; }
-.foot-logo span { color: var(--orange); }
-.foot-tagline { font-size: 11px; color: rgba(255,255,255,0.85); letter-spacing: 0.05em; margin-top: 0.35rem; }
+.foot-logo span { color: var(--gold); }
+.foot-tagline { font-size: 11px; color: var(--gold); letter-spacing: 0.08em; margin-top: 0.35rem; opacity: 0.75; }
 .foot-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 0.5px solid rgba(255,255,255,0.08); padding-top: 1.25rem; margin-top: 0.5rem; }
-.foot-copy { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 0.08em; }
-.foot-web { font-size: 10px; color: rgba(255,255,255,0.9); letter-spacing: 0.05em; text-decoration: none; }
-.foot-web:hover { color: var(--orange-light); }
+.foot-copy { font-size: 10px; color: rgba(255,255,255,0.45); letter-spacing: 0.08em; }
+.foot-web { font-size: 10px; color: var(--gold); letter-spacing: 0.05em; text-decoration: none; opacity: 0.75; }
+.foot-web:hover { color: var(--gold); opacity: 1; }
 
 /* ─── ANIMATIONS ─── */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }

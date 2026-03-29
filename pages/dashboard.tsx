@@ -117,6 +117,9 @@ export default function DashboardPage() {
   const [showArticleForm, setShowArticleForm] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
+  // Admin inscriptions
+  const [adminInscriptions, setAdminInscriptions] = useState<InscriptionFormation[]>([]);
+  const [loadingAdminInscriptions, setLoadingAdminInscriptions] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Articles techniques',
@@ -160,12 +163,84 @@ export default function DashboardPage() {
   useEffect(() => {
     if (activeTab === "articles" && user?.role === "admin") {
       fetchArticles();
+    } else if (activeTab === "inscriptions-manage" && user?.role === "admin") {
+      fetchAdminInscriptions();
     } else if (activeTab === "formations") {
       fetchFormations();
     } else if (activeTab === "inscriptions" && user) {
       fetchUserInscriptions();
     }
   }, [activeTab, user]);
+
+  const fetchAdminInscriptions = async () => {
+    setLoadingAdminInscriptions(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(buildApiUrl('/api/inscriptions-manage'), {
+        headers: { Authorization: `Bearer ${token || ''}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAdminInscriptions(data.data || []);
+      } else {
+        setAdminInscriptions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching admin inscriptions:', err);
+      setAdminInscriptions([]);
+    } finally {
+      setLoadingAdminInscriptions(false);
+    }
+  };
+
+  const handleAdminAction = async (id: number, action: 'accept' | 'reject') => {
+    if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(buildApiUrl('/api/inscriptions-manage'), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
+        body: JSON.stringify({ id, action })
+      });
+      if (res.ok) {
+        await fetchAdminInscriptions();
+        setSuccess(action === 'accept' ? 'Inscription acceptée' : 'Inscription rejetée');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Erreur');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de la mise à jour');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleAdminDelete = async (id: number) => {
+    if (!confirm('Confirmer la suppression permanente de cette inscription ?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(buildApiUrl(`/api/inscriptions-manage/${id}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token || ''}` }
+      });
+      if (res.ok) {
+        setSuccess('Inscription supprimée');
+        await fetchAdminInscriptions();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Erreur lors de la suppression');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de la suppression');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
 
   const fetchFormations = async () => {
     setLoadingFormations(true);
@@ -875,11 +950,37 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td colSpan={5} style={{ textAlign:"center", padding:"3rem", color:"var(--steel)" }}>
-                          Aucune inscription
-                        </td>
-                      </tr>
+                      {loadingAdminInscriptions ? (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>Chargement...</td>
+                        </tr>
+                      ) : adminInscriptions.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>Aucune inscription</td>
+                        </tr>
+                      ) : (
+                        adminInscriptions.map(insc => (
+                          <tr key={insc.id}>
+                            <td>{insc.firstName} {insc.lastName}</td>
+                            <td>{insc.email}</td>
+                            <td>{insc.formation?.name || '-'}</td>
+                            <td><span className={`badge ${insc.status === 'confirme' ? 'badge-admin' : 'badge-user'}`}>{insc.status}</span></td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {(['liste_attente', 'demande_en_attente'] as string[]).includes(insc.status) && (
+                                  <button className="btn-small" onClick={() => handleAdminAction(insc.id, 'accept')}>Accepter</button>
+                                )}
+                                {(['confirme','liste_attente','demande_en_attente'] as string[]).includes(insc.status) && (
+                                  <button className="btn-small" onClick={() => handleAdminAction(insc.id, 'reject')}>Rejeter</button>
+                                )}
+                                {( ['annule','liste_attente','demande_en_attente'].includes(insc.status) ) && (
+                                  <button className="btn-delete" onClick={() => handleAdminDelete(insc.id)}>Supprimer</button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
