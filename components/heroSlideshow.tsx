@@ -398,8 +398,8 @@ export default function HeroSlideshow() {
         ══════════════════════════════════════════ */
         .hs-top-right {
           position: absolute;
-          /* place badge at the very top of the hero */
-          top: 0.6rem;
+          /* place badge below header to avoid being masked */
+          top: 6rem;
           right: 1rem;
           z-index: 1300; /* above header when compact */
           display: flex;

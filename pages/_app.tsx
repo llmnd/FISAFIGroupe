@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import { ThemeProvider } from '@/context/ThemeContext';
 import '../styles/globals.css';
+import '../styles/header.css';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 
