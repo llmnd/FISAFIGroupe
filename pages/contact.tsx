@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+
+const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -63,28 +66,7 @@ export default function Contact() {
 
       <Header />
 
-      {/* HERO */}
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-overlay" />
-
-        {/* Badge — "Contact" au lieu de "Dakar · Sénégal" */}
-        <div className="hero-badge">
-          <div className="hero-badge-label">Page</div>
-          <div className="hero-badge-value">Contact</div>
-        </div>
-
-        <div className="hero-content">
-          <div className="hero-eyebrow">Contactez-nous</div>
-          <h1 className="hero-title">
-            Parlons de votre<br />
-            <em>projet</em>
-          </h1>
-          <p className="hero-sub">
-            Notre équipe est prête à vous accompagner dans vos défis numériques et techniques.
-          </p>
-        </div>
-      </section>
+      <HeroSlideshow />
 
       <div className="divider" />
 

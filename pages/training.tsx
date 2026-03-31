@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+
+const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 export default function FormationPage() {
   const [formData, setFormData] = useState({
@@ -354,42 +357,7 @@ export default function FormationPage() {
 
       <Header />
 
-      {/* HERO */}
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-lines">
-          <div className="hero-line" />
-          <div className="hero-line" />
-          <div className="hero-line" />
-        </div>
-        <div className="hero-orbs">
-          <div className="hero-orb" />
-          <div className="hero-orb" />
-        </div>
-        <div className="hero-overlay" />
-        <div className="hero-badge">
-          <div className="hero-badge-label">Expertise</div>
-          <div className="hero-badge-value">Formations Technologiques</div>
-        </div>
-        <div className="hero-content">
-          <div className="hero-eyebrow">Développement des compétences</div>
-          <h1 className="hero-title">
-            Formations<br />
-            d&apos;<em>excellence</em>
-          </h1>
-          <p className="hero-sub">
-            Réseaux, cybersécurité, infrastructure IT — Des formations professionnelles conçues pour développer l&apos;expertise technologique de vos équipes.
-          </p>
-          <div className="hero-actions">
-            <button
-              className="btn-primary"
-              onClick={() => document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Voir le catalogue
-            </button>
-          </div>
-        </div>
-      </section>
+      <HeroSlideshow />
 
       {/* ESPACE FORMATION */}
       <div className="about-strip">

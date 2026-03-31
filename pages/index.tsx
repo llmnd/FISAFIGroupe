@@ -142,18 +142,28 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
       <section className="section" id="services">
         <div className="section-eyebrow reveal">Nos offres</div>
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
-        <div className="services-grid">
+        <div className="services-grid-new">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions." },
-            { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés." },
-            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte." },
-            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations." },
+            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/1.jpeg" },
+            { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/2.jpeg" },
+            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/3.jpeg" },
+            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/7.jpeg" },
           ].map((s, i) => (
-            <div key={s.num} className={`service-card reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
-              <div className="service-left">
-                <div className="service-num">{s.num}</div>
-                <div className="service-name">{s.name}</div>
-                <div className="service-desc">{s.desc}</div>
+            <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
+              <div className="service-image-wrapper">
+                <Image
+                  src={s.img}
+                  alt={s.name}
+                  width={400}
+                  height={280}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                />
+                <div className="service-overlay" />
+                <div className="service-num-badge">{s.num}</div>
+              </div>
+              <div className="service-content">
+                <h3 className="service-name-new">{s.name}</h3>
+                <p className="service-desc-new">{s.desc}</p>
               </div>
             </div>
           ))}

@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 const SLIDES = [
-  { src: "/1.jpeg", alt: "FiSAFi Groupe – slide 1" },
-  { src: "/2.jpeg", alt: "FiSAFi Groupe – slide 2" },
-  { src: "/3.jpeg", alt: "FiSAFi Groupe – slide 3" },
-  { src: "/4.jpeg", alt: "FiSAFi Groupe – slide 4" },
-  { src: "/5.jpeg", alt: "FiSAFi Groupe – slide 5" },
+  { src: "/7.jpeg", alt: "FiSAFi Groupe – slide 1" },
+  { src: "/1.jpeg", alt: "FiSAFi Groupe – slide 2" },
+  { src: "/2.jpeg", alt: "FiSAFi Groupe – slide 3" },
+  { src: "/3.jpeg", alt: "FiSAFi Groupe – slide 4" },
+  { src: "/4.jpeg", alt: "FiSAFi Groupe – slide 5" },
   { src: "/6.jpeg", alt: "FiSAFi Groupe – slide 6" },
 ];
 
@@ -181,13 +181,11 @@ export default function HeroSlideshow() {
             {SLIDE_TEXT[nextText].sub}
           </p>
         </div>
+        <br />
 
         <div className="hs-actions">
           <Link href="/services" className="hs-btn-primary">
             Nos services
-          </Link>
-          <Link href="#contact" className="hs-btn-ghost">
-            Nous contacter <span aria-hidden>→</span>
           </Link>
         </div>
 
@@ -321,14 +319,14 @@ export default function HeroSlideshow() {
         /* Eyebrow */
         .hs-eyebrow {
            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-          font-size: 11px; font-weight: 600; letter-spacing: 0.36em; text-transform: uppercase;
+          font-size: 10px; font-weight: 600; letter-spacing: 0.36em; text-transform: uppercase;
           color: rgba(245, 166, 35, 0.95);
-          display: flex; align-items: center; gap: 0.85rem;
-          margin-bottom: 1.2rem;
+          display: flex; align-items: center; gap: 0.75rem;
+          margin-bottom: 0.6rem;
           opacity: 0; animation: hsFadeUp 0.9s 0.3s forwards;
         }
         .hs-eyebrow-line {
-          display: inline-block; width: 2rem; height: 1.5px;
+          display: inline-block; width: 1.5rem; height: 1.5px;
           background: rgba(245,166,35,0.75);
           flex-shrink: 0; border-radius: 1px;
         }
@@ -336,61 +334,66 @@ export default function HeroSlideshow() {
         /* Title */
         .hs-title {
           font-family: 'Cormorant Garamond', serif;
-          font-size: clamp(2.8rem, 8vw, 5rem);
-          font-weight: 500; line-height: 1.04; letter-spacing: -0.01em;
-          color: #ffffff; margin-bottom: 1.25rem;
+          font-size: clamp(2rem, 5.5vw, 3.5rem);
+          font-weight: 500; line-height: 1.05; letter-spacing: -0.01em;
+          color: #ffffff; margin-bottom: 0.5rem;
           opacity: 0; animation: hsFadeUp 0.9s 0.5s forwards;
           text-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 6px 18px rgba(0,0,0,0.5);
         }
-        .hs-title em { font-style: italic; color: rgba(255,255,255,0.78); font-weight: 400; }
+        .hs-title em { font-style: italic; color: rgba(255,255,255,0.85); font-weight: 400; }
 
         /* Subtitle */
         .hs-sub {
            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-          font-size: clamp(14px, 2.2vw, 18px);
-          font-weight: 400; line-height: 1.7; letter-spacing: 0.02em;
-          color: rgba(255,255,255,0.92); max-width: 44ch; margin-bottom: 2rem;
+          font-size: clamp(12px, 1.6vw, 14px);
+          font-weight: 400; line-height: 1.5; letter-spacing: 0.02em;
+          color: rgba(255,255,255,0.88); max-width: 35ch; margin-bottom: 0;
           opacity: 0; animation: hsFadeUp 0.9s 0.7s forwards;
         }
 
         /* Actions */
         .hs-actions {
           display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center;
-          margin-bottom: 2.5rem;
+          margin-bottom: 2rem;
           opacity: 0; animation: hsFadeUp 0.9s 0.9s forwards;
         }
         .hs-btn-primary {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
           font-size: 12px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
           text-decoration: none; background: #fff; color: #0b1829;
-          padding: 1rem 2.6rem; min-height: 52px;
+          padding: 0.9rem 2.4rem; min-height: 48px;
           display: inline-flex; align-items: center;
           border: none; cursor: pointer;
           transition: background 0.18s, color 0.18s, transform 0.12s;
           box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+          border-radius: 0;
         }
         .hs-btn-primary:hover { background: #e55a00; color: #fff; transform: translateY(-2px); }
         .hs-btn-ghost {
            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-          font-size: 11px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase;
-          text-decoration: none; color: rgba(255,255,255,0.80);
-          display: inline-flex; align-items: center; gap: 0.45rem;
-          min-height: 48px; background: none; border: none; cursor: pointer;
-          transition: color 0.2s; text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+          font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase;
+          text-decoration: none; color: rgba(255,255,255,0.85);
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          min-height: 48px; background: none; border: 1px solid rgba(255,255,255,0.25); cursor: pointer;
+          transition: color 0.2s, border-color 0.2s, background 0.2s; 
+          text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+          padding: 0 1.2rem;
+          border-radius: 0;
         }
-        .hs-btn-ghost:hover { color: #fff; }
+        .hs-btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
 
         /* Dots */
         .hs-dots {
-          display: flex; gap: 0.5rem; align-items: center;
+          display: flex; gap: 0.6rem; align-items: center;
           opacity: 0; animation: hsFadeIn 1s 1.1s forwards;
+          padding-top: 1rem;
         }
         .hs-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: rgba(255,255,255,0.35); border: none; cursor: pointer; padding: 0;
+          width: 5px; height: 5px; border-radius: 50%;
+          background: rgba(255,255,255,0.3); border: none; cursor: pointer; padding: 0;
           transition: background 0.3s, transform 0.3s, width 0.3s;
         }
-        .hs-dot--active { background: #f5a623; width: 22px; border-radius: 3px; }
+        .hs-dot--active { background: #f5a623; width: 20px; border-radius: 2px; }
 
         /* ══════════════════════════════════════════
            TOP-RIGHT CLUSTER
@@ -513,6 +516,13 @@ export default function HeroSlideshow() {
         .hs-text-block {
           opacity: 1;
           transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1);
+          background: linear-gradient(135deg, rgba(6, 15, 36, 0.65) 0%, rgba(6, 15, 36, 0.55) 100%);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          padding: 1rem 1.4rem;
+          border-radius: 0;
+          border-left: 3px solid #f5a623;
+          max-width: 380px;
         }
         .hs-text-block.hs-text-fading {
           opacity: 0;

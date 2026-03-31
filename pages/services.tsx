@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 export default function Services() {
   useEffect(() => {
@@ -78,28 +80,8 @@ export default function Services() {
 
       <Header />
 
-      {/* HERO */}
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-overlay" />
-
-        {/* Badge */}
-        <div className="hero-badge">
-          <div className="hero-badge-label">Expertise</div>
-          <div className="hero-badge-value">Nos Services</div>
-        </div>
-
-        <div className="hero-content">
-          <div className="hero-eyebrow">Nos solutions</div>
-          <h1 className="hero-title">
-            Des services<br />
-            <em>à la mesure</em> de vos besoins
-          </h1>
-          <p className="hero-sub">
-            Ingénierie, expertise, cybersécurité et conseil stratégique pour transformer votre infrastructure numérique.
-          </p>
-        </div>
-      </section>
+      {/* ─── HERO SLIDESHOW ─── */}
+      <HeroSlideshow />
 
       <div className="divider" />
 
