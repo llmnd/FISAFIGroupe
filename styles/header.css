@@ -10,48 +10,37 @@
   --fh-soc-size:36px;
   --fh-radius:  8px;
   --fh-trans:   200ms ease;
+
+  /* Heights — must match JS constants in Header.tsx */
+  --fh-h-l1:        110px; /* logo row */
+  --fh-h-l2:         44px; /* nav row */
+  --fh-h-l3:         44px; /* burger row (mobile only) */
+  --fh-h-mobile:    198px; /* L1 + L2 + L3 */
+  --fh-h-desktop:   154px; /* L1 + L2 */
+  --fh-h-collapsed:  44px; /* mobile topbar-hidden */
+
+  /* Drawer top — updated by JS on scroll + resize */
+  --fh-drawer-top: var(--fh-h-mobile);
 }
 
-/* ── Header shell — fixed overlay, body has padding ── */
-:root {
-  --header-height: 168px;
-}
-@media (min-width: 901px) {
-  :root {
-    --header-height: 124px;
-  }
-}
-
+/* ── Body padding = header height ── */
 body {
-  padding-top: var(--header-height);
+  padding-top: var(--fh-h-mobile);
   transition: padding-top 450ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+@media (min-width: 901px) {
+  body { padding-top: var(--fh-h-desktop); }
+}
 
+/* ── Header shell — fixed ── */
 .fh {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 1000;
   background: var(--fh-bg);
   border-bottom: 1px solid var(--fh-border);
   box-shadow: 0 1px 6px rgba(0,0,0,.06);
   width: 100%;
-  /* Fixed on hero — content pushed by body padding */
-}
-
-/* Mobile: topbar-hidden = 44px (L3 only) */
-@media (max-width: 900px) {
-  .fh.topbar-hidden {
-    --header-height: 44px;
-  }
-}
-
-/* Desktop: topbar-hidden = 44px (L2 only, L1 hidden) */
-@media (min-width: 901px) {
-  .fh.topbar-hidden {
-    --header-height: 44px;
-  }
 }
 
 /* ── Layer 1 — Logo + desktop socials/lang ── */
@@ -60,74 +49,31 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  height: 110px;
+  height: var(--fh-h-l1);
   border-bottom: 1px solid var(--fh-border);
-  transition: height 450ms cubic-bezier(0.4, 0, 0.2, 1), opacity 450ms cubic-bezier(0.4, 0, 0.2, 1), padding 450ms cubic-bezier(0.4, 0, 0.2, 1), border 450ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    height      450ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity     450ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding     450ms cubic-bezier(0.4, 0, 0.2, 1),
+    border      450ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 @media (min-width: 901px) {
   .fh-l1 { padding: 0 40px; }
 }
 
-/* Smooth topbar hide/show — opacity + collapse */
-.fh-topbar {
-  transition: opacity 300ms ease, height 300ms ease, padding 300ms ease, margin 300ms ease, border 300ms ease;
-  opacity: 1;
-}
-.fh-topbar.hidden {
+/* Collapse L1 when topbar-hidden (both mobile + desktop) */
+.fh.topbar-hidden .fh-l1 {
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-width: 0;
   opacity: 0;
   pointer-events: none;
-  height: 0;
-  overflow: hidden;
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* Mobile: L1 hides when topbar hidden */
-@media (max-width: 900px) {
-  .fh.topbar-hidden .fh-l1 {
-    height: 0;
-    padding: 0;
-    border: none;
-    overflow: hidden;
-  }
-}
-
-/* Desktop: L1 hides with smooth transition */
-@media (min-width: 901px) {
-  .fh.topbar-hidden .fh-l1 {
-    height: 0;
-    padding: 0;
-    border: none;
-    overflow: hidden;
-  }
-}
-
-/* Hide mobile L2 content when topbar hidden (mobile only) */
-@media (max-width: 900px) {
-  .fh.topbar-hidden .fh-l2 {
-    height: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
-    overflow: hidden;
-    pointer-events: none;
-    transition: height 300ms ease, padding 300ms ease, margin 300ms ease, border 300ms ease;
-  }
-}
-
-/* Desktop: L2 always visible */
-@media (min-width: 901px) {
-  .fh.topbar-hidden .fh-l2 {
-    height: 44px;
-    padding: 0 40px;
-    border-bottom: 1px solid var(--fh-border);
-    transition: height 300ms ease, opacity 300ms ease, padding 300ms ease;
-  }
 }
 
 .fh-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
-.fh-logo-img { width: auto; height: 110px; object-fit: contain; display: block; }
+.fh-logo-img { width: auto; height: var(--fh-h-l1); object-fit: contain; display: block; }
 
 .fh-l1-right {
   display: none;
@@ -143,13 +89,30 @@ body {
   display: flex;
   align-items: center;
   padding: 0 24px;
-  height: 44px;
+  height: var(--fh-h-l2);
   border-bottom: 1px solid var(--fh-border);
   gap: 16px;
-  transition: height 300ms ease, opacity 300ms ease, padding 300ms ease;
+  transition:
+    height  300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border  300ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 @media (min-width: 901px) {
   .fh-l2 { padding: 0 40px; }
+}
+
+/* Mobile: collapse L2 when topbar-hidden */
+@media (max-width: 900px) {
+  .fh.topbar-hidden .fh-l2 {
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Mobile-only socials/lang inside L2 */
@@ -258,7 +221,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  height: 44px;
+  height: var(--fh-h-l3);
 }
 @media (min-width: 901px) {
   .fh-l3 { display: none; }
@@ -365,26 +328,33 @@ body {
 .fh-lang-opt.active { color: var(--fh-accent); font-weight: 600; }
 .fh-lang-check { color: var(--fh-accent); display: flex; }
 
-/* ── Mobile drawer ── */
-/*
- * The drawer opens downward from the header.
- * Starts at top: var(--header-height) with max-height: 0 (collapsed)
- * Expands downward to fill available screen space when opened.
- * Mobile header: L1(80) + L2(44) + L3(44) = 168px, or 44px when topbar hidden
- */
+/* ── Mobile drawer ─────────────────────────────────────────────────────────
+ *
+ * KEY FIX: `top` is driven by --fh-drawer-top, a CSS custom property that JS
+ * sets directly on <html> (documentElement) on every scroll + resize event.
+ * This means the drawer always anchors flush below whatever is visible in the
+ * header, regardless of topbar-hidden state — no sibling selector needed and
+ * no race condition between CSS transitions and JS state.
+ *
+ * Transition includes `top` so it slides in sync with the header collapsing.
+ * ───────────────────────────────────────────────────────────────────────── */
 .fh-drawer {
   position: fixed;
-  top: var(--header-height);
+  top: var(--fh-drawer-top, var(--fh-h-mobile)); /* JS keeps this accurate */
   left: 0; right: 0;
   max-height: 0;
   background: var(--fh-bg);
   z-index: 999;
-  transition: max-height 300ms cubic-bezier(.4,0,.2,1);
   overflow: hidden;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  /* Animate both max-height (open/close) and top (topbar show/hide) */
+  transition:
+    max-height 300ms cubic-bezier(.4,0,.2,1),
+    top        450ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.fh-drawer.open { 
-  max-height: calc(100vh - var(--header-height));
+.fh-drawer.open {
+  max-height: calc(100vh - var(--fh-drawer-top, var(--fh-h-mobile)));
   overflow-y: auto;
 }
 

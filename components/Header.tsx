@@ -96,6 +96,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Contact", href: "/contact" },
 ];
 
+/* Heights en pixels — source unique de vérité pour JS + CSS */
+const H_L1        = 110; // logo row
+const H_L2        = 44;  // nav / socials row
+const H_L3        = 44;  // burger row (mobile only)
+const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198 — total mobile
+const H_DESKTOP   = H_L1 + H_L2;        // 154 — total desktop
+const H_COLLAPSED = H_L3;               // 44  — mobile topbar hidden
+
 export default function Header() {
   const [mobileOpen,     setMobileOpen]     = useState(false);
   const [openDropdown,   setOpenDropdown]   = useState<string | null>(null);
@@ -105,7 +113,7 @@ export default function Header() {
   const [lang,           setLang]           = useState<Lang>("FR");
   const [langOpen,       setLangOpen]       = useState(false);
   const [mobSearchOpen,  setMobSearchOpen]  = useState(false);
-  const [showTopbar,     setShowTopbar]     = useState(true);
+  const [topbarHidden,   setTopbarHidden]   = useState(false);
 
   const navRef         = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -118,39 +126,57 @@ export default function Header() {
   /* Lock body scroll when mobile drawer is open */
   useEffect(() => { document.body.style.overflow = mobileOpen ? "hidden" : ""; }, [mobileOpen]);
 
-  /* Hide top bar on scroll down, show on scroll up — huge dead zone prevents jitter */
+  /*
+   * Hide top bar on scroll down (past 400px), show on scroll back to top (<20px).
+   * We ALSO update the CSS custom property --fh-drawer-top directly on <body>
+   * so the drawer always anchors below the visible header — no sibling selector needed.
+   */
   useEffect(() => {
     let ticking = false;
     let lastState = true;
-    
+
+    const updateDrawerTop = (hidden: boolean) => {
+      const isMobile = window.innerWidth <= 900;
+      const top = hidden && isMobile ? H_COLLAPSED : (isMobile ? H_MOBILE : H_DESKTOP);
+      document.documentElement.style.setProperty("--fh-drawer-top", `${top}px`);
+    };
+
+    // Set initial value
+    updateDrawerTop(false);
+
     const onScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const scrollY = window.scrollY;
           const isScrollingDown = scrollY > lastScrollY.current;
           lastScrollY.current = scrollY;
-          
+
           let newState = lastState;
-          // Extremely conservative: only hide if scrolled WAY down
           if (isScrollingDown && scrollY > 400 && lastState) {
             newState = false;
-          } 
-          // Only show if scrolled back to absolute top (or very close)
-          else if (!isScrollingDown && scrollY < 20 && !lastState) {
+          } else if (!isScrollingDown && scrollY < 20 && !lastState) {
             newState = true;
           }
-          
+
           if (newState !== lastState) {
-            setShowTopbar(newState);
             lastState = newState;
+            setTopbarHidden(!newState);
+            updateDrawerTop(!newState);
           }
           ticking = false;
         });
         ticking = true;
       }
     };
+
+    const onResize = () => updateDrawerTop(!lastState);
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   /* Close dropdowns on outside click */
@@ -187,8 +213,11 @@ export default function Header() {
 
   return (
     <>
-      <header className={`fh${showTopbar ? "" : " topbar-hidden"}`} ref={navRef} suppressHydrationWarning>
-
+      <header
+        className={`fh${topbarHidden ? " topbar-hidden" : ""}`}
+        ref={navRef}
+        suppressHydrationWarning
+      >
         {/* ══ LAYER 1 — Logo ══ */}
         <div className="fh-l1" suppressHydrationWarning>
           <Link href="/" className="fh-logo">
@@ -333,7 +362,11 @@ export default function Header() {
       </header>
 
       {/* ══ Mobile drawer ══ */}
-      <div className={`fh-drawer${mobileOpen ? " open" : ""}`} role="navigation" aria-label="Menu mobile">
+      <div
+        className={`fh-drawer${mobileOpen ? " open" : ""}`}
+        role="navigation"
+        aria-label="Menu mobile"
+      >
         <div>
           {NAV_ITEMS.map(item =>
             item.children ? (
