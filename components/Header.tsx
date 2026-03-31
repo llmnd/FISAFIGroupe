@@ -96,13 +96,16 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Contact", href: "/contact" },
 ];
 
-/* Heights en pixels — source unique de vérité pour JS + CSS */
+/*
+ * Heights in pixels — single source of truth shared by JS and CSS custom properties.
+ * CSS variables in :root must match these values.
+ */
 const H_L1        = 110; // logo row
-const H_L2        = 44;  // nav / socials row
-const H_L3        = 44;  // burger row (mobile only)
-const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198 — total mobile
-const H_DESKTOP   = H_L1 + H_L2;        // 154 — total desktop
-const H_COLLAPSED = H_L3;               // 44  — mobile topbar hidden
+const H_L2        =  44; // nav / socials row
+const H_L3        =  44; // burger row (mobile only)
+const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198 — full mobile header
+const H_DESKTOP   = H_L1 + H_L2;        // 154 — full desktop header
+const H_COLLAPSED = H_L3;               //  44 — mobile minimum (L3 only)
 
 export default function Header() {
   const [mobileOpen,     setMobileOpen]     = useState(false);
@@ -119,7 +122,6 @@ export default function Header() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const langRef        = useRef<HTMLDivElement>(null);
   const mobSearchRef   = useRef<HTMLInputElement>(null);
-  const lastScrollY    = useRef(0);
 
   useEffect(() => { setIsLoggedIn(!!localStorage.getItem("token")); }, []);
 
@@ -127,57 +129,72 @@ export default function Header() {
   useEffect(() => { document.body.style.overflow = mobileOpen ? "hidden" : ""; }, [mobileOpen]);
 
   /*
-   * Hide top bar on scroll down (past 400px), show on scroll back to top (<20px).
-   * We ALSO update the CSS custom property --fh-drawer-top directly on <body>
-   * so the drawer always anchors below the visible header — no sibling selector needed.
+   * SCROLL BEHAVIOUR
+   * ─────────────────────────────────────────────────────────────────────────
+   * On mobile  : header has 3 rows (L1=110 + L2=44 + L3=44 = 198px total).
+   *              As the user scrolls, we translate ALL rows upward by
+   *              scrollOffset (0 → 110px). At the same time we shrink the
+   *              shell height by the same amount (198 → 88px).
+   *              The shell never shrinks below H_L3 (44px) so L3 (burger bar)
+   *              is always fully visible and usable.
+   *
+   * On desktop : header has 2 rows (L1=110 + L2=44 = 154px total).
+   *              Same logic but min height = H_L2 (44px, the nav bar).
+   *
+   * The key insight: overflow:hidden on .fh + matching height reduction =
+   * zero whitespace left behind while the rows slide out the top.
+   *
+   * CSS custom properties updated every frame:
+   *   --fh-scroll-offset   negative translateY applied to every layer
+   *   --fh-shell-h         actual rendered height of .fh
+   *   --fh-body-pad        body padding-top = shell height (mobile only; desktop is static)
+   *   --fh-drawer-top      top of the mobile drawer = shell height
+   * ─────────────────────────────────────────────────────────────────────────
    */
   useEffect(() => {
     let ticking = false;
-    let lastState = true;
 
-    const updateDrawerTop = (hidden: boolean) => {
-  const isMobile = window.innerWidth <= 900;
-  const top = hidden && isMobile ? H_COLLAPSED : (isMobile ? H_MOBILE : H_DESKTOP);
-  document.documentElement.style.setProperty("--fh-drawer-top", `${top}px`);
-  document.documentElement.style.setProperty("--fh-current-header-height", `${top}px`);
-};
+    const updateHeaderPosition = () => {
+      const scrollY  = window.scrollY;
+      const isMobile = window.innerWidth <= 900;
 
-    // Set initial value
-    updateDrawerTop(false);
+      const fullH = isMobile ? H_MOBILE  : H_DESKTOP;
+      const minH  = isMobile ? H_COLLAPSED : H_L2;     // never shrink below this
+
+      /*
+       * scrollOffset: how far the content has slid up (0 → H_L1).
+       * We only scroll L1 height worth — L2 (desktop nav) or L3 (mobile burger)
+       * must always stay reachable.
+       */
+      const scrollOffset = Math.min(scrollY, H_L1);    // 0 … 110
+      const shellH       = Math.max(fullH - scrollOffset, minH);
+
+      const root = document.documentElement;
+      root.style.setProperty("--fh-scroll-offset", `-${scrollOffset}px`);
+      root.style.setProperty("--fh-shell-h",        `${shellH}px`);
+      root.style.setProperty("--fh-body-pad",        `${shellH}px`);
+      root.style.setProperty("--fh-drawer-top",      `${shellH}px`);
+
+      setTopbarHidden(scrollOffset >= H_L1);
+    };
 
     const onScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const isScrollingDown = scrollY > lastScrollY.current;
-          lastScrollY.current = scrollY;
-
-          let newState = lastState;
-          if (isScrollingDown && scrollY > 80 && lastState) {
-  newState = false;
-} 
-else if (!isScrollingDown && scrollY < 40 && !lastState) {
-  newState = true;
-}
-
-          if (newState !== lastState) {
-            lastState = newState;
-            setTopbarHidden(!newState);
-            updateDrawerTop(!newState);
-          }
+          updateHeaderPosition();
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    const onResize = () => updateDrawerTop(!lastState);
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize, { passive: true });
+    // Run once immediately to set initial values
+    updateHeaderPosition();
+    window.addEventListener("scroll", onScroll,          { passive: true });
+    window.addEventListener("resize", updateHeaderPosition, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", updateHeaderPosition);
     };
   }, []);
 
@@ -240,12 +257,23 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
               <a href="#" className="fh-soc fh-soc--ig" aria-label="Instagram"><IconInstagram /></a>
             </nav>
             <div className="fh-lang-wrap" ref={langRef}>
-              <button className="fh-lang-btn" aria-label="Changer de langue" aria-expanded={langOpen} onClick={() => setLangOpen(v => !v)}>
+              <button
+                className="fh-lang-btn"
+                aria-label="Changer de langue"
+                aria-expanded={langOpen}
+                onClick={() => setLangOpen(v => !v)}
+              >
                 <IconGlobe /> {lang} <IconChevron />
               </button>
               <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
                 {(["FR", "EN"] as Lang[]).map(l => (
-                  <button key={l} className={`fh-lang-opt${lang === l ? " active" : ""}`} role="option" aria-selected={lang === l} onClick={() => selectLang(l)}>
+                  <button
+                    key={l}
+                    className={`fh-lang-opt${lang === l ? " active" : ""}`}
+                    role="option"
+                    aria-selected={lang === l}
+                    onClick={() => selectLang(l)}
+                  >
                     {l === "FR" ? "🇫🇷 Français" : "🇬🇧 English"}
                     {lang === l && <span className="fh-lang-check"><IconCheck /></span>}
                   </button>
@@ -255,7 +283,7 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
           </div>
         </div>
 
-        {/* ══ LAYER 2 — Mobile: socials + lang | Desktop: nav + actions ══ */}
+        {/* ══ LAYER 2 — Mobile: socials + lang  |  Desktop: nav + actions ══ */}
         <div className="fh-l2">
 
           {/* Mobile left: socials */}
@@ -269,13 +297,25 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
 
           {/* Mobile right: lang */}
           <div className="fh-l2-mob" style={{ marginLeft: "auto" }}>
-            <div className="fh-lang-wrap" ref={langRef}>
-              <button className="fh-lang-btn" aria-label="Langue" aria-expanded={langOpen} onClick={() => setLangOpen(v => !v)}>
+            {/* NOTE: langRef is shared — on mobile this is the active instance */}
+            <div className="fh-lang-wrap">
+              <button
+                className="fh-lang-btn"
+                aria-label="Langue"
+                aria-expanded={langOpen}
+                onClick={() => setLangOpen(v => !v)}
+              >
                 <IconGlobe /> {lang} <IconChevron />
               </button>
               <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
                 {(["FR", "EN"] as Lang[]).map(l => (
-                  <button key={l} className={`fh-lang-opt${lang === l ? " active" : ""}`} role="option" aria-selected={lang === l} onClick={() => selectLang(l)}>
+                  <button
+                    key={l}
+                    className={`fh-lang-opt${lang === l ? " active" : ""}`}
+                    role="option"
+                    aria-selected={lang === l}
+                    onClick={() => selectLang(l)}
+                  >
                     {l === "FR" ? "🇫🇷 Français" : "🇬🇧 English"}
                     {lang === l && <span className="fh-lang-check"><IconCheck /></span>}
                   </button>
@@ -288,17 +328,24 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
           <nav className="fh-nav" aria-label="Navigation principale">
             {NAV_ITEMS.map(item =>
               item.children ? (
-                <div className="fh-ni" key={item.label}
+                <div
+                  className="fh-ni"
+                  key={item.label}
                   onMouseEnter={() => setOpenDropdown(item.label)}
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
-                  <button className="fh-nb" aria-expanded={openDropdown === item.label}
-                    onClick={() => setOpenDropdown(v => v === item.label ? null : item.label)}>
+                  <button
+                    className="fh-nb"
+                    aria-expanded={openDropdown === item.label}
+                    onClick={() => setOpenDropdown(v => v === item.label ? null : item.label)}
+                  >
                     {item.label} <IconChevron />
                   </button>
                   <div className={`fh-dd${openDropdown === item.label ? " open" : ""}`}>
                     {item.children.map(c => (
-                      <Link key={c.href} href={c.href} onClick={() => setOpenDropdown(null)}>{c.label}</Link>
+                      <Link key={c.href} href={c.href} onClick={() => setOpenDropdown(null)}>
+                        {c.label}
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -312,15 +359,21 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
 
           {/* Desktop: connexion + search */}
           <div className="fh-l2-right-dsk">
-            <Link href={isLoggedIn ? "/dashboard" : "/login"} className="fh-nl"
-              style={{ color: isLoggedIn ? "var(--fh-accent2)" : undefined }}>
+            <Link
+              href={isLoggedIn ? "/dashboard" : "/login"}
+              className="fh-nl"
+              style={{ color: isLoggedIn ? "var(--fh-accent2)" : undefined }}
+            >
               <IconUser /> {isLoggedIn ? "Dashboard" : "Connexion"}
             </Link>
             <div className={`fh-sw${searchOpen ? " open" : ""}`} role="search">
               <button className="fh-sb" aria-label="Rechercher" onClick={() => setSearchOpen(v => !v)}>
                 <IconSearch />
               </button>
-              <input ref={searchInputRef} className="fh-si" placeholder="Rechercher…"
+              <input
+                ref={searchInputRef}
+                className="fh-si"
+                placeholder="Rechercher…"
                 onKeyDown={e => {
                   if (e.key === "Escape") setSearchOpen(false);
                   if (e.key === "Enter") {
@@ -337,7 +390,8 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
         <div className="fh-l3">
           <button
             className={`fh-burger${mobileOpen ? " open" : ""}`}
-            aria-label="Menu" aria-expanded={mobileOpen}
+            aria-label="Menu"
+            aria-expanded={mobileOpen}
             onClick={() => setMobileOpen(v => !v)}
           >
             <span /><span /><span />
@@ -387,14 +441,20 @@ else if (!isScrollingDown && scrollY < 40 && !lastState) {
               </div>
             ) : (
               <div className="fh-dm" key={item.label}>
-                <Link href={item.href!} className="fh-dml" onClick={closeMobile}>{item.label}</Link>
+                <Link href={item.href!} className="fh-dml" onClick={closeMobile}>
+                  {item.label}
+                </Link>
               </div>
             )
           )}
         </div>
 
         <div className="fh-dfooter">
-          <Link href={isLoggedIn ? "/dashboard" : "/login"} className="fh-dcta" onClick={closeMobile}>
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/login"}
+            className="fh-dcta"
+            onClick={closeMobile}
+          >
             <IconUser /> {isLoggedIn ? "Dashboard" : "Connexion"}
           </Link>
           <nav className="fh-dsocials" aria-label="Réseaux sociaux">
