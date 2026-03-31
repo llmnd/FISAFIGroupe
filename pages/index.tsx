@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import CeoGreeting from "@/components/CeoGreeting";
+const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -100,49 +101,12 @@ export default function Home() {
         <meta name="theme-color" content="#1e40af" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap"
-          rel="stylesheet"
-        />
       </Head>
 
       <Header />
 
-      {/* ─── HERO ─── */}
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-lines">
-          <div className="hero-line" />
-          <div className="hero-line" />
-          <div className="hero-line" />
-        </div>
-        <div className="hero-orbs">
-          <div className="hero-orb" />
-          <div className="hero-orb" />
-        </div>
-        <div className="hero-overlay" />
-
-        <div className="hero-badge">
-          <div className="hero-badge-label">Basé à</div>
-          <div className="hero-badge-value">Dakar · Sénégal</div>
-        </div>
-
-        <div className="hero-content">
-          <CeoGreeting />
-          <div className="hero-eyebrow">Ingénierie & Conseil Technologique</div>
-          <h1 className="hero-title">
-            L&apos;expertise qui<br />
-            fait <em>la différence</em>
-          </h1>
-          <p className="hero-sub">
-            Réseaux, cybersécurité et conseil stratégique <br></br>
-            FISAFI Groupe accompagne la transformation numérique de l&apos;Afrique.
-          </p>
-          <div className="hero-actions">
-            <Link href="/services" className="btn-primary" style={{ textDecoration: "none" }}>Nos services</Link>
-          </div>
-        </div>
-      </section>
+      {/* ─── HERO (component) ─── */}
+      <HeroSlideshow />
 
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
@@ -153,7 +117,8 @@ export default function Home() {
         </div>
         <div>
           <p className="about-text">
-            FISAFI GROUPE est plus qu&apos;un prestataire : un partenaire stratégique engagé aux côtés de ses clients pour relever les défis d&apos;aujourd&apos;hui et préparer les opportunités de demain. Ensemble, construisons l&apos;avenir numérique de l&apos;Afrique.
+            FISAFI GROUPE <br />
+Partenaire stratégique pour l’avenir numérique de l’Afrique.
           </p>
           <div className="about-ceo">
             <div className="ceo-avatar">
