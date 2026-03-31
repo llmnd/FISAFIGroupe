@@ -12,29 +12,42 @@
   --fh-trans:   200ms ease;
 
   /* Heights — must match JS constants in Header.tsx */
-  --fh-h-l1:        110px; /* logo row */
-  --fh-h-l2:         44px; /* nav row */
-  --fh-h-l3:         44px; /* burger row (mobile only) */
-  --fh-h-mobile:    198px; /* L1 + L2 + L3 */
-  --fh-h-desktop:   154px; /* L1 + L2 */
-  --fh-h-collapsed:  44px; /* mobile sticky bar */
+  --fh-h-l1:        110px;
+  --fh-h-l2:         44px;
+  --fh-h-l3:         44px;
+  --fh-h-mobile:    198px;
+  --fh-h-desktop:   154px;
+  --fh-h-collapsed:  44px;
 
-  /* Driven by JS on every scroll + resize */
+  /*
+   * These are written by the rAF loop in JS — do NOT add CSS transitions
+   * to properties that depend on them or you'll fight the animation.
+   */
   --fh-scroll-offset: 0px;
   --fh-shell-h:       var(--fh-h-desktop);
   --fh-drawer-top:    var(--fh-h-mobile);
-  --fh-body-pad:      110px;
 }
 
-/* ── Body padding = header visible height (JS updates --fh-body-pad) ── */
+/*
+ * ── Body padding — static, set by CSS only, never touched by JS ──────────
+ * The header shrinks while scrolling but the body offset stays fixed at the
+ * full initial header height. Content doesn't shift — the header just slides
+ * up and overlaps its own padding space (which is fine; it's position:fixed).
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 body {
-  padding-top: var(--fh-body-pad, 110px);
+  padding-top: var(--fh-h-mobile); /* 198px — mobile default */
 }
 @media (min-width: 901px) {
-  body { padding-top: var(--fh-h-desktop); }
+  body { padding-top: var(--fh-h-desktop); } /* 154px — desktop */
 }
 
-/* ── Header shell — fixed, height driven by JS ── */
+/* ── Header shell ────────────────────────────────────────────────────────
+ * fixed + overflow:hidden + height driven by JS = layers slide out cleanly.
+ * isolation:isolate keeps all children on their own stacking context.
+ * contain:layout style paint tells the browser nothing outside is affected.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 .fh {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -43,10 +56,32 @@ body {
   border-bottom: 1px solid var(--fh-border);
   box-shadow: 0 1px 6px rgba(0,0,0,.06);
   width: 100%;
-  /* KEY: overflow hidden + dynamic height = content slides up with no whitespace */
   overflow: hidden;
   height: var(--fh-shell-h, var(--fh-h-desktop));
   will-change: height;
+  contain: layout style paint;
+  isolation: isolate;
+  /* Promote to its own GPU layer — prevents compositing issues with children */
+  transform: translateZ(0);
+}
+
+/*
+ * ── Layer helpers ─────────────────────────────────────────────────────────
+ * All three layers share the same vertical translate so they move as a unit.
+ * translate3d (not translateY) forces GPU compositing unconditionally.
+ * will-change:transform tells the browser to allocate a layer upfront.
+ * backface-visibility:hidden prevents subpixel flicker on some renderers.
+ * No CSS transition on transform — the JS lerp loop owns that animation.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+.fh-l1,
+.fh-l2,
+.fh-l3 {
+  transform: translate3d(0, var(--fh-scroll-offset, 0px), 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  /* Prevent any inherited transition from interfering */
+  transition: none;
 }
 
 /* ── Layer 1 — Logo + desktop socials/lang ── */
@@ -57,9 +92,6 @@ body {
   padding: 0 24px;
   height: var(--fh-h-l1);
   border-bottom: 1px solid var(--fh-border);
-  /* Slides up via JS-driven translate */
-  transform: translateY(var(--fh-scroll-offset, 0px));
-  will-change: transform;
 }
 @media (min-width: 901px) {
   .fh-l1 { padding: 0 40px; }
@@ -85,8 +117,6 @@ body {
   height: var(--fh-h-l2);
   border-bottom: 1px solid var(--fh-border);
   gap: 16px;
-  transform: translateY(var(--fh-scroll-offset, 0px));
-  will-change: transform;
 }
 @media (min-width: 901px) {
   .fh-l2 { padding: 0 40px; }
@@ -199,9 +229,6 @@ body {
   justify-content: space-between;
   padding: 0 16px;
   height: var(--fh-h-l3);
-  /* Translates with L1+L2, but shell stops shrinking once L3 is the last visible row */
-  transform: translateY(var(--fh-scroll-offset, 0px));
-  will-change: transform;
 }
 @media (min-width: 901px) {
   .fh-l3 { display: none; }
@@ -309,10 +336,10 @@ body {
 .fh-lang-check { color: var(--fh-accent); display: flex; }
 
 /* ── Mobile drawer ────────────────────────────────────────────────────────
- *
- * top is driven by --fh-drawer-top which JS sets to the current shell height.
- * It always anchors flush below whatever is visible — zero gap, zero overlap.
- * ───────────────────────────────────────────────────────────────────────── */
+ * top is driven by --fh-drawer-top (JS writes it on every frame).
+ * Using translate3d for the open animation to keep it GPU-composited.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 .fh-drawer {
   position: fixed;
   top: var(--fh-drawer-top, var(--fh-h-mobile));
@@ -325,6 +352,9 @@ body {
   flex-direction: column;
   border-top: 1px solid var(--fh-border);
   box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  /* Promote drawer to its own GPU layer */
+  will-change: max-height;
+  transform: translateZ(0);
 }
 .fh-drawer.open {
   max-height: calc(100vh - var(--fh-drawer-top, var(--fh-h-mobile)));

@@ -97,15 +97,23 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 /*
- * Heights in pixels — single source of truth shared by JS and CSS custom properties.
+ * Heights — single source of truth shared by JS and CSS custom properties.
  * CSS variables in :root must match these values.
  */
 const H_L1        = 110; // logo row
 const H_L2        =  44; // nav / socials row
 const H_L3        =  44; // burger row (mobile only)
-const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198 — full mobile header
-const H_DESKTOP   = H_L1 + H_L2;        // 154 — full desktop header
-const H_COLLAPSED = H_L3;               //  44 — mobile minimum (L3 only)
+const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198
+const H_DESKTOP   = H_L1 + H_L2;        // 154
+const H_COLLAPSED = H_L3;               //  44
+
+/*
+ * Lerp factor — controls how fast the header catches up to the scroll target.
+ * 0.12 = very smooth / slightly floaty
+ * 0.18 = snappier but still silky
+ */
+const LERP_FACTOR   = 0.14;
+const SNAP_EPSILON  = 0.08; // px threshold below which we snap to exact value
 
 export default function Header() {
   const [mobileOpen,     setMobileOpen]     = useState(false);
@@ -129,72 +137,101 @@ export default function Header() {
   useEffect(() => { document.body.style.overflow = mobileOpen ? "hidden" : ""; }, [mobileOpen]);
 
   /*
-   * SCROLL BEHAVIOUR
    * ─────────────────────────────────────────────────────────────────────────
-   * On mobile  : header has 3 rows (L1=110 + L2=44 + L3=44 = 198px total).
-   *              As the user scrolls, we translate ALL rows upward by
-   *              scrollOffset (0 → 110px). At the same time we shrink the
-   *              shell height by the same amount (198 → 88px).
-   *              The shell never shrinks below H_L3 (44px) so L3 (burger bar)
-   *              is always fully visible and usable.
+   * SMOOTH SCROLL — lerp-based rAF loop
+   * ─────────────────────────────────────────────────────────────────────────
    *
-   * On desktop : header has 2 rows (L1=110 + L2=44 = 154px total).
-   *              Same logic but min height = H_L2 (44px, the nav bar).
+   * How it works:
+   *   • `target`  = the raw clamped scroll value we WANT to reach (0–H_L1)
+   *   • `current` = the animated value we are currently AT (chases target)
+   *   • Each rAF frame: current += (target - current) * LERP_FACTOR
+   *   • When |target - current| < SNAP_EPSILON we snap and stop the loop.
+   *   • On the next scroll event we restart the loop.
    *
-   * The key insight: overflow:hidden on .fh + matching height reduction =
-   * zero whitespace left behind while the rows slide out the top.
-   *
-   * CSS custom properties updated every frame:
-   *   --fh-scroll-offset   negative translateY applied to every layer
-   *   --fh-shell-h         actual rendered height of .fh
-   *   --fh-body-pad        body padding-top = shell height (mobile only; desktop is static)
-   *   --fh-drawer-top      top of the mobile drawer = shell height
+   * Why this eliminates jitter:
+   *   • No direct binding of scroll position → CSS variable (which skips frames)
+   *   • All DOM writes happen inside a single rAF callback per frame
+   *   • The spacer <div> absorbs header height instead of body padding-top
+   *     (body padding changes trigger a full layout; div height is cheaper)
+   *   • GPU compositing: layers use translate3d, isolate, will-change
    * ─────────────────────────────────────────────────────────────────────────
    */
   useEffect(() => {
-    let ticking = false;
+    let rafId        = 0;
+    let current      = 0;
+    let target       = 0;
+    let prevHidden   = false;
+    let prevShellH   = -1;
 
-    const updateHeaderPosition = () => {
-      const scrollY  = window.scrollY;
-      const isMobile = window.innerWidth <= 900;
+    // Cache isMobile so we don't recompute every frame
+    let isMobile = window.innerWidth <= 900;
 
-      const fullH = isMobile ? H_MOBILE  : H_DESKTOP;
-      const minH  = isMobile ? H_COLLAPSED : H_L2;     // never shrink below this
+    // Write all CSS variables in one batch
+    const applyCSS = (offset: number) => {
+      const fullH  = isMobile ? H_MOBILE    : H_DESKTOP;
+      const minH   = isMobile ? H_COLLAPSED : H_L2;
+      const shellH = Math.max(fullH - offset, minH);
 
-      /*
-       * scrollOffset: how far the content has slid up (0 → H_L1).
-       * We only scroll L1 height worth — L2 (desktop nav) or L3 (mobile burger)
-       * must always stay reachable.
-       */
-      const scrollOffset = Math.min(scrollY, H_L1);    // 0 … 110
-      const shellH       = Math.max(fullH - scrollOffset, minH);
+      // Only touch the DOM when something actually changed
+      if (shellH !== prevShellH) {
+        prevShellH = shellH;
 
-      const root = document.documentElement;
-      root.style.setProperty("--fh-scroll-offset", `-${scrollOffset}px`);
-      root.style.setProperty("--fh-shell-h",        `${shellH}px`);
-      root.style.setProperty("--fh-body-pad",        `${shellH}px`);
-      root.style.setProperty("--fh-drawer-top",      `${shellH}px`);
+        const rs = document.documentElement.style;
+        rs.setProperty("--fh-scroll-offset", `-${offset}px`);
+        rs.setProperty("--fh-shell-h",        `${shellH}px`);
+        rs.setProperty("--fh-drawer-top",      `${shellH}px`);
+      }
 
-      setTopbarHidden(scrollOffset >= H_L1);
-    };
-
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          updateHeaderPosition();
-          ticking = false;
-        });
-        ticking = true;
+      // Sync React state only when crossing the threshold
+      const hidden = offset >= H_L1 - SNAP_EPSILON;
+      if (hidden !== prevHidden) {
+        prevHidden = hidden;
+        setTopbarHidden(hidden);
       }
     };
 
-    // Run once immediately to set initial values
-    updateHeaderPosition();
-    window.addEventListener("scroll", onScroll,          { passive: true });
-    window.addEventListener("resize", updateHeaderPosition, { passive: true });
+    // The rAF loop — runs only while unsettled
+    const frame = () => {
+      rafId = 0;
+
+      current += (target - current) * LERP_FACTOR;
+      if (Math.abs(target - current) < SNAP_EPSILON) current = target;
+
+      applyCSS(current);
+
+      if (current !== target) {
+        rafId = requestAnimationFrame(frame);
+      }
+    };
+
+    const scheduleFrame = () => {
+      if (!rafId) rafId = requestAnimationFrame(frame);
+    };
+
+    const onScroll = () => {
+      target = Math.min(window.scrollY, H_L1);
+      scheduleFrame();
+    };
+
+    const onResize = () => {
+      isMobile  = window.innerWidth <= 900;
+      prevShellH = -1; // force CSS update on next frame
+      target    = Math.min(window.scrollY, H_L1);
+      scheduleFrame();
+    };
+
+    // Initialise synchronously (no scroll yet)
+    target  = Math.min(window.scrollY, H_L1);
+    current = target;
+    applyCSS(current);
+
+    window.addEventListener("scroll", onScroll,  { passive: true });
+    window.addEventListener("resize", onResize,   { passive: true });
+
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", updateHeaderPosition);
+      window.removeEventListener("resize", onResize);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -232,6 +269,8 @@ export default function Header() {
 
   return (
     <>
+
+
       <header
         className={`fh${topbarHidden ? " topbar-hidden" : ""}`}
         ref={navRef}
@@ -297,7 +336,6 @@ export default function Header() {
 
           {/* Mobile right: lang */}
           <div className="fh-l2-mob" style={{ marginLeft: "auto" }}>
-            {/* NOTE: langRef is shared — on mobile this is the active instance */}
             <div className="fh-lang-wrap">
               <button
                 className="fh-lang-btn"
