@@ -136,10 +136,11 @@ export default function Header() {
     let lastState = true;
 
     const updateDrawerTop = (hidden: boolean) => {
-      const isMobile = window.innerWidth <= 900;
-      const top = hidden && isMobile ? H_COLLAPSED : (isMobile ? H_MOBILE : H_DESKTOP);
-      document.documentElement.style.setProperty("--fh-drawer-top", `${top}px`);
-    };
+  const isMobile = window.innerWidth <= 900;
+  const top = hidden && isMobile ? H_COLLAPSED : (isMobile ? H_MOBILE : H_DESKTOP);
+  document.documentElement.style.setProperty("--fh-drawer-top", `${top}px`);
+  document.documentElement.style.setProperty("--fh-current-header-height", `${top}px`);
+};
 
     // Set initial value
     updateDrawerTop(false);
@@ -152,11 +153,12 @@ export default function Header() {
           lastScrollY.current = scrollY;
 
           let newState = lastState;
-          if (isScrollingDown && scrollY > 400 && lastState) {
-            newState = false;
-          } else if (!isScrollingDown && scrollY < 20 && !lastState) {
-            newState = true;
-          }
+          if (isScrollingDown && scrollY > 80 && lastState) {
+  newState = false;
+} 
+else if (!isScrollingDown && scrollY < 40 && !lastState) {
+  newState = true;
+}
 
           if (newState !== lastState) {
             lastState = newState;
@@ -267,7 +269,7 @@ export default function Header() {
 
           {/* Mobile right: lang */}
           <div className="fh-l2-mob" style={{ marginLeft: "auto" }}>
-            <div className="fh-lang-wrap">
+            <div className="fh-lang-wrap" ref={langRef}>
               <button className="fh-lang-btn" aria-label="Langue" aria-expanded={langOpen} onClick={() => setLangOpen(v => !v)}>
                 <IconGlobe /> {lang} <IconChevron />
               </button>
