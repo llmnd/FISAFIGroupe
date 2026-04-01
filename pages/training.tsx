@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 
@@ -316,12 +317,12 @@ export default function FormationPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '0.75rem',
-    border: '0.5px solid var(--line)',
+    border: '1px solid rgba(255,255,255,0.25)',
     borderRadius: '2px',
     fontSize: '14px',
     fontFamily: "'Outfit', sans-serif",
-    background: 'transparent',
-    color: 'var(--ink)',
+    background: 'rgba(255,255,255,0.08)',
+    color: '#ffffff',
     outline: 'none',
   };
 
@@ -331,6 +332,7 @@ export default function FormationPage() {
     fontWeight: 500,
     fontFamily: "'Outfit', sans-serif",
     fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
   };
 
   const sessions = [
@@ -376,7 +378,7 @@ export default function FormationPage() {
             </div>
             <div>
               <div className="ceo-name">Center Formation FISAFI</div>
-              <div className="ceo-title">Excellence Pédagogique &amp; Certification</div>
+              <div className="ceo-title">Excellence Pédagogique & Certification</div>
             </div>
           </div>
         </div>
@@ -386,18 +388,28 @@ export default function FormationPage() {
       <section className="section" id="catalogue">
         <div className="section-eyebrow reveal">Nos offres de formation</div>
         <h2 className="section-title reveal reveal-delay-1">Catalogue de<br />formations</h2>
-        <div className="services-grid">
+        <div className="services-grid-new">
           {[
-            { num: "01", name: "Administration Réseaux &amp; Télécoms", desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom." },
-            { num: "02", name: "Infrastructure IT &amp; Virtualisation", desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing." },
-            { num: "03", name: "Cybersécurité &amp; Digital Trust", desc: "Sécurité informatique, protection des données, audit de sécurité et conformité." },
-            { num: "04", name: "Certification Professionnelle", desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.)." },
+            { num: "01", name: "Administration Réseaux & Télécoms", desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", img: "/4.jpeg" },
+            { num: "02", name: "Infrastructure IT & Virtualisation", desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", img: "/5.jpeg" },
+            { num: "03", name: "Cybersécurité & Digital Trust", desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", img: "/6.jpeg" },
+            { num: "04", name: "Certification Professionnelle", desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", img: "/8.jpeg" },
           ].map((s, i) => (
-            <div key={s.num} className={`service-card reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
-              <div className="service-left">
-                <div className="service-num">{s.num}</div>
-                <div className="service-name">{s.name}</div>
-                <div className="service-desc">{s.desc}</div>
+            <div key={s.num} className={`service-card-new reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
+              <div className="service-image-wrapper">
+                <Image
+                  src={s.img}
+                  alt={s.name}
+                  width={400}
+                  height={280}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                />
+                <div className="service-overlay" />
+                <div className="service-num-badge">{s.num}</div>
+              </div>
+              <div className="service-content">
+                <h3 className="service-name-new">{s.name}</h3>
+                <p className="service-desc-new">{s.desc}</p>
               </div>
             </div>
           ))}
@@ -525,9 +537,9 @@ export default function FormationPage() {
               <label style={labelStyle}>Formation souhaitée *</label>
               <select name="formationId" value={formData.formationId} onChange={handleFormChange} required style={inputStyle}>
                 <option value="">Sélectionnez une formation</option>
-                <option value="1">Administration Réseaux &amp; Télécoms</option>
-                <option value="2">Infrastructure IT &amp; Virtualisation</option>
-                <option value="3">Cybersécurité &amp; Digital Trust</option>
+                <option value="1">Administration Réseaux & Télécoms</option>
+                <option value="2">Infrastructure IT & Virtualisation</option>
+                <option value="3">Cybersécurité & Digital Trust</option>
                 <option value="4">Certification Professionnelle</option>
               </select>
             </div>

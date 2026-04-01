@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
@@ -26,40 +27,28 @@ export default function Services() {
 
   const services = [
     {
-      title: "Réseaux & Télécommunications",
-      items: [
-        "Conception, déploiement et modernisation d'infrastructures réseaux",
-        "Études techniques télécoms et dimensionnement",
-        "Intégration de solutions de communication unifiée",
-        "Maintenance et supervision des infrastructures",
-      ],
+      num: "01",
+      name: "Réseaux & Télécommunications",
+      desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.",
+      img: "/1.jpeg",
     },
     {
-      title: "Informatique & Infrastructures IT",
-      items: [
-        "Audit, déploiement et maintenance de systèmes d'information",
-        "Virtualisation et cloud computing",
-        "Administration de serveurs et bases de données",
-        "Support technique et infogérance",
-      ],
+      num: "02",
+      name: "Informatique & Infrastructures IT",
+      desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.",
+      img: "/2.jpeg",
     },
     {
-      title: "Sécurité & Cybersécurité",
-      items: [
-        "Audit de sécurité et tests d'intrusion",
-        "Mise en œuvre de solutions de cyberdéfense",
-        "Protection des données et conformité RGPD",
-        "Sensibilisation et formation à la sécurité",
-      ],
+      num: "03",
+      name: "Sécurité & Cybersécurité",
+      desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.",
+      img: "/3.jpeg",
     },
     {
-      title: "Conseil & Accompagnement Stratégique",
-      items: [
-        "Études et diagnostics numériques",
-        "Assistance à maîtrise d'ouvrage (AMO)",
-        "Transformation digitale et stratégie IT",
-        "Formations techniques spécialisées",
-      ],
+      num: "04",
+      name: "Conseil & Accompagnement Stratégique",
+      desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.",
+      img: "/7.jpeg",
     },
   ];
 
@@ -90,28 +79,29 @@ export default function Services() {
         <div className="section-eyebrow reveal">Nos offres complètes</div>
         <h2 className="section-title reveal reveal-delay-1">Nos<br />services</h2>
 
-        <div className="services-detailed">
-          {services.map((service, index) => (
-            <div
-              key={index}
-              className={`service-detail-card reveal${index > 0 ? ` reveal-delay-${index}` : ""}`}
-            >
-              <div className="service-detail-header">
-                <h3 className="service-detail-title">{service.title}</h3>
+        <div className="services-grid-new">
+          {services.map((service, i) => (
+            <div key={service.num} className={`service-card-new reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
+              <div className="service-image-wrapper">
+                <Image
+                  src={service.img}
+                  alt={service.name}
+                  width={400}
+                  height={280}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                />
+                <div className="service-overlay" />
+                <div className="service-num-badge">{service.num}</div>
               </div>
-              <ul className="service-detail-items">
-                {service.items.map((item, i) => (
-                  <li key={i} className="service-detail-item">
-                    <span className="service-detail-dot" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="service-content">
+                <h3 className="service-name-new">{service.name}</h3>
+                <p className="service-desc-new">{service.desc}</p>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="services-cta reveal reveal-delay-4" style={{ textAlign: "center", marginTop: "3rem" }}>
+        <div className="services-cta reveal reveal-delay-4">
           <Link href="/contact" className="btn-primary" style={{ textDecoration: "none" }}>
             Discuter de votre projet
           </Link>
