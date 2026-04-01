@@ -144,6 +144,7 @@ export default function SessionsPage() {
 
       {/* HERO */}
       <section className="hero" style={{ height: "300px" }}>
+        <div className="hero-bg" />
         <div className="hero-overlay" />
         <div className="hero-content">
           <h1 className="hero-title">Calendrier des Sessions</h1>
@@ -281,9 +282,9 @@ export default function SessionsPage() {
 
         .toggle-btn {
           padding: 10px 20px;
-          border: 2px solid #1e40af;
-          background: white;
-          color: #1e40af;
+          border: 2px solid var(--blue);
+          background: var(--white);
+          color: var(--blue);
           border-radius: 6px;
           cursor: pointer;
           font-weight: 500;
@@ -291,12 +292,12 @@ export default function SessionsPage() {
         }
 
         .toggle-btn.active {
-          background: #1e40af;
-          color: white;
+          background: var(--blue);
+          color: var(--white);
         }
 
         .calendar-container {
-          background: white;
+          background: var(--white);
           border-radius: 12px;
           padding: 30px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -311,12 +312,17 @@ export default function SessionsPage() {
 
         .calendar-controls button {
           padding: 10px 20px;
-          background: #1e40af;
-          color: white;
+          background: var(--blue);
+          color: var(--white);
           border: none;
           border-radius: 6px;
           cursor: pointer;
           font-weight: 500;
+          transition: background 0.2s;
+        }
+
+        .calendar-controls button:hover {
+          background: var(--blue-deep);
         }
 
         .calendar {
@@ -333,7 +339,7 @@ export default function SessionsPage() {
         .calendar-day-header {
           text-align: center;
           font-weight: 600;
-          color: #1e40af;
+          color: var(--blue);
           padding: 10px 0;
         }
 
@@ -345,19 +351,19 @@ export default function SessionsPage() {
 
         .calendar-day {
           min-height: 100px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--line);
           border-radius: 8px;
           padding: 10px;
-          background: #f9fafb;
+          background: var(--mist);
         }
 
         .calendar-day.empty {
-          background: #f5f5f5;
+          background: rgba(30, 64, 175, 0.02);
         }
 
         .day-number {
           font-weight: 600;
-          color: #1e40af;
+          color: var(--blue);
           margin-bottom: 8px;
         }
 
@@ -377,23 +383,23 @@ export default function SessionsPage() {
         }
 
         .session-badge.ouverte {
-          background: #dcfce7;
-          color: #166534;
+          background: rgba(34, 197, 94, 0.12);
+          color: rgb(22, 101, 52);
         }
 
         .session-badge.complète {
-          background: #fee2e2;
-          color: #991b1b;
+          background: rgba(239, 68, 68, 0.12);
+          color: rgb(153, 27, 27);
         }
 
         .session-badge.terminée {
-          background: #f3f4f6;
-          color: #374151;
+          background: rgba(107, 114, 128, 0.1);
+          color: var(--steel);
         }
 
         .session-more {
           font-size: 11px;
-          color: #6b7280;
+          color: var(--steel);
           font-weight: 500;
         }
 
@@ -402,7 +408,7 @@ export default function SessionsPage() {
           gap: 30px;
           justify-content: center;
           padding: 20px;
-          background: #f9fafb;
+          background: var(--mist);
           border-radius: 8px;
         }
 
@@ -410,6 +416,8 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 10px;
+          font-size: 13px;
+          color: var(--ink);
         }
 
         .badge {
@@ -419,15 +427,15 @@ export default function SessionsPage() {
         }
 
         .badge.ouverte {
-          background: #dcfce7;
+          background: rgba(34, 197, 94, 0.12);
         }
 
         .badge.complète {
-          background: #fee2e2;
+          background: rgba(239, 68, 68, 0.12);
         }
 
         .badge.terminée {
-          background: #f3f4f6;
+          background: rgba(107, 114, 128, 0.1);
         }
 
         .sessions-list {
@@ -439,33 +447,34 @@ export default function SessionsPage() {
           display: flex;
           gap: 20px;
           padding: 20px;
-          border: 1px solid #e5e7eb;
+          border: 0.5px solid var(--line);
           border-radius: 8px;
-          background: white;
+          background: var(--white);
           transition: all 0.3s;
         }
 
         .session-card:hover {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          border-color: var(--orange);
         }
 
         .session-date {
           text-align: center;
           min-width: 70px;
           padding: 10px;
-          background: #f3f4f6;
+          background: var(--mist);
           border-radius: 6px;
         }
 
         .date-value {
           font-size: 24px;
           font-weight: 700;
-          color: #1e40af;
+          color: var(--blue);
         }
 
         .date-month {
           font-size: 12px;
-          color: #6b7280;
+          color: var(--steel);
         }
 
         .session-info {
@@ -474,13 +483,16 @@ export default function SessionsPage() {
 
         .session-info h3 {
           margin: 0 0 10px 0;
-          color: #1f2937;
+          color: var(--ink);
+          font-family: 'Roboto', sans-serif;
+          font-size: 15px;
+          font-weight: 500;
         }
 
         .session-info p {
           margin: 6px 0;
-          color: #6b7280;
-          font-size: 14px;
+          color: var(--steel);
+          font-size: 13px;
         }
 
         .session-status {
@@ -494,47 +506,54 @@ export default function SessionsPage() {
         .status-badge {
           padding: 6px 12px;
           border-radius: 6px;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 500;
         }
 
         .status-badge.ouverte {
-          background: #dcfce7;
-          color: #166534;
+          background: rgba(34, 197, 94, 0.12);
+          color: rgb(22, 101, 52);
         }
 
         .status-badge.complète {
-          background: #fee2e2;
-          color: #991b1b;
+          background: rgba(239, 68, 68, 0.12);
+          color: rgb(153, 27, 27);
         }
 
         .status-badge.terminée {
-          background: #f3f4f6;
-          color: #374151;
+          background: rgba(107, 114, 128, 0.1);
+          color: var(--steel);
         }
 
         .btn-secondary {
           padding: 8px 16px;
-          background: #1e40af;
-          color: white;
+          background: var(--blue);
+          color: var(--white);
           border: none;
           border-radius: 6px;
           cursor: pointer;
           font-weight: 500;
           text-decoration: none;
-          font-size: 13px;
+          font-size: 12px;
+          transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: var(--blue-deep);
         }
 
         .loading {
           text-align: center;
           padding: 60px 20px;
-          color: #6b7280;
+          color: var(--steel);
+          font-size: 14px;
         }
 
         .no-sessions {
           text-align: center;
           padding: 40px 20px;
-          color: #6b7280;
+          color: var(--steel);
+          font-size: 14px;
         }
 
         @media (max-width: 768px) {
