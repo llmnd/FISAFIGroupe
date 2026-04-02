@@ -390,9 +390,9 @@ export default function FormationPage() {
         <h2 className="section-title reveal reveal-delay-1">Catalogue de<br />formations</h2>
         <div className="services-grid-new">
           {[
-            { num: "01", name: "Administration Réseaux & Télécoms", desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", img: "/9.jpeg" },
+            { num: "01", name: "Administration Réseaux & Télécoms", desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", img: "/19.jpeg" },
             { num: "02", name: "Infrastructure IT & Virtualisation", desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", img: "/18.jpeg" },
-            { num: "03", name: "Cybersécurité & Digital Trust", desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", img: "/20.jpeg" },
+            { num: "03", name: "Cybersécurité & Digital Trust", desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", img: "/21.jpeg" },
             { num: "04", name: "Certification Professionnelle", desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", img: "/17.jpeg" },
           ].map((s, i) => (
             <div key={s.num} className={`service-card-new reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>

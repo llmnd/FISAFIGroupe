@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/Header";
 
@@ -120,6 +121,35 @@ export default function News() {
           <p className="hero-sub">
             Découvrez nos articles techniques, innovations et actualités du secteur.
           </p>
+        </div>
+      </section>
+
+      <div className="divider" />
+
+      {/* ACTUALITES FEATURED IMAGE */}
+      <section className="section" id="actualites-featured">
+        <div className="services-grid-new">
+          {[
+            { num: "01", name: "Suivez nos actualités", desc: "Restez informé de toutes nos innovations, publications et événements", img: "/20.jpeg" },
+          ].map((s, i) => (
+            <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
+              <div className="service-image-wrapper">
+                <Image
+                  src={s.img}
+                  alt={s.name}
+                  width={400}
+                  height={280}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                />
+                <div className="service-overlay" />
+                <div className="service-num-badge">{s.num}</div>
+              </div>
+              <div className="service-content">
+                <h3 className="service-name-new">{s.name}</h3>
+                <p className="service-desc-new">{s.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

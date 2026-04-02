@@ -144,10 +144,10 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
         <div className="services-grid-new">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/20.jpeg" },
+            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/19.jpeg" },
             { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/18.jpeg" },
-            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/19.jpeg" },
-            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/1.jpeg" },
+            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/21.jpeg" },
+            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/22.jpeg" },
           ].map((s, i) => (
             <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
               <div className="service-image-wrapper">
@@ -235,13 +235,14 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <h2 className="section-title reveal reveal-delay-1">Actualités &<br />innovations</h2>
         <div className="news-grid-home">
           {[
-            { category: "Articles techniques", desc: "Contenus approfondis sur nos domaines d'expertise" },
-            { category: "Innovations", desc: "Découvrez nos dernières solutions et projets" },
-            { category: "Événements", desc: "Participation et sponsoring de conférences et salons" },
+            { category: "Articles techniques", desc: "Contenus approfondis sur nos domaines d'expertise", img: "/20.jpeg" },
+            { category: "Innovations", desc: "Découvrez nos dernières solutions et projets", img: "/21.jpeg" },
+            { category: "Événements", desc: "Participation et sponsoring de conférences et salons", img: "/20.jpeg" },
           ].map((item, i) => (
-            <div key={item.category} className={`news-item-home reveal${i > 0 ? ` reveal-delay-${i + 1}` : ""}`}>
-              <div className="news-item-category">{item.category}</div>
-              <p className="news-item-desc">{item.desc}</p>
+            <div key={item.category} className={`news-item-home reveal${i > 0 ? ` reveal-delay-${i + 1}` : ""}`} style={{ backgroundImage: `url(${item.img})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))', pointerEvents: 'none' }} />
+              <div className="news-item-category" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>{item.category}</div>
+              <p className="news-item-desc" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>{item.desc}</p>
             </div>
           ))}
         </div>
