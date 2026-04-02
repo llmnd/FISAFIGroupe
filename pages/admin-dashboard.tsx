@@ -351,6 +351,13 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
+  // Re-fetch inscriptions when filter changes
+  useEffect(() => {
+    if (activeTab === "inscriptions") {
+      fetchInscriptions();
+    }
+  }, [filterInscriptionStatus]);
+
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
