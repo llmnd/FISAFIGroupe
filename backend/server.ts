@@ -25,6 +25,8 @@ app.register(fastifyCors, {
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://fisafi.vercel.app",
+    "https://www.fisafigroupe.com",
+    "https://fisafigroupe.com",
     "https://fisafigroupe.onrender.com"
   ],
   credentials: true,
