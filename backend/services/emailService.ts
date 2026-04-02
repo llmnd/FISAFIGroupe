@@ -4,17 +4,26 @@ import { config } from '../config';
 // Create transporter for OVH SMTP
 const createTransporter = () => {
   const emailPassword = process.env.EMAIL_PASSWORD;
+  const emailHost = process.env.EMAIL_HOST || 'mail.ovh.net';
+  const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
+  const emailFrom = process.env.EMAIL_FROM || 'contact@fisafigroupe.com';
   
+  console.log('[📧 Email Service] Initializing OVH SMTP transporter...');
+  console.log('[📧 Email Service] From:', emailFrom);
+  console.log('[📧 Email Service] Host:', `${emailHost}:${emailPort}`);
+  console.log('[📧 Email Service] Password set:', !!emailPassword ? '✅ YES' : '❌ NO');
+
   if (!emailPassword) {
-    console.warn('⚠️ EMAIL_PASSWORD not set - email service will not work');
+    console.error('⚠️ [📧 Email Service] WARNING: EMAIL_PASSWORD not set! Emails will not send.');
+    console.error('[📧 Email Service] Add EMAIL_PASSWORD to .env.local');
   }
 
   return nodemailer.createTransport({
-    host: 'mail.ovh.net',
-    port: 465,
-    secure: true, // true for 465, false for other ports
+    host: emailHost,
+    port: emailPort,
+    secure: emailPort === 465,  // true for 465, false for 587
     auth: {
-      user: 'contact@fisafigroupe.com',
+      user: emailFrom,
       pass: emailPassword || '',
     },
   });
@@ -32,6 +41,7 @@ export const emailService = {
     subject: string
   ): Promise<boolean> {
     try {
+      console.log(`[📧 Email Service] Sending contact confirmation to: ${visitorEmail}`);
       await this.transporter.sendMail({
         from: 'contact@fisafigroupe.com',
         to: visitorEmail,
@@ -46,10 +56,10 @@ export const emailService = {
           <a href="https://www.fisafigroupe.com">www.fisafigroupe.com</a></p>
         `,
       });
-      console.log(`✅ Confirmation email sent to ${visitorEmail}`);
+      console.log(`✅ [📧 Email Service] Confirmation email sent to ${visitorEmail}`);
       return true;
-    } catch (error) {
-      console.error('❌ Error sending confirmation email:', error);
+    } catch (error: any) {
+      console.error(`❌ [📧 Email Service] Error sending confirmation email to ${visitorEmail}:`, error.message);
       return false;
     }
   },
@@ -279,11 +289,15 @@ export const emailService = {
    */
   async testConnection(): Promise<boolean> {
     try {
+      console.log('[📧 Email Service] Testing SMTP connection...');
       await this.transporter.verify();
-      console.log('✅ Email service connected successfully');
+      console.log('✅ [📧 Email Service] SMTP connection SUCCESSFUL! Email service is ready.');
       return true;
-    } catch (error) {
-      console.error('❌ Email service connection failed:', error);
+    } catch (error: any) {
+      console.error('❌ [📧 Email Service] SMTP connection FAILED!');
+      console.error('[📧 Email Service] Error:', error.message);
+      console.error('[📧 Email Service] Code:', error.code);
+      console.error('[📧 Email Service] Reason:', error);
       return false;
     }
   },

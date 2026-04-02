@@ -13,9 +13,11 @@ Votre backend est maintenant configuré pour envoyer des emails via votre compte
 ### 2. **Inscription Utilisateur (Register)**
 - ✉️ **Confirmation d'inscription** - Bienvenue + lien de connexion
 
-### 3. **Inscription Formation** (si implémenté)
-- ✉️ **Confirmation utilisateur** - Détails de la formation
-- ✉️ **Notification admin** - Nouvel inscrit
+### 3. **Inscription Formation** ✨ NOUVEAU
+- ✉️ **Confirmation utilisateur** - Remerciement pour l'inscription
+- ✉️ **Notification admin** - Alert nouvel inscrit
+- ✉️ **Email d'acceptation** - Quand l'admin accepte l'inscription
+- ✉️ **Email de rejet** - Quand l'admin rejette/annule l'inscription
 
 ---
 
@@ -156,14 +158,48 @@ Si vous voulez envoyer depuis une autre adresse (ex: `noreply@fisafigroupe.com`)
 
 ---
 
-## ✨ Fonctionnalités futures
+## ✨ Statut d'implémentation (Complété ✅)
 
-- [ ] Template de template d'emails HTML (courants maintenant)
+### Routes qui envoient des emails:
+
+| Route | Emails Envoyés | Status |
+|-------|----------------|--------|
+| **POST /api/v1/inscriptions** (Contact form) | ✉️ Confirmation + ✉️ Admin notif | ✅ FAIT |
+| **POST /api/v1/auth/register** | ✉️ Confirmation registration | ✅ FAIT |
+| **POST /api/v1/inscriptions-formations** | ✉️ Confirmation + ✉️ Admin notif | ✅ FAIT |
+| **PATCH /api/v1/inscriptions-manage (accept)** | ✉️ Email d'acceptation | ✅ FAIT |
+| **PATCH /api/v1/inscriptions-manage (reject)** | ✉️ Email de rejet | ✅ FAIT |
+
+### Différents types d'emails implémentés:
+- ✉️ **Contact confirmation** - Remerciement visiteur
+- ✉️ **Contact admin notification** - Alert nouvel message  
+- ✉️ **Registration confirmation** - Bienvenue utilisateur
+- ✉️ **Formation subscription confirmation** - Remerciement inscription
+- ✉️ **Formation subscription admin notification** - Alert nouvel inscrit
+- ✉️ **Formation acceptance** - ✨ NOUVEAU - Confirmation acceptation
+- ✉️ **Formation rejection** - ✨ NOUVEAU - Notification rejet/annulation
+
+---
+
+## 🧪 Test Checklist
+
+**À faire après remplir le mot de passe:**
+
+1. [ ] Remplir contact form → Recevoir 2 emails
+2. [ ] S'inscrire (Register) → Recevoir 1 email
+3. [ ] S'inscrire formation → Recevoir 2 emails
+4. [ ] Admin accepte → User reçoit email acceptance
+5. [ ] Admin rejette → User reçoit email rejection
+
+---
+
+## 📧 Fonctionnalités futures
+
 - [ ] Logs d'envoi en base de données
 - [ ] Retry automatique si email échoue
-- [ ] Support de pièces jointes
+- [ ] Support de pièces jointes (brochures)
 - [ ] Templates personnalisables par admin
 
 ---
 
-**Questions?** Consultez la [documentation OVH Email](https://docs.ovh.com/gb/en/emails/)
+**Tous les emails sont implémentés! ✅ En attente du mot de passe OVH seulement.** 🎉

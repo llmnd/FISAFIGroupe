@@ -21,10 +21,10 @@ const SERVICES_SLIDES = [
 ];
 
 const TRAINING_SLIDES = [
-  { src: "/9.jpeg", alt: "Formation – session 1" },
-  { src: "/10.jpeg", alt: "Formation – session 2" },
-  { src: "/11.jpeg", alt: "Formation – session 3" },
-  { src: "/12.jpeg", alt: "Formation – session 4" },
+  { src: "/17.jpeg", alt: "Formation – session 1" },
+  { src: "/18.jpeg", alt: "Formation – session 2" },
+  { src: "/1.jpeg", alt: "Formation – session 3" },
+  { src: "/20.jpeg", alt: "Formation – session 4" },
 ];
 
 const DEFAULT_SLIDE_TEXT = [

@@ -4,6 +4,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { config } from './config';
+import { emailService } from './services/emailService';
 import { authRoutes } from './routes/auth';
 import { articleRoutes } from './routes/articles';
 import { formationRoutes } from './routes/formations';
@@ -103,6 +104,9 @@ app.setErrorHandler((error: unknown, request, reply) => {
 // Start server
 const start = async () => {
   try {
+    // Test email connection
+    await emailService.testConnection();
+
     await app.listen({
       port: config.server.port,
       host: config.server.host,
