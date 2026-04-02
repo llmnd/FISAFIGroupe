@@ -19,6 +19,7 @@ export default function FormationPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [emailError, setEmailError] = useState('');
   const [brochures, setBrochures] = useState<any[]>([]);
   const [loadingBrochures, setLoadingBrochures] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -60,12 +61,36 @@ export default function FormationPage() {
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Validation email en temps réel
+    if (name === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (value && !emailRegex.test(value)) {
+        setEmailError('Veuillez entrer une adresse email valide');
+      } else {
+        setEmailError('');
+      }
+    }
+  };
+
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Vérifier l'email avant de soumettre
+    if (!isValidEmail(formData.email)) {
+      setEmailError('Veuillez entrer une adresse email valide');
+      setSubmitStatus(null);
+      return;
+    }
+    
     setLoading(true);
     setSubmitStatus(null);
+    setEmailError('');
     try {
       const nameParts = formData.firstName.trim().split(' ');
       const firstName = nameParts[0];
@@ -527,7 +552,26 @@ export default function FormationPage() {
             </div>
             <div>
               <label style={labelStyle}>Email *</label>
-              <input type="email" name="email" value={formData.email} onChange={handleFormChange} placeholder="votre@email.com" required style={inputStyle} />
+              <input 
+                type="email" 
+                name="email" 
+                value={formData.email} 
+                onChange={handleFormChange} 
+                placeholder="votre@email.com" 
+                required 
+                style={{ ...inputStyle, borderColor: emailError ? '#f87171' : 'rgba(255,255,255,0.25)' }}
+              />
+              {emailError && (
+                <div style={{
+                  marginTop: '0.25rem',
+                  fontSize: '11px',
+                  color: '#fca5a5',
+                  fontFamily: "'Outfit', sans-serif",
+                  letterSpacing: '0.02em',
+                }}>
+                  ✗ {emailError}
+                </div>
+              )}
             </div>
             <div>
               <label style={labelStyle}>Téléphone *</label>
