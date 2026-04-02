@@ -30,25 +30,25 @@ export default function Services() {
       num: "01",
       name: "Réseaux & Télécommunications",
       desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.",
-      img: "/1.jpeg",
+      img: "/5.jpeg",
     },
     {
       num: "02",
       name: "Informatique & Infrastructures IT",
       desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.",
-      img: "/2.jpeg",
+      img: "/6.jpeg",
     },
     {
       num: "03",
       name: "Sécurité & Cybersécurité",
       desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.",
-      img: "/3.jpeg",
+      img: "/7.jpeg",
     },
     {
       num: "04",
       name: "Conseil & Accompagnement Stratégique",
       desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.",
-      img: "/7.jpeg",
+      img: "/8.jpeg",
     },
   ];
 
@@ -70,7 +70,7 @@ export default function Services() {
       <Header />
 
       {/* ─── HERO SLIDESHOW ─── */}
-      <HeroSlideshow />
+      <HeroSlideshow variant="services" />
 
       <div className="divider" />
 

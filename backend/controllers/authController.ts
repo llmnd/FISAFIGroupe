@@ -2,6 +2,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/db';
 import { hashPassword, verifyPassword } from '../utils/auth';
+import { emailService } from '../services/emailService';
 import { CreateUserRequest, LoginRequest, AuthResponse } from '../types';
 
 export async function register(
@@ -34,6 +35,12 @@ export async function register(
         firstName,
         lastName,
       },
+    });
+
+    // Send registration confirmation email (non-blocking)
+    const fullName = `${firstName || ''} ${lastName || ''}`.trim() || email;
+    emailService.sendRegistrationConfirmation(email, fullName).catch(err => {
+      console.error('Failed to send registration email:', err);
     });
 
     // Generate token

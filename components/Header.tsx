@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
+import type { Language } from "@/context/LanguageContext";
 
 /* ─── Icons ─── */
 const IconFacebook = () => (
@@ -77,7 +79,6 @@ const IconGlobe = () => (
 
 type NavChild = { label: string; href: string };
 type NavItem  = { label: string; href?: string; children?: NavChild[] };
-type Lang     = "FR" | "EN";
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Accueil", href: "/" },
@@ -121,10 +122,11 @@ export default function Header() {
   const [isLoggedIn,     setIsLoggedIn]     = useState(false);
   const [searchOpen,     setSearchOpen]     = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
-  const [lang,           setLang]           = useState<Lang>("FR");
   const [langOpen,       setLangOpen]       = useState(false);
   const [mobSearchOpen,  setMobSearchOpen]  = useState(false);
   const [topbarHidden,   setTopbarHidden]   = useState(false);
+
+  const { lang, setLang } = useLanguage();
 
   const navRef         = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -264,8 +266,19 @@ export default function Header() {
   useEffect(() => { if (searchOpen)    setTimeout(() => searchInputRef.current?.focus(), 50); }, [searchOpen]);
   useEffect(() => { if (mobSearchOpen) setTimeout(() => mobSearchRef.current?.focus(),   50); }, [mobSearchOpen]);
 
-  const closeMobile = () => { setMobileOpen(false); setMobileExpanded(null); };
-  const selectLang  = (l: Lang) => { setLang(l); setLangOpen(false); };
+  /* Debug language changes */
+  useEffect(() => {
+    console.log('📍 Header rendering with lang:', lang);
+  }, [lang]);
+
+  const closeMobile = useCallback(() => { setMobileOpen(false); setMobileExpanded(null); }, []);
+  const selectLang  = useCallback((l: Language) => { 
+    console.log('🔄 selectLang called with:', l);
+    setLang(l); 
+    setLangOpen(false);
+    // Log after selection for debugging
+    console.log('✅ Language callback completed');
+  }, [setLang]);
 
   return (
     <>
@@ -305,7 +318,7 @@ export default function Header() {
                 <IconGlobe /> {lang} <IconChevron />
               </button>
               <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
-                {(["FR", "EN"] as Lang[]).map(l => (
+                {(["FR", "EN"] as Language[]).map(l => (
                   <button
                     key={l}
                     className={`fh-lang-opt${lang === l ? " active" : ""}`}
@@ -346,7 +359,7 @@ export default function Header() {
                 <IconGlobe /> {lang} <IconChevron />
               </button>
               <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
-                {(["FR", "EN"] as Lang[]).map(l => (
+                {(["FR", "EN"] as Language[]).map(l => (
                   <button
                     key={l}
                     className={`fh-lang-opt${lang === l ? " active" : ""}`}

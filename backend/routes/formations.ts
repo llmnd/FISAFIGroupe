@@ -1,6 +1,7 @@
 // backend/routes/formations.ts
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/db';
+import { emailService } from '../services/emailService';
 
 export async function formationRoutes(app: FastifyInstance) {
   // Get all published formations
@@ -233,6 +234,17 @@ export async function formationRoutes(app: FastifyInstance) {
           formation: { select: { name: true } },
           session: { select: { startDate: true, location: true } },
         },
+      });
+
+      // Send confirmation email to user (non-blocking)
+      const fullName = `${firstName} ${lastName}`;
+      emailService.sendFormationSubscriptionConfirmation(email, fullName, formation.name).catch(err => {
+        console.error('Failed to send subscription confirmation email:', err);
+      });
+
+      // Send admin notification (non-blocking)
+      emailService.sendFormationSubscriptionAdminNotification(fullName, email, formation.name).catch(err => {
+        console.error('Failed to send admin notification:', err);
       });
 
       return reply.status(201).send({

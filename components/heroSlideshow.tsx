@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const SLIDES = [
+const DEFAULT_SLIDES = [
   { src: "/7.jpeg", alt: "FiSAFi Groupe – slide 1" },
   { src: "/1.jpeg", alt: "FiSAFi Groupe – slide 2" },
   { src: "/2.jpeg", alt: "FiSAFi Groupe – slide 3" },
@@ -13,7 +13,21 @@ const SLIDES = [
   { src: "/6.jpeg", alt: "FiSAFi Groupe – slide 6" },
 ];
 
-const SLIDE_TEXT = [
+const SERVICES_SLIDES = [
+  { src: "/5.jpeg", alt: "Services – réseaux" },
+  { src: "/6.jpeg", alt: "Services – infrastructure" },
+  { src: "/7.jpeg", alt: "Services – cybersécurité" },
+  { src: "/8.jpeg", alt: "Services – conseil" },
+];
+
+const TRAINING_SLIDES = [
+  { src: "/9.jpeg", alt: "Formation – session 1" },
+  { src: "/10.jpeg", alt: "Formation – session 2" },
+  { src: "/11.jpeg", alt: "Formation – session 3" },
+  { src: "/12.jpeg", alt: "Formation – session 4" },
+];
+
+const DEFAULT_SLIDE_TEXT = [
   {
     eyebrow: "Ingénierie & Conseil Technologique",
     title: "Solutions IT de <em>classe mondiale</em>",
@@ -46,11 +60,28 @@ const SLIDE_TEXT = [
   },
 ];
 
+const SERVICES_SLIDE_TEXT = [
+  { eyebrow: "Nos services", title: "Réseaux & <em>Télécommunications</em>", sub: "Conception, déploiement et maintenance d'infrastructures" },
+  { eyebrow: "Infrastructure", title: "Infrastructure IT & <em>Virtualisation</em>", sub: "Solutions serveurs, stockage et cloud" },
+  { eyebrow: "Sécurité", title: "Cybersécurité & <em>Protection</em>", sub: "Audit, défense et conformité" },
+  { eyebrow: "Conseil", title: "Conseil & <em>Accompagnement</em>", sub: "Stratégie, audits et transformation digitale" },
+];
+
+const TRAINING_SLIDE_TEXT = [
+  { eyebrow: "Formation", title: "Sessions <em>Présentielles</em>", sub: "Formations pratiques animées par nos experts" },
+  { eyebrow: "E-Learning", title: "Parcours <em>en ligne</em>", sub: "Contenu structuré et tutorat" },
+  { eyebrow: "Hybride", title: "Mode <em>Hybride</em>", sub: "Présentiel + digital pour une flexibilité optimale" },
+  { eyebrow: "Certifications", title: "Préparation aux <em>certifications</em>", sub: "Cisco, CompTIA, Microsoft et autres" },
+];
+
 const INTERVAL = 5000;      // ms between slides
 const FADE_DURATION = 1400; // ms — must match CSS
 
 
-export default function HeroSlideshow() {
+export default function HeroSlideshow({ variant = 'home' }: { variant?: 'home' | 'services' | 'training' }) {
+  // choose slides/text based on variant
+  const slides = variant === 'services' ? SERVICES_SLIDES : variant === 'training' ? TRAINING_SLIDES : DEFAULT_SLIDES;
+  const slideText = variant === 'services' ? SERVICES_SLIDE_TEXT : variant === 'training' ? TRAINING_SLIDE_TEXT : DEFAULT_SLIDE_TEXT;
   const [current, setCurrent] = useState(0);
   const [prev, setPrev]       = useState<number | null>(null);
   const [fading, setFading]   = useState(false);
@@ -67,11 +98,11 @@ export default function HeroSlideshow() {
       
       // Start text fade after a short delay
       const textTimer = setTimeout(() => {
-        setNextText((current + 1) % SLIDES.length);
+        setNextText((current + 1) % slides.length);
         setTextFading(false);
       }, FADE_DURATION * 0.4);
       
-      setCurrent((c) => (c + 1) % SLIDES.length);
+      setCurrent((c) => (c + 1) % slides.length);
       setTimeout(() => {
         setPrev(null);
         setFading(false);
@@ -140,7 +171,7 @@ export default function HeroSlideshow() {
     <section className="hs-root">
       {/* ── Background slides ── */}
       <div className="hs-bg-stack">
-        {SLIDES.map((slide, idx) => (
+        {slides.map((slide, idx) => (
           <div
             key={slide.src}
             className={`hs-slide ${
@@ -172,13 +203,13 @@ export default function HeroSlideshow() {
         <div className={`hs-text-block${textFading ? " hs-text-fading" : ""}`}>
           <div className="hs-eyebrow">
             <span className="hs-eyebrow-line" />
-            {SLIDE_TEXT[nextText].eyebrow}
+            {slideText[nextText].eyebrow}
           </div>
 
-          <h1 className="hs-title" dangerouslySetInnerHTML={{ __html: SLIDE_TEXT[nextText].title }} />
+          <h1 className="hs-title" dangerouslySetInnerHTML={{ __html: slideText[nextText].title }} />
 
           <p className="hs-sub">
-            {SLIDE_TEXT[nextText].sub}
+            {slideText[nextText].sub}
           </p>
         </div>
         <br />
@@ -190,7 +221,7 @@ export default function HeroSlideshow() {
         </div>
 
         <div className="hs-dots" role="tablist" aria-label="Diapositives">
-          {SLIDES.map((_, idx) => (
+          {slides.map((_, idx) => (
             <button
               key={idx}
               role="tab"
@@ -238,7 +269,7 @@ export default function HeroSlideshow() {
         </span>
         <span className="hs-counter-sep" />
         <span className="hs-counter-total">
-          {String(SLIDES.length).padStart(2, "0")}
+          {String(slides.length).padStart(2, "0")}
         </span>
       </div>
 
@@ -330,6 +361,9 @@ export default function HeroSlideshow() {
           background: rgba(245,166,35,0.75);
           flex-shrink: 0; border-radius: 1px;
         }
+        /* Services variant accent colors */
+        .hs-root--services .hs-eyebrow-line { background: rgba(30,144,255,0.95); }
+        .hs-root--training .hs-eyebrow-line { background: rgba(16,185,129,0.95); }
 
         /* Title */
         .hs-title {
@@ -369,6 +403,10 @@ export default function HeroSlideshow() {
           border-radius: 0;
         }
         .hs-btn-primary:hover { background: #e55a00; color: #fff; transform: translateY(-2px); }
+        .hs-root--services .hs-btn-primary { background: #ffffff; color: #0b1829; }
+        .hs-root--services .hs-btn-primary:hover { background: #1e90ff; color: #fff; }
+        .hs-root--training .hs-btn-primary { background: #ffffff; color: #0b1829; }
+        .hs-root--training .hs-btn-primary:hover { background: #10b981; color: #fff; }
         .hs-btn-ghost {
            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
           font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase;
@@ -429,6 +467,7 @@ export default function HeroSlideshow() {
           -webkit-backdrop-filter: blur(8px);
           border: none;
           border-radius: 0;
+           margin-top: -60px; /* ajustez la valeur */
         }
         .hs-badge-label {
           font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
@@ -524,6 +563,8 @@ export default function HeroSlideshow() {
           border-left: 3px solid #f5a623;
           max-width: 380px;
         }
+        .hs-root--services .hs-text-block { border-left-color: rgba(30,144,255,0.95); }
+        .hs-root--training .hs-text-block { border-left-color: rgba(16,185,129,0.95); }
         .hs-text-block.hs-text-fading {
           opacity: 0;
         }

@@ -144,10 +144,10 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
         <div className="services-grid-new">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/1.jpeg" },
-            { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/2.jpeg" },
-            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/3.jpeg" },
-            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/7.jpeg" },
+            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/5.jpeg" },
+            { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/6.jpeg" },
+            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/7.jpeg" },
+            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/8.jpeg" },
           ].map((s, i) => (
             <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
               <div className="service-image-wrapper">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -617,12 +618,20 @@ export default function DashboardPage() {
           .topbar-hamburger.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
           .topbar-hamburger.open span:nth-child(2) { opacity:0; }
           .topbar-hamburger.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+          
+          /* ── Mobile logo ── */
+          .dash-mobile-logo { display:none; }
+          .dash-mobile-logo img { display:block; width:100%; height:100%; object-fit:cover; }
+          @media(max-width:768px) {
+            .dash-mobile-logo { display:flex; justify-content:center; width:48px; height:48px; border-radius:50%; overflow:hidden; border:1px solid var(--orange); background:#fff; margin-right:0.75rem; flex-shrink:0; }
+            .dash-mobile-logo img { width:100%; height:100%; object-fit:cover; }
+          }
 
           /* ── MAIN ── */
           .dash-main { flex:1; min-width:0; display:flex; flex-direction:column; }
           @media(min-width:900px) { .dash-main { margin-left:var(--sidebar-w); } }
 
-          .dash-content { flex:1; padding:1.5rem 1rem 3rem; max-width:900px; }
+          .dash-content { padding:0 1rem 3rem; max-width:900px; }
           @media(min-width:600px) { .dash-content { padding:2rem 2rem 3rem; } }
           @media(min-width:900px) { .dash-content { padding:2.5rem 3rem 4rem; } }
 
@@ -798,6 +807,10 @@ export default function DashboardPage() {
 
           {/* Topbar mobile */}
           <div className="dash-topbar">
+            {/* Mobile circular logo */}
+            <div className="dash-mobile-logo" aria-hidden="true">
+              <Image src="/logo.jpeg" alt="FiSAFi Groupe" width={72} height={72} priority />
+            </div>
             <div className="topbar-logo">Fi<span>SAFI</span></div>
             <button
               className={`topbar-hamburger${sidebarOpen ? " open" : ""}`}

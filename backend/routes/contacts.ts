@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/db';
+import { emailService } from '../services/emailService';
 
 export async function contactsRoutes(app: FastifyInstance) {
   // Public: submit a contact message
@@ -11,6 +12,16 @@ export async function contactsRoutes(app: FastifyInstance) {
       }
 
       const created = await prisma.inscription.create({ data: { name, email, phone, subject, message } });
+
+      // Send confirmation email to visitor (non-blocking)
+      emailService.sendContactConfirmation(email, name, subject).catch(err => {
+        console.error('Failed to send confirmation email:', err);
+      });
+
+      // Send admin notification (non-blocking)
+      emailService.sendContactAdminNotification(name, email, phone || null, subject, message).catch(err => {
+        console.error('Failed to send admin notification:', err);
+      });
 
       return reply.code(201).send({ success: true, data: created, message: 'Message received' });
     } catch (error: any) {

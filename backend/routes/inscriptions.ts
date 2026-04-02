@@ -1,6 +1,7 @@
 // backend/routes/inscriptions.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/db';
+import { emailService } from '../services/emailService';
 
 export async function inscriptionsRoutes(app: FastifyInstance) {
   // Test endpoint (no auth)
@@ -135,6 +136,19 @@ export async function inscriptionsRoutes(app: FastifyInstance) {
               session: { select: { id: true, startDate: true, location: true, capacity: true, available: true } },
             },
           });
+
+          // Send acceptance email to user (non-blocking)
+          const formation = await prisma.formation.findUnique({ where: { id: updatedInscription.formationId } });
+          const fullName = `${inscription.firstName} ${inscription.lastName}`;
+          emailService.sendFormationAcceptanceEmail(
+            inscription.email,
+            fullName,
+            formation?.name || 'Formation',
+            inscription.session.startDate,
+            inscription.session.location
+          ).catch(err => {
+            console.error('Failed to send acceptance email:', err);
+          });
         } else {
           return reply.code(400).send({
             success: false,
@@ -164,6 +178,17 @@ export async function inscriptionsRoutes(app: FastifyInstance) {
               session: { select: { id: true, startDate: true, location: true, capacity: true, available: true } },
             },
           });
+
+          // Send rejection email to user (non-blocking)
+          const formation = await prisma.formation.findUnique({ where: { id: updatedInscription.formationId } });
+          const fullName = `${inscription.firstName} ${inscription.lastName}`;
+          emailService.sendFormationRejectionEmail(
+            inscription.email,
+            fullName,
+            formation?.name || 'Formation'
+          ).catch(err => {
+            console.error('Failed to send rejection email:', err);
+          });
         } else if (inscription.status === 'liste_attente' || inscription.status === 'demande_en_attente') {
           console.log(`Rejecting waitlist inscription ${id} with status ${inscription.status}`);
           // Just mark as cancelled without changing capacity
@@ -174,6 +199,17 @@ export async function inscriptionsRoutes(app: FastifyInstance) {
               formation: { select: { id: true, name: true, slug: true } },
               session: { select: { id: true, startDate: true, location: true, capacity: true, available: true } },
             },
+          });
+
+          // Send rejection email to user (non-blocking)
+          const formation = await prisma.formation.findUnique({ where: { id: updatedInscription.formationId } });
+          const fullName = `${inscription.firstName} ${inscription.lastName}`;
+          emailService.sendFormationRejectionEmail(
+            inscription.email,
+            fullName,
+            formation?.name || 'Formation'
+          ).catch(err => {
+            console.error('Failed to send rejection email:', err);
           });
         } else {
           return reply.code(400).send({

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -873,6 +874,14 @@ export default function AdminDashboard() {
           .mob-menu-btn.open span:nth-child(2){opacity:0;}
           .mob-menu-btn.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
 
+          /* ── Mobile logo ── */
+          .mob-mobile-logo { display:none; }
+          .mob-mobile-logo img { display:block; width:100%; height:100%; object-fit:cover; }
+          @media(max-width:900px) {
+            .mob-mobile-logo { display:flex; justify-content:center; width:48px; height:48px; border-radius:50%; overflow:hidden; border:1px solid rgba(229,90,0,0.6); background:#fff; margin-right:0.75rem; flex-shrink:0; }
+            .mob-mobile-logo img { width:100%; height:100%; object-fit:cover; }
+          }
+
           /* ── MOBILE NAV (slides from right — matches site style) ── */
           .mob-menu{
             position:fixed;top:calc(60px + env(safe-area-inset-top));left:0;right:0;bottom:0;
@@ -927,7 +936,7 @@ export default function AdminDashboard() {
 
           /* ── MAIN ── */
           .admin-main{flex:1;display:flex;flex-direction:column;min-width:0;}
-          .admin-content{flex:1;padding:2rem 1.25rem 110px;max-width:900px;margin:0 auto;width:100%;}
+          .admin-content{padding:0.5rem 1.25rem 110px;max-width:900px;margin:0 auto;width:100%;}
           @media(min-width:900px){.admin-content{padding:3.5rem 3rem 3rem;}}
 
           /* ── PAGE HEADER ── */
@@ -1139,6 +1148,10 @@ export default function AdminDashboard() {
         <div className="admin-main">
           {/* Mobile topbar */}
           <header className="mob-topbar">
+            {/* Mobile circular logo */}
+            <div className="mob-mobile-logo" aria-hidden="true">
+              <Image src="/logo.jpeg" alt="FiSAFi Groupe" width={72} height={72} priority />
+            </div>
             <div className="mob-logo">Fi<span>SAFI</span></div>
             <button className={`mob-menu-btn${navOpen?" open":""}`} onClick={() => setNavOpen(!navOpen)}>
               <span/><span/><span/>

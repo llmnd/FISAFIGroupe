@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import '../styles/globals.css';
 import '../styles/header.css';
 import { useEffect } from 'react';
@@ -41,8 +42,8 @@ function ScrollPersistence() {
     router.events.on('routeChangeStart', onStart);
     router.events.on('routeChangeComplete', onComplete);
 
-    // restore on initial load
-    restoreScroll(router.asPath.split('#')[0]);
+    // Do not restore scroll on initial load (prevents auto-scrolling on first visit).
+    // Scroll restoration still happens on routeChangeComplete when navigating within the app.
 
     return () => {
       router.events.off('routeChangeStart', onStart);
@@ -55,9 +56,11 @@ function ScrollPersistence() {
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider>
-      <ScrollPersistence />
-      <Component {...pageProps} />
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <ScrollPersistence />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
