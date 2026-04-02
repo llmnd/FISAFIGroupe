@@ -489,10 +489,15 @@ export default function AdminDashboard() {
   const fetchFormations = async () => {
     setLoadingFormations(true);
     try {
-      const r = await fetch("/api/formations?limit=100");
+      const token = localStorage.getItem("token");
+      const r = await fetch(buildApiUrl("/api/formations?limit=100"), {
+        headers: { Authorization: `Bearer ${token || ""}` }
+      });
       if (r.ok) {
         const data = await r.json();
         setFormations(data.data?.formations || []);
+      } else {
+        console.error("Fetch formations error:", r.status);
       }
     } catch (err) {
       console.error("Error fetching formations:", err);

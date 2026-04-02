@@ -167,15 +167,12 @@ export async function brochureRoutes(app: FastifyInstance) {
         ...(type && { type }),
       };
 
-      // If publishing, set publishedAt to now
+      // If publishing or unpublishing
       if (published === true) {
         dataToUpdate.published = true;
-        dataToUpdate.publishedAt = new Date();
       }
-      // If unpublishing, clear publishedAt
       else if (published === false) {
         dataToUpdate.published = false;
-        dataToUpdate.publishedAt = null;
       }
 
       const updatedBrochure = await prisma.brochure.update({
