@@ -91,10 +91,7 @@ export async function brochureRoutes(app: FastifyInstance) {
           }
         }
 
-        // Redirect to Cloudinary with download disposition headers
-        reply.header('Content-Disposition', `attachment; filename="${brochure.name}"`);
-        
-        // Fetch and stream file from Cloudinary
+        // Fetch file from Cloudinary
         const fileResponse = await fetch(brochure.fileUrl);
         if (!fileResponse.ok) {
           throw new Error(`Cloudinary returned ${fileResponse.status}`);
@@ -103,17 +100,22 @@ export async function brochureRoutes(app: FastifyInstance) {
         const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
         const contentLength = fileResponse.headers.get('content-length');
         
+        // Convert Web stream to Node.js Buffer
+        const buffer = Buffer.from(await fileResponse.arrayBuffer());
+        
+        // Sanitize filename for content-disposition header
+        const sanitizedFilename = brochure.name
+          .replace(/[^\w\s.-]/g, '_')  // Replace special chars with underscore
+          .replace(/\s+/g, '_')         // Replace spaces with underscore
+          .slice(0, 200);               // Limit length
+        
         reply.type(contentType);
+        reply.header('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
         if (contentLength) {
           reply.header('Content-Length', contentLength);
         }
         
-        // Stream the response
-        if (fileResponse.body) {
-          return reply.send(fileResponse.body);
-        }
-        
-        throw new Error('No response body from Cloudinary');
+        return reply.send(buffer);
       } catch (error) {
         console.error('Error downloading brochure:', error);
         return reply.status(500).send({

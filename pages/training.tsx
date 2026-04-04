@@ -23,15 +23,25 @@ export default function FormationPage() {
   const [brochures, setBrochures] = useState<any[]>([]);
   const [loadingBrochures, setLoadingBrochures] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [hoveredBrochureId, setHoveredBrochureId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchBrochures = async () => {
       try {
+        // Vérifier le cache d'abord
+        const cachedBrochures = sessionStorage.getItem('brochures_cache');
+        if (cachedBrochures) {
+          setBrochures(JSON.parse(cachedBrochures));
+          setLoadingBrochures(false);
+          return;
+        }
+
         const response = await fetch('/api/brochures');
         if (response.ok) {
           const data = await response.json();
-          setBrochures(data.data || []);
+          const brochuresData = data.data || [];
+          setBrochures(brochuresData);
+          // Mettre en cache pour cette session
+          sessionStorage.setItem('brochures_cache', JSON.stringify(brochuresData));
         }
       } catch (error) {
         console.error('Error loading brochures:', error);
@@ -186,8 +196,20 @@ export default function FormationPage() {
       return (
         <div style={{ paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: 64, borderRadius: 2, background: 'rgba(30,64,175,0.04)' }} />
+            <div key={i} style={{ 
+              height: 64, 
+              borderRadius: 2, 
+              background: 'linear-gradient(90deg, rgba(30,64,175,0.04), rgba(30,64,175,0.08), rgba(30,64,175,0.04))',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 2s infinite',
+            }} />
           ))}
+          <style>{`
+            @keyframes shimmer {
+              0% { background-position: 200% 0; }
+              100% { background-position: -200% 0; }
+            }
+          `}</style>
         </div>
       );
     }
@@ -212,7 +234,6 @@ export default function FormationPage() {
           const fileSize = doc.fileSize ? parseInt(doc.fileSize, 10) : 0;
           const displaySize = getFormattedFileSize(fileSize);
           const isAvailable = !!doc.fileUrl;
-          const isHovered = hoveredBrochureId === doc.id;
           const isDownloading = downloadingId === doc.id;
 
           // Utilise un objet style unique sans doublon de propriété
@@ -239,8 +260,6 @@ export default function FormationPage() {
             <button
               key={doc.id}
               onClick={(e) => handleDownload(e, doc)}
-              onMouseEnter={() => isAvailable && setHoveredBrochureId(doc.id)}
-              onMouseLeave={() => setHoveredBrochureId(null)}
               disabled={!isAvailable || isDownloading}
               title={isAvailable ? 'Télécharger' : 'Fichier non disponible'}
               style={buttonStyle}
@@ -253,7 +272,7 @@ export default function FormationPage() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isHovered ? 'var(--blue)' : 'var(--steel)',
+                color: '#ffffff',
                 transition: 'color 0.15s',
                 flexShrink: 0,
               }}>
@@ -264,7 +283,7 @@ export default function FormationPage() {
                   letterSpacing: '0.08em',
                   marginTop: 3,
                   fontFamily: "'Outfit', sans-serif",
-                  color: isHovered ? 'var(--blue)' : 'var(--steel)',
+                  color: '#ffffff',
                   transition: 'color 0.15s',
                 }}>
                   PDF
@@ -316,15 +335,15 @@ export default function FormationPage() {
                 fontSize: 11,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: 'var(--blue)',
-                opacity: isHovered && isAvailable ? 1 : 0,
-                transform: isHovered && isAvailable ? 'translateX(0)' : 'translateX(6px)',
+                color: '#ffffff',
+                opacity: 1,
+                transform: 'translateX(0)',
                 transition: 'opacity 0.15s, transform 0.15s',
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
               }}>
                 {isDownloading ? (
-                  <span style={{ fontSize: 11, color: 'var(--steel)' }}>…</span>
+                  <span style={{ fontSize: 11, color: '#ffffff' }}>…</span>
                 ) : (
                   <>
                     <DownloadIcon />

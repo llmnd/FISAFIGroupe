@@ -28,6 +28,16 @@
   --fh-drawer-top:    var(--fh-h-mobile);
 }
 
+/* Dark mode variables */
+html.dark {
+  --fh-bg:      #0f1419;
+  --fh-border:  #2a2f3d;
+  --fh-text:    #e4e6eb;
+  --fh-muted:   #a0a8b8;
+  --fh-accent:  #4a9eff;
+  --fh-accent2: #ff9f5a;
+}
+
 /*
  * ── Body padding — static, set by CSS only, never touched by JS ──────────
  * The header shrinks while scrolling but the body offset stays fixed at the
@@ -53,7 +63,7 @@ body {
   top: 0; left: 0; right: 0;
   z-index: 1000;
   background: var(--fh-bg);
-  border-bottom: 1px solid var(--fh-border);
+  border-bottom: 0.5px solid rgba(30,64,175,0.04);
   box-shadow: 0 1px 6px rgba(0,0,0,.06);
   width: 100%;
   height: var(--fh-shell-h, var(--fh-h-desktop));
@@ -62,6 +72,7 @@ body {
   isolation: isolate;
   /* Promote to its own GPU layer — prevents compositing issues with children */
   transform: translateZ(0);
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
 /*
@@ -90,14 +101,24 @@ body {
   justify-content: space-between;
   padding: 0 24px;
   height: var(--fh-h-l1);
-  border-bottom: 1px solid var(--fh-border);
+  border-bottom: 0.5px solid rgba(30,64,175,0.04);
 }
 @media (min-width: 901px) {
   .fh-l1 { padding: 0 40px; }
 }
 
 .fh-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
-.fh-logo-img { width: auto; height: var(--fh-h-l1); object-fit: contain; display: block; }
+.fh-logo-img { 
+  width: 100px; 
+  height: 100px; 
+  object-fit: contain; 
+  display: block;
+  border-radius: 50%;
+  background: var(--fh-bg);
+  padding: 8px;
+  transition: background 300ms ease, border-color 300ms ease;
+  border: 0.5px solid rgba(30,64,175,0.04);
+}
 
 .fh-l1-right {
   display: none;
@@ -114,7 +135,7 @@ body {
   align-items: center;
   padding: 0 24px;
   height: var(--fh-h-l2);
-  border-bottom: 1px solid var(--fh-border);
+  border-bottom: 0.5px solid rgba(30,64,175,0.04);
   gap: 16px;
 }
 @media (min-width: 901px) {
@@ -157,8 +178,8 @@ body {
   color: var(--fh-accent);
   background: rgba(0,85,164,.08);
 }
-.fh-nb svg { transition: transform var(--fh-trans) cubic-bezier(0.4, 0, 0.2, 1); }
-.fh-nb[aria-expanded="true"] svg { transform: rotate(180deg); }
+.fh-nl svg, .fh-nb svg { transition: transform var(--fh-trans) cubic-bezier(0.4, 0, 0.2, 1); }
+.fh-nl:hover svg { transform: rotate(20deg); }
 
 /* Dropdown */
 .fh-dd {
@@ -168,7 +189,7 @@ body {
   box-shadow: 0 12px 32px rgba(0,0,0,.12);
   padding: 8px;
   opacity: 0; visibility: hidden; transform: translateY(-8px);
-  transition: opacity var(--fh-trans), transform var(--fh-trans), visibility 0s linear var(--fh-trans);
+  transition: opacity var(--fh-trans), transform var(--fh-trans), visibility 0s linear var(--fh-trans), background 300ms ease, border-color 300ms ease;
   z-index: 200;
   pointer-events: none;
 }
@@ -181,7 +202,7 @@ body {
   display: block; padding: 10px 14px;
   font-size: 13.5px; font-weight: 500; color: var(--fh-text);
   text-decoration: none; border-radius: 6px;
-  transition: background var(--fh-trans), color var(--fh-trans);
+  transition: background var(--fh-trans), color var(--fh-trans), color 300ms ease;
 }
 .fh-dd a:hover { background: rgba(0,85,164,.08); color: var(--fh-accent); font-weight: 600; }
 
@@ -205,6 +226,26 @@ body {
   color: var(--fh-accent);
 }
 .fh-l2-right-dsk .fh-nl:hover { color: var(--fh-accent2); background: transparent; }
+
+/* Dark mode theme toggle button — icon style */
+.fh-l2-right-dsk button[aria-label*="dark"] {
+  padding: 6px !important;
+  gap: 0 !important;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fh-radius);
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: var(--fh-muted);
+  background: transparent;
+  transition: color var(--fh-trans), background var(--fh-trans), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fh-l2-right-dsk button[aria-label*="dark"]:hover {
+  color: var(--fh-accent);
+  background: rgba(0,85,164,.06);
+  transform: rotate(20deg);
+}
 
 /* Search widget */
 .fh-sw { display: flex; align-items: center; position: relative; }
@@ -282,6 +323,19 @@ body {
   transition: color var(--fh-trans), background var(--fh-trans);
 }
 .fh-msb:hover { color: var(--fh-accent); background: rgba(0,85,164,.06); }
+
+/* Mobile dark mode theme toggle button */
+.fh-mob-theme {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border: none; background: none; cursor: pointer;
+  color: var(--fh-muted); border-radius: var(--fh-radius);
+  transition: color var(--fh-trans), background var(--fh-trans), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fh-mob-theme:hover {
+  color: var(--fh-accent);
+  background: rgba(0,85,164,.06);
+  transform: rotate(20deg);
+}
 
 /* ── Socials ── */
 .fh-socials { display: flex; align-items: center; gap: 4px; }
@@ -398,6 +452,89 @@ body {
   transition: color var(--fh-trans), padding-left var(--fh-trans);
 }
 .fh-dsub a:hover { color: var(--fh-accent); padding-left: 40px; font-weight: 600; }
+
+/* Items inside drawer subsections */
+.fh-dsub .fh-drawer-item {
+  padding: 12px 36px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color var(--fh-trans), padding-left var(--fh-trans);
+}
+.fh-dsub .fh-drawer-item:hover {
+  color: var(--fh-accent);
+  padding-left: 40px;
+}
+
+.fh-dsub .fh-drawer-label {
+  font-weight: 500;
+}
+
+/* Drawer sections - Trust & Support */
+.fh-drawer-sections {
+  padding: 0;
+  border-top: 1px solid var(--fh-border);
+  border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-drawer-section {
+  padding: 0;
+  margin-bottom: 20px;
+}
+.fh-drawer-section:last-child {
+  margin-bottom: 0;
+}
+
+.fh-drawer-section-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fh-accent);
+  padding: 0 24px 12px 24px;
+  margin: 0;
+}
+
+.fh-drawer-section-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-drawer-link {
+  display: block;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fh-text);
+  text-decoration: none;
+  transition: color var(--fh-trans), padding-left var(--fh-trans);
+}
+.fh-drawer-link:hover {
+  color: var(--fh-accent);
+  padding-left: 28px;
+}
+
+.fh-drawer-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-drawer-item {
+  display: block;
+  padding: 10px 24px;
+  font-size: 13px;
+  color: var(--fh-text);
+  text-decoration: none;
+  transition: color var(--fh-trans), padding-left var(--fh-trans);
+}
+.fh-drawer-item:hover {
+  color: var(--fh-accent);
+  padding-left: 28px;
+}
+
+.fh-drawer-label {
+  display: block;
+  font-weight: 500;
+}
 
 /* Drawer footer */
 .fh-dfooter {

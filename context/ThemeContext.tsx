@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
@@ -44,10 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always provide the context, even before mounting
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}

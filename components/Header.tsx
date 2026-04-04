@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useLanguage } from "@/context/LanguageContext";
-import type { Language } from "@/context/LanguageContext";
+import { useTheme } from "@/context/ThemeContext";
 
 /* ─── Icons ─── */
 const IconFacebook = () => (
@@ -68,14 +67,27 @@ const IconUser = () => (
     <circle cx="12" cy="7" r="4"/>
   </svg>
 );
-const IconGlobe = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+const IconSun = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
   </svg>
 );
+const IconMoon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
 
 type NavChild = { label: string; href: string };
 type NavItem  = { label: string; href?: string; children?: NavChild[] };
@@ -117,20 +129,17 @@ const LERP_FACTOR   = 0.14;
 const SNAP_EPSILON  = 0.08; // px threshold below which we snap to exact value
 
 export default function Header() {
+  const { theme, toggleTheme } = useTheme();
   const [mobileOpen,     setMobileOpen]     = useState(false);
   const [openDropdown,   setOpenDropdown]   = useState<string | null>(null);
   const [isLoggedIn,     setIsLoggedIn]     = useState(false);
   const [searchOpen,     setSearchOpen]     = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
-  const [langOpen,       setLangOpen]       = useState(false);
   const [mobSearchOpen,  setMobSearchOpen]  = useState(false);
   const [topbarHidden,   setTopbarHidden]   = useState(false);
 
-  const { lang, setLang } = useLanguage();
-
   const navRef         = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const langRef        = useRef<HTMLDivElement>(null);
   const mobSearchRef   = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setIsLoggedIn(!!localStorage.getItem("token")); }, []);
@@ -244,9 +253,6 @@ export default function Header() {
         setOpenDropdown(null);
         setSearchOpen(false);
       }
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false);
-      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -266,19 +272,7 @@ export default function Header() {
   useEffect(() => { if (searchOpen)    setTimeout(() => searchInputRef.current?.focus(), 50); }, [searchOpen]);
   useEffect(() => { if (mobSearchOpen) setTimeout(() => mobSearchRef.current?.focus(),   50); }, [mobSearchOpen]);
 
-  /* Debug language changes */
-  useEffect(() => {
-    console.log('📍 Header rendering with lang:', lang);
-  }, [lang]);
-
   const closeMobile = useCallback(() => { setMobileOpen(false); setMobileExpanded(null); }, []);
-  const selectLang  = useCallback((l: Language) => { 
-    console.log('🔄 selectLang called with:', l);
-    setLang(l); 
-    setLangOpen(false);
-    // Log after selection for debugging
-    console.log('✅ Language callback completed');
-  }, [setLang]);
 
   return (
     <>
@@ -308,29 +302,9 @@ export default function Header() {
               <a href="https://www.linkedin.com/company/fisafi-groupe-suarl/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--li" aria-label="LinkedIn"><IconLinkedin /></a>
               <a href="#" className="fh-soc fh-soc--ig" aria-label="Instagram"><IconInstagram /></a>
             </nav>
-            <div className="fh-lang-wrap" ref={langRef}>
-              <button
-                className="fh-lang-btn"
-                aria-label="Changer de langue"
-                aria-expanded={langOpen}
-                onClick={() => setLangOpen(v => !v)}
-              >
-                <IconGlobe /> {lang} <IconChevron />
-              </button>
-              <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
-                {(["FR", "EN"] as Language[]).map(l => (
-                  <button
-                    key={l}
-                    className={`fh-lang-opt${lang === l ? " active" : ""}`}
-                    role="option"
-                    aria-selected={lang === l}
-                    onClick={() => selectLang(l)}
-                  >
-                    {l === "FR" ? "🇫🇷 Français" : "🇬🇧 English"}
-                    {lang === l && <span className="fh-lang-check"><IconCheck /></span>}
-                  </button>
-                ))}
-              </div>
+            <div className="fh-flags">
+              <span className="fh-flag" title="Tchad">🇹🇩</span>
+              <span className="fh-flag" title="Sénégal">🇸🇳</span>
             </div>
           </div>
         </div>
@@ -349,29 +323,9 @@ export default function Header() {
 
           {/* Mobile right: lang */}
           <div className="fh-l2-mob" style={{ marginLeft: "auto" }}>
-            <div className="fh-lang-wrap">
-              <button
-                className="fh-lang-btn"
-                aria-label="Langue"
-                aria-expanded={langOpen}
-                onClick={() => setLangOpen(v => !v)}
-              >
-                <IconGlobe /> {lang} <IconChevron />
-              </button>
-              <div className={`fh-lang-dd${langOpen ? " open" : ""}`} role="listbox">
-                {(["FR", "EN"] as Language[]).map(l => (
-                  <button
-                    key={l}
-                    className={`fh-lang-opt${lang === l ? " active" : ""}`}
-                    role="option"
-                    aria-selected={lang === l}
-                    onClick={() => selectLang(l)}
-                  >
-                    {l === "FR" ? "🇫🇷 Français" : "🇬🇧 English"}
-                    {lang === l && <span className="fh-lang-check"><IconCheck /></span>}
-                  </button>
-                ))}
-              </div>
+            <div className="fh-flags">
+              <span className="fh-flag" title="Tchad">🇹🇩</span>
+              <span className="fh-flag" title="Sénégal">🇸🇳</span>
             </div>
           </div>
 
@@ -410,6 +364,15 @@ export default function Header() {
 
           {/* Desktop: connexion + search */}
           <div className="fh-l2-right-dsk">
+            <button
+              className="fh-nl"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Désactiver le dark mode' : 'Activer le dark mode'}
+              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              {theme === 'dark' ? <IconSun /> : <IconMoon />}
+            </button>
             <Link
               href={isLoggedIn ? "/dashboard" : "/login"}
               className="fh-nl"
@@ -465,6 +428,16 @@ export default function Header() {
               <IconSearch />
             </button>
           </div>
+
+          {/* Mobile: dark mode toggle */}
+          <button
+            className="fh-mob-theme"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Désactiver le dark mode' : 'Activer le dark mode'}
+            title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+          >
+            {theme === 'dark' ? <IconSun /> : <IconMoon />}
+          </button>
         </div>
       </header>
 
@@ -498,6 +471,48 @@ export default function Header() {
               </div>
             )
           )}
+        </div>
+
+        {/* Trust & Support sections */}
+        <div className="fh-drawer-sections">
+          {/* Confiance & Crédibilité */}
+          <div className="fh-dm">
+            <button
+              className={`fh-dmt${mobileExpanded === "trust" ? " expanded" : ""}`}
+              onClick={() => setMobileExpanded(v => v === "trust" ? null : "trust")}
+            >
+              Confiance & Crédibilité <IconChevron />
+            </button>
+            <div className={`fh-dsub${mobileExpanded === "trust" ? " open" : ""}`}>
+              <Link href="/privacy" className="fh-drawer-link" onClick={closeMobile}>
+                Politique de confidentialité
+              </Link>
+              <Link href="/terms" className="fh-drawer-link" onClick={closeMobile}>
+                Conditions d'utilisation
+              </Link>
+            </div>
+          </div>
+
+          {/* Support & Contact */}
+          <div className="fh-dm">
+            <button
+              className={`fh-dmt${mobileExpanded === "support" ? " expanded" : ""}`}
+              onClick={() => setMobileExpanded(v => v === "support" ? null : "support")}
+            >
+              Support & Contact <IconChevron />
+            </button>
+            <div className={`fh-dsub${mobileExpanded === "support" ? " open" : ""}`}>
+              <div className="fh-drawer-item">
+                <span className="fh-drawer-label">FiSAFi Groupe</span>
+              </div>
+              <a href="mailto:contact@fisafi.com" className="fh-drawer-item" onClick={closeMobile}>
+                <span className="fh-drawer-label">📧 Contact Support</span>
+              </a>
+              <a href="https://wa.me/221771234567" target="_blank" rel="noopener noreferrer" className="fh-drawer-item">
+                <span className="fh-drawer-label">💬 WhatsApp Assistance</span>
+              </a>
+            </div>
+          </div>
         </div>
 
         <div className="fh-dfooter">
