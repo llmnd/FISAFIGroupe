@@ -3,8 +3,12 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import '../styles/globals.css';
 import '../styles/header.css';
+import '../styles/floating-logo.css';
+import '../styles/carousel.css';
+import '../styles/footer-enhanced.css';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import FloatingLogo from '@/components/FloatingLogo';
 
 function ScrollPersistence() {
   const router = useRouter();
@@ -60,6 +64,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider>
         <ScrollPersistence />
         <Component {...pageProps} />
+        <FloatingLogo />
       </ThemeProvider>
     </LanguageProvider>
   );

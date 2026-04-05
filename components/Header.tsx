@@ -3,535 +3,494 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useTheme } from "@/context/ThemeContext";
 
-/* ─── Icons ─── */
-const IconFacebook = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+/* ─── SVG Icons ─────────────────────────────────────────── */
+const IconStar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>
 );
-const IconLinkedin = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4V9h4v1.5A6 6 0 0 1 16 8z"/>
-    <rect x="2" y="9" width="4" height="12"/>
-    <circle cx="4" cy="4" r="2"/>
-  </svg>
-);
-const IconInstagram = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
-const IconTwitter = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
-  </svg>
-);
-const IconYoutube = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.4a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/>
-  </svg>
-);
+
 const IconSearch = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8"/>
-    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <path d="m21 21-4.35-4.35"/>
   </svg>
 );
-const IconChevron = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="6 9 12 15 18 9"/>
+
+const IconPlus = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.5" strokeLinecap="round">
+    <path d="M12 5v14M5 12h14"/>
   </svg>
 );
-const IconCheck = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="20 6 9 17 4 12"/>
+
+const IconBell = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </svg>
 );
+
+const IconShare = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3"/>
+    <circle cx="6" cy="12" r="3"/>
+    <circle cx="18" cy="19" r="3"/>
+    <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/>
+  </svg>
+);
+
 const IconUser = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
   </svg>
 );
-const IconSun = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/>
-    <line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/>
-    <line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-  </svg>
-);
-const IconMoon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+
+const IconFacebook = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
   </svg>
 );
 
+const IconLinkedin = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+  </svg>
+);
 
-type NavChild = { label: string; href: string };
-type NavItem  = { label: string; href?: string; children?: NavChild[] };
+const IconInstagram = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.117.63c-.794.297-1.473.702-2.082 1.31-.608.609-1.013 1.288-1.31 2.082C.428 4.905.226 5.775.166 7.053.015 8.333 0 8.74 0 12c0 3.26.015 3.667.072 4.947.06 1.277.261 2.148.558 2.936.297.794.702 1.473 1.31 2.082.609.608 1.288 1.013 2.082 1.31.788.297 1.658.499 2.936.559C8.333 23.985 8.74 24 12 24s3.667-.015 4.947-.072c1.28-.06 2.148-.262 2.936-.559.794-.297 1.473-.702 2.082-1.31.608-.609 1.013-1.288 1.31-2.082.297-.788.5-1.658.559-2.936C23.985 15.667 24 15.26 24 12s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.559-2.936-.297-.793-.702-1.473-1.31-2.082-.609-.608-1.288-1.013-2.082-1.31C19.148.262 18.28.06 17 0 15.667.015 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.56.217.96.477 1.382.896.419.42.679.82.896 1.381.17.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85 0 3.204-.013 3.585-.07 4.85-.053 1.17-.244 1.805-.413 2.227-.217.56-.477.96-.896 1.382-.42.419-.822.679-1.382.896-.422.17-1.057.36-2.227.413-1.265.057-1.645.07-4.85.07-3.204 0-3.584-.013-4.849-.07-1.17-.053-1.805-.244-2.227-.413-.56-.217-.96-.477-1.382-.896-.419-.42-.679-.822-.896-1.382-.17-.422-.36-1.057-.413-2.227-.057-1.265-.07-1.646-.07-4.85 0-3.204.013-3.584.07-4.849.053-1.17.244-1.805.413-2.227.217-.56.477-.96.896-1.382.42-.419.822-.679 1.382-.896.422-.17 1.057-.36 2.227-.413C8.416 2.173 8.796 2.16 12 2.16z"/>
+    <path d="M12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+  </svg>
+);
+
+/* ─── Nav Items ──────────────────────────────────────────── */
+type NavItem = { label: string; href: string };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Accueil", href: "/" },
-  {
-    label: "Nos pôles d'activités",
-    children: [{ label: "Services", href: "/services" }],
-  },
-  {
-    label: "Ressources",
-    children: [
-      { label: "Actualités", href: "/news" },
-      { label: "Formation",  href: "/training" },
-      { label: "Sessions",   href: "/sessions" },
-    ],
-  },
-  { label: "Contact", href: "/contact" },
+  { label: "Accueil",    href: "/" },
+  { label: "Services",   href: "/services" },
+  { label: "Formation",  href: "/training" },
+  { label: "Actualités", href: "/news" },
+  { label: "Sessions",   href: "/sessions" },
+  { label: "Contact",    href: "/contact" },
 ];
 
-/*
- * Heights — single source of truth shared by JS and CSS custom properties.
- * CSS variables in :root must match these values.
- */
-const H_L1        = 110; // logo row
-const H_L2        =  44; // nav / socials row
-const H_L3        =  44; // burger row (mobile only)
-const H_MOBILE    = H_L1 + H_L2 + H_L3; // 198
-const H_DESKTOP   = H_L1 + H_L2;        // 154
-const H_COLLAPSED = H_L3;               //  44
+const SOCIALS = [
+  { href: "https://www.facebook.com/share/179K7oUPAA/",               Icon: IconFacebook,  label: "Facebook",  className: "" },
+  { href: "https://www.linkedin.com/company/fisafi-groupe-suarl/",     Icon: IconLinkedin,  label: "LinkedIn",  className: "" },
+  { href: "https://www.instagram.com/",                                Icon: IconInstagram, label: "Instagram", className: "instagram" },
+];
 
-/*
- * Lerp factor — controls how fast the header catches up to the scroll target.
- * 0.12 = very smooth / slightly floaty
- * 0.18 = snappier but still silky
- */
-const LERP_FACTOR   = 0.14;
-const SNAP_EPSILON  = 0.08; // px threshold below which we snap to exact value
-
+/* ─── Component ──────────────────────────────────────────── */
 export default function Header() {
-  const { theme, toggleTheme } = useTheme();
-  const [mobileOpen,     setMobileOpen]     = useState(false);
-  const [openDropdown,   setOpenDropdown]   = useState<string | null>(null);
-  const [isLoggedIn,     setIsLoggedIn]     = useState(false);
-  const [searchOpen,     setSearchOpen]     = useState(false);
-  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
-  const [mobSearchOpen,  setMobSearchOpen]  = useState(false);
-  const [topbarHidden,   setTopbarHidden]   = useState(false);
+  const [mobileOpen,   setMobileOpen]   = useState(false);
+  const [showSocials,  setShowSocials]  = useState(false);
+  const [showSearch,   setShowSearch]   = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [scrolled,     setScrolled]     = useState(false);
+  const [scrollPct,    setScrollPct]    = useState(0);
+  const [isLoggedIn,   setIsLoggedIn]   = useState(false);
+  const [activeLink,   setActiveLink]   = useState("/");
+  const [socialPopupStyle, setSocialPopupStyle] = useState<React.CSSProperties>({});
 
-  const navRef         = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const mobSearchRef   = useRef<HTMLInputElement>(null);
+  const headerRef  = useRef<HTMLElement>(null);
+  const socialsRef = useRef<HTMLDivElement>(null);
+  const searchRef  = useRef<HTMLInputElement>(null);
+  const shareButtonRef = useRef<HTMLButtonElement>(null);
+  const socialPopupRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setIsLoggedIn(!!localStorage.getItem("token")); }, []);
-
-  /* Lock body scroll when mobile drawer is open */
-  useEffect(() => { document.body.style.overflow = mobileOpen ? "hidden" : ""; }, [mobileOpen]);
-
-  /*
-   * ─────────────────────────────────────────────────────────────────────────
-   * SMOOTH SCROLL — lerp-based rAF loop
-   * ─────────────────────────────────────────────────────────────────────────
-   *
-   * How it works:
-   *   • `target`  = the raw clamped scroll value we WANT to reach (0–H_L1)
-   *   • `current` = the animated value we are currently AT (chases target)
-   *   • Each rAF frame: current += (target - current) * LERP_FACTOR
-   *   • When |target - current| < SNAP_EPSILON we snap and stop the loop.
-   *   • On the next scroll event we restart the loop.
-   *
-   * Why this eliminates jitter:
-   *   • No direct binding of scroll position → CSS variable (which skips frames)
-   *   • All DOM writes happen inside a single rAF callback per frame
-   *   • The spacer <div> absorbs header height instead of body padding-top
-   *     (body padding changes trigger a full layout; div height is cheaper)
-   *   • GPU compositing: layers use translate3d, isolate, will-change
-   * ─────────────────────────────────────────────────────────────────────────
-   */
+  /* Auth check */
   useEffect(() => {
-    let rafId        = 0;
-    let current      = 0;
-    let target       = 0;
-    let prevHidden   = false;
-    let prevShellH   = -1;
-
-    // Cache isMobile so we don't recompute every frame
-    let isMobile = window.innerWidth <= 900;
-
-    // Write all CSS variables in one batch
-    const applyCSS = (offset: number) => {
-      const fullH  = isMobile ? H_MOBILE    : H_DESKTOP;
-      const minH   = isMobile ? H_COLLAPSED : H_L2;
-      const shellH = Math.max(fullH - offset, minH);
-
-      // Only touch the DOM when something actually changed
-      if (shellH !== prevShellH) {
-        prevShellH = shellH;
-
-        const rs = document.documentElement.style;
-        rs.setProperty("--fh-scroll-offset", `-${offset}px`);
-        rs.setProperty("--fh-shell-h",        `${shellH}px`);
-        rs.setProperty("--fh-drawer-top",      `${shellH}px`);
-      }
-
-      // Sync React state only when crossing the threshold
-      const hidden = offset >= H_L1 - SNAP_EPSILON;
-      if (hidden !== prevHidden) {
-        prevHidden = hidden;
-        setTopbarHidden(hidden);
-      }
-    };
-
-    // The rAF loop — runs only while unsettled
-    const frame = () => {
-      rafId = 0;
-
-      current += (target - current) * LERP_FACTOR;
-      if (Math.abs(target - current) < SNAP_EPSILON) current = target;
-
-      applyCSS(current);
-
-      if (current !== target) {
-        rafId = requestAnimationFrame(frame);
-      }
-    };
-
-    const scheduleFrame = () => {
-      if (!rafId) rafId = requestAnimationFrame(frame);
-    };
-
-    const onScroll = () => {
-      target = Math.min(window.scrollY, H_L1);
-      scheduleFrame();
-    };
-
-    const onResize = () => {
-      isMobile  = window.innerWidth <= 900;
-      prevShellH = -1; // force CSS update on next frame
-      target    = Math.min(window.scrollY, H_L1);
-      scheduleFrame();
-    };
-
-    // Initialise synchronously (no scroll yet)
-    target  = Math.min(window.scrollY, H_L1);
-    current = target;
-    applyCSS(current);
-
-    window.addEventListener("scroll", onScroll,  { passive: true });
-    window.addEventListener("resize", onResize,   { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (rafId) cancelAnimationFrame(rafId);
-    };
+    setIsLoggedIn(!!localStorage.getItem("token"));
   }, []);
 
-  /* Close dropdowns on outside click */
+  /* Body scroll lock when drawer open */
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+  }, [mobileOpen]);
+
+  /* Scroll → progress bar + header shrink + update social bar position */
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.scrollY;
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      const isScrolled = scrollTop > 10;
+      setScrolled(isScrolled);
+      setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
+      
+      // Update --header-h and --drawer-top CSS variables for elements to follow
+      const newHeight = isScrolled ? "54px" : "62px";
+      document.documentElement.style.setProperty("--header-h", newHeight);
+      document.documentElement.style.setProperty("--drawer-top", newHeight);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Click outside to close popups */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null);
-        setSearchOpen(false);
+      if (
+        socialPopupRef.current &&
+        !socialPopupRef.current.contains(e.target as Node) &&
+        shareButtonRef.current &&
+        !shareButtonRef.current.contains(e.target as Node)
+      ) {
+        setShowSocials(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /* Listen for external open request */
+  /* Focus search input when overlay opens */
   useEffect(() => {
-    const handler = () => {
-      setMobileOpen(true);
-      window.requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+    if (showSearch) setTimeout(() => searchRef.current?.focus(), 80);
+  }, [showSearch]);
+
+  /* Keyboard shortcuts */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearch(v => !v);
+      }
+      if (e.key === "Escape") {
+        setShowSearch(false);
+        setShowSocials(false);
+        setMobileOpen(false);
+      }
     };
-    window.addEventListener("open-mobile-drawer", handler as EventListener);
-    return () => window.removeEventListener("open-mobile-drawer", handler as EventListener);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  /* Focus search inputs when opened */
-  useEffect(() => { if (searchOpen)    setTimeout(() => searchInputRef.current?.focus(), 50); }, [searchOpen]);
-  useEffect(() => { if (mobSearchOpen) setTimeout(() => mobSearchRef.current?.focus(),   50); }, [mobSearchOpen]);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  const closeMobile = useCallback(() => { setMobileOpen(false); setMobileExpanded(null); }, []);
+  /* Compute popup position dynamically */
+  const handleToggleSocials = useCallback(() => {
+    setShowSocials(v => {
+      const next = !v;
+      if (next && shareButtonRef.current) {
+        const btn = shareButtonRef.current.getBoundingClientRect();
+        const POPUP_WIDTH = 240; // 3 × 72px + 2 × 8px gap + 2 × 14px padding
+        const MARGIN = 12;       // screen margin
+        const viewportW = window.innerWidth;
+
+        // Vertical position: just below the button
+        const top = btn.bottom + MARGIN;
+
+        // Horizontal position: try to align with button's left edge,
+        // but clamp to stay in viewport
+        let left = btn.left;
+        if (left + POPUP_WIDTH > viewportW - MARGIN) {
+          // Overflows right → anchor to right of button
+          left = btn.right - POPUP_WIDTH;
+        }
+        left = Math.max(MARGIN, left); // never off-screen left
+
+        setSocialPopupStyle({ top, left, right: "auto", position: "fixed" });
+      }
+      return next;
+    });
+  }, []);
+
+  /* Shared socials grid */
+  const SocialsGrid = () => (
+    <div className="social-grid">
+      {SOCIALS.map(({ href, Icon, label, className }, i) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`social-item ${className}`}
+          style={{ "--i": i } as React.CSSProperties}
+        >
+          <Icon />
+          <span>{label}</span>
+        </a>
+      ))}
+    </div>
+  );
 
   return (
     <>
-
-
+      {/* ── Header ── */}
       <header
-        className={`fh${topbarHidden ? " topbar-hidden" : ""}`}
-        ref={navRef}
+        ref={headerRef}
+        className={`header${scrolled ? " scrolled" : ""}`}
         suppressHydrationWarning
       >
-        {/* ══ LAYER 1 — Logo ══ */}
-        <div className="fh-l1" suppressHydrationWarning>
-          <Link href="/" className="fh-logo">
-            <Image
-              src="/logo.jpeg"
-              alt="FiSAFi Groupe"
-              width={160} height={72}
-              className="fh-logo-img"
-              priority
-            />
-          </Link>
+        {/* Logo */}
+        <Link href="/" className="header-logo" onClick={(e) => { e.preventDefault(); setShowInfoModal(true); }}>
+          <Image
+            src="/logo.jpeg"
+            alt="FiSAFi Groupe"
+            width={50}
+            height={50}
+            priority
+            className="header-logo-image"
+          />
+        </Link>
 
-          {/* Desktop only: socials + lang */}
-          <div className="fh-l1-right">
-            <nav className="fh-socials" aria-label="Réseaux sociaux">
-              <a href="https://www.facebook.com/share/179K7oUPAA/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--fb" aria-label="Facebook"><IconFacebook /></a>
-              <a href="https://www.linkedin.com/company/fisafi-groupe-suarl/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--li" aria-label="LinkedIn"><IconLinkedin /></a>
-              <a href="#" className="fh-soc fh-soc--ig" aria-label="Instagram"><IconInstagram /></a>
-            </nav>
-            <div className="fh-flags">
-              <span className="fh-flag" title="Tchad">🇹🇩</span>
-              <span className="fh-flag" title="Sénégal">🇸🇳</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ══ LAYER 2 — Mobile: socials + lang  |  Desktop: nav + actions ══ */}
-        <div className="fh-l2">
-
-          {/* Mobile left: socials */}
-          <div className="fh-l2-mob">
-            <nav className="fh-socials" aria-label="Réseaux sociaux">
-              <a href="https://www.facebook.com/share/179K7oUPAA/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--fb" aria-label="Facebook"><IconFacebook /></a>
-              <a href="https://www.linkedin.com/company/fisafi-groupe-suarl/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--li" aria-label="LinkedIn"><IconLinkedin /></a>
-              <a href="#" className="fh-soc fh-soc--ig" aria-label="Instagram"><IconInstagram /></a>
-            </nav>
-          </div>
-
-          {/* Mobile right: lang */}
-          <div className="fh-l2-mob" style={{ marginLeft: "auto" }}>
-            <div className="fh-flags">
-              <span className="fh-flag" title="Tchad">🇹🇩</span>
-              <span className="fh-flag" title="Sénégal">🇸🇳</span>
-            </div>
-          </div>
-
-          {/* Desktop: nav links */}
-          <nav className="fh-nav" aria-label="Navigation principale">
-            {NAV_ITEMS.map(item =>
-              item.children ? (
-                <div
-                  className="fh-ni"
-                  key={item.label}
-                  onMouseEnter={() => setOpenDropdown(item.label)}
-                  onMouseLeave={() => setOpenDropdown(null)}
+        {/* Desktop Nav */}
+        <nav aria-label="Navigation principale">
+          <ul className="header-nav">
+            {NAV_ITEMS.map(({ label, href }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className={`header-nav-link${activeLink === href ? " active" : ""}`}
+                  onClick={() => setActiveLink(href)}
                 >
-                  <button
-                    className="fh-nb"
-                    aria-expanded={openDropdown === item.label}
-                    onClick={() => setOpenDropdown(v => v === item.label ? null : item.label)}
-                  >
-                    {item.label} <IconChevron />
-                  </button>
-                  <div className={`fh-dd${openDropdown === item.label ? " open" : ""}`}>
-                    {item.children.map(c => (
-                      <Link key={c.href} href={c.href} onClick={() => setOpenDropdown(null)}>
-                        {c.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="fh-ni" key={item.label}>
-                  <Link href={item.href!} className="fh-nl">{item.label}</Link>
-                </div>
-              )
-            )}
-          </nav>
-
-          {/* Desktop: connexion + search */}
-          <div className="fh-l2-right-dsk">
-            <button
-              className="fh-nl"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Désactiver le dark mode' : 'Activer le dark mode'}
-              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              {theme === 'dark' ? <IconSun /> : <IconMoon />}
-            </button>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
-              className="fh-nl"
-              style={{ color: isLoggedIn ? "var(--fh-accent2)" : undefined }}
-            >
-              <IconUser /> {isLoggedIn ? "Dashboard" : "Connexion"}
-            </Link>
-            <div className={`fh-sw${searchOpen ? " open" : ""}`} role="search">
-              <button className="fh-sb" aria-label="Rechercher" onClick={() => setSearchOpen(v => !v)}>
-                <IconSearch />
-              </button>
-              <input
-                ref={searchInputRef}
-                className="fh-si"
-                placeholder="Rechercher…"
-                onKeyDown={e => {
-                  if (e.key === "Escape") setSearchOpen(false);
-                  if (e.key === "Enter") {
-                    const q = (e.target as HTMLInputElement).value.trim();
-                    if (q) window.location.href = `/search?q=${encodeURIComponent(q)}`;
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ══ LAYER 3 — Burger + Search (mobile only) ══ */}
-        <div className="fh-l3">
-          <button
-            className={`fh-burger${mobileOpen ? " open" : ""}`}
-            aria-label="Menu"
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen(v => !v)}
-          >
-            <span /><span /><span />
-          </button>
-
-          <div className={`fh-mob-search${mobSearchOpen ? " open" : ""}`}>
-            <input
-              ref={mobSearchRef}
-              className="fh-mob-search-input"
-              placeholder="Rechercher…"
-              onKeyDown={e => {
-                if (e.key === "Escape") setMobSearchOpen(false);
-                if (e.key === "Enter") {
-                  const q = (e.target as HTMLInputElement).value.trim();
-                  if (q) window.location.href = `/search?q=${encodeURIComponent(q)}`;
-                }
-              }}
-            />
-            <button className="fh-msb" aria-label="Rechercher" onClick={() => setMobSearchOpen(v => !v)}>
-              <IconSearch />
-            </button>
-          </div>
-
-          {/* Mobile: dark mode toggle */}
-          <button
-            className="fh-mob-theme"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Désactiver le dark mode' : 'Activer le dark mode'}
-            title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-          >
-            {theme === 'dark' ? <IconSun /> : <IconMoon />}
-          </button>
-        </div>
-      </header>
-
-      {/* ══ Mobile drawer ══ */}
-      <div
-        className={`fh-drawer${mobileOpen ? " open" : ""}`}
-        role="navigation"
-        aria-label="Menu mobile"
-      >
-        <div>
-          {NAV_ITEMS.map(item =>
-            item.children ? (
-              <div className="fh-dm" key={item.label}>
-                <button
-                  className={`fh-dmt${mobileExpanded === item.label ? " expanded" : ""}`}
-                  onClick={() => setMobileExpanded(v => v === item.label ? null : item.label)}
-                >
-                  {item.label} <IconChevron />
-                </button>
-                <div className={`fh-dsub${mobileExpanded === item.label ? " open" : ""}`}>
-                  {item.children.map(c => (
-                    <Link key={c.href} href={c.href} onClick={closeMobile}>{c.label}</Link>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="fh-dm" key={item.label}>
-                <Link href={item.href!} className="fh-dml" onClick={closeMobile}>
-                  {item.label}
+                  {label}
                 </Link>
-              </div>
-            )
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Action zone */}
+        <div className="header-actions">
+          {/* Search */}
+          <button
+            className="header-icon-btn"
+            onClick={() => setShowSearch(true)}
+            aria-label="Rechercher"
+            title="Rechercher (⌘K)"
+          >
+            <IconSearch />
+          </button>
+
+          {/* Plus */}
+          <button
+            className="header-plus-btn"
+            aria-label="Nouveau"
+            title="Nouveau"
+          >
+            <IconPlus />
+          </button>
+
+          <div className="header-divider" />
+
+          <div className="header-divider" />
+
+          {/* Avatar / Login */}
+          {isLoggedIn ? (
+            <Link href="/dashboard" className="header-avatar-btn" aria-label="Mon compte">
+              <div className="header-avatar-inner">FS</div>
+              <span className="header-avatar-badge" aria-hidden="true" />
+            </Link>
+          ) : (
+            <Link href="/login" className="header-login-btn" aria-label="Connexion">
+              <IconUser />
+            </Link>
           )}
         </div>
 
-        {/* Trust & Support sections */}
-        <div className="fh-drawer-sections">
-          {/* Confiance & Crédibilité */}
-          <div className="fh-dm">
-            <button
-              className={`fh-dmt${mobileExpanded === "trust" ? " expanded" : ""}`}
-              onClick={() => setMobileExpanded(v => v === "trust" ? null : "trust")}
-            >
-              Confiance & Crédibilité <IconChevron />
-            </button>
-            <div className={`fh-dsub${mobileExpanded === "trust" ? " open" : ""}`}>
-              <Link href="/privacy" className="fh-drawer-link" onClick={closeMobile}>
-                Politique de confidentialité
-              </Link>
-              <Link href="/terms" className="fh-drawer-link" onClick={closeMobile}>
-                Conditions d'utilisation
-              </Link>
-            </div>
-          </div>
+        {/* Mobile Burger */}
+        <button
+          className={`header-burger${mobileOpen ? " open" : ""}`}
+          onClick={() => setMobileOpen(v => !v)}
+          aria-label="Menu"
+          aria-expanded={mobileOpen}
+        >
+          <span className="burger-line" />
+          <span className="burger-line" />
+          <span className="burger-line" />
+        </button>
 
-          {/* Support & Contact */}
-          <div className="fh-dm">
-            <button
-              className={`fh-dmt${mobileExpanded === "support" ? " expanded" : ""}`}
-              onClick={() => setMobileExpanded(v => v === "support" ? null : "support")}
-            >
-              Support & Contact <IconChevron />
-            </button>
-            <div className={`fh-dsub${mobileExpanded === "support" ? " open" : ""}`}>
-              <div className="fh-drawer-item">
-                <span className="fh-drawer-label">FiSAFi Groupe</span>
-              </div>
-              <a href="mailto:contact@fisafi.com" className="fh-drawer-item" onClick={closeMobile}>
-                <span className="fh-drawer-label">📧 Contact Support</span>
-              </a>
-              <a href="https://wa.me/221771234567" target="_blank" rel="noopener noreferrer" className="fh-drawer-item">
-                <span className="fh-drawer-label">💬 WhatsApp Assistance</span>
-              </a>
-            </div>
-          </div>
+        {/* Progress Bar */}
+        <div className="header-progress" aria-hidden="true">
+          <div
+            className="header-progress-fill"
+            style={{ width: `${scrollPct}%` }}
+          />
         </div>
+      </header>
 
-        <div className="fh-dfooter">
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/login"}
-            className="fh-dcta"
-            onClick={closeMobile}
-          >
-            <IconUser /> {isLoggedIn ? "Dashboard" : "Connexion"}
-          </Link>
-          <nav className="fh-dsocials" aria-label="Réseaux sociaux">
-            <a href="https://www.facebook.com/share/179K7oUPAA/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--fb" aria-label="Facebook"><IconFacebook /></a>
-            <a href="https://www.linkedin.com/company/fisafi-groupe-suarl/" target="_blank" rel="noopener noreferrer" className="fh-soc fh-soc--li" aria-label="LinkedIn"><IconLinkedin /></a>
-            <a href="#" className="fh-soc fh-soc--tw" aria-label="Twitter"><IconTwitter /></a>
-            <a href="#" className="fh-soc fh-soc--ig" aria-label="Instagram"><IconInstagram /></a>
-            <a href="#" className="fh-soc fh-soc--yt" aria-label="YouTube"><IconYoutube /></a>
-          </nav>
+      {/* ── Social & Flags Bar ── */}
+      <div 
+        className="header-social-flags-bar"
+        style={{ opacity: Math.max(0, 1 - scrollPct / 30) }}
+      >
+        <div className="bar-content">
+          <div className="bar-socials">
+            <button
+              ref={shareButtonRef}
+              className="header-icon-btn"
+              onClick={handleToggleSocials}
+              aria-label="Réseaux sociaux"
+              title="Réseaux sociaux"
+              aria-expanded={showSocials}
+              aria-haspopup="true"
+            >
+              <IconShare />
+            </button>
+            <div
+              ref={socialPopupRef}
+              className={`header-social-popup${showSocials ? " open" : ""}`}
+              style={socialPopupStyle}
+              role="menu"
+            >
+              <SocialsGrid />
+            </div>
+          </div>
+
+          <div className="bar-flags">
+            <span className="flag">🇸🇳</span>
+            <div className="flags-divider"></div>
+            <span className="flag">🇹🇩</span>
+          </div>
         </div>
       </div>
+
+      {/* ── Mobile Drawer ── */}
+      <nav
+        className={`header-drawer${mobileOpen ? " open" : ""}`}
+        aria-label="Menu mobile"
+      >
+        <div className="header-drawer-inner">
+          <ul className="header-drawer-nav">
+            {NAV_ITEMS.map(({ label, href }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className={`header-drawer-link${activeLink === href ? " active" : ""}`}
+                  onClick={() => { setActiveLink(href); closeMobile(); }}
+                >
+                  {label}
+                  <span className="drawer-chevron">›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div className="header-drawer-footer">
+            <Link
+              href={isLoggedIn ? "/dashboard" : "/login"}
+              className="header-drawer-cta"
+              onClick={closeMobile}
+            >
+              <IconUser />
+              {isLoggedIn ? "Dashboard" : "Connexion"}
+            </Link>
+
+            <div className="header-drawer-socials">
+              {SOCIALS.map(({ href, Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="header-drawer-social"
+                  aria-label={label}
+                >
+                  <Icon />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Search Overlay ── */}
+      {showSearch && (
+        <div
+          className="header-search-overlay open"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSearch(false); }}
+          role="dialog"
+          aria-label="Recherche"
+          style={{ position: 'fixed', inset: 0, zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="header-search-box">
+            <IconSearch />
+            <input
+              ref={searchRef}
+              className="header-search-input"
+              type="text"
+              placeholder="Rechercher…"
+              aria-label="Recherche"
+            />
+            <span className="header-search-kbd">Échap</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Info Modal ── */}
+      {showInfoModal && (
+        <div
+          className="header-info-overlay"
+          onClick={() => setShowInfoModal(false)}
+          role="dialog"
+          aria-label="À propos de FiSAFi Groupe"
+          style={{ position: 'fixed', inset: 0, zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="header-info-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="header-info-close"
+              onClick={() => setShowInfoModal(false)}
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+
+            <div className="header-info-content">
+              <div className="header-info-logo">
+                <Image
+                  src="/logo.jpeg"
+                  alt="FiSAFi Groupe"
+                  width={80}
+                  height={80}
+                  priority
+                  style={{ borderRadius: "50%", objectFit: "cover" }}
+                />
+              </div>
+
+              <h2 className="header-info-title">FiSAFi Groupe</h2>
+              <p className="header-info-tagline">L'expertise qui fait la différence</p>
+
+              <div className="header-info-divider" />
+
+              <div className="header-info-items">
+                <div className="header-info-item">
+                  <span className="header-info-label">Localisation</span>
+                  <span className="header-info-value">Liberté 6 Extension, Dakar Sénégal</span>
+                </div>
+
+                <div className="header-info-item">
+                  <span className="header-info-label">Téléphone</span>
+                  <a href="tel:+221788965939" className="header-info-value header-info-link">
+                    +221 78 896 59 39
+                  </a>
+                </div>
+
+                <div className="header-info-item">
+                  <span className="header-info-label">Email</span>
+                  <a href="mailto:contact@fisafigroupe.com" className="header-info-value header-info-link">
+                    contact@fisafigroupe.com
+                  </a>
+                </div>
+
+                <div className="header-info-item">
+                  <span className="header-info-label">Spécialités</span>
+                  <span className="header-info-value">Réseaux • IT • Cybersécurité • Conseil</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

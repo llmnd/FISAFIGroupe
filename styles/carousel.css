@@ -1,0 +1,143 @@
+/* ════════════════════════════════════════════════════════════
+   CARD CAROUSEL
+   ════════════════════════════════════════════════════════════ */
+
+.carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+}
+
+.carousel-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.carousel-container::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-container > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* ─── SERVICES CAROUSEL ─── */
+.carousel-services .carousel-container > * {
+  width: calc((100vw - 80px) / 1.2);
+}
+
+@media (min-width: 640px) {
+  .carousel-services .carousel-container > * {
+    width: calc(50vw - 40px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-services .carousel-container > * {
+    width: calc(25vw - 30px);
+    max-width: 320px;
+  }
+}
+
+/* ─── NEWS CAROUSEL ─── */
+.carousel-news .carousel-container > * {
+  width: calc((100vw - 80px) / 1.1);
+}
+
+@media (min-width: 640px) {
+  .carousel-news .carousel-container > * {
+    width: calc(50vw - 40px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-news .carousel-container > * {
+    width: calc(33.333vw - 30px);
+  }
+}
+
+/* ─── NAVIGATION BUTTONS ─── */
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4A3728;
+  transition: all 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.carousel-nav.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carousel-nav-left {
+  left: 0;
+}
+
+.carousel-nav-right {
+  right: 0;
+}
+
+/* ─── FADE GRADIENTS ─── */
+.carousel-fade {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 60px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.carousel-fade-left {
+  left: 44px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+}
+
+.carousel-fade-right {
+  right: 44px;
+  background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  opacity: 0;
+}
+
+/* ─── MOBILE ─── */
+@media (max-width: 640px) {
+  .carousel-nav {
+    width: 40px;
+    height: 40px;
+  }
+
+  .carousel-fade {
+    width: 50px;
+  }
+
+  .carousel-fade-left {
+    left: 40px;
+  }
+
+  .carousel-fade-right {
+    right: 40px;
+  }
+}

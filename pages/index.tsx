@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import CardCarousel from "@/components/CardCarousel";
+import StatCounter from "@/components/StatCounter";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 const PhoneIcon = () => (
@@ -108,6 +110,22 @@ export default function Home() {
       {/* ─── HERO (component) ─── */}
       <HeroSlideshow />
 
+      {/* ─── STATS SECTION ─── */}
+      <section className="stats-section">
+        <div className="stats-grid">
+          {[
+            { number: "10+", label: "Projets réalisés", color: "#E8580A" },
+            { number: "5+", label: "Clients satisfaits", color: "#FF7235" },
+            { number: "1+", label: "Années d'expertise", color: "#F59052" },
+            { number: "24/7", label: "Support technique", color: "#EC6B1F" },
+          ].map((stat, i) => (
+            <div key={stat.label} className={`stat-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`} style={{ borderLeftColor: stat.color }}>
+              <StatCounter number={stat.number} label={stat.label} color={stat.color} />
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
         <div>
@@ -142,7 +160,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
       <section className="section" id="services">
         <div className="section-eyebrow reveal">Nos offres</div>
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
-        <div className="services-grid-new">
+        <CardCarousel variant="services">
           {[
             { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/19.jpeg" },
             { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/18.jpeg" },
@@ -167,7 +185,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
               </div>
             </div>
           ))}
-        </div>
+        </CardCarousel>
         <div className="services-cta reveal reveal-delay-4">
           <Link href="/services" className="btn-primary" style={{ textDecoration: "none" }}>Voir tous nos services</Link>
         </div>
@@ -227,32 +245,6 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         </div>
       </section>
 
-      <div className="divider" />
-
-      {/* ─── NEWS ─── */}
-      <section className="section" id="news">
-        <div className="section-eyebrow reveal">Publications</div>
-        <h2 className="section-title reveal reveal-delay-1">Actualités &<br />innovations</h2>
-        <div className="news-grid-home">
-          {[
-            { category: "Articles techniques", desc: "Contenus approfondis sur nos domaines d'expertise", img: "/20.jpeg" },
-            { category: "Innovations", desc: "Découvrez nos dernières solutions et projets", img: "/21.jpeg" },
-            { category: "Événements", desc: "Participation et sponsoring de conférences et salons", img: "/20.jpeg" },
-          ].map((item, i) => (
-            <div key={item.category} className={`news-item-home reveal${i > 0 ? ` reveal-delay-${i + 1}` : ""}`} style={{ backgroundImage: `url(${item.img})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative', minHeight: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))', pointerEvents: 'none' }} />
-              <div className="news-item-category" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>{item.category}</div>
-              <p className="news-item-desc" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-        <div className="news-cta reveal reveal-delay-4">
-          <Link href="/news" className="btn-primary" style={{ textDecoration: "none" }}>Voir toutes les actualités</Link>
-        </div>
-      </section>
-
-      <div className="divider" />
-
       {/* ─── CONTACT ─── */}
       <section className="contact-section" id="contact">
         <div className="section-eyebrow reveal">Parlons-en</div>
@@ -289,12 +281,62 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer>
-        <div>
-          <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
-          <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
+      <footer className="footer-enhanced">
+        <div className="footer-content">
+          {/* Brand Section */}
+          <div className="footer-brand">
+            <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
+            <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
+            <p className="footer-desc">Partenaire stratégique en expertise technologique, ingénierie et conseil pour l&apos;Afrique.</p>
+            <div className="footer-socials">
+              <a href="#" aria-label="LinkedIn" title="LinkedIn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.006 1.422-.103.249-.129.597-.129.946v5.437h-3.554s.05-8.817 0-9.737h3.554v1.378c-.009.015-.021.029-.031.042h.031v-.042c.427-.659 1.191-1.598 2.897-1.598 2.117 0 3.704 1.381 3.704 4.352v5.605zM5.337 8.855c-1.144 0-1.915-.759-1.915-1.71 0-.955.771-1.71 1.958-1.71 1.187 0 1.914.755 1.937 1.71 0 .951-.75 1.71-1.98 1.71zm1.581 11.597H3.714V9.671h3.203v10.781zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                </svg>
+              </a>
+              <a href="#" aria-label="Twitter" title="Twitter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.953 4.57a10 10 0 002.856-3.515a9.953 9.953 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827a4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417a9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Services</h4>
+            <ul className="footer-list">
+              <li><Link href="/services#networks">Réseaux & Télécoms</Link></li>
+              <li><Link href="/services#infrastructure">Infrastructure IT</Link></li>
+              <li><Link href="/services#security">Cybersécurité</Link></li>
+              <li><Link href="/services#consulting">Conseil Stratégique</Link></li>
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Entreprise</h4>
+            <ul className="footer-list">
+              <li><Link href="/#services">À propos</Link></li>
+              <li><Link href="/training">Formations</Link></li>
+              <li><Link href="/news">Actualités</Link></li>
+              <li><Link href="/#contact">Contact</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Légal</h4>
+            <ul className="footer-list">
+              <li><Link href="/privacy">Politique de confidentialité</Link></li>
+              <li><Link href="/terms">Conditions d&apos;utilisation</Link></li>
+              <li><a href="mailto:contact@fisafigroupe.com">Support</a></li>
+            </ul>
+          </div>
         </div>
-        <div className="foot-bottom">
+
+        {/* Bottom Bar */}
+        <div className="footer-bottom">
           <div className="foot-copy">© 2025 FISAFI Groupe. Tous droits réservés.</div>
           <a href="https://www.fisafigroupe.com" className="foot-web">fisafigroupe.com</a>
         </div>
