@@ -6,7 +6,7 @@ import Link from "next/link";
 
 /* ─── Slide data ─── */
 const DEFAULT_SLIDES = [
-  { src: "/cyber.mp4",  alt: "FiSAFi – cybersécurité",   type: "video",
+  { src: "/wow.mp4",  alt: "FiSAFi – cybersécurité",   type: "video",
     eyebrow: "Cybersécurité Avancée",
     title:   "Protégé contre les <em>menaces</em>",
     sub:     "Solutions de sécurité de pointe immédiatement opérationnelles" },
@@ -84,6 +84,7 @@ export default function HeroSlideshow({
   const [prev,       setPrev]       = useState<number | null>(null);
   const [bgFading,   setBgFading]   = useState(false);
   const [textFading, setTextFading] = useState(false);
+  const [isMobile,   setIsMobile]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* Accent color per variant */
@@ -125,6 +126,13 @@ export default function HeroSlideshow({
   };
 
   useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
     startInterval();
     return () => clearInterval(timerRef.current!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,8 +155,17 @@ export default function HeroSlideshow({
             {slide.type === "video" ? (
               <video
                 src={slide.src}
-                autoPlay muted loop playsInline
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 5%" }}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload={isMobile ? "none" : "auto"}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: isMobile ? "contain" : "cover",
+                  objectPosition: "center"
+                }}
               />
             ) : (
               <Image
@@ -247,6 +264,9 @@ export default function HeroSlideshow({
         }
         @media (min-width: 900px) {
           .hs-bg-stack { top: -18%; bottom: -6%; }
+        }
+        @media (max-width: 600px) {
+          .hs-bg-stack { top: -5%; bottom: -2%; }
         }
 
         .hs-slide {
