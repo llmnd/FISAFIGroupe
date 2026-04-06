@@ -762,7 +762,25 @@ nav { margin: 0; padding: 0; }
 .news-cta { text-align: center; margin-top: 2rem; }
 
 /* ─── COMPETENCES ─── */
-.competences-section { background: var(--ink); padding: 1.5rem 1.5rem; }
+.competences-section {
+  position: relative;
+  background: var(--ink);
+  padding: 1.5rem 1.5rem;
+  overflow: hidden;
+}
+.competences-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+.competences-section > *:not(.competences-bg-video) { position: relative; z-index: 1; }
 .competences-section .section-eyebrow { color: #fff; }
 .competences-section .section-eyebrow::before { background: #fff; }
 .competences-section .section-title { color: #fff; }
@@ -806,7 +824,24 @@ nav { margin: 0; padding: 0; }
 }
 
 /* ─── VISION (nouveau design) ─── */
-.vision-section { padding: 6rem 1.5rem; background: var(--mist); }
+.vision-section {
+  position: relative;
+  padding: 6rem 1.5rem;
+  background: var(--mist);
+  overflow: hidden;
+}
+.vision-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.12;
+  z-index: 0;
+  pointer-events: none;
+}
+.vision-section > *:not(.vision-bg-video) { position: relative; z-index: 1; }
 .vision-section .section-title { color: var(--ink); }
 
 .vision-box {
@@ -982,9 +1017,24 @@ html.dark .atout-text {
 
 /* ─── CONTACT (nouveau design) ─── */
 .contact-section {
+  position: relative;
   background: var(--blue-deep);
   padding: 6rem 1.5rem;
+  overflow: hidden;
 }
+.contact-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  opacity: 0.10;
+  z-index: 0;
+  pointer-events: none;
+}
+.contact-section > *:not(.contact-bg-video) { position: relative; z-index: 1; }
 .contact-section .section-eyebrow { color: var(--orange-light); }
 .contact-section .section-eyebrow::before { background: var(--orange-light); }
 .contact-section .section-title { color: #fff; margin-bottom: 0; }

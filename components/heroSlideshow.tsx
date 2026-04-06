@@ -6,7 +6,7 @@ import Link from "next/link";
 
 /* ─── Slide data ─── */
 const DEFAULT_SLIDES = [
-  { src: "/wow.mp4",  alt: "FiSAFi – cybersécurité",   type: "video",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4",  alt: "FiSAFi – cybersécurité",   type: "video",
     eyebrow: "Cybersécurité Avancée",
     title:   "Protégé contre les <em>menaces</em>",
     sub:     "Solutions de sécurité de pointe immédiatement opérationnelles" },
@@ -14,7 +14,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Infrastructure Résiliente",
     title:   "Performance et <em>sécurité garanties</em>",
     sub:     "Architecture cloud scalable et optimisée" },
-  { src: "/18.jpeg",    alt: "FiSAFi – slide 2",         type: "image",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4",    alt: "FiSAFi – cybersécurité avancée", type: "video",
     eyebrow: "Conseil Technologique",
     title:   "Solutions IT de <em>classe mondiale</em>",
     sub:     "Réseaux, cybersécurité et conseil stratégique" },
@@ -22,7 +22,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Transformation Digitale",
     title:   "Modernisez votre <em>infrastructure</em>",
     sub:     "Accompagnement expert vers le numérique" },
-  { src: "/3.jpeg",     alt: "FiSAFi – slide 4",         type: "image",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4",     alt: "FiSAFi – services managés", type: "video",
     eyebrow: "Services Managés",
     title:   "Support technique <em>24/7</em>",
     sub:     "Expertise IT au service de votre croissance" },
@@ -86,6 +86,7 @@ export default function HeroSlideshow({
   const [textFading, setTextFading] = useState(false);
   const [isMobile,   setIsMobile]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   /* Accent color per variant */
   const accent =
@@ -132,6 +133,14 @@ export default function HeroSlideshow({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  /* Reset video to start when slide changes */
+  useEffect(() => {
+    if (videoRefs.current[current]) {
+      const video = videoRefs.current[current];
+      video.currentTime = 0;
+    }
+  }, [current]);
+
   useEffect(() => {
     startInterval();
     return () => clearInterval(timerRef.current!);
@@ -145,7 +154,7 @@ export default function HeroSlideshow({
       <div className="hs-bg-stack">
         {slides.map((slide, idx) => (
           <div
-            key={slide.src}
+            key={idx}
             className={
               "hs-slide" +
               (idx === current ? " hs-slide--active"  : "") +
@@ -154,6 +163,7 @@ export default function HeroSlideshow({
           >
             {slide.type === "video" ? (
               <video
+                ref={(ref) => { videoRefs.current[idx] = ref; }}
                 src={slide.src}
                 autoPlay
                 muted

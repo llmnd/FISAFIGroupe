@@ -195,6 +195,9 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── COMPETENCES ─── */}
       <section className="competences-section" id="competences">
+        <video autoPlay muted loop playsInline className="competences-bg-video" preload="auto">
+          <source src="https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4" type="video/mp4" />
+        </video>
         <div className="section-eyebrow reveal">Domaines d&apos;expertise</div>
         <h2 className="section-title reveal reveal-delay-1">Nos compétences<br />clés</h2>
         <div className="comp-grid">
@@ -247,6 +250,9 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── CONTACT ─── */}
       <section className="contact-section" id="contact">
+        <video autoPlay muted loop playsInline className="contact-bg-video" preload="auto">
+          <source src="https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4" type="video/mp4" />
+        </video>
         <div className="section-eyebrow reveal">Parlons-en</div>
         <h2 className="section-title reveal reveal-delay-1">Travaillons<br />ensemble</h2>
         <p className="contact-tagline reveal reveal-delay-2">« L&apos;expertise qui fait la différence »</p>
