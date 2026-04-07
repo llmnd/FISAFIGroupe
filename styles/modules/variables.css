@@ -1,0 +1,31 @@
+/* ─── CSS VARIABLES & COLOR SCHEME ─── */
+
+/* Light mode (default) */
+:root {
+  --ink: #0b1829;
+  --blue: #1e40af;
+  --blue-deep: #0f2470;
+  --orange: #e55a00;
+  --orange-light: #f07030;
+  --gold: #c9a84c;
+  --mist: #f5f4f0;
+  --white: #ffffff;
+  --steel: #7a8ea8;
+  --line: rgba(30,64,175,0.10);
+  --line-o: rgba(229,90,0,0.15);
+}
+
+/* Dark mode */
+html.dark {
+  --ink: #e4e6eb;
+  --blue: #4a9eff;
+  --blue-deep: #3a7ed5;
+  --orange: #ff9f5a;
+  --orange-light: #ffb380;
+  --gold: #d4b85a;
+  --mist: #0f1419;
+  --white: #1a1f2e;
+  --steel: #a0a8b8;
+  --line: rgba(74,158,255,0.12);
+  --line-o: rgba(255,159,90,0.15);
+}

@@ -1,0 +1,27 @@
+/* ─── RESET & BASE ─── */
+
+*, *::before, *::after { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
+
+html { 
+  scroll-behavior: smooth; 
+  overflow-x: hidden; 
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  color: var(--ink);
+  background: var(--mist);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: color 300ms ease, background-color 300ms ease;
+}
+
+nav { 
+  margin: 0; 
+  padding: 0; 
+}

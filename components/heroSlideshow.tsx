@@ -14,7 +14,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Infrastructure Résiliente",
     title:   "Performance et <em>sécurité garanties</em>",
     sub:     "Architecture cloud scalable et optimisée" },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4",    alt: "FiSAFi – cybersécurité avancée", type: "video",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4",    alt: "FiSAFi – cybersécurité avancée", type: "video",
     eyebrow: "Conseil Technologique",
     title:   "Solutions IT de <em>classe mondiale</em>",
     sub:     "Réseaux, cybersécurité et conseil stratégique" },
@@ -33,7 +33,7 @@ const DEFAULT_SLIDES = [
 ];
 
 const SERVICES_SLIDES = [
-  { src: "/5.jpeg", alt: "Services – réseaux",        type: "image",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", alt: "Services – réseaux",        type: "video",
     eyebrow: "Réseaux",        title: "Réseaux & <em>Télécommunications</em>",
     sub: "Conception, déploiement et maintenance d'infrastructures" },
   { src: "/6.jpeg", alt: "Services – infrastructure", type: "image",
@@ -57,15 +57,15 @@ const TRAINING_SLIDES = [
   { src: "/1.jpeg",  alt: "Formation – 3", type: "image",
     eyebrow: "Hybride",         title: "Mode <em>Hybride</em>",
     sub: "Présentiel + digital pour une flexibilité optimale" },
-  { src: "/20.jpeg", alt: "Formation – 4", type: "image",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", alt: "Formation – 4", type: "image",
     eyebrow: "Certifications",  title: "Préparation aux <em>certifications</em>",
     sub: "Cisco, CompTIA, Microsoft et autres" },
 ];
 
 /* ─── Constants ─── */
-const INTERVAL = 5000;   // ms between slides
-const FADE_BG  = 1400;   // ms — background crossfade (same as original)
-const FADE_TXT = 560;    // ms — text fade
+const INTERVAL = 7000;
+const FADE_BG  = 1400;
+const FADE_TXT = 560;
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
@@ -88,20 +88,25 @@ export default function HeroSlideshow({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  /* Accent color per variant */
   const accent =
     variant === "services" ? "#1E90FF" :
     variant === "training" ? "#10b981" :
-    "#C8A96E";
+    "#A8996A";
 
-  /* ── Core transition ── */
   const transitionTo = (next: number) => {
     if (next === current || bgFading) return;
     setPrev(current);
     setBgFading(true);
     setTextFading(true);
     setCurrent(next);
-    // text fades back in at 40% of bg transition
+    setTimeout(() => {
+      if (videoRefs.current[next]) {
+        const video = videoRefs.current[next];
+        video.pause();
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      }
+    }, 50);
     setTimeout(() => setTextFading(false), FADE_BG * 0.4);
     setTimeout(() => { setPrev(null); setBgFading(false); }, FADE_BG);
   };
@@ -119,6 +124,14 @@ export default function HeroSlideshow({
         setPrev(c);
         setBgFading(true);
         setTextFading(true);
+        setTimeout(() => {
+          if (videoRefs.current[next]) {
+            const video = videoRefs.current[next];
+            video.pause();
+            video.currentTime = 0;
+            video.play().catch(() => {});
+          }
+        }, 50);
         setTimeout(() => setTextFading(false), FADE_BG * 0.4);
         setTimeout(() => { setPrev(null); setBgFading(false); }, FADE_BG);
         return next;
@@ -133,11 +146,12 @@ export default function HeroSlideshow({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  /* Reset video to start when slide changes */
   useEffect(() => {
     if (videoRefs.current[current]) {
       const video = videoRefs.current[current];
+      video.pause();
       video.currentTime = 0;
+      video.play().catch(() => {});
     }
   }, [current]);
 
@@ -150,7 +164,7 @@ export default function HeroSlideshow({
   return (
     <section className="hs-root">
 
-      {/* ══ Background slide stack — identical crossfade logic to original ══ */}
+      {/* ══ Background slide stack ══ */}
       <div className="hs-bg-stack">
         {slides.map((slide, idx) => (
           <div
@@ -170,11 +184,21 @@ export default function HeroSlideshow({
                 loop
                 playsInline
                 preload={isMobile ? "none" : "auto"}
+                onPause={(e) => {
+                  const video = e.target as HTMLVideoElement;
+                  video.play().catch(() => {});
+                }}
+                onEnded={(e) => {
+                  const video = e.target as HTMLVideoElement;
+                  video.currentTime = 0;
+                  video.play().catch(() => {});
+                }}
                 style={{
                   width: "100%",
                   height: "100%",
                   objectFit: isMobile ? "contain" : "cover",
-                  objectPosition: "center"
+                  objectPosition: "center",
+                  backgroundColor: "#000"
                 }}
               />
             ) : (
@@ -190,10 +214,13 @@ export default function HeroSlideshow({
           </div>
         ))}
 
-        {/* Overlays */}
+        {/* Overlays - AMÉLIORÉS pour meilleure lisibilité */}
         <div className="hs-ov-base" />
         <div className="hs-ov-gradient" />
         <div className="hs-ov-vignette" />
+        
+        {/* NOUVEAU: Overlay supplémentaire pour contraste texte */}
+        <div className="hs-ov-contrast" />
       </div>
 
       {/* Top accent rule */}
@@ -215,16 +242,22 @@ export default function HeroSlideshow({
       <div className="hs-content">
         <div className={`hs-inner${textFading ? " hs-inner--fading" : ""}`}>
 
-          <p className="hs-eyebrow">{slides[current].eyebrow}</p>
+          <p className="hs-eyebrow">
+            <span className="hs-plate">{slides[current].eyebrow}</span>
+          </p>
 
-          <h1
-            className="hs-title"
-            dangerouslySetInnerHTML={{ __html: slides[current].title }}
-          />
+          <h1 className="hs-title">
+            <span 
+              className="hs-title-plate" 
+              dangerouslySetInnerHTML={{ __html: slides[current].title }} 
+            />
+          </h1>
 
           <div className="hs-title-rule" />
 
-          <p className="hs-sub">{slides[current].sub}</p>
+          <p className="hs-sub">
+            <span className="hs-sub-plate">{slides[current].sub}</span>
+          </p>
         </div>
 
         <Link href="/services" className="hs-btn">
@@ -288,28 +321,38 @@ export default function HeroSlideshow({
         .hs-slide--active  { opacity: 1; z-index: 2; }
         .hs-slide--leaving { opacity: 0; z-index: 1; }
 
-        /* ─── Overlays ─── */
+        /* ─── Overlays - AMÉLIORÉS ─── */
         .hs-ov-base {
           position: absolute; inset: 0; z-index: 3;
-          background: rgba(6, 15, 36, 0.60);
+          background: rgba(6, 15, 36, 0.55);
         }
         .hs-ov-gradient {
           position: absolute; inset: 0; z-index: 4;
           background: linear-gradient(
             180deg,
-            rgba(6,15,36,0.10)  0%,
-            rgba(6,15,36,0.05)  20%,
-            rgba(6,15,36,0.65)  68%,
-            rgba(6,15,36,0.92) 100%
+            rgba(6,15,36,0.15)  0%,
+            rgba(6,15,36,0.08)  25%,
+            rgba(6,15,36,0.55)  65%,
+            rgba(6,15,36,0.88) 100%
           );
         }
         .hs-ov-vignette {
           position: absolute; inset: 0; z-index: 5;
           background: radial-gradient(
             ellipse 110% 110% at 50% 50%,
-            transparent 25%,
-            rgba(4,10,28,0.50) 100%
+            transparent 30%,
+            rgba(4,10,28,0.55) 100%
           );
+        }
+        /* NOUVEAU: Overlay de contraste pour texte */
+        .hs-ov-contrast {
+          position: absolute; inset: 0; z-index: 6;
+          background: radial-gradient(
+            ellipse 80% 100% at 50% 40%,
+            transparent 45%,
+            rgba(0,0,0,0.25) 100%
+          );
+          pointer-events: none;
         }
 
         /* ─── Top rule ─── */
@@ -345,11 +388,11 @@ export default function HeroSlideshow({
 
         /* ══ Content ══ */
         .hs-content {
-          position: relative; z-index: 10;
+          position: relative; z-index: 15;
           text-align: center;
           display: flex; flex-direction: column; align-items: center;
           padding: 6rem 2rem 5rem;
-          max-width: 680px; width: 100%;
+          max-width: 720px; width: 100%;
         }
 
         /* Text fade wrapper */
@@ -360,50 +403,98 @@ export default function HeroSlideshow({
         }
         .hs-inner--fading { opacity: 0; transform: translateY(10px); }
 
-        /* Eyebrow */
+        /* Eyebrow - AMÉLIORÉ */
         .hs-eyebrow {
           font-family: 'Jost', sans-serif;
-          font-weight: 400; font-size: 10px;
-          letter-spacing: 0.48em; text-transform: uppercase;
-          color: var(--accent);
+          font-weight: 500;
+          font-size: 10px;
+          letter-spacing: 0.48em;
+          text-transform: uppercase;
           margin-bottom: 1.8rem;
-          text-shadow: 0 1px 6px rgba(0,0,0,0.5);
-          opacity: 0; animation: hsFadeUp 0.8s 0.3s forwards;
+          text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+          opacity: 0;
+          animation: hsFadeUp 0.8s 0.3s forwards;
         }
 
-        /* Title */
+        /* Plates de fond pour lisibilité - AMÉLIORÉES */
+        .hs-plate {
+          display: inline-block;
+          padding: 0.35rem 1rem;
+          background: rgba(6, 15, 36, 0.65);
+          backdrop-filter: blur(4px);
+          color: #fff;
+          font-weight: 500;
+          letter-spacing: 0.48em;
+          text-transform: uppercase;
+          border-left: 2px solid var(--accent);
+        }
+
+        .hs-title-plate {
+          display: inline-block;
+          padding: 0.1em 0.3em;
+          background: linear-gradient(135deg, rgba(6,15,36,0.7) 0%, rgba(6,15,36,0.55) 100%);
+          backdrop-filter: blur(3px);
+          line-height: 1.08;
+        }
+        .hs-title-plate em { 
+          background: transparent; 
+          color: var(--accent); 
+          font-style: italic;
+          font-weight: 400;
+        }
+
+        .hs-sub-plate {
+          display: inline-block;
+          padding: 0.2em 0.5em;
+          background: rgba(6, 15, 36, 0.55);
+          backdrop-filter: blur(3px);
+        }
+
+        /* Title - AMÉLIORÉ */
         .hs-title {
           font-family: 'Cormorant Garamond', serif;
           font-weight: 300;
-          font-size: clamp(2.6rem, 6.5vw, 5rem);
-          line-height: 1.06; letter-spacing: -0.01em;
+          font-size: clamp(2.8rem, 7vw, 5.2rem);
+          line-height: 1.06;
+          letter-spacing: -0.01em;
           color: #ffffff;
           margin-bottom: 1.2rem;
-          text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 6px 24px rgba(0,0,0,0.55);
-          opacity: 0; animation: hsFadeUp 0.9s 0.5s forwards;
+          text-shadow: 0 2px 12px rgba(0,0,0,0.7), 0 6px 28px rgba(0,0,0,0.5);
+          opacity: 0;
+          animation: hsFadeUp 0.9s 0.5s forwards;
         }
-        .hs-title em { font-style: italic; color: var(--accent); font-weight: 300; }
+        .hs-title em { 
+          font-style: italic; 
+          color: var(--accent); 
+          font-weight: 300;
+          text-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
 
         /* Thin rule */
         .hs-title-rule {
-          width: 28px; height: 1px;
+          width: 32px;
+          height: 2px;
           background: var(--accent);
           margin: 0 auto 1.5rem;
-          opacity: 0; animation: hsFadeIn 0.8s 0.65s forwards;
+          opacity: 0;
+          animation: hsFadeIn 0.8s 0.65s forwards;
         }
 
-        /* Subtitle */
+        /* Subtitle - AMÉLIORÉ */
         .hs-sub {
           font-family: 'Jost', sans-serif;
-          font-weight: 300; font-size: 14px;
-          letter-spacing: 0.07em; line-height: 1.9;
-          color: rgba(255,255,255,0.95);
-          text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+          font-weight: 300;
+          font-size: 14px;
+          letter-spacing: 0.07em;
+          line-height: 1.9;
+          color: rgba(255,255,255,0.98);
+          text-shadow: 0 1px 12px rgba(0,0,0,0.6);
           margin-bottom: 3rem;
-          opacity: 0; animation: hsFadeUp 0.9s 0.7s forwards;
+          opacity: 0;
+          animation: hsFadeUp 0.9s 0.7s forwards;
         }
 
-        /* ── CTA button — solid white ── */
+        /* ── CTA button ── */
         .hs-btn {
           display: inline-flex; align-items: center; gap: 1.4rem;
           font-family: 'Jost', sans-serif;
@@ -416,7 +507,7 @@ export default function HeroSlideshow({
           position: relative; overflow: hidden;
           transition: background 0.35s, color 0.35s;
           opacity: 0; animation: hsFadeUp 0.9s 0.9s forwards;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+          box-shadow: 0 4px 28px rgba(0,0,0,0.22);
         }
         .hs-btn::before {
           content: ''; position: absolute; inset: 0;
@@ -464,7 +555,9 @@ export default function HeroSlideshow({
         /* ══ Progress bar ══ */
         .hs-progress {
           position: absolute; bottom: 0; left: 0;
-          height: 1px; background: var(--accent); opacity: 0.6;
+          height: 2px;
+          background: var(--accent);
+          opacity: 0.7;
           z-index: 20;
           animation: hsProgress ${INTERVAL}ms linear forwards;
         }
@@ -473,9 +566,27 @@ export default function HeroSlideshow({
           to   { width: 100%; }
         }
 
+        /* ──── Video Styling ──── */
+        video {
+          display: block;
+          pointer-events: none;
+        }
+        video::-webkit-media-controls {
+          display: none !important;
+        }
+        video::-webkit-media-controls-panel {
+          display: none !important;
+        }
+        video::-webkit-media-controls-play-button {
+          display: none !important;
+        }
+        video::cue {
+          background: transparent;
+        }
+
         /* ─── Keyframes ─── */
         @keyframes hsFadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes hsFadeIn {
@@ -488,6 +599,12 @@ export default function HeroSlideshow({
           .hs-dots    { display: none; }
           .hs-counter { right: 1rem; }
           .hs-content { padding: 5rem 1.5rem 4rem; }
+          .hs-plate { letter-spacing: 0.3em; font-size: 9px; padding: 0.25rem 0.8rem; }
+          .hs-sub { font-size: 12px; }
+        }
+        
+        @media (min-width: 601px) and (max-width: 900px) {
+          .hs-content { max-width: 580px; }
         }
       `}</style>
     </section>

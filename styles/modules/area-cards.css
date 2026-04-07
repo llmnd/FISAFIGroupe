@@ -1,0 +1,203 @@
+/* ─── AREA CARDS GRID ─── */
+
+.area-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.5rem;
+  perspective: 1000px;
+}
+
+@media (min-width: 640px) {
+  .area-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .area-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+.area-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.area-card-item:hover {
+  transform: translateY(-2px);
+}
+
+.area-card {
+  position: relative;
+  overflow: visible;
+  aspect-ratio: 22 / 9;
+  width: 100%;
+  height: auto;
+  background: #f8f8f8;
+  cursor: pointer;
+  border-radius: 8px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.area-card.flipped {
+  transform: rotateY(180deg);
+}
+
+/* ─── RECTO : Images et Vidéos ─── */
+.area-card-front {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.area-card-front img,
+.area-card-front video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.area-card-image {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  backface-visibility: hidden;
+  border-radius: 8px;
+}
+
+video.area-card-video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  backface-visibility: hidden;
+  border-radius: 8px;
+}
+
+/* ─── VERSO CARD (BACK FACE) ─── */
+.area-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+html.dark .area-card-overlay {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.area-card-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  z-index: 3;
+  width: 100%;
+}
+
+.area-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.4;
+  text-shadow: none;
+  display: block;
+  padding: 0;
+  border: none;
+}
+
+html.dark .area-card-name {
+  color: #fff;
+}
+
+/* Ligne décorative sous le titre */
+.area-card-name::after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 1px;
+  background: var(--orange);
+  margin: 0.5rem auto 0;
+}
+
+/* Description optionnelle (si présent) */
+.area-card-description {
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  margin: 0.25rem 0 0 0;
+  opacity: 0.9;
+}
+
+html.dark .area-card-description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Indicateur "cliquer pour voir" au recto */
+.area-card-hint {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.area-card:hover .area-card-hint {
+  opacity: 1;
+}
+
+.area-card-bottom {
+  display: none;
+}
+
+.area-card-arrow {
+  display: none;
+}
+
+.area-card-bottom {
+  display: none;
+}
+
+.area-card-arrow {
+  display: none;
+}

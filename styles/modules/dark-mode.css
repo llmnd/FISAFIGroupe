@@ -1,0 +1,97 @@
+/* ─── DARK MODE OVERRIDES ─── */
+
+/* Dark mode: texte noir dans les sections compétences et vision */
+html.dark .comp-item {
+  background: var(--ink);
+  border-color: rgba(0,0,0,0.08);
+}
+
+html.dark .comp-name {
+  color: #000;
+}
+
+html.dark .comp-item::after {
+  background: linear-gradient(90deg, #ff9f5a, #4a9eff);
+}
+
+html.dark .comp-icon {
+  background: linear-gradient(90deg, #ff9f5a, #ffb380);
+}
+
+html.dark .vision-box {
+  background: #000000;
+  border-color: rgba(255,255,255,0.08);
+}
+
+html.dark .vision-quote-mark {
+  color: rgba(255,255,255,0.06);
+}
+
+html.dark .vision-text {
+  color: #ffffff;
+}
+
+html.dark .vision-label {
+  color: #ff9f5a;
+}
+
+html.dark .vision-box-inner {
+  border-image: linear-gradient(180deg, #ff9f5a 0%, #4a9eff 100%) 1;
+}
+
+/* Dark mode: fond clair avec texte noir pour section compétences */
+html.dark .competences-section {
+  background: var(--ink);
+}
+
+html.dark .competences-section .section-eyebrow {
+  color: #000;
+}
+
+html.dark .competences-section .section-eyebrow::before {
+  background: #000;
+}
+
+html.dark .competences-section .section-title {
+  color: #000;
+}
+
+html.dark .comp-grid {
+  background: transparent;
+  border-color: rgba(0,0,0,0.08);
+}
+
+/* Dark mode: fond clair pour section vision */
+html.dark .vision-section {
+  background: #f5f4f0;
+}
+
+html.dark .vision-section .section-eyebrow {
+  color: #000;
+}
+
+html.dark .vision-section .section-eyebrow::before {
+  background: #000;
+}
+
+html.dark .vision-section .section-title {
+  color: #000;
+}
+
+/* Dark mode: fond clair et texte noir pour atouts */
+html.dark .atouts-list {
+  background: #f5f4f0;
+  border-color: rgba(0,0,0,0.08);
+}
+
+html.dark .atout-item {
+  border-color: rgba(0,0,0,0.08);
+}
+
+html.dark .atout-dot {
+  background: #ff9f5a;
+}
+
+html.dark .atout-text {
+  color: #000;
+}

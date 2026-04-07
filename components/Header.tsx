@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -99,7 +100,7 @@ export default function Header() {
   const [scrolled,     setScrolled]     = useState(false);
   const [scrollPct,    setScrollPct]    = useState(0);
   const [isLoggedIn,   setIsLoggedIn]   = useState(false);
-  const [activeLink,   setActiveLink]   = useState("/");
+  const pathname = usePathname();
   const [socialPopupStyle, setSocialPopupStyle] = useState<React.CSSProperties>({});
 
   const headerRef  = useRef<HTMLElement>(null);
@@ -250,8 +251,7 @@ export default function Header() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`header-nav-link${activeLink === href ? " active" : ""}`}
-                  onClick={() => setActiveLink(href)}
+                  className={`header-nav-link${pathname === href ? " active" : ""}`}
                 >
                   {label}
                 </Link>
@@ -366,8 +366,8 @@ export default function Header() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`header-drawer-link${activeLink === href ? " active" : ""}`}
-                  onClick={() => { setActiveLink(href); closeMobile(); }}
+                  className={`header-drawer-link${pathname === href ? " active" : ""}`}
+                  onClick={() => { closeMobile(); }}
                 >
                   {label}
                   <span className="drawer-chevron">›</span>

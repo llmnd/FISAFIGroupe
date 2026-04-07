@@ -1,0 +1,98 @@
+/* ─── COMPETENCES SECTION ─── */
+
+.competences-section {
+  position: relative;
+  background: var(--ink);
+  padding: 1.5rem 1.5rem;
+  overflow: hidden;
+}
+
+.competences-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.competences-section > *:not(.competences-bg-video) { 
+  position: relative; 
+  z-index: 1; 
+}
+
+.competences-section .section-eyebrow { 
+  color: #fff; 
+}
+
+.competences-section .section-eyebrow::before { 
+  background: #fff; 
+}
+
+.competences-section .section-title { 
+  color: #fff; 
+}
+
+.comp-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1px; 
+  background: rgba(255,255,255,0.06); 
+  border: 0.5px solid rgba(255,255,255,0.06); 
+}
+
+.comp-item {
+  background: var(--ink);
+  padding: 2rem 1.5rem;
+  transition: background 0.25s;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.comp-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0; 
+  left: 0; 
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--blue));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+
+.comp-item:hover { 
+  background: rgba(255,255,255,0.03); 
+}
+
+.comp-item:hover::after { 
+  transform: scaleX(1); 
+}
+
+.comp-icon {
+  width: 2rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-light));
+  margin-bottom: 1.25rem;
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+
+.comp-item:hover .comp-icon { 
+  width: 3.5rem; 
+}
+
+.comp-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.5;
+  font-weight: 400;
+}

@@ -10,6 +10,7 @@ import CardCarousel from "@/components/CardCarousel";
 import StatCounter from "@/components/StatCounter";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
+
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.94 2.18 2 2 0 012.92.01h3a2 2 0 012 1.72c.13 1 .37 1.97.72 2.9a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.93.35 1.9.59 2.9.72a2 2 0 011.63 2.01z"/>
@@ -78,6 +79,8 @@ const contactItems = [
 ];
 
 export default function Home() {
+  const [clickedAreaCard, setClickedAreaCard] = useState<string | null>(null);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -162,7 +165,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
         <CardCarousel variant="services">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "/19.jpeg" },
+            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "https://i.pinimg.com/1200x/91/bf/3c/91bf3c42a9d339d90f30b2df5a4023f6.jpg" },
             { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/18.jpeg" },
             { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "/21.jpeg" },
             { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/22.jpeg" },
@@ -193,7 +196,58 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       <div className="divider" />
 
-      {/* ─── COMPETENCES ─── */}
+      {/* ─── SPLIT CARDS (CAPABILITIES) ─── */}
+      <section className="section" id="capabilities">
+        <div className="section-eyebrow reveal">Nos atouts</div>
+        <h2 className="section-title reveal reveal-delay-1">Expertise<br />reconnue</h2>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
+          {[
+            { 
+              title: "Ingénierie Réseaux", 
+              desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.",
+              img: "https://i.pinimg.com/1200x/3e/38/40/3e38402097ef1637dc91da355f223715.jpg",
+            },
+            { 
+              title: "Solutions Sécurité", 
+              desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.",
+              img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg",
+            },
+            { 
+              title: "Cloud & Virtualisation", 
+              desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.",
+              img: "https://i.pinimg.com/1200x/11/73/0e/11730e8efe165364e8ebc2587ba4bbc7.jpg",
+            },
+          ].map((cap, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${(i % 3) + 1}` : "";
+            return (
+              <div 
+                key={cap.title} 
+                className={`split-card reveal${delayClass} compact`}
+              >
+                <div className="split-card-image">
+                  <Image
+                    src={cap.img}
+                    alt={cap.title}
+                    width={350}
+                    height={250}
+                    style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                  />
+                  <div className="split-card-overlay" />
+                </div>
+                <div className="split-card-content" style={{ direction: "ltr" }}>
+                  <h3 className="split-card-title">{cap.title}</h3>
+                  <p className="split-card-description">{cap.desc}</p>
+                  <a href="/services" className="split-card-arrow">En savoir plus</a>
+                </div>
+              </div>
+            );
+          })
+        }
+        </div>
+      </section>
+
+      <div className="divider" />
       <section className="competences-section" id="competences">
         <video autoPlay muted loop playsInline className="competences-bg-video" preload="auto">
           <source src="https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4" type="video/mp4" />
@@ -245,6 +299,55 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
               <div className="atout-text">{text}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ─── AREA CARDS GRID ─── */}
+      <section className="section" style={{ background: "var(--mist)", paddingTop: "4rem", paddingBottom: "4rem" }}>
+        <div className="section-eyebrow reveal">Zones d'intervention</div>
+        <h2 className="section-title reveal reveal-delay-1">Nos domaines<br />d'action</h2>
+        
+        <div className="area-cards-grid">
+          {[
+            { name: "Réseaux & Télécoms", img: "https://i.pinimg.com/736x/ed/a3/94/eda3945e4636ae02cdd4bb7bff772370.jpg", type: "image" },
+            { name: "Infrastructure IT", img: "https://i.pinimg.com/736x/2d/85/a7/2d85a74061bce155cad15c1171265493.jpg", type: "image" },
+            { name: "Sécurité Digitale", img: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", type: "video" },
+            { name: "Conseil Stratégique", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
+          ].map((area, i) => (
+            <div key={area.name} className="area-card-item">
+              <div 
+                className={`area-card ${clickedAreaCard === area.name ? 'flipped' : ''}`}
+                onClick={() => setClickedAreaCard(clickedAreaCard === area.name ? null : area.name)}
+              >
+                {/* Recto - Image ou Vidéo */}
+                <div className="area-card-front">
+                  {area.type === "video" ? (
+                    <video autoPlay muted loop playsInline preload="auto" className="area-card-video">
+                      <source src={area.img} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <Image
+                      src={area.img}
+                      alt={area.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  )}
+                </div>
+
+                {/* Hint Cliquer */}
+                <div className="area-card-hint">Cliquer</div>
+
+                {/* Verso - Contenu texte */}
+                <div className="area-card-overlay">
+                  <div className="area-card-content">
+                    <div className="area-card-name">{area.name}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        }
         </div>
       </section>
 
