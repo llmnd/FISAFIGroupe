@@ -70,7 +70,7 @@
 
 .vision-text {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
   font-style: italic;
   font-weight: 300;
   color: #fff;
@@ -111,7 +111,7 @@
 }
 
 .atout-text { 
-  font-size: 12px; 
+  font-size: 14px; 
   color: var(--ink); 
   line-height: 1.5; 
   letter-spacing: 0.02em; 

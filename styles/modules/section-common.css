@@ -5,7 +5,7 @@
 }
 
 .section-eyebrow {
-  font-size: 10px; 
+  font-size: 12px; 
   letter-spacing: 0.3em; 
   text-transform: uppercase;
   color: var(--orange); 
@@ -24,7 +24,7 @@
 
 .section-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2rem, 7vw, 3rem);
+  font-size: clamp(2.2rem, 8vw, 3.5rem);
   font-weight: 300; 
   color: var(--ink); 
   line-height: 1.1;

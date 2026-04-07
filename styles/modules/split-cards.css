@@ -71,7 +71,7 @@
 
 .split-card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
   font-weight: 300;
   color: var(--ink);
   line-height: 1.2;
@@ -80,11 +80,11 @@
 }
 
 .split-card-description {
-  font-size: 12.5px;
+  font-size: 15px;
   line-height: 1.85;
   color: var(--steel);
   margin: 0;
-  font-weight: 300;
+  font-weight: 500;
   letter-spacing: 0.02em;
   max-width: 38ch;
 }

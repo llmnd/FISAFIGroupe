@@ -51,7 +51,7 @@ html.dark .footer-main {
 }
 
 .footer-title {
-  font-size: 1.125rem;
+  font-size: 1.3rem;
   font-weight: 300;
   letter-spacing: 0.1em;
   margin-bottom: 1rem;
@@ -63,7 +63,7 @@ html.dark .footer-title {
 }
 
 .footer-desc {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 300;
   line-height: 1.6;
   color: var(--steel);
@@ -74,7 +74,7 @@ html.dark .footer-desc {
 }
 
 .footer-section-title {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
