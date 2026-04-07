@@ -245,16 +245,17 @@ export default function HeroSlideshow({
             className="hs-title"
             dangerouslySetInnerHTML={{ __html: slides[current].title.replace(/\n/g, "<br/>") }}
           />
-          {/* CTA */}
-          <div className="hs-actions">
-            <Link href="/services" className="hs-btn-primary">
-              <span>Nos services</span>
-              <span className="hs-btn-arrow" aria-hidden />
-            </Link>
-            <Link href="/#contact" className="hs-btn-ghost">
-              <span>Nous contacter</span>
-            </Link>
-          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="hs-actions">
+          <Link href="/services" className="hs-btn-primary">
+            <span>Nos services</span>
+            <span className="hs-btn-arrow" aria-hidden />
+          </Link>
+          <Link href="/#contact" className="hs-btn-ghost">
+            <span>Nous contacter</span>
+          </Link>
         </div>
 
         {/* Dots navigation */}
@@ -332,8 +333,8 @@ export default function HeroSlideshow({
           background: linear-gradient(
             to right,
             var(--bg) 0%,
-            rgba(11, 21, 32, 0.8) 20%,
-            rgba(11, 21, 32, 0.4) 50%,
+            rgba(11, 21, 32, 0.7) 20%,
+            rgba(11, 21, 32, 0.15) 50%,
             rgba(11, 21, 32, 0) 85%
           );
           z-index: 3;
@@ -359,7 +360,7 @@ export default function HeroSlideshow({
           min-height: 100svh;
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: space-between;
           padding: 7rem 3.5rem 5rem 5rem;
           flex-shrink: 0;
         }
@@ -481,7 +482,7 @@ export default function HeroSlideshow({
           align-items: center;
           gap: 1.5rem;
           flex-wrap: wrap;
-          margin-top: 4.5rem;
+          margin-top: auto;
           opacity: 0;
           animation: hsFadeUp 0.9s 0.65s forwards;
         }
