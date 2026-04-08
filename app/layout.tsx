@@ -2,24 +2,41 @@ import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'FiSAFi Groupe — Cabinet de Conseil en Technologie | Dakar, Sénégal',
-  description: 'FiSAFi Groupe est un cabinet de conseil en technologie, ingénierie, formation et import-export basé à Dakar, Sénégal. Expertise en réseaux, télécommunications, cybersécurité et solutions IT.',
-  keywords: ['conseil technologie', 'ingénierie réseaux', 'cybersécurité', 'formation IT', 'Dakar', 'Sénégal'],
+  title: 'FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal',
+  description: 'Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d\'expertise. +221 78 896 59 39',
+  keywords: [
+    'cabinet IT Dakar',
+    'conseil informatique Sénégal',
+    'ingénierie réseaux Dakar',
+    'cybersécurité Sénégal',
+    'infrastructure cloud Dakar',
+    'consultant IT Afrique',
+    'formation IT Sénégal',
+    'services informatiques',
+    'support technique 24/7',
+  ],
   authors: [{ name: 'FiSAFi Groupe' }],
   creator: 'FiSAFi Groupe',
   publisher: 'FiSAFi Groupe',
-  robots: 'index, follow',
+  robots: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1',
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
     url: 'https://fisafigroupe.com',
-    title: 'FiSAFi Groupe — Cabinet de Conseil en Technologie | Dakar, Sénégal',
-    description: 'Cabinet de conseil en technologie, ingénierie, formation et import-export basé à Dakar, Sénégal. Expertise reconnue en réseaux, télécommunications et solutions IT.',
+    title: 'FiSAFi Groupe — Cabinet IT & Réseaux | Dakar',
+    description: 'Cabinet de conseil en IT, réseaux, cybersécurité et formations. Expertise reconnue en infrastructure cloud, télécoms et solutions sécurisées au Sénégal.',
     images: [
       {
         url: 'https://fisafigroupe.com/logo.jpeg',
         width: 1200,
         height: 630,
+        alt: 'FiSAFi Groupe - Cabinet IT Dakar',
+        type: 'image/jpeg',
+      },
+      {
+        url: 'https://fisafigroupe.com/logo.jpeg',
+        width: 800,
+        height: 420,
         alt: 'FiSAFi Groupe Logo',
         type: 'image/jpeg',
       },
@@ -28,9 +45,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FiSAFi Groupe — Cabinet de Conseil en Technologie',
-    description: 'Expertise en technologie, ingénierie et formation à Dakar, Sénégal',
+    title: 'FiSAFi Groupe — Cabinet IT & Réseaux',
+    description: 'Expertise IT, réseaux, cybersécurité et formations certifiantes à Dakar, Sénégal',
     images: ['https://fisafigroupe.com/logo.jpeg'],
+    creator: '@fisafigroupe',
   },
   viewport: 'width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover',
   themeColor: '#1e40af',
@@ -39,47 +57,97 @@ export const metadata: Metadata = {
     email: true,
     address: true,
   },
+  alternates: {
+    canonical: 'https://fisafigroupe.com',
+    languages: {
+      'fr-FR': 'https://fisafigroupe.com',
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': 'https://fisafigroupe.com/#organization',
     name: 'FiSAFi Groupe',
     url: 'https://fisafigroupe.com',
-    logo: 'https://fisafigroupe.com/logo.jpeg',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://fisafigroupe.com/logo.jpeg',
+      width: 1200,
+      height: 630,
+    },
     description: 'Cabinet de conseil en technologie, ingénierie, formation et import-export basé à Dakar, Sénégal.',
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'Liberté 6 Extension',
       addressLocality: 'Dakar',
       addressCountry: 'SN',
-      postalCode: '',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Customer Support',
+      telephone: '+221788965939',
+      email: 'contact@fisafigroupe.com',
+      areaServed: ['SN', 'TD', 'AF'],
+      availableLanguage: ['fr', 'en'],
     },
     sameAs: [
       'https://www.facebook.com/fisafigroupe',
       'https://www.linkedin.com/company/fisafigroupe',
       'https://twitter.com/fisafigroupe',
     ],
+    foundingDate: '2020',
+  };
+
+  const webSiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    url: 'https://fisafigroupe.com',
+    name: 'FiSAFi Groupe',
+    description: 'Cabinet de conseil en technologie et ingénierie IT',
+    publisher: {
+      '@type': 'Organization',
+      name: 'FiSAFi Groupe',
+    },
   };
 
   return (
     <html lang="fr">
       <head>
+        {/* Organization Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
+        {/* WebSite Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+        />
+
+        {/* Canonical URL */}
         <link rel="canonical" href="https://fisafigroupe.com" />
+
+        {/* Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&family=DM+Sans:wght@200;300;400;500&display=swap"
         />
+
+        {/* Meta Tags */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        {/* Search Engines Verification */}
+        <meta name="google-site-verification" content="YOUR_GOOGLE_VERIFICATION_CODE_HERE" />
+        <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE_HERE" />
       </head>
       <body>
         {children}

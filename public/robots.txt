@@ -1,0 +1,48 @@
+# FISAFI GROUPE - robots.txt
+# Dernière mise à jour : 2026-04
+
+User-agent: *
+Allow: /
+Allow: /services
+Allow: /contact
+Allow: /news
+Allow: /training
+Allow: /articles
+Allow: /search
+
+# Bloquer pages non SEO-friendly
+Disallow: /api/
+Disallow: /admin/
+Disallow: /admin-dashboard
+Disallow: /dashboard
+Disallow: /login
+Disallow: /sessions
+Disallow: /_next/
+Disallow: *.json$
+
+# Images autorisées
+Allow: /public/
+Allow: *.jpg$
+Allow: *.jpeg$
+Allow: *.png$
+Allow: *.gif$
+Allow: *.webp$
+
+# Crawler rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://fisafigroupe.com/sitemap.xml
+
+# Respect des standards
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
