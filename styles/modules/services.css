@@ -1,182 +1,201 @@
-/* ──────────────────────────────────────────────────────────
-   SERVICES GRID - Édition Iconique
-   Design d'exception, micro-interactions, luxe sensoriel
-   ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   SERVICES GRID — Haute Joaillerie Numérique
+   Chaque interaction est une expérience sensorielle.
+   Chaque courbe de Bézier, un geste de maître.
+   ══════════════════════════════════════════════════════════════ */
 
+/* ─── FONDATIONS CINÉTIQUES ───────────────────────────────── */
+/* Courbes inspirées du mouvement d'un balancier horloger */
 :root {
-  --service-card-radius: 24px;
-  --service-card-radius-sm: 20px;
-  --service-transition-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --service-transition-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
-  --service-transition-smooth: cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  --service-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --service-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
-  --service-shadow-lg: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
-  --service-shadow-xl: 0 30px 50px -15px rgba(0, 0, 0, 0.2);
-  --service-glow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 20px 35px -10px rgba(0, 0, 0, 0.15);
-  --service-glow-hover: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 30px 45px -12px rgba(0, 0, 0, 0.25);
+  --radius-card:        26px;
+  --radius-card-sm:     20px;
+  --radius-badge:       50%;
+
+  /* Quatre tempéraments cinétiques distincts */
+  --ease-silk:          cubic-bezier(0.25, 0.46, 0.45, 0.94);   /* fluide, sans aspérité */
+  --ease-spring:        cubic-bezier(0.34, 1.56, 0.64, 1);      /* rebond organique */
+  --ease-expo:          cubic-bezier(0.16, 1, 0.3, 1);          /* décélération exponentielle */
+  --ease-anticipate:    cubic-bezier(0.68, -0.6, 0.32, 1.6);    /* recul avant élan */
+  --ease-watch:         cubic-bezier(0.22, 1.2, 0.36, 0.97);    /* mécanique d'horlogerie */
+
+  /* Ombres stratifiées — lumière volumétrique */
+  --shadow-ambient:     0 1px 2px rgba(0,0,0,.02), 0 2px 4px rgba(0,0,0,.02);
+  --shadow-card:        0 4px 12px rgba(0,0,0,.03), 0 8px 24px rgba(0,0,0,.04),
+                        0 1px 2px rgba(0,0,0,.04);
+  --shadow-card-lift:   0 8px 20px rgba(0,0,0,.05), 0 20px 40px rgba(0,0,0,.08),
+                        0 2px 4px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.04);
+  --shadow-card-float:  0 16px 40px rgba(0,0,0,.10), 0 40px 80px rgba(0,0,0,.14),
+                        0 0 0 .5px rgba(0,0,0,.06);
+  --shadow-badge:       0 4px 14px rgba(0,0,0,.1);
+  --shadow-badge-hover: 0 10px 28px rgba(0,0,0,.22);
+
+  /* Filtre grain SVG intégré (texture sensorielle) */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.035'/%3E%3C/svg%3E");
 }
 
-/* Mode sombre natif (respecte les préférences système) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --service-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-    --service-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.25);
-    --service-shadow-lg: 0 20px 35px -12px rgba(0, 0, 0, 0.4);
-    --service-shadow-xl: 0 30px 50px -15px rgba(0, 0, 0, 0.5);
-  }
-  
-  .service-card,
-  .service-card-new {
-    background: rgba(20, 20, 25, 0.8);
-    backdrop-filter: blur(0px);
-  }
-  
-  .service-tag {
-    background: rgba(255, 255, 255, 0.05);
-    color: #aaa;
-  }
-}
-
-/* ─── SERVICES GRID ─── */
+/* ─── GRILLE DE SERVICE ────────────────────────────────────── */
 .services-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4rem 2rem;
+  gap: 4.5rem 2.5rem;
   margin-bottom: 3rem;
+  position: relative;
 }
 
 @media (min-width: 640px) {
-  .services-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 3.5rem 2.5rem;
-  }
+  .services-grid { grid-template-columns: repeat(2, 1fr); gap: 4rem 3rem; }
 }
-
 @media (min-width: 1024px) {
-  .services-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3rem 2rem;
-  }
+  .services-grid { grid-template-columns: repeat(3, 1fr); gap: 3.5rem 2.5rem; }
 }
 
-/* ─── SERVICE CARD (Version Ultra-Premium) ─── */
+/* ─── CARTE DE SERVICE — Architecture principale ───────────── */
 .service-card {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.4rem;
   cursor: pointer;
-  opacity: 0;
-  animation: fadeInUp 0.8s var(--service-transition-expo) forwards;
-  transition: all 0.5s var(--service-transition-smooth);
   text-decoration: none;
-  background: transparent;
   position: relative;
-  transform: translateZ(0);
+  transform: translateZ(0) perspective(1200px);
   will-change: transform;
+  backface-visibility: hidden;
+
+  /* Apparition orchestrée */
+  opacity: 0;
+  animation: revealCard .9s var(--ease-expo) forwards;
 }
 
-/* Effet de bordure animée au survol (très chic) */
+/* Stagger précis au millième */
+.service-card:nth-child(1) { animation-delay: .05s; }
+.service-card:nth-child(2) { animation-delay: .15s; }
+.service-card:nth-child(3) { animation-delay: .25s; }
+.service-card:nth-child(4) { animation-delay: .35s; }
+.service-card:nth-child(5) { animation-delay: .45s; }
+.service-card:nth-child(6) { animation-delay: .55s; }
+
+/* Halo de proximité — se révèle avant même le survol */
 .service-card::before {
   content: '';
   position: absolute;
-  inset: -2px;
-  background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.05) 100%);
-  border-radius: calc(var(--service-card-radius) + 2px);
+  inset: -20px;
+  border-radius: calc(var(--radius-card) + 20px);
+  background: radial-gradient(ellipse at 50% 60%, rgba(0,0,0,.04) 0%, transparent 70%);
   opacity: 0;
-  transition: opacity 0.4s var(--service-transition-smooth);
+  transition: opacity .6s var(--ease-silk);
   pointer-events: none;
   z-index: -1;
 }
 
-@media (hover: hover) {
-  .service-card:hover::before {
-    opacity: 1;
-  }
-  
-  .service-card:hover {
-    transform: translateY(-8px);
-  }
-}
-
-/* Ligne signature au survol (rafinée) */
+/* Ligne de signature — croît depuis l'origine */
 .service-card::after {
   content: '';
   position: absolute;
-  bottom: -0.75rem;
+  bottom: -1rem;
   left: 0;
+  height: 1.5px;
   width: 0;
-  height: 2px;
-  background: currentColor;
-  transition: width 0.6s var(--service-transition-expo);
-  opacity: 0.6;
+  background: linear-gradient(90deg, currentColor 0%, transparent 100%);
+  opacity: .45;
+  transition: width .7s var(--ease-expo);
+  transform-origin: left center;
 }
 
 @media (hover: hover) {
-  .service-card:hover::after {
-    width: 48px;
+  .service-card:hover::before { opacity: 1; }
+  .service-card:hover::after  { width: 56px; }
+
+  /* Micro-inclinaison magnétique (amplifiée via JS — voir bas de fichier) */
+  .service-card:hover {
+    transform: translateY(-10px) translateZ(0) perspective(1200px);
   }
 }
 
-/* ─── SERVICE CARD MEDIA ─── */
+/* ─── MEDIA DE CARTE ───────────────────────────────────────── */
 .service-card-media {
   position: relative;
   width: 100%;
-  border-radius: var(--service-card-radius);
+  border-radius: var(--radius-card);
   overflow: hidden;
-  background: #f5f2ef;
-  box-shadow: var(--service-shadow-md);
-  transition: box-shadow 0.5s var(--service-transition-smooth), transform 0.4s ease;
+  background: #f3f0ec;
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow .55s var(--ease-silk),
+    border-radius .4s var(--ease-silk);
+
+  /* Pseudo-container pour les effets superposés */
+  isolation: isolate;
 }
 
-@media (hover: hover) {
-  .service-card:hover .service-card-media {
-    box-shadow: var(--service-glow-hover);
-  }
+/* Texture grain — pellicule photographique argentique */
+.service-card-media::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 200px 200px;
+  opacity: 1;
+  z-index: 3;
+  pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
-/* Effet de brillance au passage de la souris (glass shine) */
+/* Brillance lenticulaire — lumière rasante */
 .service-card-media::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
-  transform: translateX(-100%);
-  transition: transform 0.6s var(--service-transition-expo);
+  background: linear-gradient(
+    118deg,
+    transparent 0%,
+    rgba(255,255,255,.14) 38%,
+    rgba(255,255,255,.06) 52%,
+    transparent 100%
+  );
+  transform: translateX(-110%) skewX(-12deg);
+  transition: transform .75s var(--ease-expo);
   pointer-events: none;
+  z-index: 4;
 }
 
 @media (hover: hover) {
+  .service-card:hover .service-card-media {
+    box-shadow: var(--shadow-card-float);
+    border-radius: calc(var(--radius-card) - 2px); /* rétrécissement subtil */
+  }
   .service-card:hover .service-card-media::after {
-    transform: translateX(100%);
+    transform: translateX(120%) skewX(-12deg);
   }
 }
 
+/* Image — zoom organique */
 .service-card-media img {
   width: 100%;
   height: auto;
   display: block;
-  transition: transform 0.8s var(--service-transition-expo);
+  transition: transform 1s var(--ease-expo);
   will-change: transform;
   backface-visibility: hidden;
+  transform-origin: center 60%; /* zoom vers le sujet, pas le centre géométrique */
 }
 
 @media (hover: hover) {
   .service-card:hover .service-card-media img {
-    transform: scale(1.05);
+    transform: scale(1.07);
   }
 }
 
-/* ─── SERVICE CARD BADGE ─── */
+/* ─── BADGE ────────────────────────────────────────────────── */
 .service-card-badge {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
-  width: 46px;
-  height: 46px;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(8px);
-  border-radius: 50%;
+  bottom: 14px;
+  right: 14px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-radius: var(--radius-badge);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,418 +203,472 @@
   font-size: 1rem;
   font-weight: 500;
   color: var(--ink);
-  transition: all 0.45s var(--service-transition-bounce);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  letter-spacing: 0.02em;
-  z-index: 2;
+  letter-spacing: .02em;
+  box-shadow: var(--shadow-badge);
+  transition:
+    background .4s var(--ease-spring),
+    color       .4s var(--ease-spring),
+    transform   .45s var(--ease-spring),
+    box-shadow  .4s var(--ease-silk);
+  z-index: 5;
+
+  /* Bord intérieur nacré */
+  outline: 1px solid rgba(255,255,255,.6);
+  outline-offset: -2px;
 }
 
 @media (hover: hover) {
   .service-card:hover .service-card-badge {
     background: var(--ink);
-    color: white;
-    transform: scale(1.12) rotate(5deg);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    transform: scale(1.15) rotate(8deg);
+    box-shadow: var(--shadow-badge-hover);
+    outline-color: rgba(255,255,255,.2);
   }
 }
 
-/* ─── SERVICE CARD CONTENT ─── */
+/* ─── CONTENU TEXTUEL ──────────────────────────────────────── */
 .service-card-content {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  padding: 0 0.25rem;
+  gap: .75rem;
+  padding: 0 .35rem;
 }
 
 .service-card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
   font-weight: 350;
   color: var(--ink);
   margin: 0;
   line-height: 1.2;
-  letter-spacing: -0.01em;
-  transition: all 0.3s ease;
+  letter-spacing: -.015em;
   position: relative;
-  display: inline-block;
+
+  /* Transition de couleur via clip-path pour le dégradé */
+  background-image: linear-gradient(110deg, var(--ink) 0%, var(--orange, #c06030) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+  transition: background-position .6s var(--ease-expo);
 }
 
-/* Effet de dégradé dynamique au survol (optionnel) */
 @media (hover: hover) {
   .service-card:hover .service-card-title {
-    background: linear-gradient(120deg, var(--ink) 0%, var(--orange) 80%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+    background-position: 60% 50%;
   }
 }
 
-/* ─── SERVICE TAGS ─── */
+/* ─── TAGS ─────────────────────────────────────────────────── */
 .service-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.25rem;
+  gap: .55rem;
+  margin-top: .2rem;
 }
 
 .service-tag {
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
+  font-family: 'Outfit', sans-serif;
+  font-size: .62rem;
+  letter-spacing: .13em;
   font-weight: 500;
   text-transform: uppercase;
-  padding: 0.3rem 0.85rem;
-  background: rgba(0, 0, 0, 0.02);
-  color: var(--steel);
+  padding: .28rem .8rem;
   border-radius: 40px;
   display: inline-block;
   white-space: nowrap;
-  transition: all 0.3s var(--service-transition-smooth);
-  border: 0.5px solid rgba(0, 0, 0, 0.04);
-  backdrop-filter: blur(2px);
+  transition:
+    transform   .3s var(--ease-spring),
+    letter-spacing .3s var(--ease-silk),
+    box-shadow  .3s var(--ease-silk);
+
+  /* Base */
+  background: rgba(0,0,0,.03);
+  color: var(--steel, #666);
+  border: .5px solid rgba(0,0,0,.05);
 }
 
 @media (hover: hover) {
   .service-tag:hover {
-    background: rgba(0, 0, 0, 0.06);
-    transform: translateY(-1px);
-    letter-spacing: 0.14em;
+    transform: translateY(-2px) scale(1.02);
+    letter-spacing: .16em;
+    box-shadow: 0 4px 12px rgba(0,0,0,.06);
   }
 }
 
-/* Palette raffinée avec opacités */
-.service-tag:nth-child(2) {
-  background: rgba(139, 94, 60, 0.08);
-  color: #8b5e3c;
-}
-.service-tag:nth-child(3) {
-  background: rgba(46, 125, 50, 0.06);
-  color: #2e7d32;
-}
-.service-tag:nth-child(4) {
-  background: rgba(108, 99, 181, 0.06);
-  color: #6c63b5;
-}
-.service-tag:nth-child(5) {
-  background: rgba(198, 89, 17, 0.06);
-  color: #c65911;
-}
+/* Palette chromatique précise — six teintes distinctes */
+.service-tag:nth-child(1) { background: rgba(0,0,0,.025);        color: #555;     border-color: rgba(0,0,0,.04); }
+.service-tag:nth-child(2) { background: rgba(139,94,60,.07);     color: #7a5232;  border-color: rgba(139,94,60,.12); }
+.service-tag:nth-child(3) { background: rgba(46,125,50,.06);     color: #2a6e2f;  border-color: rgba(46,125,50,.1); }
+.service-tag:nth-child(4) { background: rgba(108,99,181,.06);    color: #5d55a8;  border-color: rgba(108,99,181,.1); }
+.service-tag:nth-child(5) { background: rgba(198,89,17,.06);     color: #b55210;  border-color: rgba(198,89,17,.1); }
+.service-tag:nth-child(6) { background: rgba(20,110,140,.06);    color: #1a6f8c;  border-color: rgba(20,110,140,.1); }
 
-/* ─── SERVICE MODAL PREMIUM ─── */
-.service-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  animation: fadeIn 0.4s ease;
-  will-change: opacity;
-}
-
-.service-modal {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(0px);
-  border-radius: 36px;
-  padding: 3rem;
-  max-width: 640px;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: var(--service-shadow-xl), 0 0 0 1px rgba(255,255,255,0.3);
-  position: relative;
-  animation: slideUpModal 0.6s var(--service-transition-bounce);
-  transform-origin: center;
-}
-
-/* Scrollbar fine et élégante */
-.service-modal::-webkit-scrollbar {
-  width: 4px;
-}
-.service-modal::-webkit-scrollbar-track {
-  background: #eaeaea;
-  border-radius: 4px;
-}
-.service-modal::-webkit-scrollbar-thumb {
-  background: #aaa;
-  border-radius: 4px;
-}
-.service-modal-close {
-  position: absolute;
-  top: 1.75rem;
-  right: 1.75rem;
-  background: rgba(0, 0, 0, 0.04);
-  border: none;
-  font-size: 20px;
-  color: var(--steel);
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.4s var(--service-transition-bounce);
-  border-radius: 50%;
-}
-.service-modal-close:hover {
-  background: var(--ink);
-  color: white;
-  transform: rotate(90deg) scale(1.05);
-}
-.service-modal-content {
-  padding-top: 0.5rem;
-}
-.service-modal-num {
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--orange);
-  margin-bottom: 1rem;
-  font-family: 'Outfit', sans-serif;
-}
-.service-modal-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2.6rem;
-  font-weight: 300;
-  color: var(--ink);
-  margin: 0 0 1.5rem 0;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-.service-modal-desc {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--steel);
-  line-height: 1.75;
-  margin: 0;
-}
-
-/* ─── ANIMATIONS AVANCÉES ─── */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(40px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes slideUpModal {
-  0% {
-    opacity: 0;
-    transform: scale(0.96) translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ─── TRAINING GRID PREMIUM ─── */
+/* ─── GRILLE FORMATIONS ────────────────────────────────────── */
 .services-grid-new {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
 }
-@media (min-width: 640px) {
-  .services-grid-new {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-  }
-}
-@media (min-width: 1024px) {
-  .services-grid-new {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2.5rem;
-  }
-}
+@media (min-width: 640px)  { .services-grid-new { grid-template-columns: repeat(2,1fr); } }
+
+/* ─── CARTE FORMATION ──────────────────────────────────────── */
 .service-card-new {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ffffff;
+  background: #fff;
   border-radius: 28px;
   overflow: hidden;
-  transition: all 0.6s var(--service-transition-expo);
-  opacity: 0;
-  animation: fadeInUp 0.7s ease-out forwards;
-  box-shadow: var(--service-shadow-md);
-  border: none;
+  box-shadow: var(--shadow-card);
+  border: .5px solid rgba(0,0,0,.04);
   position: relative;
+  isolation: isolate;
+  opacity: 0;
+  animation: revealCard .75s var(--ease-expo) forwards;
+  transition:
+    box-shadow .55s var(--ease-silk),
+    transform  .55s var(--ease-watch),
+    border-color .3s var(--ease-silk);
 }
-.service-card-new:hover {
-  box-shadow: var(--service-shadow-xl);
-  transform: translateY(-8px) scale(1.01);
+
+.service-card-new::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 180px 180px;
+  opacity: .6;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: multiply;
 }
+
+@media (hover: hover) {
+  .service-card-new:hover {
+    box-shadow: var(--shadow-card-float);
+    transform: translateY(-8px) scale(1.008);
+    border-color: rgba(0,0,0,.07);
+  }
+}
+
 .service-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 11;
+  aspect-ratio: 16/11;
   overflow: hidden;
   background: linear-gradient(145deg, #f0ede9, #e5e1dc);
 }
+
 .service-image-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
-  transition: transform 0.9s var(--service-transition-expo);
+  transition: transform .95s var(--ease-expo);
+  transform-origin: center 55%;
   will-change: transform;
 }
-.service-card-new:hover .service-image-wrapper img {
-  transform: scale(1.06);
+
+@media (hover: hover) {
+  .service-card-new:hover .service-image-wrapper img { transform: scale(1.07); }
 }
+
+/* Voile de profondeur */
 .service-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.12) 100%);
-  pointer-events: none;
+  background:
+    linear-gradient(0deg,   rgba(0,0,0,.18) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,0,0,.05) 0%, transparent 60%);
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity .5s var(--ease-silk);
+  pointer-events: none;
 }
-.service-card-new:hover .service-overlay {
-  opacity: 1;
+@media (hover: hover) {
+  .service-card-new:hover .service-overlay { opacity: 1; }
 }
+
+/* Numéro flottant */
 .service-num-badge {
   position: absolute;
-  top: 1.25rem;
-  left: 1.25rem;
+  top: 1.1rem;
+  left: 1.1rem;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.9rem;
+  font-size: 1.8rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.05em;
-  z-index: 2;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(8px);
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 2px 10px rgba(0,0,0,.25);
+  letter-spacing: .06em;
+  z-index: 5;
+  background: rgba(0,0,0,.22);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   width: 52px;
   height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.4s var(--service-transition-bounce);
+  outline: 1px solid rgba(255,255,255,.2);
+  outline-offset: -2px;
+  transition:
+    background .4s var(--ease-spring),
+    transform  .45s var(--ease-spring),
+    outline-color .3s;
 }
-.service-card-new:hover .service-num-badge {
-  background: var(--ink);
-  transform: scale(1.08) rotate(3deg);
-  backdrop-filter: blur(0);
+
+@media (hover: hover) {
+  .service-card-new:hover .service-num-badge {
+    background: var(--ink, #111);
+    transform: scale(1.1) rotate(5deg);
+    outline-color: rgba(255,255,255,.08);
+  }
 }
+
+/* ─── CONTENU FORMATION ────────────────────────────────────── */
 .service-content {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1.6rem;
+  gap: .75rem;
+  padding: 1.5rem 1.6rem;
   flex-grow: 1;
-  background: white;
 }
+
 .service-name-new {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.15rem;
-  font-weight: 550;
+  font-size: 1.1rem;
+  font-weight: 570;
   color: #1a1a1a;
   margin: 0;
   line-height: 1.35;
-  letter-spacing: -0.01em;
-  transition: color 0.3s ease;
+  letter-spacing: -.015em;
+  transition: color .3s var(--ease-silk);
 }
-.service-card-new:hover .service-name-new {
-  color: var(--orange);
-}
-.service-desc-new {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
-  color: #6b6b6b;
-  margin: 0;
-  line-height: 1.65;
-  font-weight: 380;
-  letter-spacing: 0.01em;
+@media (hover: hover) {
+  .service-card-new:hover .service-name-new { color: var(--orange, #c06030); }
 }
 
-/* ─── RÉVÉLATION AU SCROLL AMÉLIORÉE ─── */
+.service-desc-new {
+  font-family: 'Outfit', sans-serif;
+  font-size: .83rem;
+  color: #696969;
+  margin: 0;
+  line-height: 1.7;
+  font-weight: 390;
+  letter-spacing: .008em;
+}
+
+/* ─── MODAL PREMIUM ────────────────────────────────────────── */
+.service-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,4,8,.88);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeBackdrop .4s var(--ease-silk) both;
+}
+
+.service-modal {
+  background: rgba(255,255,255,.99);
+  border-radius: 36px;
+  padding: 3rem;
+  max-width: 640px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow:
+    var(--shadow-card-float),
+    0 0 0 .5px rgba(255,255,255,.25),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  position: relative;
+  animation: riseModal .65s var(--ease-spring) both;
+  transform-origin: 50% 60%;
+
+  /* Grain sur la modal aussi */
+  background-image: var(--grain);
+  background-blend-mode: multiply;
+}
+
+.service-modal::-webkit-scrollbar       { width: 3px; }
+.service-modal::-webkit-scrollbar-track { background: rgba(0,0,0,.04); border-radius: 3px; }
+.service-modal::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 3px; }
+
+.service-modal-close {
+  position: absolute;
+  top: 1.6rem;
+  right: 1.6rem;
+  background: rgba(0,0,0,.04);
+  border: none;
+  color: var(--steel, #666);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 18px;
+  outline: .5px solid rgba(0,0,0,.07);
+  outline-offset: -1px;
+  transition:
+    background .35s var(--ease-spring),
+    color      .3s,
+    transform  .4s var(--ease-spring),
+    outline-color .3s;
+}
+.service-modal-close:hover {
+  background: var(--ink, #111);
+  color: #fff;
+  transform: rotate(90deg) scale(1.06);
+  outline-color: transparent;
+}
+
+.service-modal-num {
+  font-family: 'Outfit', sans-serif;
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--orange, #c06030);
+  margin-bottom: .85rem;
+  display: block;
+}
+
+.service-modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--ink, #111);
+  margin: 0 0 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+
+.service-modal-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: .97rem;
+  font-weight: 390;
+  color: var(--steel, #555);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ─── RÉVÉLATION AU SCROLL ─────────────────────────────────── */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.9s var(--service-transition-expo);
+  transform: translateY(28px) scale(.995);
+  transition:
+    opacity   .9s var(--ease-expo),
+    transform .9s var(--ease-expo);
 }
 .reveal.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
-.reveal-delay-1 { transition-delay: 0.05s; }
-.reveal-delay-2 { transition-delay: 0.1s; }
-.reveal-delay-3 { transition-delay: 0.2s; }
-.reveal-delay-4 { transition-delay: 0.3s; }
+.reveal-delay-1 { transition-delay: .04s; }
+.reveal-delay-2 { transition-delay: .1s;  }
+.reveal-delay-3 { transition-delay: .18s; }
+.reveal-delay-4 { transition-delay: .28s; }
 
-/* ─── RESPONSIVE & ACCESSIBILITÉ ─── */
-@media (max-width: 640px) {
-  .services-grid,
-  .services-grid-new {
-    gap: 2rem;
-  }
-  .service-modal {
-    padding: 2rem 1.5rem;
-    border-radius: 28px;
-  }
-  .service-modal-title {
-    font-size: 1.8rem;
-  }
-  .service-card-media {
-    border-radius: 20px;
-  }
-  .service-card-new {
-    border-radius: 24px;
-  }
-  .service-num-badge {
-    width: 44px;
-    height: 44px;
-    font-size: 1.5rem;
-    top: 1rem;
-    left: 1rem;
-  }
-  .service-card-badge {
-    width: 38px;
-    height: 38px;
-    font-size: 0.9rem;
-  }
+/* ─── KEYFRAMES ────────────────────────────────────────────── */
+@keyframes revealCard {
+  0%   { opacity:0; transform: translateY(36px) scale(.97); }
+  100% { opacity:1; transform: translateY(0)    scale(1);   }
 }
 
-/* Réduction de mouvement */
+@keyframes riseModal {
+  0%   { opacity:0; transform: scale(.93) translateY(24px); }
+  100% { opacity:1; transform: scale(1)   translateY(0);    }
+}
+
+@keyframes fadeBackdrop {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+/* ─── INCLINAISON MAGNÉTIQUE (JS requis) ───────────────────── */
+/*
+  Copiez ce script dans votre HTML :
+
+  document.querySelectorAll('.service-card, .service-card-new').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - .5;
+      const y = (e.clientY - r.top)  / r.height - .5;
+      card.style.setProperty('--tilt-x', `${y * -8}deg`);
+      card.style.setProperty('--tilt-y', `${x *  8}deg`);
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
+    });
+  });
+
+  Et ajoutez ces règles :
+*/
+.service-card,
+.service-card-new {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+}
+
+@media (hover: hover) {
+  .service-card:hover,
+  .service-card-new:hover {
+    transform:
+      translateY(-10px)
+      rotateX(var(--tilt-x))
+      rotateY(var(--tilt-y))
+      scale(1.005);
+  }
+}
+
+/* ─── MODE SOMBRE ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --shadow-card:      0 4px 12px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    --shadow-card-lift: 0 8px 20px rgba(0,0,0,.4), 0 20px 40px rgba(0,0,0,.4);
+    --shadow-card-float:0 16px 40px rgba(0,0,0,.5), 0 40px 80px rgba(0,0,0,.5);
+  }
+  .service-card-media  { background: #1a1a1e; }
+  .service-card-new    { background: #111116; border-color: rgba(255,255,255,.06); }
+  .service-content     { background: #111116; }
+  .service-name-new    { color: #eee; }
+  .service-desc-new    { color: #888; }
+  .service-tag         { background: rgba(255,255,255,.05); color: #999; border-color: rgba(255,255,255,.07); }
+  .service-modal       { background: rgba(16,16,20,.98); }
+  .service-modal-title { color: #f0ede9; }
+  .service-modal-desc  { color: #aaa; }
+  .service-modal-close { background: rgba(255,255,255,.06); color: #aaa; outline-color: rgba(255,255,255,.08); }
+  .service-modal-close:hover { background: #f0ede9; color: #111; }
+}
+
+/* ─── ACCESSIBILITÉ ────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .service-card,
-  .service-card-new,
-  .service-card-media img,
-  .service-card-badge,
-  .service-modal,
-  .reveal {
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-  }
-  .service-card::before,
-  .service-card::after,
-  .service-card-media::after {
-    display: none;
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
   }
 }
 
-/* Support des écrans tactiles */
 @media (hover: none) and (pointer: coarse) {
-  .service-card:active {
-    transform: scale(0.98);
-  }
-  .service-card-new:active {
-    transform: scale(0.98);
-  }
+  .service-card:active      { transform: scale(.975); transition-duration: .15s; }
+  .service-card-new:active  { transform: scale(.975); transition-duration: .15s; }
+}
+
+.service-card:focus-visible,
+.service-card-new:focus-visible {
+  outline: 2px solid var(--orange, #c06030);
+  outline-offset: 4px;
+  border-radius: var(--radius-card);
 }
