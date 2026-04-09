@@ -12,6 +12,7 @@ export default function StatCounter({ number, label, color }: StatCounterProps) 
   const [displayValue, setDisplayValue] = useState(number);
   const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
 
   const animateCounter = useCallback(() => {
     if (hasAnimated) return;
@@ -21,24 +22,31 @@ export default function StatCounter({ number, label, color }: StatCounterProps) 
     const suffix = number.replace(/^[0-9]+/, ""); // Get non-numeric part like "+", "/7", etc.
 
     const duration = 1800; // ms
-    const steps = 60;
+    const steps = 30; // Reduced from 60 for less re-renders
     const increment = numericPart / steps;
     let current = 0;
     let step = 0;
+    let startTime: number | null = null;
 
-    const counter = setInterval(() => {
-      step++;
-      current += increment;
+    const animateFrame = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      step = Math.floor(progress * steps);
+      current = numericPart * progress;
 
-      if (step >= steps) {
+      if (progress >= 1) {
         setDisplayValue(number);
         setHasAnimated(true);
-        clearInterval(counter);
       } else {
         const displayNum = Math.floor(current);
         setDisplayValue(displayNum > 0 ? displayNum + suffix : suffix);
+        animationRef.current = requestAnimationFrame(animateFrame);
       }
-    }, duration / steps);
+    };
+
+    animationRef.current = requestAnimationFrame(animateFrame);
   }, [number, hasAnimated]);
 
   useEffect(() => {
@@ -58,6 +66,9 @@ export default function StatCounter({ number, label, color }: StatCounterProps) 
     return () => {
       if (containerRef.current) {
         observer.unobserve(containerRef.current);
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
   }, [hasAnimated, animateCounter]);

@@ -123,7 +123,7 @@ const LOGIN_CSS = `
   }
   .l-form-wrap { width: 100%; max-width: 370px; position: relative; z-index: 1; animation: fadeUp 0.65s 0.1s both; }
   .l-mode-pill { display: inline-flex; border: 0.5px solid rgba(30,64,175,0.18); border-radius: 0; overflow: hidden; margin-bottom: 2rem; }
-  .l-pill-btn { padding: 0.45rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.38); cursor: pointer; transition: all 0.2s; }
+  .l-pill-btn { padding: 0.45rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.38); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
   .l-pill-btn.active { background: var(--ink); color: #fff; }
   .l-pill-btn:not(.active):hover { color: var(--ink); background: rgba(30,64,175,0.04); }
   .l-form-h { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: var(--ink); letter-spacing: -0.015em; line-height: 1.1; margin-bottom: 0.4rem; }
@@ -132,7 +132,7 @@ const LOGIN_CSS = `
   .l-fields { display: flex; flex-direction: column; gap: 0; }
   .l-field { position: relative; padding-top: 1rem; border-bottom: 1px solid rgba(11,24,41,0.1); transition: border-color 0.22s; margin-bottom: 0.2rem; }
   .l-field.focused { border-color: var(--blue); }
-  .l-field label { position: absolute; left: 0; top: 1.5rem; font-size: 13px; color: rgba(11,24,41,0.38); font-weight: 300; pointer-events: none; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .l-field label { position: absolute; left: 0; top: 1.5rem; font-size: 13px; color: rgba(11,24,41,0.38); font-weight: 300; pointer-events: none; transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1); }
   .l-field.focused label, .l-field.filled label { top: 0.15rem; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue); font-weight: 500; }
   .l-field input { width: 100%; padding: 0.5rem 0 0.65rem; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 400; color: var(--ink); }
   .l-field input::placeholder { color: transparent; }

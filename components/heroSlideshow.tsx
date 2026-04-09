@@ -6,11 +6,11 @@ import Link from "next/link";
 
 /* ─── Slide data ─── */
 const DEFAULT_SLIDES = [
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – cybersécurité", type: "video",
+  { src: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", alt: "FiSAFi – cybersécurité", type: "image",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>",
      },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – slide 1", type: "video",
+  { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>",
      },
@@ -18,7 +18,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>",
     },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – slide 3", type: "video",
+  { src: "https://i.pinimg.com/1200x/3b/6c/95/3b6c95df881772652bec1198801db826.jpg", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>",
     sub: "Accompagnement expert\nvers le numérique" },
@@ -26,7 +26,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Services Managés",
     title: "Support technique\n<em>24/7</em>",
     sub: "Expertise IT au service\nde votre croissance" },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – slide 5", type: "video",
+  { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 5", type: "image",
     eyebrow: "Solutions Personnalisées",
     title: "Vos défis,\n<em>nos solutions</em>",
    },
@@ -215,7 +215,7 @@ export default function HeroSlideshow({
                 fill
                 priority={idx === 0}
                 sizes="60vw"
-                style={{ objectFit: "cover", objectPosition: "center 15%" }}
+                style={{ objectFit: "contain", objectPosition: "center" }}
               />
             )}
             {/* Dégradé gauche sur l'image — fondu vers le panel texte */}

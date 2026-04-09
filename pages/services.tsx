@@ -80,8 +80,11 @@ export default function Services() {
         <h2 className="section-title reveal reveal-delay-1">Nos<br />services</h2>
 
         <div className="services-grid-new">
-          {services.map((service, i) => (
-            <div key={service.num} className={`service-card-new reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
+          {services.map((service, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const serviceClassName = `service-card-new reveal${delayClass}`;
+            return (
+            <div key={service.num} className={serviceClassName}>
               <div className="service-image-wrapper">
                 <Image
                   src={service.img}
@@ -98,8 +101,10 @@ export default function Services() {
                 <p className="service-desc-new">{service.desc}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
+
 
         <div className="services-cta reveal reveal-delay-4">
           <Link href="/contact" className="btn-primary" style={{ textDecoration: "none" }}>

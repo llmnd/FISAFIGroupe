@@ -197,7 +197,7 @@ body {
   text-decoration: none;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
+  transition: color var(--transition), background var(--transition), transform var(--transition);
   position: relative;
   cursor: pointer;
   white-space: nowrap;
@@ -259,7 +259,7 @@ body {
   color: var(--brown-2);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
   position: relative;
   flex-shrink: 0;
   padding: 0;
@@ -283,7 +283,7 @@ body {
   color: var(--orange);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  transition: all 0.3s var(--spring);
+  transition: transform 0.3s var(--spring), background 0.3s var(--spring), border-color 0.3s var(--spring), box-shadow 0.3s var(--spring);
   flex-shrink: 0;
   padding: 0;
   margin: 0 2px;
@@ -383,7 +383,7 @@ body {
   white-space: nowrap;
   cursor: pointer;
   border: none;
-  transition: all 0.2s var(--spring);
+  transition: background 0.2s var(--spring), color 0.2s var(--spring), transform 0.2s var(--spring);
 }
 
 .header-login-btn:hover {
@@ -554,7 +554,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  transition: all 0.22s var(--spring);
+  transition: transform 0.22s var(--spring), background 0.22s var(--spring), box-shadow 0.22s var(--spring), color 0.22s var(--spring);
   animation: item-pop 0.36s var(--spring) both;
   animation-delay: calc(var(--i, 0) * 55ms);
   cursor: pointer;
@@ -613,7 +613,7 @@ body {
   width: 18px; height: 1.5px;
   background: var(--brown);
   border-radius: 2px;
-  transition: all 0.32s var(--spring);
+  transition: width 0.32s var(--spring), transform 0.32s var(--spring), opacity 0.32s var(--spring);
   transform-origin: center;
 }
 
@@ -747,7 +747,7 @@ body {
   font-weight: 500;
   border-radius: var(--radius-md);
   text-decoration: none;
-  transition: all 0.20s ease;
+  transition: background 0.20s ease, color 0.20s ease, transform 0.20s ease;
   cursor: pointer;
   position: relative;
   letter-spacing: 0.1px;
@@ -834,7 +834,7 @@ body {
   text-decoration: none;
   cursor: pointer;
   border: none;
-  transition: all 0.24s var(--spring);
+  transition: transform 0.24s var(--spring), box-shadow 0.24s var(--spring), background 0.24s var(--spring);
   letter-spacing: 0.2px;
   box-shadow:
     0 4px 16px rgba(232, 88, 10, 0.30),
@@ -863,7 +863,7 @@ body {
   cursor: pointer;
   color: var(--brown-2);
   text-decoration: none;
-  transition: all var(--transition);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
 .header-drawer-social:hover {
@@ -1028,7 +1028,7 @@ body {
   color: var(--brown-2);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
 .header-info-close:hover {

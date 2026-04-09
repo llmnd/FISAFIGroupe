@@ -1,64 +1,87 @@
 /* ─── ABOUT STRIP ─── */
 
 .about-strip {
-  background: var(--blue-deep);
-  padding: 3.5rem 1.75rem;
-  display: flex; 
-  flex-direction: column; 
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #0d1f4e;
+  padding: 1rem 0;
+}
+
+@media (max-width: 600px) {
+  .about-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.about-strip-left {
+  padding: 3rem 3.5rem;
+  border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.about-strip-right {
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   gap: 1.5rem;
-  border-top: 0.5px solid rgba(255,255,255,0.06);
-  border-bottom: 0.5px solid rgba(255,255,255,0.06);
 }
 
 .about-quote {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.7rem, 5vw, 2.3rem);
-  font-style: italic; 
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
   font-weight: 300;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.55;
-  padding-left: 1.5rem;
-  border-left: 1.5px solid var(--orange);
-  opacity: 0.95;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.4;
+  border-left: 2px solid var(--orange);
+  padding-left: 1.75rem;
+  margin: 0;
 }
 
 .about-text {
-  font-size: 15px; 
-  line-height: 2;
-  color: rgba(255,255,255,0.45);
-  font-weight: 300; 
-  letter-spacing: 0.015em;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.7;
+  margin: 0;
 }
 
 .about-ceo {
-  display: flex; 
-  align-items: center; 
-  gap: 1rem;
-  padding-top: 1.5rem;
-  border-top: 0.5px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .ceo-avatar {
-  width: 44px; 
-  height: 44px; 
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2);
-  flex-shrink: 0; 
   overflow: hidden;
-  box-shadow: 0 0 0 2px rgba(229,90,0,0.25);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1e40af, #0d1f4e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
 }
 
 .ceo-name {
-  font-size: 13px; 
-  color: rgba(255,255,255,0.85);
-  font-weight: 400; 
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  color: #fff;
+  margin-bottom: 3px;
+  margin: 0 0 3px 0;
 }
 
 .ceo-title {
-  font-size: 10px; 
-  color: rgba(255,255,255,0.35);
-  letter-spacing: 0.14em; 
-  text-transform: uppercase; 
-  margin-top: 3px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
 }

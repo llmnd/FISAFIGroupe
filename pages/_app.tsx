@@ -14,22 +14,26 @@ function ScrollPersistence() {
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!globalThis.window) return;
 
     const saveScroll = (path: string) => {
       try {
-        sessionStorage.setItem('scroll:' + path, String(window.scrollY || 0));
-      } catch (e) {}
+        sessionStorage.setItem('scroll:' + path, String(globalThis.window.scrollY || 0));
+      } catch (error) {
+        console.error('Error saving scroll position:', error);
+      }
     };
 
     const restoreScroll = (path: string) => {
       try {
         const v = sessionStorage.getItem('scroll:' + path);
         if (v !== null) {
-          const y = parseInt(v) || 0;
-          window.requestAnimationFrame(() => window.scrollTo(0, y));
+          const y = Number.parseInt(v, 10) || 0;
+          globalThis.window.requestAnimationFrame(() => globalThis.window.scrollTo(0, y));
         }
-      } catch (e) {}
+      } catch (error) {
+        console.error('Error restoring scroll position:', error);
+      }
     };
 
     const onStart = (url: string) => {

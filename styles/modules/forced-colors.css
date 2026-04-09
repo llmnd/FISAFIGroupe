@@ -1,0 +1,123 @@
+/* ─── FORCED COLOR MODE PROTECTION ─── */
+/* Prevents browser from changing colors/images when dark mode is forced */
+
+/* All visual elements */
+img,
+picture,
+video,
+canvas,
+svg,
+source {
+  forced-color-adjust: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+
+/* Protect images explicitly */
+img {
+  color-scheme: normal;
+  forced-color-adjust: none;
+}
+
+/* Flag emojis & international icons */
+.flag,
+[data-flag],
+[class*="flag"],
+.locale-selector,
+.language-selector {
+  forced-color-adjust: none;
+  color-adjust: exact;
+}
+
+/* Hero section protection */
+.hero,
+.hero-bg,
+.hero-content,
+.hero-overlay,
+.hero-content-box,
+.hero-content-box-title,
+.hero-image {
+  forced-color-adjust: none;
+}
+
+/* Service cards & visual content */
+.service-card,
+.service-image,
+.service-image-wrapper,
+.card-carousel,
+.carousel-item,
+.split-card,
+.split-card-image,
+.area-card {
+  forced-color-adjust: none;
+}
+
+/* Section backgrounds with intentional colors */
+.stats-section,
+.about-strip,
+.section,
+.divider,
+.split-card {
+  forced-color-adjust: none;
+}
+
+/* Buttons with specific brand colors */
+.btn-primary,
+.btn-secondary,
+[class*="btn"] {
+  forced-color-adjust: none;
+}
+
+/* Custom styling for specific visual elements */
+.ceo-avatar,
+.floating-logo,
+.map-component,
+[class*="logo"],
+[class*="badge"],
+[class*="badge"] {
+  forced-color-adjust: none;
+}
+
+/* Preserve footer colors */
+footer,
+.footer {
+  forced-color-adjust: none;
+}
+
+/* Prevent form elements from being inverted */
+input,
+textarea,
+select {
+  forced-color-adjust: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Icon systems */
+[class*="icon"],
+svg[class*="icon"] {
+  forced-color-adjust: none;
+}
+
+/* Accent colors & decorative elements */
+.accent,
+.orange,
+.blue,
+.gradient,
+[style*="background"],
+[style*="color"] {
+  forced-color-adjust: none;
+}
+
+/* Animations & transitions should not be affected */
+@supports (forced-color-adjust: none) {
+  * {
+    forced-color-adjust: none;
+  }
+
+  /* Only allow default color scheme for body text */
+  body {
+    forced-color-adjust: auto;
+  }
+}

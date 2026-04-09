@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
   padding: 0;
 }
@@ -58,7 +58,7 @@
   right: 4px;
   opacity: 0;
   transform: scale(0);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 0 8px rgba(232, 88, 10, 0.6);
 }
 
@@ -104,7 +104,7 @@
   font-size: 13px;
   font-weight: 500;
   box-shadow: 0 4px 12px rgba(74, 55, 40, 0.1), 0 2px 4px rgba(74, 55, 40, 0.06);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   transform-origin: bottom right;
   animation: actionSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);

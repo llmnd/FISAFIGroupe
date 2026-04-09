@@ -6,8 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import CardCarousel from "@/components/CardCarousel";
-import StatCounter from "@/components/StatCounter";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 
@@ -80,6 +78,7 @@ const contactItems = [
 
 export default function Home() {
   const [clickedAreaCard, setClickedAreaCard] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -113,30 +112,14 @@ export default function Home() {
       {/* ─── HERO (component) ─── */}
       <HeroSlideshow />
 
-      {/* ─── STATS SECTION ─── */}
-      <section className="stats-section">
-        <div className="stats-grid">
-          {[
-            { number: "10+", label: "Projets réalisés", color: "#E8580A" },
-            { number: "5+", label: "Clients satisfaits", color: "#FF7235" },
-            { number: "1+", label: "Années d'expertise", color: "#F59052" },
-            { number: "24/7", label: "Support technique", color: "#EC6B1F" },
-          ].map((stat, i) => (
-            <div key={stat.label} className={`stat-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`} style={{ borderLeftColor: stat.color }}>
-              <StatCounter number={stat.number} label={stat.label} color={stat.color} />
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
-        <div>
+        <div className="about-strip-left">
           <p className="about-quote">
             « Pensez grand.<br />Pensez digital.<br />Pensez FISAFI. »
           </p>
         </div>
-        <div>
+        <div className="about-strip-right">
           <p className="about-text">
             FISAFI GROUPE <br />
 Partenaire stratégique pour l’avenir numérique de l’Afrique.
@@ -163,36 +146,80 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
       <section className="section" id="services">
         <div className="section-eyebrow reveal">Nos offres</div>
         <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
-        <CardCarousel variant="services">
+        
+        <div className="services-grid">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.", img: "https://i.pinimg.com/1200x/91/bf/3c/91bf3c42a9d339d90f30b2df5a4023f6.jpg" },
-            { num: "02", name: "Informatique & Infrastructures IT", desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.", img: "/18.jpeg" },
-            { num: "03", name: "Sécurité & Cybersécurité", desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg" },
-            { num: "04", name: "Conseil & Accompagnement Stratégique", desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.", img: "/22.jpeg" },
-          ].map((s, i) => (
-            <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
-              <div className="service-image-wrapper">
-                <Image
-                  src={s.img}
-                  alt={s.name}
-                  width={400}
-                  height={280}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-                <div className="service-overlay" />
-                <div className="service-num-badge">{s.num}</div>
+            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/1200x/67/fa/68/67fa686e89f245b451f52e4b180ee27a.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
+            { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
+            { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
+            { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnons dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", tags: ["CONSEIL", "STRATÉGIE"] },
+          ].map((service, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            return (
+              <div 
+                key={service.num} 
+                className={`service-card reveal${delayClass}`}
+                onClick={() => setSelectedService(service)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedService(service);
+                  }
+                }}
+              >
+                <div className="service-card-media">
+                  <Image
+                    src={service.img}
+                    alt={service.name}
+                    width={280}
+                    height={240}
+                    style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
+                  />
+                  <div className="service-card-badge">↗</div>
+                </div>
+                <div className="service-card-content">
+                  <h3 className="service-card-title">{service.name}</h3>
+                  <div className="service-card-tags">
+                    {service.tags?.map((tag) => (
+                      <span key={tag} className="service-tag">{tag}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="service-content">
-                <h3 className="service-name-new">{s.name}</h3>
-                <p className="service-desc-new">{s.desc}</p>
-              </div>
-            </div>
-          ))}
-        </CardCarousel>
-        <div className="services-cta reveal reveal-delay-4">
-          <Link href="/services" className="btn-primary" style={{ textDecoration: "none" }}>Voir tous nos services</Link>
+            );
+          })}
         </div>
       </section>
+
+      {/* Modal Service */}
+      {selectedService && (
+        <div 
+          className="service-modal-backdrop" 
+          onClick={() => setSelectedService(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSelectedService(null);
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="service-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="service-modal-close" 
+              onClick={() => setSelectedService(null)}
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+            <div className="service-modal-content">
+              <div className="service-modal-num">{selectedService.num}</div>
+              <h2 className="service-modal-title">{selectedService.name}</h2>
+              <p className="service-modal-desc">{selectedService.fullDesc}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="divider" />
 
@@ -255,12 +282,16 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <div className="section-eyebrow reveal">Domaines d&apos;expertise</div>
         <h2 className="section-title reveal reveal-delay-1">Nos compétences<br />clés</h2>
         <div className="comp-grid">
-          {["Réseaux & Télécoms", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
-            <div key={name} className={`comp-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
+          {["Réseaux & Télécoms", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const compClassName = `comp-item reveal${delayClass}`;
+            return (
+            <div key={name} className={compClassName}>
               <div className="comp-icon" />
               <div className="comp-name">{name}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -309,18 +340,14 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", img: "https://i.pinimg.com/736x/ed/a3/94/eda3945e4636ae02cdd4bb7bff772370.jpg", type: "image" },
-            { name: "Infrastructure IT", img: "https://i.pinimg.com/736x/2d/85/a7/2d85a74061bce155cad15c1171265493.jpg", type: "image" },
-            { name: "Sécurité Digitale", img: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", type: "video" },
-            { name: "Conseil Stratégique", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/736x/ed/a3/94/eda3945e4636ae02cdd4bb7bff772370.jpg", type: "image" },
+            { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/736x/2d/85/a7/2d85a74061bce155cad15c1171265493.jpg", type: "image" },
+            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", type: "video" },
+            { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
           ].map((area, i) => (
-            <div key={area.name} className="area-card-item">
-              <div 
-                className={`area-card ${clickedAreaCard === area.name ? 'flipped' : ''}`}
-                onClick={() => setClickedAreaCard(clickedAreaCard === area.name ? null : area.name)}
-              >
-                {/* Recto - Image ou Vidéo */}
-                <div className="area-card-front">
+            <div key={area.name} className={`area-card-item reveal`} style={{ "--delay": `${i * 0.15}s` } as any}>
+              <div className="area-card">
+                <div className="area-card-media">
                   {area.type === "video" ? (
                     <video autoPlay muted loop playsInline preload="auto" className="area-card-video">
                       <source src={area.img} type="video/mp4" />
@@ -329,20 +356,16 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                     <Image
                       src={area.img}
                       alt={area.name}
-                      fill
-                      style={{ objectFit: "cover" }}
+                      width={240}
+                      height={200}
+                      style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
                     />
                   )}
                 </div>
-
-                {/* Hint Cliquer */}
-                <div className="area-card-hint">Cliquer</div>
-
-                {/* Verso - Contenu texte */}
-                <div className="area-card-overlay">
-                  <div className="area-card-content">
-                    <div className="area-card-name">{area.name}</div>
-                  </div>
+                <div className="area-card-content">
+                  <h3 className="area-card-title">{area.name}</h3>
+                  <p className="area-card-desc">{area.desc}</p>
+                  <div className="area-card-accent" />
                 </div>
               </div>
             </div>
@@ -363,11 +386,13 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <div className="contact-items">
           {contactItems.map((item, i) => {
             const Tag = item.href ? "a" : "div";
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const contactClassName = `contact-item reveal${delayClass}`;
             return (
               <Tag
                 key={item.label}
                 href={item.href || undefined}
-                className={`contact-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}
+                className={contactClassName}
               >
                 <div className={`contact-icon${item.highlight ? " contact-icon--highlight" : ""}`}>
                   {item.icon}
@@ -398,12 +423,12 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
             <p className="footer-desc">Partenaire stratégique en expertise technologique, ingénierie et conseil pour l&apos;Afrique.</p>
             <div className="footer-socials">
-              <a href="#" aria-label="LinkedIn" title="LinkedIn">
+              <a href="https://www.linkedin.com/company/fisafigroupe" aria-label="LinkedIn" title="LinkedIn" target="_blank" rel="noopener noreferrer">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.006 1.422-.103.249-.129.597-.129.946v5.437h-3.554s.05-8.817 0-9.737h3.554v1.378c-.009.015-.021.029-.031.042h.031v-.042c.427-.659 1.191-1.598 2.897-1.598 2.117 0 3.704 1.381 3.704 4.352v5.605zM5.337 8.855c-1.144 0-1.915-.759-1.915-1.71 0-.955.771-1.71 1.958-1.71 1.187 0 1.914.755 1.937 1.71 0 .951-.75 1.71-1.98 1.71zm1.581 11.597H3.714V9.671h3.203v10.781zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
                 </svg>
               </a>
-              <a href="#" aria-label="Twitter" title="Twitter">
+              <a href="https://twitter.com/fisafigroupe" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M23.953 4.57a10 10 0 002.856-3.515a9.953 9.953 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827a4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417a9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                 </svg>

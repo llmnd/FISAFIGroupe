@@ -8,6 +8,40 @@ import Header from "@/components/Header";
 
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
+// Icon components extracted for better code organization
+const CalendarIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const PdfIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="9" y1="12" x2="12" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
 export default function FormationPage() {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -113,7 +147,7 @@ export default function FormationPage() {
           lastName: lastName || formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          formationId: parseInt(formData.formationId),
+          formationId: Number.parseInt(formData.formationId, 10),
           message: formData.message,
         }),
       });
@@ -138,40 +172,6 @@ export default function FormationPage() {
     return bytes + ' o';
   };
 
-  // Icône SVG calendrier — pas d'emoji, layout stable sur mobile
-  const CalendarIcon = () => (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-
-  const PdfIcon = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="9" y1="12" x2="12" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-
-  const DownloadIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-
   const handleDownload = async (e: React.MouseEvent<HTMLButtonElement>, doc: any) => {
     if (!doc.fileUrl) { e.preventDefault(); return; }
     setDownloadingId(doc.id);
@@ -183,7 +183,7 @@ export default function FormationPage() {
       link.download = doc.name || 'document';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
     } catch (error) {
       console.error('Download error:', error);
     } finally {
@@ -194,15 +194,9 @@ export default function FormationPage() {
   const renderBrochuresList = () => {
     if (loadingBrochures) {
       return (
-        <div style={{ paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="brochures-loading">
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ 
-              height: 64, 
-              borderRadius: 2, 
-              background: 'linear-gradient(90deg, rgba(30,64,175,0.04), rgba(30,64,175,0.08), rgba(30,64,175,0.04))',
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 2s infinite',
-            }} />
+            <div key={i} className="brochures-skeleton" />
           ))}
           <style>{`
             @keyframes shimmer {
@@ -216,45 +210,19 @@ export default function FormationPage() {
 
     if (brochures.length === 0) {
       return (
-        <div style={{
-          padding: '3rem 0',
-          textAlign: 'center',
-          color: 'var(--steel)',
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: 14,
-        }}>
+        <div className="brochures-empty">
           Aucun document disponible pour le moment.
         </div>
       );
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="brochures-list">
         {brochures.map((doc) => {
-          const fileSize = doc.fileSize ? parseInt(doc.fileSize, 10) : 0;
+          const fileSize = doc.fileSize ? Number.parseInt(doc.fileSize, 10) : 0;
           const displaySize = getFormattedFileSize(fileSize);
           const isAvailable = !!doc.fileUrl;
           const isDownloading = downloadingId === doc.id;
-
-          // Utilise un objet style unique sans doublon de propriété
-          const buttonStyle: React.CSSProperties = {
-            display: 'grid',
-            gridTemplateColumns: 'auto 1fr auto',
-            alignItems: 'center',
-            gap: '1.25rem',
-            padding: '1.25rem 0',
-            borderTop: 'none',
-            borderLeft: 'none',
-            borderRight: 'none',
-            borderBottom: '0.5px solid var(--line)',
-            background: 'transparent',
-            cursor: isAvailable ? 'pointer' : 'default',
-            textAlign: 'left',
-            fontFamily: 'inherit',
-            width: '100%',
-            opacity: isAvailable ? 1 : 0.45,
-            transition: 'all 0.15s ease',
-          };
 
           return (
             <button
@@ -262,88 +230,34 @@ export default function FormationPage() {
               onClick={(e) => handleDownload(e, doc)}
               disabled={!isAvailable || isDownloading}
               title={isAvailable ? 'Télécharger' : 'Fichier non disponible'}
-              style={buttonStyle}
+              className={`brochure-item ${!isAvailable ? 'brochure-item--unavailable' : ''}`}
             >
               {/* Icône PDF */}
-              <div style={{
-                width: 40,
-                height: 48,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                transition: 'color 0.15s',
-                flexShrink: 0,
-              }}>
+              <div className="brochure-icon">
                 <PdfIcon />
-                <span style={{
-                  fontSize: 8,
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  marginTop: 3,
-                  fontFamily: "'Outfit', sans-serif",
-                  color: '#ffffff',
-                  transition: 'color 0.15s',
-                }}>
-                  PDF
-                </span>
+                <span className="brochure-label">PDF</span>
               </div>
 
               {/* Infos */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 400,
-                  color: 'var(--ink)',
-                  letterSpacing: '0.01em',
-                  marginBottom: 4,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {doc.name || 'Document sans titre'}
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: 11,
-                  color: 'var(--steel)',
-                  letterSpacing: '0.03em',
-                }}>
+              <div className="brochure-info">
+                <div className="brochure-name">{doc.name || 'Document sans titre'}</div>
+                <div className="brochure-meta">
                   {displaySize && (
                     <>
                       <span>{displaySize}</span>
-                      <span style={{ width: 2, height: 2, borderRadius: '50%', background: 'var(--line)', display: 'inline-block' }} />
+                      <span className="brochure-separator" />
                     </>
                   )}
-                  <span style={{ textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.08em' }}>
+                  <span>
                     {isAvailable ? 'Disponible' : 'Non disponible'}
                   </span>
                 </div>
               </div>
 
               {/* Action télécharger */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#ffffff',
-                opacity: 1,
-                transform: 'translateX(0)',
-                transition: 'opacity 0.15s, transform 0.15s',
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-              }}>
+              <div className="brochure-action">
                 {isDownloading ? (
-                  <span style={{ fontSize: 11, color: '#ffffff' }}>…</span>
+                  <span>…</span>
                 ) : (
                   <>
                     <DownloadIcon />
@@ -356,27 +270,6 @@ export default function FormationPage() {
         })}
       </div>
     );
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '0.75rem',
-    border: '1px solid rgba(255,255,255,0.25)',
-    borderRadius: '2px',
-    fontSize: '14px',
-    fontFamily: "'Outfit', sans-serif",
-    background: 'rgba(255,255,255,0.08)',
-    color: '#ffffff',
-    outline: 'none',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    marginBottom: '0.5rem',
-    fontWeight: 500,
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
   };
 
   const sessions = [
@@ -407,18 +300,18 @@ export default function FormationPage() {
 
       {/* ESPACE FORMATION */}
       <div className="about-strip">
-        <div>
+        <div className="about-strip-left">
           <p className="about-quote">
             « L&apos;Espace<br />Formation FISAFI.<br />Votre partenaire<br />de compétences. »
           </p>
         </div>
-        <div>
+        <div className="about-strip-right">
           <p className="about-text">
-            L&apos;Espace Formation FISAFI est un centre de formation spécialisé dans les technologies de l&apos;information et des télécommunications. Nous proposons des formations pratiques et certifiantes conçues pour développer vos compétences et celles de vos équipes, avec un accompagnement pédagogique de qualité assuré par nos experts de terrain.
+            L&apos;Espace Formation FISAFI est un centre de formation spécialisé dans les technologies de l&apos;information et des télécommunications. Nous proposons des formations pratiques et certifiantes conçues pour développer vos compétences et celles de vos équipes.
           </p>
           <div className="about-ceo">
             <div className="ceo-avatar">
-              <div style={{ background: "#1e40af", borderRadius: "50%", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "20px" }}>📚</div>
+              📚
             </div>
             <div>
               <div className="ceo-name">Center Formation FISAFI</div>
@@ -432,20 +325,53 @@ export default function FormationPage() {
       <section className="section" id="catalogue">
         <div className="section-eyebrow reveal">Nos offres de formation</div>
         <h2 className="section-title reveal reveal-delay-1">Catalogue de<br />formations</h2>
+        
         <div className="services-grid-new">
           {[
-            { num: "01", name: "Administration Réseaux & Télécoms", desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", img: "/19.jpeg" },
-            { num: "02", name: "Infrastructure IT & Virtualisation", desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", img: "/18.jpeg" },
-            { num: "03", name: "Cybersécurité & Digital Trust", desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", img: "/21.jpeg" },
-            { num: "04", name: "Certification Professionnelle", desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", img: "/17.jpeg" },
-          ].map((s, i) => (
-            <div key={s.num} className={`service-card-new reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}>
+            { 
+              num: "01", 
+              name: "Administration Réseaux & Télécoms", 
+              desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", 
+              img: "/19.jpeg",
+              hours: "40H",
+              level: "Intermédiaire"
+            },
+            { 
+              num: "02", 
+              name: "Infrastructure IT & Virtualisation", 
+              desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", 
+              img: "/18.jpeg",
+              hours: "35H",
+              level: "Avancé"
+            },
+            { 
+              num: "03", 
+              name: "Cybersécurité & Digital Trust", 
+              desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", 
+              img: "/21.jpeg",
+              hours: "45H",
+              level: "Avancé"
+            },
+            { 
+              num: "04", 
+              name: "Certification Professionnelle", 
+              desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", 
+              img: "/17.jpeg",
+              hours: "30H",
+              level: "Variable"
+            },
+          ].map((s, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const serviceClassName = `service-card-new reveal${delayClass}`;
+            return (
+            <div key={s.num} className={serviceClassName}>
               <div className="service-image-wrapper">
                 <Image
                   src={s.img}
                   alt={s.name}
                   width={400}
-                  height={280}
+                  height={300}
+                  priority={i === 0}
                   style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
                 <div className="service-overlay" />
@@ -454,9 +380,25 @@ export default function FormationPage() {
               <div className="service-content">
                 <h3 className="service-name-new">{s.name}</h3>
                 <p className="service-desc-new">{s.desc}</p>
+                <div className="service-meta" style={{
+                  marginTop: 'auto',
+                  paddingTop: '0.75rem',
+                  borderTop: '1px solid rgba(0,0,0,0.08)',
+                  display: 'flex',
+                  gap: '1rem',
+                  fontSize: '11px',
+                  color: '#5a6b7d',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                }}>
+                  <span>📚 {s.hours}</span>
+                  <span>🎯 {s.level}</span>
+                </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -467,10 +409,13 @@ export default function FormationPage() {
         <div className="section-eyebrow reveal">Planning des sessions</div>
         <h2 className="section-title reveal reveal-delay-1">Calendrier<br />des sessions</h2>
         <div className="comp-grid">
-          {sessions.map((session, i) => (
+          {sessions.map((session, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const sessionClassName = `comp-item reveal${delayClass}`;
+            return (
             <div
               key={session.title}
-              className={`comp-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}
+              className={sessionClassName}
             >
               {/* Icône SVG — remplace l'emoji 📅 pour éviter tout chevauchement */}
               <div
@@ -499,22 +444,17 @@ export default function FormationPage() {
                 {session.desc}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* BROCHURES */}
+      {/* ─── BROCHURES ─── */}
       <section className="vision-section" id="brochures">
         <div className="section-eyebrow reveal">Ressources</div>
         <h2 className="section-title reveal reveal-delay-1">Téléchargement<br />de brochures</h2>
         <div className="vision-box reveal reveal-delay-2">
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            flexWrap: 'wrap',
-          }}>
+          <div className="brochures-header">
             <div>
               <div className="vision-label">Documents disponibles</div>
               <p className="vision-text" style={{ marginBottom: 0 }}>
@@ -522,15 +462,7 @@ export default function FormationPage() {
               </p>
             </div>
             {!loadingBrochures && brochures.length > 0 && (
-              <div style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 11,
-                color: 'var(--steel)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                paddingTop: '0.2rem',
-                whiteSpace: 'nowrap',
-              }}>
+              <div className="brochures-count">
                 {brochures.length} document{brochures.length > 1 ? 's' : ''}
               </div>
             )}
@@ -548,57 +480,43 @@ export default function FormationPage() {
 
         <form
           className="contact-form reveal reveal-delay-3"
-          style={{ maxWidth: '600px', margin: '2rem auto' }}
           onSubmit={handleFormSubmit}
         >
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className="form-grid">
             {submitStatus && (
-              <div style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                backgroundColor: submitStatus.type === 'success' ? '#d4edda' : '#f8d7da',
-                color: submitStatus.type === 'success' ? '#155724' : '#721c24',
-                border: `1px solid ${submitStatus.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 14,
-              }}>
+              <div className={`form-status form-status-${submitStatus.type}`}>
                 {submitStatus.message}
               </div>
             )}
-            <div>
-              <label style={labelStyle}>Nom complet *</label>
-              <input type="text" name="firstName" value={formData.firstName} onChange={handleFormChange} placeholder="Votre nom" required style={inputStyle} />
+            <div className="form-group">
+              <label htmlFor="fullName" className="form-label">Nom complet *</label>
+              <input id="fullName" type="text" name="firstName" value={formData.firstName} onChange={handleFormChange} placeholder="Votre nom" required className="form-input" />
             </div>
-            <div>
-              <label style={labelStyle}>Email *</label>
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email *</label>
               <input 
+                id="email"
                 type="email" 
                 name="email" 
                 value={formData.email} 
                 onChange={handleFormChange} 
                 placeholder="votre@email.com" 
                 required 
-                style={{ ...inputStyle, borderColor: emailError ? '#f87171' : 'rgba(255,255,255,0.25)' }}
+                className={`form-input ${emailError ? 'form-input-error' : ''}`}
               />
               {emailError && (
-                <div style={{
-                  marginTop: '0.25rem',
-                  fontSize: '11px',
-                  color: '#fca5a5',
-                  fontFamily: "'Outfit', sans-serif",
-                  letterSpacing: '0.02em',
-                }}>
+                <div className="form-error">
                   ✗ {emailError}
                 </div>
               )}
             </div>
-            <div>
-              <label style={labelStyle}>Téléphone *</label>
-              <input type="tel" name="phone" value={formData.phone} onChange={handleFormChange} placeholder="+221 77 XXX XX XX" required style={inputStyle} />
+            <div className="form-group">
+              <label htmlFor="phone" className="form-label">Téléphone *</label>
+              <input id="phone" type="tel" name="phone" value={formData.phone} onChange={handleFormChange} placeholder="+221 77 XXX XX XX" required className="form-input" />
             </div>
-            <div>
-              <label style={labelStyle}>Formation souhaitée *</label>
-              <select name="formationId" value={formData.formationId} onChange={handleFormChange} required style={inputStyle}>
+            <div className="form-group">
+              <label htmlFor="formation" className="form-label">Formation souhaitée *</label>
+              <select id="formation" name="formationId" value={formData.formationId} onChange={handleFormChange} required className="form-input">
                 <option value="">Sélectionnez une formation</option>
                 <option value="1">Administration Réseaux & Télécoms</option>
                 <option value="2">Infrastructure IT & Virtualisation</option>
@@ -606,22 +524,23 @@ export default function FormationPage() {
                 <option value="4">Certification Professionnelle</option>
               </select>
             </div>
-            <div>
-              <label style={labelStyle}>Message</label>
+            <div className="form-group">
+              <label htmlFor="message" className="form-label">Message</label>
               <textarea
+                id="message"
                 name="message"
                 value={formData.message}
                 onChange={handleFormChange}
                 placeholder="Vos questions…"
                 rows={4}
-                style={{ ...inputStyle, resize: 'vertical' }}
+                className="form-input form-textarea"
               />
             </div>
             <button
               type="submit"
               className="btn-contact"
-              style={{ marginTop: '1rem', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
               disabled={loading}
+              style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading ? 'Envoi en cours…' : 'Soumettre mon inscription'}
             </button>

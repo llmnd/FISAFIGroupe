@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
+import { ThemeProvider } from '@/context/ThemeContext';
+import SmoothScrollProvider from '@/components/SmoothScrollProvider';
+import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal',
@@ -65,7 +68,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { readonly children: ReactNode }) {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -148,9 +151,33 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Search Engines Verification */}
         <meta name="google-site-verification" content="YOUR_GOOGLE_VERIFICATION_CODE_HERE" />
         <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE_HERE" />
+
+        {/* Theme Initialization Script - Prevent FOUC (Flash of Unstyled Content) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'light';
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {
+                  // localStorage might not be available in some contexts
+                  document.documentElement.classList.remove('dark');
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
-        {children}
+        <ThemeProvider>
+          <SmoothScrollProvider />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -19,15 +19,14 @@ interface Article {
 }
 
 export default function News() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    // Token check for potential future use
+    // const token = localStorage.getItem("token");
   }, []);
 
   useEffect(() => {
@@ -131,8 +130,11 @@ export default function News() {
         <div className="services-grid-new">
           {[
             { num: "01", name: "Suivez nos actualités", desc: "Restez informé de toutes nos innovations, publications et événements", img: "/20.jpeg" },
-          ].map((s, i) => (
-            <div key={s.num} className={`service-card-new reveal${i > 0 ?  ` reveal-delay-${i}` : ""}`}>
+          ].map((s, i) => {
+            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
+            const serviceClassName = `service-card-new reveal${delayClass}`;
+            return (
+            <div key={s.num} className={serviceClassName}>
               <div className="service-image-wrapper">
                 <Image
                   src={s.img}
@@ -149,7 +151,9 @@ export default function News() {
                 <p className="service-desc-new">{s.desc}</p>
               </div>
             </div>
-          ))}
+            );
+          })
+        }
         </div>
       </section>
 
@@ -195,346 +199,6 @@ export default function News() {
             </button>
           ))}
         </div>
-
-        {/* Loading */}
-        {loadingArticles ? (
-          <div
-            className="reveal reveal-delay-2"
-            style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--steel)' }}
-          >
-            Chargement des articles…
-          </div>
-        ) : articles.length === 0 ? (
-          <div
-            className="reveal reveal-delay-2"
-            style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--steel)' }}
-          >
-            Aucun article dans cette catégorie pour le moment
-          </div>
-        ) : (
-          <div
-            className="reveal reveal-delay-2"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              border: '0.5px solid var(--line)',
-            }}
-          >
-            {articles.map((article, index) => {
-              const isFeatured = index === 0 && !!article.image;
-              const isHovered = hoveredId === article.id;
-
-              if (isFeatured) {
-                return (
-                  <Link
-                    key={article.id}
-                    href={`/articles/${article.id}`}
-                    style={{ textDecoration: 'none', gridColumn: '1 / -1' }}
-                  >
-                    <div
-                      onMouseEnter={() => setHoveredId(article.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        borderBottom: '0.5px solid var(--line)',
-                        background: isHovered ? 'rgba(30,64,175,0.015)' : 'transparent',
-                        transition: 'background 0.2s',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {/* Image gauche */}
-                      <div style={{ overflow: 'hidden', maxHeight: 380 }}>
-                        <img
-                          src={article.image}
-                          alt={article.title}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            minHeight: 300,
-                            objectFit: 'cover',
-                            display: 'block',
-                            transform: isHovered ? 'scale(1.025)' : 'scale(1)',
-                            transition: 'transform 0.5s ease',
-                          }}
-                        />
-                      </div>
-
-                      {/* Corps droit */}
-                      <div
-                        style={{
-                          padding: '3rem 3rem 2.5rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {/* Meta */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem' }}>
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 500,
-                              letterSpacing: '0.12em',
-                              textTransform: 'uppercase',
-                              color: 'var(--blue)',
-                              background: 'rgba(30,64,175,0.07)',
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: 2,
-                              fontFamily: "'Outfit', sans-serif",
-                            }}
-                          >
-                            {article.category}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 11,
-                              color: 'var(--steel)',
-                              fontFamily: "'Outfit', sans-serif",
-                            }}
-                          >
-                            {formatDate(article.createdAt)}
-                          </span>
-                          {article.author && (
-                            <>
-                              <span
-                                style={{
-                                  width: 2,
-                                  height: 2,
-                                  borderRadius: '50%',
-                                  background: 'var(--line)',
-                                  display: 'inline-block',
-                                }}
-                              />
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: 'var(--steel)',
-                                  fontFamily: "'Outfit', sans-serif",
-                                }}
-                              >
-                                {article.author}
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Titre */}
-                        <h2
-                          style={{
-                            fontFamily: "'Cormorant Garamond', Georgia, serif",
-                            fontSize: '2rem',
-                            fontWeight: 400,
-                            lineHeight: 1.2,
-                            color: 'var(--ink)',
-                            marginBottom: '1rem',
-                            letterSpacing: '-0.01em',
-                          }}
-                        >
-                          {article.title}
-                        </h2>
-
-                        {/* Excerpt */}
-                        <p
-                          style={{
-                            fontFamily: "'Outfit', sans-serif",
-                            fontSize: 14,
-                            fontWeight: 300,
-                            lineHeight: 1.7,
-                            color: 'var(--steel)',
-                            marginBottom: '1.75rem',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 4,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {article.excerpt}
-                        </p>
-
-                        {/* CTA */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: 11,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: 'var(--blue)',
-                            fontFamily: "'Outfit', sans-serif",
-                            opacity: isHovered ? 1 : 0,
-                            transform: isHovered ? 'translateX(0)' : 'translateX(-6px)',
-                            transition: 'opacity 0.2s, transform 0.2s',
-                          }}
-                        >
-                          Lire l'article
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              }
-
-              /* ── Carte normale ── */
-              return (
-                <Link
-                  key={article.id}
-                  href={`/articles/${article.id}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <div
-                    onMouseEnter={() => setHoveredId(article.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    style={{
-                      padding: '2rem 2rem 1.75rem',
-                      borderBottom: '0.5px solid var(--line)',
-                      borderRight: '0.5px solid var(--line)',
-                      background: isHovered ? 'rgba(30,64,175,0.015)' : 'transparent',
-                      transition: 'background 0.15s',
-                      cursor: 'pointer',
-                      height: '100%',
-                    }}
-                  >
-                    {/* Image optionnelle */}
-                    {article.image && (
-                      <div style={{ overflow: 'hidden', marginBottom: '1.5rem', borderRadius: 2 }}>
-                        <img
-                          src={article.image}
-                          alt={article.title}
-                          style={{
-                            width: '100%',
-                            height: 180,
-                            objectFit: 'cover',
-                            display: 'block',
-                            transform: isHovered ? 'scale(1.03)' : 'scale(1)',
-                            transition: 'transform 0.4s ease',
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Meta */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.55rem',
-                        marginBottom: '0.85rem',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 500,
-                          letterSpacing: '0.12em',
-                          textTransform: 'uppercase',
-                          color: 'var(--blue)',
-                          background: 'rgba(30,64,175,0.07)',
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: 2,
-                          fontFamily: "'Outfit', sans-serif",
-                        }}
-                      >
-                        {article.category}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: 'var(--steel)',
-                          fontFamily: "'Outfit', sans-serif",
-                        }}
-                      >
-                        {formatDate(article.createdAt)}
-                      </span>
-                      {article.author && (
-                        <>
-                          <span
-                            style={{
-                              width: 2,
-                              height: 2,
-                              borderRadius: '50%',
-                              background: 'var(--line)',
-                              display: 'inline-block',
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontSize: 11,
-                              color: 'var(--steel)',
-                              fontFamily: "'Outfit', sans-serif",
-                            }}
-                          >
-                            {article.author}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Titre */}
-                    <h3
-                      style={{
-                        fontFamily: "'Cormorant Garamond', Georgia, serif",
-                        fontSize: '1.3rem',
-                        fontWeight: 400,
-                        lineHeight: 1.3,
-                        color: 'var(--ink)',
-                        marginBottom: '0.65rem',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      {article.title}
-                    </h3>
-
-                    {/* Excerpt */}
-                    <p
-                      style={{
-                        fontFamily: "'Outfit', sans-serif",
-                        fontSize: 13,
-                        fontWeight: 300,
-                        lineHeight: 1.7,
-                        color: 'var(--steel)',
-                        marginBottom: '1.25rem',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {article.excerpt}
-                    </p>
-
-                    {/* Flèche hover */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: 'var(--blue)',
-                        fontFamily: "'Outfit', sans-serif",
-                        opacity: isHovered ? 1 : 0,
-                        transform: isHovered ? 'translateX(0)' : 'translateX(-5px)',
-                        transition: 'opacity 0.2s, transform 0.2s',
-                      }}
-                    >
-                      Lire
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </section>
 
       <div className="divider" />

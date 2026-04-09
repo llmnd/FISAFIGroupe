@@ -1,17 +1,18 @@
 /* ─── FOOTER ─── */
 
 footer {
-  background: var(--mist);
-  padding: 5rem 1.5rem;
-  color: var(--ink);
+  background: linear-gradient(135deg, #0f1b2e 0%, #1a2f4a 100%);
+  padding: 3rem 1.5rem;
+  color: #fff;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 html.dark footer {
-  background: var(--white);
-  color: #e4e6eb;
+  background: linear-gradient(135deg, #0f1b2e 0%, #1a2f4a 100%);
+  color: #fff;
 }
 
 .footer-main {
