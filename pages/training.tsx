@@ -279,6 +279,41 @@ export default function FormationPage() {
     { title: "Sessions Intra-Entreprise", desc: "Formation personnalisée sur site entreprise" },
   ];
 
+  const formations = [
+    { 
+      num: "01", 
+      name: "Administration Réseaux & Télécoms", 
+      desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", 
+      img: "/19.jpeg",
+      hours: "40H",
+      level: "Intermédiaire"
+    },
+    { 
+      num: "02", 
+      name: "Infrastructure IT & Virtualisation", 
+      desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", 
+      img: "/18.jpeg",
+      hours: "35H",
+      level: "Avancé"
+    },
+    { 
+      num: "03", 
+      name: "Cybersécurité & Digital Trust", 
+      desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", 
+      img: "/21.jpeg",
+      hours: "45H",
+      level: "Avancé"
+    },
+    { 
+      num: "04", 
+      name: "Certification Professionnelle", 
+      desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", 
+      img: "/17.jpeg",
+      hours: "30H",
+      level: "Variable"
+    },
+  ];
+
   return (
     <>
       <Head>
@@ -326,77 +361,31 @@ export default function FormationPage() {
         <div className="section-eyebrow reveal">Nos offres de formation</div>
         <h2 className="section-title reveal reveal-delay-1">Catalogue de<br />formations</h2>
         
-        <div className="services-grid-new">
-          {[
-            { 
-              num: "01", 
-              name: "Administration Réseaux & Télécoms", 
-              desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", 
-              img: "/19.jpeg",
-              hours: "40H",
-              level: "Intermédiaire"
-            },
-            { 
-              num: "02", 
-              name: "Infrastructure IT & Virtualisation", 
-              desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", 
-              img: "/18.jpeg",
-              hours: "35H",
-              level: "Avancé"
-            },
-            { 
-              num: "03", 
-              name: "Cybersécurité & Digital Trust", 
-              desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", 
-              img: "/21.jpeg",
-              hours: "45H",
-              level: "Avancé"
-            },
-            { 
-              num: "04", 
-              name: "Certification Professionnelle", 
-              desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", 
-              img: "/17.jpeg",
-              hours: "30H",
-              level: "Variable"
-            },
-          ].map((s, i) => {
+        <div className="services-grid">
+          {formations.map((formation, i) => {
             const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const serviceClassName = `service-card-new reveal${delayClass}`;
             return (
-            <div key={s.num} className={serviceClassName}>
-              <div className="service-image-wrapper">
-                <Image
-                  src={s.img}
-                  alt={s.name}
-                  width={400}
-                  height={300}
-                  priority={i === 0}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-                <div className="service-overlay" />
-                <div className="service-num-badge">{s.num}</div>
-              </div>
-              <div className="service-content">
-                <h3 className="service-name-new">{s.name}</h3>
-                <p className="service-desc-new">{s.desc}</p>
-                <div className="service-meta" style={{
-                  marginTop: 'auto',
-                  paddingTop: '0.75rem',
-                  borderTop: '1px solid rgba(0,0,0,0.08)',
-                  display: 'flex',
-                  gap: '1rem',
-                  fontSize: '11px',
-                  color: '#5a6b7d',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  fontWeight: 500,
-                }}>
-                  <span>📚 {s.hours}</span>
-                  <span>🎯 {s.level}</span>
+              <div key={formation.num} className={`service-card reveal${delayClass}`}>
+                <div className="service-card-media">
+                  <Image
+                    src={formation.img}
+                    alt={formation.name}
+                    width={400}
+                    height={300}
+                    priority={i === 0}
+                    style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                  />
+                  <div className="service-card-badge">{formation.num}</div>
+                </div>
+                <div className="service-card-content">
+                  <h3 className="service-card-title">{formation.name}</h3>
+                  <div className="service-card-tags">
+                    <span className="service-tag">📚 {formation.hours}</span>
+                    <span className="service-tag">🎯 {formation.level}</span>
+                  </div>
+                  <p className="service-desc-new">{formation.desc}</p>
                 </div>
               </div>
-            </div>
             );
           })}
         </div>
@@ -405,50 +394,7 @@ export default function FormationPage() {
       <div className="divider" />
 
       {/* CALENDRIER DES SESSIONS */}
-      <section className="competences-section" id="sessions">
-        <div className="section-eyebrow reveal">Planning des sessions</div>
-        <h2 className="section-title reveal reveal-delay-1">Calendrier<br />des sessions</h2>
-        <div className="comp-grid">
-          {sessions.map((session, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const sessionClassName = `comp-item reveal${delayClass}`;
-            return (
-            <div
-              key={session.title}
-              className={sessionClassName}
-            >
-              {/* Icône SVG — remplace l'emoji 📅 pour éviter tout chevauchement */}
-              <div
-                className="comp-icon"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 36,
-                  height: 36,
-                  color: 'var(--blue)',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                <CalendarIcon />
-              </div>
-              <div className="comp-name">{session.title}</div>
-              <div style={{
-                fontSize: '0.85rem',
-                color: 'var(--steel)',
-                marginTop: '0.5rem',
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 300,
-                lineHeight: 1.6,
-              }}>
-                {session.desc}
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      </section>
-
+      
       {/* ─── BROCHURES ─── */}
       <section className="vision-section" id="brochures">
         <div className="section-eyebrow reveal">Ressources</div>

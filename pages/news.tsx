@@ -80,6 +80,14 @@ export default function News() {
       year: 'numeric',
     });
 
+  // Featured news item
+  const featuredNews = {
+    num: "01",
+    name: "Suivez nos actualités",
+    desc: "Restez informé de toutes nos innovations, publications et événements",
+    img: "/20.jpeg"
+  };
+
   return (
     <>
       <Head>
@@ -127,33 +135,28 @@ export default function News() {
 
       {/* ACTUALITES FEATURED IMAGE */}
       <section className="section" id="actualites-featured">
-        <div className="services-grid-new">
-          {[
-            { num: "01", name: "Suivez nos actualités", desc: "Restez informé de toutes nos innovations, publications et événements", img: "/20.jpeg" },
-          ].map((s, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const serviceClassName = `service-card-new reveal${delayClass}`;
-            return (
-            <div key={s.num} className={serviceClassName}>
-              <div className="service-image-wrapper">
-                <Image
-                  src={s.img}
-                  alt={s.name}
-                  width={400}
-                  height={280}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-                <div className="service-overlay" />
-                <div className="service-num-badge">{s.num}</div>
-              </div>
-              <div className="service-content">
-                <h3 className="service-name-new">{s.name}</h3>
-                <p className="service-desc-new">{s.desc}</p>
-              </div>
+        <div className="services-grid">
+          <div className="service-card reveal">
+            <div className="service-card-media">
+              <Image
+                src={featuredNews.img}
+                alt={featuredNews.name}
+                width={400}
+                height={300}
+                style={{ objectFit: "cover", width: "100%", height: "auto" }}
+              />
+              <div className="service-card-badge">{featuredNews.num}</div>
             </div>
-            );
-          })
-        }
+            <div className="service-card-content">
+              <h3 className="service-card-title">{featuredNews.name}</h3>
+              <div className="service-card-tags">
+                <span className="service-tag">Actualités</span>
+                <span className="service-tag">Innovations</span>
+                <span className="service-tag">Événements</span>
+              </div>
+              <p className="service-desc-new">{featuredNews.desc}</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -199,6 +202,93 @@ export default function News() {
             </button>
           ))}
         </div>
+
+        {/* Articles Grid */}
+        {loadingArticles ? (
+          <div className="services-grid">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="service-card" style={{ opacity: 0.6 }}>
+                <div className="service-card-media">
+                  <div style={{ background: '#e8e8e8', width: '100%', aspectRatio: '16/9', borderRadius: '16px' }} />
+                </div>
+                <div className="service-card-content">
+                  <div style={{ height: '24px', background: '#e8e8e8', width: '80%', marginBottom: '0.8rem' }} />
+                  <div style={{ height: '60px', background: '#e8e8e8', width: '100%' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : articles.length > 0 ? (
+          <div className="services-grid">
+            {articles.map((article, i) => {
+              const delayClass = i > 0 ? ` reveal-delay-${Math.min(i, 3)}` : "";
+              return (
+                <div 
+                  key={article.id} 
+                  className={`service-card reveal${delayClass}`}
+                  onMouseEnter={() => setHoveredId(article.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <div className="service-card-media">
+                    {article.image ? (
+                      <Image
+                        src={article.image}
+                        alt={article.title}
+                        width={400}
+                        height={250}
+                        style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                      />
+                    ) : (
+                      <div style={{ 
+                        background: 'linear-gradient(135deg, #f5f5f5, #e8e8e8)', 
+                        width: '100%', 
+                        aspectRatio: '16/9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#999',
+                        fontSize: '14px'
+                      }}>
+                        Illustration
+                      </div>
+                    )}
+                    <div className="service-card-badge">
+                      {String(article.id).padStart(2, '0')}
+                    </div>
+                  </div>
+                  <div className="service-card-content">
+                    <div className="service-card-tags">
+                      <span className="service-tag">{article.category || "Actualité"}</span>
+                      <span className="service-tag">{formatDate(article.createdAt)}</span>
+                    </div>
+                    <h3 className="service-card-title">{article.title}</h3>
+                    <p className="service-desc-new">{article.excerpt}</p>
+                    {hoveredId === article.id && (
+                      <Link 
+                        href={`/news/${article.id}`}
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '0.5rem',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          color: 'var(--blue)',
+                          textDecoration: 'none',
+                          letterSpacing: '0.05em'
+                        }}
+                      >
+                        Lire la suite →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>
+            Aucun article trouvé dans cette catégorie.
+          </div>
+        )}
       </section>
 
       <div className="divider" />

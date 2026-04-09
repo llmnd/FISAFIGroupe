@@ -1,16 +1,55 @@
-/* ─── SERVICES GRID (Compact Style) ─── */
+/* ──────────────────────────────────────────────────────────
+   SERVICES GRID - Édition Iconique
+   Design d'exception, micro-interactions, luxe sensoriel
+   ────────────────────────────────────────────────────────── */
 
+:root {
+  --service-card-radius: 24px;
+  --service-card-radius-sm: 20px;
+  --service-transition-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --service-transition-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --service-transition-smooth: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  --service-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --service-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+  --service-shadow-lg: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+  --service-shadow-xl: 0 30px 50px -15px rgba(0, 0, 0, 0.2);
+  --service-glow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+  --service-glow-hover: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 30px 45px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Mode sombre natif (respecte les préférences système) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --service-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --service-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.25);
+    --service-shadow-lg: 0 20px 35px -12px rgba(0, 0, 0, 0.4);
+    --service-shadow-xl: 0 30px 50px -15px rgba(0, 0, 0, 0.5);
+  }
+  
+  .service-card,
+  .service-card-new {
+    background: rgba(20, 20, 25, 0.8);
+    backdrop-filter: blur(0px);
+  }
+  
+  .service-tag {
+    background: rgba(255, 255, 255, 0.05);
+    color: #aaa;
+  }
+}
+
+/* ─── SERVICES GRID ─── */
 .services-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 3rem 2rem;
-  margin-bottom: 2rem;
+  gap: 4rem 2rem;
+  margin-bottom: 3rem;
 }
 
 @media (min-width: 640px) {
   .services-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 3rem 2.5rem;
+    gap: 3.5rem 2.5rem;
   }
 }
 
@@ -21,30 +60,105 @@
   }
 }
 
-/* ─── SERVICE CARD ─── */
+/* ─── SERVICE CARD (Version Ultra-Premium) ─── */
 .service-card {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   cursor: pointer;
   opacity: 0;
-  animation: fadeInUp 0.6s ease-out forwards;
+  animation: fadeInUp 0.8s var(--service-transition-expo) forwards;
+  transition: all 0.5s var(--service-transition-smooth);
+  text-decoration: none;
+  background: transparent;
+  position: relative;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Effet de bordure animée au survol (très chic) */
+.service-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.05) 100%);
+  border-radius: calc(var(--service-card-radius) + 2px);
+  opacity: 0;
+  transition: opacity 0.4s var(--service-transition-smooth);
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (hover: hover) {
+  .service-card:hover::before {
+    opacity: 1;
+  }
+  
+  .service-card:hover {
+    transform: translateY(-8px);
+  }
+}
+
+/* Ligne signature au survol (rafinée) */
+.service-card::after {
+  content: '';
+  position: absolute;
+  bottom: -0.75rem;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.6s var(--service-transition-expo);
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .service-card:hover::after {
+    width: 48px;
+  }
 }
 
 /* ─── SERVICE CARD MEDIA ─── */
 .service-card-media {
   position: relative;
   width: 100%;
-  border-radius: 16px;
+  border-radius: var(--service-card-radius);
   overflow: hidden;
+  background: #f5f2ef;
+  box-shadow: var(--service-shadow-md);
+  transition: box-shadow 0.5s var(--service-transition-smooth), transform 0.4s ease;
+}
+
+@media (hover: hover) {
+  .service-card:hover .service-card-media {
+    box-shadow: var(--service-glow-hover);
+  }
+}
+
+/* Effet de brillance au passage de la souris (glass shine) */
+.service-card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--service-transition-expo);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .service-card:hover .service-card-media::after {
+    transform: translateX(100%);
+  }
 }
 
 .service-card-media img {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 16px;
-  transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
+  transition: transform 0.8s var(--service-transition-expo);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @media (hover: hover) {
@@ -56,26 +170,32 @@
 /* ─── SERVICE CARD BADGE ─── */
 .service-card-badge {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.9);
+  bottom: 16px;
+  right: 16px;
+  width: 46px;
+  height: 46px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  color: var(--ink);
+  transition: all 0.45s var(--service-transition-bounce);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.02em;
+  z-index: 2;
 }
 
 @media (hover: hover) {
   .service-card:hover .service-card-badge {
-    background: var(--orange);
+    background: var(--ink);
     color: white;
-    transform: scale(1.1);
+    transform: scale(1.12) rotate(5deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -83,16 +203,31 @@
 .service-card-content {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.7rem;
+  padding: 0 0.25rem;
 }
 
 .service-card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.1rem, 3vw, 1.4rem);
-  font-weight: 300;
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 350;
   color: var(--ink);
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+}
+
+/* Effet de dégradé dynamique au survol (optionnel) */
+@media (hover: hover) {
+  .service-card:hover .service-card-title {
+    background: linear-gradient(120deg, var(--ink) 0%, var(--orange) 80%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
 }
 
 /* ─── SERVICE TAGS ─── */
@@ -100,274 +235,367 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+  margin-top: 0.25rem;
 }
 
 .service-tag {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  font-weight: 600;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  font-weight: 500;
   text-transform: uppercase;
-  padding: 0.35rem 0.8rem;
-  background: #e8d5c4;
-  color: #8b5e3c;
-  border-radius: 20px;
+  padding: 0.3rem 0.85rem;
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--steel);
+  border-radius: 40px;
   display: inline-block;
   white-space: nowrap;
+  transition: all 0.3s var(--service-transition-smooth);
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(2px);
 }
 
+@media (hover: hover) {
+  .service-tag:hover {
+    background: rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+    letter-spacing: 0.14em;
+  }
+}
+
+/* Palette raffinée avec opacités */
 .service-tag:nth-child(2) {
-  background: #c8e6c9;
+  background: rgba(139, 94, 60, 0.08);
+  color: #8b5e3c;
+}
+.service-tag:nth-child(3) {
+  background: rgba(46, 125, 50, 0.06);
   color: #2e7d32;
 }
-
-.service-tag:nth-child(3) {
-  background: #dbd9f3;
+.service-tag:nth-child(4) {
+  background: rgba(108, 99, 181, 0.06);
   color: #6c63b5;
 }
-
-.service-tag:nth-child(4) {
-  background: #f3e5d8;
+.service-tag:nth-child(5) {
+  background: rgba(198, 89, 17, 0.06);
   color: #c65911;
 }
 
-/* ─── SERVICE MODAL ─── */
+/* ─── SERVICE MODAL PREMIUM ─── */
 .service-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  animation: fadeIn 0.3s ease;
+  padding: 2rem;
+  animation: fadeIn 0.4s ease;
+  will-change: opacity;
 }
 
 .service-modal {
-  background: white;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(0px);
+  border-radius: 36px;
   padding: 3rem;
-  max-width: 600px;
+  max-width: 640px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--service-shadow-xl), 0 0 0 1px rgba(255,255,255,0.3);
   position: relative;
-  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideUpModal 0.6s var(--service-transition-bounce);
+  transform-origin: center;
 }
 
+/* Scrollbar fine et élégante */
+.service-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.service-modal::-webkit-scrollbar-track {
+  background: #eaeaea;
+  border-radius: 4px;
+}
+.service-modal::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 4px;
+}
 .service-modal-close {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  background: none;
+  top: 1.75rem;
+  right: 1.75rem;
+  background: rgba(0, 0, 0, 0.04);
   border: none;
-  font-size: 24px;
+  font-size: 20px;
   color: var(--steel);
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease, background 0.2s ease;
-  border-radius: 8px;
+  transition: all 0.4s var(--service-transition-bounce);
+  border-radius: 50%;
 }
-
 .service-modal-close:hover {
-  background: var(--mist);
-  color: var(--ink);
+  background: var(--ink);
+  color: white;
+  transform: rotate(90deg) scale(1.05);
 }
-
 .service-modal-content {
-  padding-top: 1rem;
+  padding-top: 0.5rem;
 }
-
 .service-modal-num {
-  font-size: 12px;
-  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--orange);
   margin-bottom: 1rem;
+  font-family: 'Outfit', sans-serif;
 }
-
 .service-modal-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 2.2rem;
+  font-size: 2.6rem;
   font-weight: 300;
   color: var(--ink);
   margin: 0 0 1.5rem 0;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
-
 .service-modal-desc {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--steel);
-  line-height: 1.8;
+  line-height: 1.75;
   margin: 0;
 }
 
-/* ─── ANIMATIONS ─── */
+/* ─── ANIMATIONS AVANCÉES ─── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
-@keyframes slideUp {
-  from {
+@keyframes fadeInUp {
+  0% {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px) scale(0.98);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes slideUpModal {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
-/* ─── TRAINING CATALOGUE GRID (NEW) ─── */
+/* ─── TRAINING GRID PREMIUM ─── */
 .services-grid-new {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2.5rem;
+  gap: 2rem;
   margin-bottom: 2rem;
 }
-
 @media (min-width: 640px) {
+  .services-grid-new {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+}
+@media (min-width: 1024px) {
   .services-grid-new {
     grid-template-columns: repeat(2, 1fr);
     gap: 2.5rem;
   }
 }
-
-@media (min-width: 1024px) {
-  .services-grid-new {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 3rem;
-  }
-}
-
-/* ─── TRAINING SERVICE CARD (NEW) ─── */
 .service-card-new {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fff;
-  border-radius: 4px;
+  background: #ffffff;
+  border-radius: 28px;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.6s var(--service-transition-expo);
   opacity: 0;
   animation: fadeInUp 0.7s ease-out forwards;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--service-shadow-md);
+  border: none;
+  position: relative;
 }
-
 .service-card-new:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-  transform: translateY(-4px);
+  box-shadow: var(--service-shadow-xl);
+  transform: translateY(-8px) scale(1.01);
 }
-
 .service-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 12;
+  aspect-ratio: 16 / 11;
   overflow: hidden;
-  background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+  background: linear-gradient(145deg, #f0ede9, #e5e1dc);
 }
-
 .service-image-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
-  transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
+  transition: transform 0.9s var(--service-transition-expo);
+  will-change: transform;
 }
-
 .service-card-new:hover .service-image-wrapper img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
-
 .service-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 100%);
+  background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.12) 100%);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
-
+.service-card-new:hover .service-overlay {
+  opacity: 1;
+}
 .service-num-badge {
   position: absolute;
   top: 1.25rem;
   left: 1.25rem;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 28px;
-  font-weight: 300;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-size: 1.9rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   letter-spacing: 0.05em;
   z-index: 2;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.4s var(--service-transition-bounce);
 }
-
+.service-card-new:hover .service-num-badge {
+  background: var(--ink);
+  transform: scale(1.08) rotate(3deg);
+  backdrop-filter: blur(0);
+}
 .service-content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.75rem 1.5rem;
+  gap: 0.8rem;
+  padding: 1.6rem;
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+  background: white;
 }
-
 .service-name-new {
   font-family: 'Outfit', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: #0b1520;
+  font-size: 1.15rem;
+  font-weight: 550;
+  color: #1a1a1a;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.35;
   letter-spacing: -0.01em;
+  transition: color 0.3s ease;
 }
-
+.service-card-new:hover .service-name-new {
+  color: var(--orange);
+}
 .service-desc-new {
   font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  color: #5a6b7d;
+  font-size: 0.85rem;
+  color: #6b6b6b;
   margin: 0;
-  line-height: 1.6;
-  font-weight: 300;
-  flex-grow: 1;
+  line-height: 1.65;
+  font-weight: 380;
   letter-spacing: 0.01em;
 }
 
-.service-card-new:hover .service-name-new {
-  color: var(--blue);
+/* ─── RÉVÉLATION AU SCROLL AMÉLIORÉE ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.9s var(--service-transition-expo);
 }
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
+.reveal-delay-1 { transition-delay: 0.05s; }
+.reveal-delay-2 { transition-delay: 0.1s; }
+.reveal-delay-3 { transition-delay: 0.2s; }
+.reveal-delay-4 { transition-delay: 0.3s; }
 
-/* ─── RESPONSIVE ─── */
-@media (max-width: 600px) {
+/* ─── RESPONSIVE & ACCESSIBILITÉ ─── */
+@media (max-width: 640px) {
+  .services-grid,
+  .services-grid-new {
+    gap: 2rem;
+  }
   .service-modal {
     padding: 2rem 1.5rem;
+    border-radius: 28px;
   }
-  
   .service-modal-title {
     font-size: 1.8rem;
   }
-  
-  .service-card-desc {
-    font-size: 12px;
+  .service-card-media {
+    border-radius: 20px;
+  }
+  .service-card-new {
+    border-radius: 24px;
+  }
+  .service-num-badge {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+    top: 1rem;
+    left: 1rem;
+  }
+  .service-card-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 0.9rem;
   }
 }
 
+/* Réduction de mouvement */
+@media (prefers-reduced-motion: reduce) {
+  .service-card,
+  .service-card-new,
+  .service-card-media img,
+  .service-card-badge,
+  .service-modal,
+  .reveal {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .service-card::before,
+  .service-card::after,
+  .service-card-media::after {
+    display: none;
+  }
+}
+
+/* Support des écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+  .service-card:active {
+    transform: scale(0.98);
+  }
+  .service-card-new:active {
+    transform: scale(0.98);
+  }
+}

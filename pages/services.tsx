@@ -31,24 +31,28 @@ export default function Services() {
       name: "Réseaux & Télécommunications",
       desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.",
       img: "/19.jpeg",
+      tags: ["Infrastructure", "Réseau", "Télécom"]
     },
     {
       num: "02",
       name: "Informatique & Infrastructures IT",
       desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.",
       img: "/18.jpeg",
+      tags: ["IT", "Infrastructure", "Cloud"]
     },
     {
       num: "03",
       name: "Sécurité & Cybersécurité",
       desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.",
       img: "/21.jpeg",
+      tags: ["Sécurité", "Cyberdéfense", "Audit"]
     },
     {
       num: "04",
       name: "Conseil & Accompagnement Stratégique",
       desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.",
       img: "/22.jpeg",
+      tags: ["Conseil", "Stratégie", "Formation"]
     },
   ];
 
@@ -79,32 +83,34 @@ export default function Services() {
         <div className="section-eyebrow reveal">Nos offres complètes</div>
         <h2 className="section-title reveal reveal-delay-1">Nos<br />services</h2>
 
-        <div className="services-grid-new">
+        <div className="services-grid">
           {services.map((service, i) => {
             const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const serviceClassName = `service-card-new reveal${delayClass}`;
             return (
-            <div key={service.num} className={serviceClassName}>
-              <div className="service-image-wrapper">
-                <Image
-                  src={service.img}
-                  alt={service.name}
-                  width={400}
-                  height={280}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-                <div className="service-overlay" />
-                <div className="service-num-badge">{service.num}</div>
+              <div key={service.num} className={`service-card reveal${delayClass}`}>
+                <div className="service-card-media">
+                  <Image
+                    src={service.img}
+                    alt={service.name}
+                    width={400}
+                    height={300}
+                    style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                  />
+                  <div className="service-card-badge">{service.num}</div>
+                </div>
+                <div className="service-card-content">
+                  <h3 className="service-card-title">{service.name}</h3>
+                  <div className="service-card-tags">
+                    {service.tags.map((tag, idx) => (
+                      <span key={idx} className="service-tag">{tag}</span>
+                    ))}
+                  </div>
+                  <p className="service-desc-new">{service.desc}</p>
+                </div>
               </div>
-              <div className="service-content">
-                <h3 className="service-name-new">{service.name}</h3>
-                <p className="service-desc-new">{service.desc}</p>
-              </div>
-            </div>
             );
           })}
         </div>
-
 
         <div className="services-cta reveal reveal-delay-4">
           <Link href="/contact" className="btn-primary" style={{ textDecoration: "none" }}>
