@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -192,7 +193,6 @@ export default function SessionsPage() {
             {view === "calendar" && (
               <>
                 <div className="cal-layout">
-                  {/* Calendrier principal */}
                   <div className="cal-main">
                     <div className="cal-nav">
                       <button className="nav-btn" onClick={prevMonth} aria-label="Mois précédent">
@@ -348,56 +348,57 @@ export default function SessionsPage() {
                       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                       .map((s) => {
                         const d = new Date(s.startDate);
-                        const places = placesLibres(s);
+                        const hasTime = s.startTime && s.endTime;
                         return (
-                          <div key={s.id} className={`list-card ${s.status}`}>
+                          <div
+                            key={s.id}
+                            className={`list-card ${s.status === "terminée" ? "terminated" : ""}`}
+                          >
+                            {/* Bloc date */}
                             <div className="list-date-block">
                               <span className="list-date-num">{d.getDate()}</span>
-                              <span className="list-date-mon">{MONTH_NAMES[d.getMonth()].slice(0, 3)}</span>
+                              <span className="list-date-mon">
+                                {MONTH_NAMES[d.getMonth()].slice(0, 3)}
+                              </span>
                             </div>
+
+                            {/* Corps */}
                             <div className="list-body">
                               <div className="list-top">
-                                <span className={`s-badge ${s.status}`}>{statusLabel(s.status)}</span>
-                                <span className="s-time">{s.startTime} – {s.endTime}</span>
+                                <h3 className="list-title">{s.formationTitle}</h3>
+                                <span className={`s-badge ${s.status}`}>
+                                  {statusLabel(s.status)}
+                                </span>
                               </div>
-                              <h3 className="list-title">{s.formationTitle}</h3>
+
                               <div className="list-meta">
-                                <span className="list-meta-item">
-                                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                    <path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z" stroke="currentColor" strokeWidth="1.3" />
-                                    <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.3" />
-                                  </svg>
-                                  {s.location}
-                                </span>
-                                <span className="list-meta-item">
-                                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                    <path d="M8 4v4l3 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                                    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-                                  </svg>
-                                  {s.currentParticipants}/{s.maxParticipants}
-                                </span>
-                              </div>
-                              <div className="fill-bar-track" style={{ marginTop: "8px" }}>
-                                <div className={`fill-bar-fill ${s.status}`} style={{ width: `${fillRate(s)}%` }} />
-                              </div>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
-                                <span style={{ fontSize: "11px", color: "var(--steel)" }}>
-                                  {s.currentParticipants}/{s.maxParticipants} participants
-                                </span>
-                                {s.status === "ouverte" && (
-                                  <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>
-                                    {places} place{places > 1 ? "s" : ""} libre{places > 1 ? "s" : ""}
+                                {s.location && (
+                                  <span className="list-meta-item">
+                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                      <path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z" stroke="currentColor" strokeWidth="1.3" />
+                                      <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+                                    </svg>
+                                    {s.location}
+                                  </span>
+                                )}
+                                {hasTime && (
+                                  <span className="list-meta-item">
+                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                      <path d="M8 4v4l3 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                                      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
+                                    </svg>
+                                    {s.startTime} – {s.endTime}
                                   </span>
                                 )}
                               </div>
-                              {/* CTA inline sur mobile */}
+
                               {s.status === "ouverte" && (
                                 <Link
                                   href={isLoggedIn ? `/training?sessionId=${s.id}` : "/login"}
-                                  className="list-cta-inline"
+                                  className="list-cta"
                                   style={{ textDecoration: "none" }}
                                 >
-                                  S&apos;inscrire
+                                  {isLoggedIn ? "S'inscrire" : "Se connecter pour s'inscrire"}
                                 </Link>
                               )}
                             </div>
@@ -689,14 +690,10 @@ export default function SessionsPage() {
         }
 
         /* ── BOTTOM SHEET MOBILE ── */
-        .sheet-backdrop {
-          display: none;
-        }
-        .bottom-sheet {
-          display: none;
-        }
+        .sheet-backdrop { display: none; }
+        .bottom-sheet { display: none; }
 
-        /* ── SESSION CARD AMÉLIORÉE ── */
+        /* ── SESSION CARD (calendrier) ── */
         .s-card {
           border: 0.5px solid var(--line);
           border-radius: 12px;
@@ -740,25 +737,25 @@ export default function SessionsPage() {
         .s-badge {
           font-size: 10px;
           font-weight: 600;
-          padding: 4px 10px;
+          padding: 3px 9px;
           border-radius: 20px;
           white-space: nowrap;
+          flex-shrink: 0;
         }
-        .s-badge.ouverte { background: rgba(22,163,74,0.12); color: #15803d; }
-        .s-badge.complète { background: rgba(220,38,38,0.12); color: #b91c1c; }
-        .s-badge.terminée { background: rgba(148,163,184,0.15); color: var(--steel); }
-        .s-time { 
-          font-size: 11px; 
-          color: var(--steel); 
+        .s-badge.ouverte { background: rgba(22,163,74,0.1); color: #15803d; }
+        .s-badge.complète { background: rgba(220,38,38,0.1); color: #b91c1c; }
+        .s-badge.terminée { background: rgba(148,163,184,0.12); color: var(--steel); }
+        .s-time {
+          font-size: 11px;
+          color: var(--steel);
           white-space: nowrap;
           background: var(--mist);
           padding: 2px 8px;
           border-radius: 12px;
         }
-
         .fill-bar-track {
-          height: 6px;
-          background: rgba(0,0,0,0.08);
+          height: 5px;
+          background: rgba(0,0,0,0.07);
           border-radius: 3px;
           overflow: hidden;
         }
@@ -767,33 +764,26 @@ export default function SessionsPage() {
           border-radius: 3px;
           transition: width 0.4s ease;
         }
-        .fill-bar-fill.ouverte { background: linear-gradient(90deg, #16a34a, #22c55e); }
-        .fill-bar-fill.complète { background: linear-gradient(90deg, #dc2626, #ef4444); }
-        .fill-bar-fill.terminée { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
-        .fill-label {
-          font-size: 11px;
-          color: var(--steel);
-        }
+        .fill-bar-fill.ouverte { background: #16a34a; }
+        .fill-bar-fill.complète { background: #dc2626; }
+        .fill-bar-fill.terminée { background: #94a3b8; }
+        .fill-label { font-size: 11px; color: var(--steel); }
         .s-card-cta {
           display: block;
           text-align: center;
           padding: 10px 16px;
-          background: linear-gradient(135deg, var(--blue), var(--blue-deep));
+          background: var(--blue);
           color: var(--white);
           border-radius: 8px;
           font-size: 12px;
           font-weight: 500;
           text-decoration: none;
-          transition: all 0.2s ease;
+          transition: opacity 0.2s ease;
           margin-top: 4px;
         }
-        .s-card-cta:hover { 
-          background: linear-gradient(135deg, var(--blue-deep), var(--blue));
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(30,64,175,0.3);
-        }
+        .s-card-cta:hover { opacity: 0.88; }
 
-        /* ── VUE LISTE AMÉLIORÉE ── */
+        /* ── VUE LISTE ── */
         .list-nav {
           display: flex;
           align-items: center;
@@ -803,40 +793,44 @@ export default function SessionsPage() {
         .sessions-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
         }
+
+        /* Card liste — design épuré */
         .list-card {
           display: flex;
-          border: 1px solid var(--line);
-          border-radius: 14px;
+          align-items: stretch;
           background: var(--white);
+          border: 0.5px solid var(--line);
+          border-radius: 12px;
           overflow: hidden;
-          transition: all 0.25s ease;
+          transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
         .list-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-          border-color: var(--orange);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+          border-color: rgba(0,0,0,0.12);
         }
-        .list-card.ouverte { border-left: 4px solid #16a34a; }
-        .list-card.complète { border-left: 4px solid #dc2626; }
-        .list-card.terminée { border-left: 4px solid #94a3b8; opacity: 0.75; }
+        .list-card.terminated {
+          opacity: 0.55;
+        }
+
+        /* Bloc date */
         .list-date-block {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-width: 70px;
-          padding: 16px 10px;
-          background: linear-gradient(135deg, var(--mist), #f0efe8);
-          border-right: 1px solid var(--line);
-          gap: 4px;
+          min-width: 68px;
+          padding: 18px 10px;
+          background: var(--mist);
+          border-right: 0.5px solid var(--line);
+          gap: 3px;
           flex-shrink: 0;
         }
         .list-date-num {
-          font-size: 26px;
-          font-weight: 700;
-          color: var(--blue);
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--ink);
           line-height: 1;
         }
         .list-date-mon {
@@ -846,19 +840,22 @@ export default function SessionsPage() {
           text-transform: uppercase;
           letter-spacing: 0.08em;
         }
+
+        /* Corps */
         .list-body {
           flex: 1;
-          padding: 14px 16px;
+          padding: 14px 18px;
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 7px;
           min-width: 0;
+          justify-content: center;
         }
         .list-top {
           display: flex;
           align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
+          justify-content: space-between;
+          gap: 12px;
         }
         .list-title {
           font-size: 15px;
@@ -866,6 +863,8 @@ export default function SessionsPage() {
           color: var(--ink);
           margin: 0;
           line-height: 1.3;
+          flex: 1;
+          min-width: 0;
         }
         .list-meta {
           display: flex;
@@ -876,27 +875,30 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 5px;
-          font-size: 11px;
+          font-size: 12px;
           color: var(--steel);
         }
-        .list-cta-inline {
+
+        /* CTA liste */
+        .list-cta {
           display: inline-flex;
           align-self: flex-start;
           align-items: center;
           padding: 7px 16px;
-          background: linear-gradient(135deg, var(--blue), var(--blue-deep));
-          color: var(--white);
+          background: var(--white);
+          border: 0.5px solid var(--line);
           border-radius: 8px;
           font-size: 12px;
           font-weight: 500;
+          color: var(--ink);
           text-decoration: none;
-          margin-top: 6px;
-          transition: all 0.2s ease;
+          margin-top: 4px;
+          transition: border-color 0.15s, background 0.15s;
         }
-        .list-cta-inline:hover { 
-          background: linear-gradient(135deg, var(--blue-deep), var(--blue));
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(30,64,175,0.3);
+        .list-cta:hover {
+          border-color: var(--blue);
+          color: var(--blue);
+          background: rgba(30,64,175,0.04);
         }
 
         /* ── ÉTATS ── */
@@ -931,13 +933,8 @@ export default function SessionsPage() {
 
         /* ── RESPONSIVE ── */
         @media (max-width: 860px) {
-          .cal-layout {
-            grid-template-columns: 1fr;
-          }
-          .desktop-panel {
-            display: none;
-          }
-          /* Bottom sheet activé */
+          .cal-layout { grid-template-columns: 1fr; }
+          .desktop-panel { display: none; }
           .sheet-backdrop {
             display: block;
             position: fixed;
@@ -987,20 +984,10 @@ export default function SessionsPage() {
             gap: 12px;
             -webkit-overflow-scrolling: touch;
           }
-          .list-date-block {
-            min-width: 60px;
-            padding: 12px 8px;
-          }
-          .list-date-num {
-            font-size: 22px;
-          }
         }
 
         @media (max-width: 500px) {
-          .sess-wrap {
-            padding: 0 14px;
-            margin: 36px auto;
-          }
+          .sess-wrap { padding: 0 14px; margin: 36px auto; }
           .ctrl-title { font-size: 17px; }
           .vt-btn span { display: none; }
           .vt-btn { padding: 7px 11px; }
@@ -1011,27 +998,18 @@ export default function SessionsPage() {
           .cal-day-num { font-size: 11px; width: 20px; height: 20px; }
           .cal-cell.today .cal-day-num { width: 20px; height: 20px; }
           .dot { width: 4px; height: 4px; }
-          .list-title { font-size: 13px; }
-          .list-card {
-            flex-direction: column;
-          }
-          .list-date-block {
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 10px 14px;
-            border-right: none;
-            border-bottom: 0.5px solid var(--line);
-          }
-          .list-date-num {
-            font-size: 16px;
-          }
+          .list-date-block { min-width: 60px; padding: 14px 8px; }
+          .list-date-num { font-size: 20px; }
+          .list-title { font-size: 14px; }
+          .list-top { flex-wrap: wrap; }
+          .list-body { padding: 12px 14px; }
         }
       `}</style>
     </>
   );
 }
 
-/* ── Composant SessionCard réutilisable et amélioré ── */
+/* ── SessionCard (vue calendrier) ── */
 function SessionCard({
   s,
   isLoggedIn,
@@ -1045,71 +1023,45 @@ function SessionCard({
   statusLabel: (status: Session["status"]) => string;
   placesLibres: (s: Session) => number;
 }) {
-  const statusClass = s.status === "complète" ? "complete" : s.status === "terminée" ? "terminee" : "ouverte";
-  const places = placesLibres(s);
-  
+  const statusClass =
+    s.status === "complète" ? "complete" : s.status === "terminée" ? "terminee" : "ouverte";
+
   return (
     <div className={`s-card ${statusClass}`}>
       <div className="s-card-top">
         <span className={`s-badge ${s.status}`}>{statusLabel(s.status)}</span>
-        <span className="s-time">{s.startTime} – {s.endTime}</span>
+        {s.startTime && s.endTime && (
+          <span className="s-time">{s.startTime} – {s.endTime}</span>
+        )}
       </div>
       <h4 className="s-card-title">{s.formationTitle}</h4>
-      <p className="s-card-loc">
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-          <path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z" stroke="currentColor" strokeWidth="1.3" />
-          <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.3" />
-        </svg>
-        {s.location}
-      </p>
-      
-      {/* Barre de progression améliorée avec indication des places libres */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <div className="fill-bar-track">
-          <div className={`fill-bar-fill ${s.status}`} style={{ width: `${fillRate(s)}%` }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {s.location && (
+        <p className="s-card-loc">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z" stroke="currentColor" strokeWidth="1.3" />
+            <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+          </svg>
+          {s.location}
+        </p>
+      )}
+      {s.maxParticipants > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <div className="fill-bar-track">
+            <div className={`fill-bar-fill ${s.status}`} style={{ width: `${fillRate(s)}%` }} />
+          </div>
           <span className="fill-label">
-            <strong>{s.currentParticipants}</strong> / {s.maxParticipants} participants
+            {s.currentParticipants} / {s.maxParticipants} participants
           </span>
-          {s.status === "ouverte" && (
-            <span style={{ 
-              fontSize: "12px", 
-              background: "rgba(22,163,74,0.1)", 
-              color: "#15803d",
-              padding: "3px 8px",
-              borderRadius: "12px",
-              fontWeight: 600
-            }}>
-              🎯 {places} place{places > 1 ? "s" : ""} restante{places > 1 ? "s" : ""}
-            </span>
-          )}
-          {s.status === "complète" && (
-            <span style={{ 
-              fontSize: "11px", 
-              color: "#b91c1c",
-              fontWeight: 500
-            }}>
-              Complet
-            </span>
-          )}
-          {s.status === "terminée" && (
-            <span style={{ 
-              fontSize: "11px", 
-              color: "var(--steel)"
-            }}>
-              Session terminée
-            </span>
-          )}
         </div>
-      </div>
-      
+      )}
       {s.status === "ouverte" && (
         <Link
           href={isLoggedIn ? `/training?sessionId=${s.id}` : "/login"}
           className="s-card-cta"
         >
-          {places > 0 ? `Réserver (${places} place${places > 1 ? "s" : ""})` : "S'inscrire"}
+          {isLoggedIn
+            ? `S'inscrire (${placesLibres(s)} place${placesLibres(s) > 1 ? "s" : ""})`
+            : "Se connecter pour s'inscrire"}
         </Link>
       )}
     </div>

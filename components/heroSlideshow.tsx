@@ -6,15 +6,15 @@ import Link from "next/link";
 
 /* ─── Slide data ─── */
 const DEFAULT_SLIDES = [
-  { src: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", alt: "FiSAFi – cybersécurité", type: "image",
+  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – cybersécurité", type: "video",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>",
      },
-  { src: "https://i.pinimg.com/736x/3d/cb/5b/3dcb5b03067d9a8c4079a83a213ac5e8.jpg", alt: "FiSAFi – slide 1", type: "image",
+  { src: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>",
      },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – cybersécurité avancée", type: "video",
+  { src: "https://i.pinimg.com/1200x/1a/52/56/1a52565e2ab3c33edce6e907dd0482a6.jpg", alt: "FiSAFi – cybersécurité avancée", type: "image",
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>",
     },
@@ -99,8 +99,10 @@ export default function HeroSlideshow({
           // Add small delay before retry
           setTimeout(() => attemptPlay(attempt + 1), 200 * attempt);
         } else {
-          // On final failure, try reloading the video source
-          videoElement.src = videoElement.src + (videoElement.src.includes('?') ? '&' : '?') + `t=${Date.now()}`;
+          // On final failure, try reloading the video source with fresh cache buster
+          const baseUrl = videoElement.src.split('?')[0].split('&')[0];
+          const separator = baseUrl.includes('?') ? '&' : '?';
+          videoElement.src = baseUrl + separator + `t=${Date.now()}`;
           videoElement.load();
           setTimeout(() => {
             videoElement.play().catch(() => console.error("Final video play failed"));
@@ -161,7 +163,7 @@ export default function HeroSlideshow({
 
   useEffect(() => {
     const v = videoRefs.current[current];
-    if (v) {
+    if (v && slides[current].type === "video") {
       // Ensure video has cache busting query param before playing
       if (!v.src.includes('t=')) {
         v.src = slides[current].src + (slides[current].src.includes('?') ? '&' : '?') + `t=${Date.now()}`;
