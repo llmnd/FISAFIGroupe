@@ -133,7 +133,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="services-grid">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/1200x/c8/f6/87/c8f687e1e5a4b85a7add0627908842d6.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
+            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/1200x/b6/e5/b4/b6e5b453d85cc0aef72de3c1e3c75177.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
             { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
             { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
             { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnons dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", tags: ["CONSEIL", "STRATÉGIE"] },
@@ -215,7 +215,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Ingénierie Réseaux", 
               desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.",
-              img: "https://i.pinimg.com/1200x/3e/38/40/3e38402097ef1637dc91da355f223715.jpg",
+              img: "https://i.pinimg.com/736x/72/ca/23/72ca23db69c94e037f9ac20be6222543.jpg",
             },
             { 
               title: "Solutions Sécurité", 

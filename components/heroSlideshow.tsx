@@ -10,7 +10,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>",
      },
-  { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 1", type: "image",
+  { src: "https://i.pinimg.com/736x/3d/cb/5b/3dcb5b03067d9a8c4079a83a213ac5e8.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>",
      },
@@ -18,7 +18,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>",
     },
-  { src: "https://i.pinimg.com/736x/79/29/38/7929386e53041c323fce7dfe928dd06d.jpg", alt: "FiSAFi – slide 3", type: "image",
+  { src: "https://i.pinimg.com/736x/72/ca/23/72ca23db69c94e037f9ac20be6222543.jpg", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>",
     sub: "Accompagnement expert\nvers le numérique" },
@@ -427,7 +427,7 @@ export default function HeroSlideshow({
           gap: 0.85rem;
           margin-bottom: 1.75rem;
           opacity: 0;
-          animation: hsFadeUp 0.8s 0.2s forwards;
+          animation: hsFadeUp var(--txt-fade) 0.05s forwards;
         }
         .hs-eyebrow-line {
           display: block;
@@ -455,7 +455,7 @@ export default function HeroSlideshow({
           color: #fff;
           margin: 0 0 1.75rem 0;
           opacity: 0;
-          animation: hsFadeUp 0.9s 0.35s forwards;
+          animation: hsFadeUp var(--txt-fade) 0.1s forwards;
         }
         .hs-title em {
           font-style: italic;
@@ -473,7 +473,7 @@ export default function HeroSlideshow({
           color: rgba(255,255,255,0.42);
           margin: 0 0 2.75rem 0;
           opacity: 0;
-          animation: hsFadeUp 0.9s 0.5s forwards;
+          animation: hsFadeUp var(--txt-fade) 0.15s forwards;
         }
 
         /* ─── Actions ─── */
@@ -484,7 +484,7 @@ export default function HeroSlideshow({
           flex-wrap: wrap;
           margin-top: auto;
           opacity: 0;
-          animation: hsFadeUp 0.9s 0.65s forwards;
+          animation: hsFadeUp var(--txt-fade) 0.2s forwards;
         }
 
         .hs-btn-primary {
@@ -560,7 +560,7 @@ export default function HeroSlideshow({
           gap: 8px;
           margin-top: 3.5rem;
           opacity: 0;
-          animation: hsFadeIn 0.8s 1s forwards;
+          animation: hsFadeIn var(--txt-fade) 0.25s forwards;
         }
         .hs-dot {
           width: 20px;
@@ -588,7 +588,7 @@ export default function HeroSlideshow({
           align-items: baseline;
           gap: 0.4rem;
           opacity: 0;
-          animation: hsFadeIn 0.8s 1.2s forwards;
+          animation: hsFadeIn var(--txt-fade) 0.3s forwards;
         }
 
         @media (max-width: 900px) {
