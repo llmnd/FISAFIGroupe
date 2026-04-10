@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   Désactiver les effets coûteux sur mobile
+   ═══════════════════════════════════════════════════════════ */
+
+/* Désactiver tous les backdrop-filter sur mobile (très lourd GPU) */
+@media (max-width: 768px) {
+  .header,
+  .header-nav-drawer,
+  .menu-backdrop,
+  .header-search-box,
+  .search-query-backdrop,
+  .header-profile-backdrop,
+  .overlay-blur,
+  [style*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Simplifier les backgrounds au lieu d'utiliser blur */
+  .header {
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  /* Enlever les will-change qui saturrent la mémoire GPU */
+  [style*="will-change"] {
+    will-change: auto !important;
+  }
+
+  /* Désactiver les box-shadows lourds */
+  .header,
+  .service-modal,
+  .floating-logo-btn {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Optimiser les transitions sur mobile */
+  * {
+    transition-duration: 0.2s !important;
+  }
+}
+
+/* Très petit écran : optim max */
+@media (max-width: 480px) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  /* Désactiver position: fixed avec enfants animés */
+  .floating-logo-container {
+    position: static;
+  }
+
+  /* Réduire les animations coûteuses */
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-3px) rotate(0deg); }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+}

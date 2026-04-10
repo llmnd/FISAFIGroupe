@@ -131,6 +131,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                 alt="Abdel-Salam Abdel-Aziz Haggar"
                 width={44}
                 height={44}
+                loading="lazy"
                 style={{ objectFit: "cover", borderRadius: "50%", width: "100%", height: "100%" }}
               />
             </div>
@@ -175,6 +176,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                     alt={service.name}
                     width={280}
                     height={240}
+                    loading="lazy"
                     style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
                   />
                   <div className="service-card-badge">↗</div>

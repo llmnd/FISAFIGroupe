@@ -6,14 +6,13 @@ import '../styles/header.css';
 import '../styles/floating-logo.css';
 import '../styles/carousel.css';
 import '../styles/footer-enhanced.css';
-import FloatingLogo from '@/components/FloatingLogo';
+import '../styles/modules/mobile-performance.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <LanguageProvider>
       <ThemeProvider>
         <Component {...pageProps} />
-        <FloatingLogo />
       </ThemeProvider>
     </LanguageProvider>
   );
