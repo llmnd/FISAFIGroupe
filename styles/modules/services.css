@@ -57,22 +57,21 @@
   cursor: pointer;
   text-decoration: none;
   position: relative;
-  transform: translateZ(0) perspective(1200px);
-  will-change: transform;
+  transform: translateZ(0);
   backface-visibility: hidden;
 
   /* Apparition orchestrée */
   opacity: 0;
-  animation: revealCard .9s var(--ease-expo) forwards;
+  animation: revealCard .4s var(--ease-expo) forwards;
 }
 
-/* Stagger précis au millième */
-.service-card:nth-child(1) { animation-delay: .05s; }
-.service-card:nth-child(2) { animation-delay: .15s; }
-.service-card:nth-child(3) { animation-delay: .25s; }
-.service-card:nth-child(4) { animation-delay: .35s; }
-.service-card:nth-child(5) { animation-delay: .45s; }
-.service-card:nth-child(6) { animation-delay: .55s; }
+/* Stagger subtil */
+.service-card:nth-child(1) { animation-delay: .0s; }
+.service-card:nth-child(2) { animation-delay: .05s; }
+.service-card:nth-child(3) { animation-delay: .1s; }
+.service-card:nth-child(4) { animation-delay: .15s; }
+.service-card:nth-child(5) { animation-delay: .2s; }
+.service-card:nth-child(6) { animation-delay: .25s; }
 
 /* Halo de proximité — se révèle avant même le survol */
 .service-card::before {
@@ -122,7 +121,6 @@
   transition:
     box-shadow .55s var(--ease-silk),
     border-radius .4s var(--ease-silk);
-
   /* Pseudo-container pour les effets superposés */
   isolation: isolate;
 }
@@ -134,10 +132,10 @@
   inset: 0;
   background-image: var(--grain);
   background-size: 200px 200px;
-  opacity: 1;
+  opacity: .4;
   z-index: 3;
   pointer-events: none;
-  mix-blend-mode: multiply;
+  mix-blend-mode: screen;
 }
 
 /* Brillance lenticulaire — lumière rasante */
@@ -161,7 +159,7 @@
 @media (hover: hover) {
   .service-card:hover .service-card-media {
     box-shadow: var(--shadow-card-float);
-    border-radius: calc(var(--radius-card) - 2px); /* rétrécissement subtil */
+    border-radius: calc(var(--radius-card) - 2px);
   }
   .service-card:hover .service-card-media::after {
     transform: translateX(120%) skewX(-12deg);
@@ -174,9 +172,8 @@
   height: auto;
   display: block;
   transition: transform 1s var(--ease-expo);
-  will-change: transform;
   backface-visibility: hidden;
-  transform-origin: center 60%; /* zoom vers le sujet, pas le centre géométrique */
+  transform-origin: center 60%;
 }
 
 @media (hover: hover) {
@@ -193,8 +190,6 @@
   width: 48px;
   height: 48px;
   background: rgba(255,255,255,.97);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border-radius: var(--radius-badge);
   display: flex;
   align-items: center;
@@ -211,8 +206,6 @@
     transform   .45s var(--ease-spring),
     box-shadow  .4s var(--ease-silk);
   z-index: 5;
-
-  /* Bord intérieur nacré */
   outline: 1px solid rgba(255,255,255,.6);
   outline-offset: -2px;
 }
@@ -344,7 +337,7 @@
   opacity: .6;
   pointer-events: none;
   z-index: 10;
-  mix-blend-mode: multiply;
+  mix-blend-mode: overlay;
 }
 
 @media (hover: hover) {
@@ -371,11 +364,13 @@
   display: block;
   transition: transform .95s var(--ease-expo);
   transform-origin: center 55%;
-  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @media (hover: hover) {
-  .service-card-new:hover .service-image-wrapper img { transform: scale(1.07); }
+  .service-card-new:hover .service-image-wrapper img {
+    transform: scale(1.07);
+  }
 }
 
 /* Voile de profondeur */
@@ -406,8 +401,6 @@
   letter-spacing: .06em;
   z-index: 5;
   background: rgba(0,0,0,.22);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
   width: 52px;
   height: 52px;
   display: flex;
@@ -468,8 +461,6 @@
   position: fixed;
   inset: 0;
   background: rgba(4,4,8,.88);
-  backdrop-filter: blur(24px) saturate(120%);
-  -webkit-backdrop-filter: blur(24px) saturate(120%);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -487,14 +478,11 @@
   max-height: 85vh;
   overflow-y: auto;
   box-shadow:
-    var(--shadow-card-float),
-    0 0 0 .5px rgba(255,255,255,.25),
-    inset 0 1px 0 rgba(255,255,255,.9);
+    0 16px 40px rgba(0,0,0,.10),
+    0 0 0 .5px rgba(255,255,255,.25);
   position: relative;
   animation: riseModal .65s var(--ease-spring) both;
   transform-origin: 50% 60%;
-
-  /* Grain sur la modal aussi */
   background-image: var(--grain);
   background-blend-mode: multiply;
 }
@@ -568,8 +556,8 @@
   opacity: 0;
   transform: translateY(28px) scale(.995);
   transition:
-    opacity   .9s var(--ease-expo),
-    transform .9s var(--ease-expo);
+    opacity   .7s var(--ease-expo),
+    transform .7s var(--ease-expo);
 }
 .reveal.visible {
   opacity: 1;
@@ -582,8 +570,8 @@
 
 /* ─── KEYFRAMES ────────────────────────────────────────────── */
 @keyframes revealCard {
-  0%   { opacity:0; transform: translateY(36px) scale(.97); }
-  100% { opacity:1; transform: translateY(0)    scale(1);   }
+  0%   { opacity:0; transform: translateY(20px) scale(.98); }
+  100% { opacity:1; transform: translateY(0)    scale(1); }
 }
 
 @keyframes riseModal {

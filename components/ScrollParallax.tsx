@@ -17,18 +17,27 @@ export const ScrollParallax: React.FC<ScrollParallaxProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
+    let ticking = false;
+    let lastScrollY = 0;
+
     const handleScroll = () => {
-      const rect = container.getBoundingClientRect();
-      const scrollProgress = 1 - (rect.top / window.innerHeight);
-      
-      // Limiter entre 0 et 1
-      const progress = Math.max(0, Math.min(1, scrollProgress));
-      
-      const yTransform = progress * strength * 100;
-      const scale = 1 + progress * 0.1;
-      
-      container.style.transform = `perspective(1200px) translateY(${yTransform}px) scaleY(${scale})`;
-      container.style.opacity = Math.max(0.3, 1 - Math.abs(progress - 0.5) * 0.4).toString();
+      lastScrollY = window.scrollY;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const rect = container.getBoundingClientRect();
+          const scrollProgress = 1 - (rect.top / window.innerHeight);
+          
+          // Limiter entre 0 et 1
+          const progress = Math.max(0, Math.min(1, scrollProgress));
+          
+          // Parallax léger et simple
+          const yTransform = progress * strength * 50;
+          
+          container.style.transform = `translateY(${yTransform}px)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -43,7 +52,6 @@ export const ScrollParallax: React.FC<ScrollParallaxProps> = ({
       className={className}
       style={{
         transformStyle: 'preserve-3d',
-        willChange: 'transform, opacity',
         transition: 'none',
       }}
     >

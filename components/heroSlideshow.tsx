@@ -18,7 +18,7 @@ const DEFAULT_SLIDES = [
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>",
     },
-  { src: "https://i.pinimg.com/1200x/3b/6c/95/3b6c95df881772652bec1198801db826.jpg", alt: "FiSAFi – slide 3", type: "image",
+  { src: "https://i.pinimg.com/736x/79/29/38/7929386e53041c323fce7dfe928dd06d.jpg", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>",
     sub: "Accompagnement expert\nvers le numérique" },
@@ -195,7 +195,7 @@ export default function HeroSlideshow({
               <video
                 ref={(r) => { videoRefs.current[idx] = r; }}
                 src={slide.src}
-                autoPlay muted loop playsInline
+                muted loop playsInline
                 crossOrigin="anonymous"
                 preload="metadata"
                 controlsList="nodownload"

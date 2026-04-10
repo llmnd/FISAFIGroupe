@@ -90,7 +90,7 @@ export default function Home() {
           }
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.25, rootMargin: "0px 0px -100px 0px" }
     );
     document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
@@ -149,7 +149,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="services-grid">
           {[
-            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/1200x/67/fa/68/67fa686e89f245b451f52e4b180ee27a.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
+            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/736x/79/29/38/7929386e53041c323fce7dfe928dd06d.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
             { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
             { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
             { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnons dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", tags: ["CONSEIL", "STRATÉGIE"] },
@@ -276,9 +276,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       <div className="divider" />
       <section className="competences-section" id="competences">
-        <video autoPlay muted loop playsInline className="competences-bg-video" preload="auto">
-          <source src="https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4" type="video/mp4" />
-        </video>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(30,30,40,0.5)', zIndex: 0, pointerEvents: 'none' }} />
         <div className="section-eyebrow reveal">Domaines d&apos;expertise</div>
         <h2 className="section-title reveal reveal-delay-1">Nos compétences<br />clés</h2>
         <div className="comp-grid">
@@ -342,25 +340,19 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
           {[
             { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/736x/ed/a3/94/eda3945e4636ae02cdd4bb7bff772370.jpg", type: "image" },
             { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/736x/2d/85/a7/2d85a74061bce155cad15c1171265493.jpg", type: "image" },
-            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", type: "video" },
+            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
           ].map((area, i) => (
             <div key={area.name} className={`area-card-item reveal`} style={{ "--delay": `${i * 0.15}s` } as any}>
               <div className="area-card">
                 <div className="area-card-media">
-                  {area.type === "video" ? (
-                    <video autoPlay muted loop playsInline preload="auto" className="area-card-video">
-                      <source src={area.img} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <Image
-                      src={area.img}
-                      alt={area.name}
-                      width={240}
-                      height={200}
-                      style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
-                    />
-                  )}
+                  <Image
+                    src={area.img}
+                    alt={area.name}
+                    width={240}
+                    height={200}
+                    style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
+                  />
                 </div>
                 <div className="area-card-content">
                   <h3 className="area-card-title">{area.name}</h3>
@@ -376,9 +368,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── CONTACT ─── */}
       <section className="contact-section" id="contact">
-        <video autoPlay muted loop playsInline className="contact-bg-video" preload="auto">
-          <source src="https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4" type="video/mp4" />
-        </video>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(20,40,70,0.8), rgba(30,50,90,0.8))', zIndex: 0, pointerEvents: 'none' }} />
         <div className="section-eyebrow reveal">Parlons-en</div>
         <h2 className="section-title reveal reveal-delay-1">Travaillons<br />ensemble</h2>
         <p className="contact-tagline reveal reveal-delay-2">« L&apos;expertise qui fait la différence »</p>

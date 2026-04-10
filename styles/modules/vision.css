@@ -35,7 +35,6 @@
   position: relative;
   overflow: hidden;
   margin-bottom: 2rem;
-  will-change: transform, opacity;
 }
 
 .vision-quote-mark {
@@ -86,21 +85,23 @@
   gap: 0;
   background: var(--white);
   border: 0.5px solid var(--line);
-  padding: 0.5rem 1.5rem;
-  will-change: transform, opacity;
 }
 
 .atout-item {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.9rem 0;
+  padding: 1rem 1.5rem;
   border-bottom: 0.5px solid var(--line);
+  transition: background-color 0.3s ease;
 }
 
 .atout-item:last-child { 
   border-bottom: none; 
-  padding-bottom: 0; 
+}
+
+.atout-item:hover {
+  background-color: rgba(232, 88, 10, 0.04);
 }
 
 .atout-dot {
@@ -109,12 +110,12 @@
   border-radius: 50%;
   background: var(--orange); 
   flex-shrink: 0; 
-  margin-top: 5px;
+  margin-top: 6px;
 }
 
 .atout-text { 
   font-size: 14px; 
   color: var(--ink); 
-  line-height: 1.5; 
-  letter-spacing: 0.02em; 
+  line-height: 1.6; 
+  letter-spacing: 0.01em; 
 }

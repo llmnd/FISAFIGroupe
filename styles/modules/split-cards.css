@@ -7,8 +7,27 @@
   background: var(--white);
   border: none;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-  transition: border-color 0.4s ease;
-  will-change: transform;
+  transition: border-color 0.3s ease, background-color 0.2s ease;
+  /* Animation d'entrée douce */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideInSoft 0.7s cubic-bezier(0.23, 1, 0.320, 1) forwards;
+}
+
+/* Stagger des cartes */
+.split-card:nth-child(1) { animation-delay: 0s; }
+.split-card:nth-child(2) { animation-delay: 0.2s; }
+.split-card:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes slideInSoft {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (min-width: 768px) {
@@ -18,7 +37,7 @@
 }
 
 .split-card:hover {
-  border-top-color: rgba(0, 0, 0, 0.2);
+  border-top-color: rgba(0, 0, 0, 0.15);
 }
 
 /* ─── CONTENT ─── */
@@ -30,7 +49,21 @@
   gap: 1.5rem;
   position: relative;
   background: var(--white);
+  animation: contentFadeIn 0.9s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
+
+@keyframes contentFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.split-card:nth-child(1) .split-card-content { animation-delay: 0.2s; }
+.split-card:nth-child(2) .split-card-content { animation-delay: 0.4s; }
+.split-card:nth-child(3) .split-card-content { animation-delay: 0.6s; }
 
 /* Rail décoratif vertical — détail industriel subtil */
 .split-card-content::before {
@@ -43,8 +76,8 @@
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(0, 0, 0, 0.12) 20%,
-    rgba(0, 0, 0, 0.12) 80%,
+    rgba(0, 0, 0, 0.08) 20%,
+    rgba(0, 0, 0, 0.08) 80%,
     transparent
   );
 }
@@ -66,7 +99,7 @@
   right: 3rem;
   font-size: 10px;
   letter-spacing: 0.2em;
-  color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.1);
   font-weight: 400;
 }
 
@@ -82,11 +115,11 @@
 
 .split-card-description {
   font-size: 15px;
-  line-height: 1.85;
+  line-height: 1.8;
   color: var(--steel);
   margin: 0;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.015em;
   max-width: 38ch;
 }
 
@@ -140,11 +173,27 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1),
-              filter 0.4s ease;
+  transition: transform 0.6s cubic-bezier(0.23, 1, 0.320, 1),
+              filter 0.5s ease;
   filter: brightness(0.96) saturate(0.85);
-  will-change: transform, filter;
+  /* Animation de révélation progressive de l'image */
+  animation: imageReveal 0.8s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
+
+@keyframes imageReveal {
+  0% {
+    opacity: 0.8;
+    filter: brightness(0.90) saturate(0.70);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(0.96) saturate(0.85);
+  }
+}
+
+.split-card:nth-child(1) .split-card-image img { animation-delay: 0.1s; }
+.split-card:nth-child(2) .split-card-image img { animation-delay: 0.3s; }
+.split-card:nth-child(3) .split-card-image img { animation-delay: 0.5s; }
 
 .split-card:hover .split-card-image img {
   transform: scale(1.04);

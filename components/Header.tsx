@@ -121,17 +121,27 @@ export default function Header() {
 
   /* Scroll → progress bar + header shrink + update social bar position */
   useEffect(() => {
+    let ticking = false;
+    let lastScrollY = 0;
+
     const onScroll = () => {
-      const scrollTop = window.scrollY;
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      const isScrolled = scrollTop > 10;
-      setScrolled(isScrolled);
-      setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
-      
-      // Update --header-h and --drawer-top CSS variables for elements to follow
-      const newHeight = isScrolled ? "54px" : "62px";
-      document.documentElement.style.setProperty("--header-h", newHeight);
-      document.documentElement.style.setProperty("--drawer-top", newHeight);
+      lastScrollY = window.scrollY;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollTop = lastScrollY;
+          const docH = document.documentElement.scrollHeight - window.innerHeight;
+          const isScrolled = scrollTop > 10;
+          setScrolled(isScrolled);
+          setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
+          
+          // Update --header-h and --drawer-top CSS variables for elements to follow
+          const newHeight = isScrolled ? "54px" : "62px";
+          document.documentElement.style.setProperty("--header-h", newHeight);
+          document.documentElement.style.setProperty("--drawer-top", newHeight);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);

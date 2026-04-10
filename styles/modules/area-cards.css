@@ -62,15 +62,8 @@
   transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
 }
 
-.area-card:hover .area-card-media img,
-.area-card:hover .area-card-media video {
+.area-card:hover .area-card-media img {
   transform: scale(1.05);
-}
-
-video.area-card-video {
-  width: 100%;
-  height: auto;
-  display: block;
 }
 
 /* ─── CARD CONTENT ─── */

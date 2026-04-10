@@ -6,12 +6,21 @@ export default function FloatingQuickMenu({ threshold = 240 }: { threshold?: num
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+    let lastScrollY = 0;
+
     const onScroll = () => {
-      const y = window.pageYOffset ?? window.scrollY ?? 0;
-      setVisible(y > threshold);
+      lastScrollY = window.pageYOffset ?? window.scrollY ?? 0;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setVisible(lastScrollY > threshold);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
+    
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, [threshold]);
 
