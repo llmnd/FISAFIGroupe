@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
-
 
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -80,22 +79,6 @@ export default function Home() {
   const [clickedAreaCard, setClickedAreaCard] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<any>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("visible");
-            observer.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.25, rootMargin: "0px 0px -100px 0px" }
-    );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <>
       <Head>
@@ -145,8 +128,8 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── SERVICES ─── */}
       <section className="section" id="services">
-        <div className="section-eyebrow reveal">Nos offres</div>
-        <h2 className="section-title reveal reveal-delay-1">Solutions<br />complètes</h2>
+        <div className="section-eyebrow">Nos offres</div>
+        <h2 className="section-title">Solutions<br />complètes</h2>
         
         <div className="services-grid">
           {[
@@ -154,44 +137,41 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
             { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
             { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnons dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", tags: ["CONSEIL", "STRATÉGIE"] },
-          ].map((service, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            return (
-              <div 
-                key={service.num} 
-                className={`service-card reveal${delayClass}`}
-                onClick={() => setSelectedService(service)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setSelectedService(service);
-                  }
-                }}
-              >
-                <div className="service-card-media">
-                  <Image
-                    src={service.img}
-                    alt={service.name}
-                    width={280}
-                    height={240}
-                    loading="lazy"
-                    style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
-                  />
-                  <div className="service-card-badge">↗</div>
-                </div>
-                <div className="service-card-content">
-                  <h3 className="service-card-title">{service.name}</h3>
-                  <div className="service-card-tags">
-                    {service.tags?.map((tag) => (
-                      <span key={tag} className="service-tag">{tag}</span>
-                    ))}
-                  </div>
+          ].map((service, i) => (
+            <div 
+              key={service.num} 
+              className="service-card"
+              onClick={() => setSelectedService(service)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedService(service);
+                }
+              }}
+            >
+              <div className="service-card-media">
+                <Image
+                  src={service.img}
+                  alt={service.name}
+                  width={280}
+                  height={240}
+                  loading="lazy"
+                  style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
+                />
+                <div className="service-card-badge">↗</div>
+              </div>
+              <div className="service-card-content">
+                <h3 className="service-card-title">{service.name}</h3>
+                <div className="service-card-tags">
+                  {service.tags?.map((tag) => (
+                    <span key={tag} className="service-tag">{tag}</span>
+                  ))}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -227,8 +207,8 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── SPLIT CARDS (CAPABILITIES) ─── */}
       <section className="section" id="capabilities">
-        <div className="section-eyebrow reveal">Nos atouts</div>
-        <h2 className="section-title reveal reveal-delay-1">Expertise<br />reconnue</h2>
+        <div className="section-eyebrow">Nos atouts</div>
+        <h2 className="section-title">Expertise<br />reconnue</h2>
         
         <div style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
           {[
@@ -247,60 +227,52 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
               desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.",
               img: "https://i.pinimg.com/1200x/11/73/0e/11730e8efe165364e8ebc2587ba4bbc7.jpg",
             },
-          ].map((cap, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${(i % 3) + 1}` : "";
-            return (
-              <div 
-                key={cap.title} 
-                className={`split-card reveal${delayClass} compact`}
-              >
-                <div className="split-card-image">
-                  <Image
-                    src={cap.img}
-                    alt={cap.title}
-                    width={350}
-                    height={250}
-                    style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                  />
-                  <div className="split-card-overlay" />
-                </div>
-                <div className="split-card-content" style={{ direction: "ltr" }}>
-                  <h3 className="split-card-title">{cap.title}</h3>
-                  <p className="split-card-description">{cap.desc}</p>
-                  <a href="/services" className="split-card-arrow">En savoir plus</a>
-                </div>
+          ].map((cap, i) => (
+            <div 
+              key={cap.title} 
+              className="split-card compact"
+            >
+              <div className="split-card-image">
+                <Image
+                  src={cap.img}
+                  alt={cap.title}
+                  width={350}
+                  height={250}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                />
+                <div className="split-card-overlay" />
               </div>
-            );
-          })
-        }
+              <div className="split-card-content" style={{ direction: "ltr" }}>
+                <h3 className="split-card-title">{cap.title}</h3>
+                <p className="split-card-description">{cap.desc}</p>
+                <a href="/services" className="split-card-arrow">En savoir plus</a>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
       <div className="divider" />
       <section className="competences-section" id="competences">
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(30,30,40,0.5)', zIndex: 0, pointerEvents: 'none' }} />
-        <div className="section-eyebrow reveal">Domaines d&apos;expertise</div>
-        <h2 className="section-title reveal reveal-delay-1">Nos compétences<br />clés</h2>
+        <div className="section-eyebrow">Domaines d&apos;expertise</div>
+        <h2 className="section-title">Nos compétences<br />clés</h2>
         <div className="comp-grid">
-          {["Réseaux & Télécoms", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const compClassName = `comp-item reveal${delayClass}`;
-            return (
-            <div key={name} className={compClassName}>
+          {["Réseaux & Télécoms", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
+            <div key={name} className="comp-item">
               <div className="comp-icon" />
               <div className="comp-name">{name}</div>
             </div>
-            );
-          })}
+          ))}
         </div>
       </section>
 
       {/* ─── VISION ─── */}
       <section className="vision-section" id="vision">
-        <div className="section-eyebrow reveal">Notre philosophie</div>
-        <h2 className="section-title reveal reveal-delay-1">Pourquoi<br />FISAFI ?</h2>
+        <div className="section-eyebrow">Notre philosophie</div>
+        <h2 className="section-title">Pourquoi<br />FISAFI ?</h2>
 
-        <div className="vision-box reveal reveal-delay-2">
+        <div className="vision-box">
           {/* Grand guillemet décoratif */}
           <div className="vision-quote-mark">&ldquo;</div>
 
@@ -317,7 +289,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         </div>
 
         {/* Atouts — conservés mais séparés sous la vision box */}
-        <div className="atouts-list reveal reveal-delay-3">
+        <div className="atouts-list">
           {[
             "Expertise technique de haut niveau, ancrée dans les réalités africaines",
             "Partenaire de confiance pour vos projets technologiques complexes",
@@ -335,8 +307,8 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
 
       {/* ─── AREA CARDS GRID ─── */}
       <section className="section" style={{ background: "var(--mist)", paddingTop: "4rem", paddingBottom: "4rem" }}>
-        <div className="section-eyebrow reveal">Zones d'intervention</div>
-        <h2 className="section-title reveal reveal-delay-1">Nos domaines<br />d'action</h2>
+        <div className="section-eyebrow">Zones d'intervention</div>
+        <h2 className="section-title">Nos domaines<br />d'action</h2>
         
         <div className="area-cards-grid">
           {[
@@ -345,7 +317,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
           ].map((area, i) => (
-            <div key={area.name} className={`area-card-item reveal`} style={{ "--delay": `${i * 0.15}s` } as any}>
+            <div key={area.name} className="area-card-item">
               <div className="area-card">
                 <div className="area-card-media">
                   <Image
@@ -363,28 +335,25 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                 </div>
               </div>
             </div>
-          ))
-        }
+          ))}
         </div>
       </section>
 
       {/* ─── CONTACT ─── */}
       <section className="contact-section" id="contact">
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(20,40,70,0.8), rgba(30,50,90,0.8))', zIndex: 0, pointerEvents: 'none' }} />
-        <div className="section-eyebrow reveal">Parlons-en</div>
-        <h2 className="section-title reveal reveal-delay-1">Travaillons<br />ensemble</h2>
-        <p className="contact-tagline reveal reveal-delay-2">« L&apos;expertise qui fait la différence »</p>
+        <div className="section-eyebrow">Parlons-en</div>
+        <h2 className="section-title">Travaillons<br />ensemble</h2>
+        <p className="contact-tagline">« L&apos;expertise qui fait la différence »</p>
 
         <div className="contact-items">
           {contactItems.map((item, i) => {
             const Tag = item.href ? "a" : "div";
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            const contactClassName = `contact-item reveal${delayClass}`;
             return (
               <Tag
                 key={item.label}
                 href={item.href || undefined}
-                className={contactClassName}
+                className="contact-item"
               >
                 <div className={`contact-icon${item.highlight ? " contact-icon--highlight" : ""}`}>
                   {item.icon}
@@ -399,7 +368,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         </div>
 
         <button
-          className="btn-contact reveal"
+          className="btn-contact"
           onClick={() => (location.href = "mailto:contact@fisafigroupe.com")}
         >
           Envoyer un message

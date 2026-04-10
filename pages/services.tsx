@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,22 +8,6 @@ import Header from "@/components/Header";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 export default function Services() {
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("visible");
-            observer.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
   const services = [
     {
       num: "01",
@@ -80,39 +63,36 @@ export default function Services() {
 
       {/* SERVICES SECTION */}
       <section className="section" id="services-list">
-        <div className="section-eyebrow reveal">Nos offres complètes</div>
-        <h2 className="section-title reveal reveal-delay-1">Nos<br />services</h2>
+        <div className="section-eyebrow">Nos offres complètes</div>
+        <h2 className="section-title">Nos<br />services</h2>
 
         <div className="services-grid">
-          {services.map((service, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            return (
-              <div key={service.num} className={`service-card reveal${delayClass}`}>
-                <div className="service-card-media">
-                  <Image
-                    src={service.img}
-                    alt={service.name}
-                    width={400}
-                    height={300}
-                    style={{ objectFit: "cover", width: "100%", height: "auto" }}
-                  />
-                  <div className="service-card-badge">{service.num}</div>
-                </div>
-                <div className="service-card-content">
-                  <h3 className="service-card-title">{service.name}</h3>
-                  <div className="service-card-tags">
-                    {service.tags.map((tag, idx) => (
-                      <span key={idx} className="service-tag">{tag}</span>
-                    ))}
-                  </div>
-                  <p className="service-desc-new">{service.desc}</p>
-                </div>
+          {services.map((service, i) => (
+            <div key={service.num} className="service-card">
+              <div className="service-card-media">
+                <Image
+                  src={service.img}
+                  alt={service.name}
+                  width={400}
+                  height={300}
+                  style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                />
+                <div className="service-card-badge">{service.num}</div>
               </div>
-            );
-          })}
+              <div className="service-card-content">
+                <h3 className="service-card-title">{service.name}</h3>
+                <div className="service-card-tags">
+                  {service.tags.map((tag, idx) => (
+                    <span key={idx} className="service-tag">{tag}</span>
+                  ))}
+                </div>
+                <p className="service-desc-new">{service.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="services-cta reveal reveal-delay-4">
+        <div className="services-cta">
           <Link href="/contact" className="btn-primary" style={{ textDecoration: "none" }}>
             Discuter de votre projet
           </Link>

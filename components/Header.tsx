@@ -119,7 +119,7 @@ export default function Header() {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
   }, [mobileOpen]);
 
-  /* Scroll → progress bar + header shrink + update social bar position */
+  /* Scroll → progress bar + update social bar position */
   useEffect(() => {
     let ticking = false;
     let lastScrollY = 0;
@@ -134,10 +134,8 @@ export default function Header() {
           setScrolled(isScrolled);
           setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
           
-          // Update --header-h and --drawer-top CSS variables for elements to follow
-          const newHeight = isScrolled ? "54px" : "62px";
-          document.documentElement.style.setProperty("--header-h", newHeight);
-          document.documentElement.style.setProperty("--drawer-top", newHeight);
+          // FIXED: Ne pas changer la hauteur du header au scroll
+          // Garder une hauteur fixe = pas de jank
           ticking = false;
         });
         ticking = true;

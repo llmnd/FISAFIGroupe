@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -58,7 +58,8 @@ export default function FormationPage() {
   const [loadingBrochures, setLoadingBrochures] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  useEffect(() => {
+  // Fetch brochures (keep this useEffect)
+  useState(() => {
     const fetchBrochures = async () => {
       try {
         // Vérifier le cache d'abord
@@ -84,23 +85,7 @@ export default function FormationPage() {
       }
     };
     fetchBrochures();
-  }, []);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("visible");
-            observer.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
+  });
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -358,36 +343,33 @@ export default function FormationPage() {
 
       {/* CATALOGUE */}
       <section className="section" id="catalogue">
-        <div className="section-eyebrow reveal">Nos offres de formation</div>
-        <h2 className="section-title reveal reveal-delay-1">Catalogue de<br />formations</h2>
+        <div className="section-eyebrow">Nos offres de formation</div>
+        <h2 className="section-title">Catalogue de<br />formations</h2>
         
         <div className="services-grid">
-          {formations.map((formation, i) => {
-            const delayClass = i > 0 ? ` reveal-delay-${i}` : "";
-            return (
-              <div key={formation.num} className={`service-card reveal${delayClass}`}>
-                <div className="service-card-media">
-                  <Image
-                    src={formation.img}
-                    alt={formation.name}
-                    width={400}
-                    height={300}
-                    priority={i === 0}
-                    style={{ objectFit: "cover", width: "100%", height: "auto" }}
-                  />
-                  <div className="service-card-badge">{formation.num}</div>
-                </div>
-                <div className="service-card-content">
-                  <h3 className="service-card-title">{formation.name}</h3>
-                  <div className="service-card-tags">
-                    <span className="service-tag">📚 {formation.hours}</span>
-                    <span className="service-tag">🎯 {formation.level}</span>
-                  </div>
-                  <p className="service-desc-new">{formation.desc}</p>
-                </div>
+          {formations.map((formation, i) => (
+            <div key={formation.num} className="service-card">
+              <div className="service-card-media">
+                <Image
+                  src={formation.img}
+                  alt={formation.name}
+                  width={400}
+                  height={300}
+                  priority={i === 0}
+                  style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                />
+                <div className="service-card-badge">{formation.num}</div>
               </div>
-            );
-          })}
+              <div className="service-card-content">
+                <h3 className="service-card-title">{formation.name}</h3>
+                <div className="service-card-tags">
+                  <span className="service-tag">📚 {formation.hours}</span>
+                  <span className="service-tag">🎯 {formation.level}</span>
+                </div>
+                <p className="service-desc-new">{formation.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -397,9 +379,9 @@ export default function FormationPage() {
       
       {/* ─── BROCHURES ─── */}
       <section className="vision-section" id="brochures">
-        <div className="section-eyebrow reveal">Ressources</div>
-        <h2 className="section-title reveal reveal-delay-1">Téléchargement<br />de brochures</h2>
-        <div className="vision-box reveal reveal-delay-2">
+        <div className="section-eyebrow">Ressources</div>
+        <h2 className="section-title">Téléchargement<br />de brochures</h2>
+        <div className="vision-box">
           <div className="brochures-header">
             <div>
               <div className="vision-label">Documents disponibles</div>
@@ -420,12 +402,12 @@ export default function FormationPage() {
 
       {/* INSCRIPTION */}
       <section className="contact-section" id="inscription">
-        <div className="section-eyebrow reveal">Rejoignez-nous</div>
-        <h2 className="section-title reveal reveal-delay-1">Inscription<br />en ligne</h2>
-        <p className="contact-tagline reveal reveal-delay-2">« Développez vos compétences avec FISAFI »</p>
+        <div className="section-eyebrow">Rejoignez-nous</div>
+        <h2 className="section-title">Inscription<br />en ligne</h2>
+        <p className="contact-tagline">« Développez vos compétences avec FISAFI »</p>
 
         <form
-          className="contact-form reveal reveal-delay-3"
+          className="contact-form"
           onSubmit={handleFormSubmit}
         >
           <div className="form-grid">
@@ -494,21 +476,21 @@ export default function FormationPage() {
         </form>
 
         <div className="contact-items" style={{ marginTop: '3rem' }}>
-          <a href="tel:+221788965939" className="contact-item reveal">
+          <a href="tel:+221788965939" className="contact-item">
             <div className="contact-icon">✆</div>
             <div className="contact-info">
               <div className="contact-label">Téléphone</div>
               <div className="contact-value">+221 78 896 59 39</div>
             </div>
           </a>
-          <a href="mailto:formations@fisafigroupe.com" className="contact-item reveal reveal-delay-1">
+          <a href="mailto:formations@fisafigroupe.com" className="contact-item">
             <div className="contact-icon">✉</div>
             <div className="contact-info">
               <div className="contact-label">Email Formations</div>
               <div className="contact-value">formations@fisafigroupe.com</div>
             </div>
           </a>
-          <div className="contact-item reveal reveal-delay-2">
+          <div className="contact-item">
             <div className="contact-icon">◎</div>
             <div className="contact-info">
               <div className="contact-label">Adresse Centre</div>

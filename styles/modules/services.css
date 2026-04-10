@@ -59,10 +59,7 @@
   position: relative;
   transform: translateZ(0);
   backface-visibility: hidden;
-
-  /* Apparition orchestrée */
-  opacity: 0;
-  animation: revealCard .4s var(--ease-expo) forwards;
+  
 }
 
 /* Stagger subtil — desktop seulement */
@@ -78,7 +75,6 @@
 /* Mobile: pas de délais, animations rapides */
 @media (max-width: 768px) {
   .service-card {
-    animation: revealCardMobile .25s ease-out forwards;
   }
   .service-card:nth-child(1) { animation-delay: 0s; }
   .service-card:nth-child(2) { animation-delay: 0s; }

@@ -7,11 +7,6 @@
   background: var(--white);
   border: none;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-  transition: border-color 0.3s ease, background-color 0.2s ease;
-  /* Animation d'entrée douce */
-  opacity: 0;
-  transform: translateY(20px);
-  animation: slideInSoft 0.7s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
 
 /* Stagger des cartes — désactiver en mobile */
@@ -21,35 +16,7 @@
   .split-card:nth-child(3) { animation-delay: 0.4s; }
 }
 
-/* Mobile: animations rapides et simples */
-@media (max-width: 768px) {
-  .split-card {
-    animation: slideInSoftMobile 0.3s ease-out forwards;
-  }
-  .split-card:nth-child(1) { animation-delay: 0s; }
-  .split-card:nth-child(2) { animation-delay: 0s; }
-  .split-card:nth-child(3) { animation-delay: 0s; }
-}
 
-@keyframes slideInSoft {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInSoftMobile {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 
 @media (min-width: 768px) {
   .split-card {
@@ -57,9 +24,6 @@
   }
 }
 
-.split-card:hover {
-  border-top-color: rgba(0, 0, 0, 0.15);
-}
 
 /* ─── CONTENT ─── */
 .split-card-content {
@@ -113,42 +77,8 @@
 }
 
 /* Rail décoratif vertical — détail industriel subtil */
-.split-card-content::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 3.5rem;
-  bottom: 3.5rem;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(0, 0, 0, 0.08) 20%,
-    rgba(0, 0, 0, 0.08) 80%,
-    transparent
-  );
-}
 
-@media (max-width: 767px) {
-  .split-card-content::before {
-    display: none;
-  }
-  .split-card-content {
-    padding: 2.5rem 1.5rem;
-  }
-}
 
-/* Numéro d'index automatique */
-.split-card-content::after {
-  content: "";
-  position: absolute;
-  top: 3.5rem;
-  right: 3rem;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: rgba(0, 0, 0, 0.1);
-  font-weight: 400;
-}
 
 .split-card-title {
   font-family: 'Cormorant Garamond', serif;
@@ -180,8 +110,6 @@
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  transition: gap 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              color 0.25s ease;
   margin-top: 0.25rem;
   position: relative;
   width: fit-content;
@@ -195,17 +123,8 @@
   height: 1px;
   background: currentColor;
   flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.split-card:hover .split-card-arrow {
-  color: var(--orange);
-  gap: 1rem;
-}
-
-.split-card:hover .split-card-arrow::before {
-  width: 2.25rem;
-}
 
 /* ─── IMAGE ─── */
 .split-card-image {
@@ -220,72 +139,13 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s cubic-bezier(0.23, 1, 0.320, 1),
-              filter 0.5s ease;
   filter: brightness(0.96) saturate(0.85);
   /* Animation de révélation progressive de l'image */
-  animation: imageReveal 0.8s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
 
-@keyframes imageReveal {
-  0% {
-    opacity: 0.8;
-    filter: brightness(0.90) saturate(0.70);
-  }
-  100% {
-    opacity: 1;
-    filter: brightness(0.96) saturate(0.85);
-  }
-}
 
-/* Desktop: stagger les animations */
-@media (min-width: 769px) {
-  .split-card:nth-child(1) .split-card-image img { animation-delay: 0.1s; }
-  .split-card:nth-child(2) .split-card-image img { animation-delay: 0.3s; }
-  .split-card:nth-child(3) .split-card-image img { animation-delay: 0.5s; }
-}
 
-/* Mobile: animations simultanées et rapides */
-@media (max-width: 768px) {
-  .split-card-image img {
-    animation: imageRevealMobile 0.3s ease-out forwards;
-  }
-  .split-card:nth-child(1) .split-card-image img { animation-delay: 0s; }
-  .split-card:nth-child(2) .split-card-image img { animation-delay: 0s; }
-  .split-card:nth-child(3) .split-card-image img { animation-delay: 0s; }
-}
 
-@keyframes imageRevealMobile {
-  from {
-    opacity: 0.9;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.split-card:hover .split-card-image img {
-  transform: scale(1.04);
-  filter: brightness(0.92) saturate(0.9);
-}
-
-/* Désactiver les hover complexes en mobile */
-@media (max-width: 768px) {
-  .split-card:hover .split-card-image img {
-    transform: none;
-  }
-}
-
-.split-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.04);
-  transition: background 0.4s ease;
-}
-
-.split-card:hover .split-card-overlay {
-  background: rgba(0, 0, 0, 0.08);
-}
 
 /* ─── COMPACT (image réduite à gauche) ─── */
 .split-card.compact {
