@@ -6,6 +6,13 @@ html {
   overflow-y: scroll; /* Force scrollbar presence for consistent layout */
 }
 
+/* Désactiver smooth scroll en mobile pour éviter les bugs */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 *,
 *::before,
 *::after {

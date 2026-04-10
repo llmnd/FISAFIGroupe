@@ -14,10 +14,22 @@
   animation: slideInSoft 0.7s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
 
-/* Stagger des cartes */
-.split-card:nth-child(1) { animation-delay: 0s; }
-.split-card:nth-child(2) { animation-delay: 0.2s; }
-.split-card:nth-child(3) { animation-delay: 0.4s; }
+/* Stagger des cartes — désactiver en mobile */
+@media (min-width: 769px) {
+  .split-card:nth-child(1) { animation-delay: 0s; }
+  .split-card:nth-child(2) { animation-delay: 0.2s; }
+  .split-card:nth-child(3) { animation-delay: 0.4s; }
+}
+
+/* Mobile: animations rapides et simples */
+@media (max-width: 768px) {
+  .split-card {
+    animation: slideInSoftMobile 0.3s ease-out forwards;
+  }
+  .split-card:nth-child(1) { animation-delay: 0s; }
+  .split-card:nth-child(2) { animation-delay: 0s; }
+  .split-card:nth-child(3) { animation-delay: 0s; }
+}
 
 @keyframes slideInSoft {
   from {
@@ -27,6 +39,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInSoftMobile {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -52,6 +73,23 @@
   animation: contentFadeIn 0.9s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
 
+/* Mobile: animation simplifiée */
+@media (max-width: 768px) {
+  .split-card-content {
+    animation: contentFadeInMobile 0.3s ease-out forwards;
+    padding: 2.5rem 1.5rem;
+  }
+}
+
+@keyframes contentFadeInMobile {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes contentFadeIn {
   0% {
     opacity: 0;
@@ -61,9 +99,18 @@
   }
 }
 
-.split-card:nth-child(1) .split-card-content { animation-delay: 0.2s; }
-.split-card:nth-child(2) .split-card-content { animation-delay: 0.4s; }
-.split-card:nth-child(3) .split-card-content { animation-delay: 0.6s; }
+/* Stagger des cartes — désactiver en mobile */
+@media (min-width: 769px) {
+  .split-card:nth-child(1) .split-card-content { animation-delay: 0.2s; }
+  .split-card:nth-child(2) .split-card-content { animation-delay: 0.4s; }
+  .split-card:nth-child(3) .split-card-content { animation-delay: 0.6s; }
+}
+
+@media (max-width: 768px) {
+  .split-card:nth-child(1) .split-card-content { animation-delay: 0s; }
+  .split-card:nth-child(2) .split-card-content { animation-delay: 0s; }
+  .split-card:nth-child(3) .split-card-content { animation-delay: 0s; }
+}
 
 /* Rail décoratif vertical — détail industriel subtil */
 .split-card-content::before {
@@ -191,13 +238,42 @@
   }
 }
 
-.split-card:nth-child(1) .split-card-image img { animation-delay: 0.1s; }
-.split-card:nth-child(2) .split-card-image img { animation-delay: 0.3s; }
-.split-card:nth-child(3) .split-card-image img { animation-delay: 0.5s; }
+/* Desktop: stagger les animations */
+@media (min-width: 769px) {
+  .split-card:nth-child(1) .split-card-image img { animation-delay: 0.1s; }
+  .split-card:nth-child(2) .split-card-image img { animation-delay: 0.3s; }
+  .split-card:nth-child(3) .split-card-image img { animation-delay: 0.5s; }
+}
+
+/* Mobile: animations simultanées et rapides */
+@media (max-width: 768px) {
+  .split-card-image img {
+    animation: imageRevealMobile 0.3s ease-out forwards;
+  }
+  .split-card:nth-child(1) .split-card-image img { animation-delay: 0s; }
+  .split-card:nth-child(2) .split-card-image img { animation-delay: 0s; }
+  .split-card:nth-child(3) .split-card-image img { animation-delay: 0s; }
+}
+
+@keyframes imageRevealMobile {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .split-card:hover .split-card-image img {
   transform: scale(1.04);
   filter: brightness(0.92) saturate(0.9);
+}
+
+/* Désactiver les hover complexes en mobile */
+@media (max-width: 768px) {
+  .split-card:hover .split-card-image img {
+    transform: none;
+  }
 }
 
 .split-card-overlay {
