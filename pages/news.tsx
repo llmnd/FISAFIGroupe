@@ -106,7 +106,7 @@ export default function News() {
       <Header />
 
       {/* HERO */}
-      <section className="hero">
+      <section className="hero" data-observe>
         <div className="hero-bg" />
         <div className="hero-lines">
           <div className="hero-line" />
@@ -143,6 +143,7 @@ export default function News() {
                 alt={featuredNews.name}
                 width={400}
                 height={300}
+                data-observe
                 style={{ objectFit: "cover", width: "100%", height: "auto" }}
               />
               <div className="service-card-badge">{featuredNews.num}</div>
@@ -236,6 +237,7 @@ export default function News() {
                         alt={article.title}
                         width={400}
                         height={250}
+                        data-observe
                         style={{ objectFit: "cover", width: "100%", height: "auto" }}
                       />
                     ) : (

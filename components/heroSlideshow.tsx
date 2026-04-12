@@ -175,6 +175,7 @@ export default function HeroSlideshow({
                 fill
                 priority={idx === 0}
                 sizes="60vw"
+                data-observe
                 style={{ objectFit: "contain", objectPosition: "center" }}
               />
             )}

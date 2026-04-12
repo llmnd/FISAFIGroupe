@@ -75,6 +75,7 @@ export default function Services() {
                   alt={service.name}
                   width={400}
                   height={300}
+                  data-observe
                   style={{ objectFit: "cover", width: "100%", height: "auto" }}
                 />
                 <div className="service-card-badge">{service.num}</div>

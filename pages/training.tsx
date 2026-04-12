@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -58,16 +58,18 @@ export default function FormationPage() {
   const [loadingBrochures, setLoadingBrochures] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  // Fetch brochures (keep this useEffect)
-  useState(() => {
+  // Fetch brochures on client only
+  useEffect(() => {
     const fetchBrochures = async () => {
       try {
         // Vérifier le cache d'abord
-        const cachedBrochures = sessionStorage.getItem('brochures_cache');
-        if (cachedBrochures) {
-          setBrochures(JSON.parse(cachedBrochures));
-          setLoadingBrochures(false);
-          return;
+        if (typeof window !== 'undefined') {
+          const cachedBrochures = sessionStorage.getItem('brochures_cache');
+          if (cachedBrochures) {
+            setBrochures(JSON.parse(cachedBrochures));
+            setLoadingBrochures(false);
+            return;
+          }
         }
 
         const response = await fetch('/api/brochures');
@@ -76,7 +78,9 @@ export default function FormationPage() {
           const brochuresData = data.data || [];
           setBrochures(brochuresData);
           // Mettre en cache pour cette session
-          sessionStorage.setItem('brochures_cache', JSON.stringify(brochuresData));
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('brochures_cache', JSON.stringify(brochuresData));
+          }
         }
       } catch (error) {
         console.error('Error loading brochures:', error);
@@ -85,7 +89,7 @@ export default function FormationPage() {
       }
     };
     fetchBrochures();
-  });
+  }, []);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

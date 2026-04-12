@@ -75,6 +75,7 @@ export default function FloatingLogo() {
             width={56}
             height={56}
             priority
+            data-observe
             className="floating-logo-img"
           />
           <span className={`floating-logo-indicator${isOpen ? " active" : ""}`} aria-hidden="true" />

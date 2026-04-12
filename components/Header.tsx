@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { initScrollHandler } from "@/scripts/scroll-optimizations";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -121,28 +122,14 @@ export default function Header() {
 
   /* Scroll → progress bar + update social bar position */
   useEffect(() => {
-    let ticking = false;
-    let lastScrollY = 0;
-
-    const onScroll = () => {
-      lastScrollY = window.scrollY;
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollTop = lastScrollY;
-          const docH = document.documentElement.scrollHeight - window.innerHeight;
-          const isScrolled = scrollTop > 10;
-          setScrolled(isScrolled);
-          setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
-          
-          // FIXED: Ne pas changer la hauteur du header au scroll
-          // Garder une hauteur fixe = pas de jank
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const cleanup = initScrollHandler(() => {
+      const scrollTop = window.scrollY;
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      const isScrolled = scrollTop > 10;
+      setScrolled(isScrolled);
+      setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
+    });
+    return () => cleanup();
   }, []);
 
   /* Click outside to close popups */

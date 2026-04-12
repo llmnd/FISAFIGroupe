@@ -115,6 +115,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                 width={44}
                 height={44}
                 loading="lazy"
+                data-observe
                 style={{ objectFit: "cover", borderRadius: "50%", width: "100%", height: "100%" }}
               />
             </div>
@@ -158,6 +159,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                   width={280}
                   height={240}
                   loading="lazy"
+                  data-observe
                   style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
                 />
                 <div className="service-card-badge">↗</div>
@@ -238,6 +240,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                   alt={cap.title}
                   width={350}
                   height={250}
+                  data-observe
                   style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
                 <div className="split-card-overlay" />
@@ -325,6 +328,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                     alt={area.name}
                     width={240}
                     height={200}
+                    data-observe
                     style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
                   />
                 </div>

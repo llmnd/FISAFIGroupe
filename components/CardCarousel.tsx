@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import { rafThrottle, addPassiveEventListener } from "@/scripts/scroll-optimizations";
 
 interface CarouselProps {
   children: React.ReactNode[];
@@ -35,11 +36,13 @@ export default function CardCarousel({ children, variant = "services" }: Carouse
   useEffect(() => {
     checkScroll();
     const container = scrollContainerRef.current;
-    container?.addEventListener("scroll", checkScroll);
-    window.addEventListener("resize", checkScroll);
+    // rafThrottle returns a generic function — cast to EventListener to satisfy TS
+    const wrapped = rafThrottle(checkScroll) as EventListener;
+    if (container) addPassiveEventListener(container, "scroll", wrapped);
+    addPassiveEventListener(window, "resize", wrapped);
     return () => {
-      container?.removeEventListener("scroll", checkScroll);
-      window.removeEventListener("resize", checkScroll);
+      container?.removeEventListener("scroll", wrapped);
+      window.removeEventListener("resize", wrapped);
     };
   }, []);
 

@@ -49,3 +49,79 @@
 
 /* 15. Dark Mode Overrides */
 @import './modules/dark-mode.css';
+
+/* ==============================
+     OPTIMISATIONS SCROLL / NAV
+     - Sans animations complexes
+     - Améliore la robustesse et la réactivité lors du scroll
+     - Règles générales et classes utilitaires
+     ============================== */
+
+:root {
+    /* Désactiver tout scroll lissé par défaut (on reste simple, sans animations) */
+    scroll-behavior: auto;
+    /* Réduit les risques de déplacements de mise en page lorsque le contenu est injecté */
+    overflow-anchor: none;
+}
+
+html, body {
+    /* Empêche le chaînage de scroll entre éléments (ex: modal -> page) */
+    
+    /* Empêcher les effets de momentum/scroll non souhaités côté rendu */
+    -webkit-overflow-scrolling: auto;
+    /* Garde la place pour la barre de défilement et évite les sauts de layout */
+    scrollbar-gutter: stable;
+}
+
+/* Classe utilitaire pour désactiver toutes animations/transitions globalement */
+.no-animations *,
+.no-animations *::before,
+.no-animations *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Header simple et performant : prefer fixed or sticky without layout thrashing */
+.site-header,
+.header,
+.main-header {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    /* Eviter de solliciter le painting pour chaque scroll : ne transformez pas inutilement */
+}
+
+/* Classe utilitaire pour éléments qui peuvent être mis sur leur propre couche de rendu
+     (n'utiliser que si nécessaire) */
+.create-layer {
+    will-change: transform;
+}
+
+/* Optimisations pour interactions tactiles : réduit les délais d'interaction */
+.fast-touch {
+    touch-action: pan-y; /* permet de scroller vertical sans interférence */
+}
+
+/* Containment pour sections lourdes (limite le travail du navigateur) */
+.contain-section {
+    contain: layout paint; /* améliore isolation et perf lorsque supporté */
+}
+
+/* Respecter préférence utilisateur pour réduire le mouvement */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Notes:
+ - Evitez d'attacher des handlers coûteux directement sur `scroll`.
+ - Préférez `IntersectionObserver` pour la visibilité/chargement paresseux.
+ - Utilisez des listeners passifs (`{passive: true}`) pour scroll/touch.
+ - Évitez les lectures de layout (offsetHeight, getBoundingClientRect) dans
+     des handlers synchrones de scroll — batcher via rAF si nécessaire.
+*/
+

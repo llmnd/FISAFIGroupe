@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+import { Cormorant_Garamond, Outfit, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from "@/context/ThemeContext";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import "@/styles/globals.css";
+import ScrollManager from "@/components/ScrollManager";
 
 export const metadata: Metadata = {
   title: "FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal",
@@ -67,6 +69,24 @@ export const viewport = {
   themeColor: "#1e40af",
 };
 
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['300','400'],
+  display: 'swap',
+})
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['300','400','500'],
+  display: 'swap',
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400','500'],
+  display: 'swap',
+})
+
 export default function RootLayout({
   children,
 }: {
@@ -117,42 +137,25 @@ export default function RootLayout({
     publisher: { "@type": "Organization", name: "FiSAFi Groupe" },
   };
 
+  // Safe serializer to avoid closing </script> sequences in JSON-LD
+  const safeSerialize = (obj: any) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${cormorant.className} ${outfit.className} ${dmSans.className}`}>
       <head>
         {/* ── Schemas ───────────────────────────────────────────── */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
-          }}
+          dangerouslySetInnerHTML={{ __html: safeSerialize(organizationSchema) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeSerialize(webSiteSchema) }}
         />
 
         <link rel="canonical" href="https://fisafigroupe.com" />
 
-        {/* ── Fonts ─────────────────────────────────────────────── */}
-        {/*
-          PERF — 3 règles critiques :
-          1. preconnect AVANT le stylesheet (réduit le DNS lookup)
-          2. display=swap  → le texte s'affiche immédiatement en fallback,
-             les fonts se substituent quand elles arrivent (pas de FOIT)
-          3. On ne charge QUE les graisses réellement utilisées
-             (on a supprimé les poids 200 et 300 de DM Sans non utilisés)
-        */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@300;400;500&family=DM+Sans:wght@400;500&display=swap"
-        />
+        {/* Fonts loaded via next/font/google for optimized delivery */}
 
         {/* ── PWA / Icons ────────────────────────────────────────── */}
         <link rel="icon" href="/favicon.ico" />
@@ -189,6 +192,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
+          <ScrollManager />
           <SmoothScrollProvider />
           {children}
         </ThemeProvider>

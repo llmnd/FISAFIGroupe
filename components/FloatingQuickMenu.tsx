@@ -1,27 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { initScrollHandler } from "@/scripts/scroll-optimizations";
 
 export default function FloatingQuickMenu({ threshold = 240 }: { threshold?: number }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    let ticking = false;
-    let lastScrollY = 0;
+    const cleanup = initScrollHandler(() => {
+      const y = window.pageYOffset ?? window.scrollY ?? 0;
+      setVisible(y > threshold);
+    });
 
-    const onScroll = () => {
-      lastScrollY = window.pageYOffset ?? window.scrollY ?? 0;
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setVisible(lastScrollY > threshold);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => cleanup();
   }, [threshold]);
 
   const handleClick = () => {

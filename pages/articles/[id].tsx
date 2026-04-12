@@ -132,6 +132,7 @@ export default function ArticleDetail() {
           <img
             src={article.image}
             alt={article.title}
+            data-observe
             style={{
               width: "100%",
               maxHeight: "400px",

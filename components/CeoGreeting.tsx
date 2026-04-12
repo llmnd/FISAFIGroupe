@@ -168,6 +168,7 @@ export default function CeoGreeting() {
             src="/ceo-avatar.png"
             alt="Abdel-Salam Abdel-Aziz Haggar"
             width={48} height={48}
+            data-observe
             style={{ objectFit: "cover", width: "100%", height: "100%", display: "block" }}
           />
         </div>
@@ -190,6 +191,7 @@ export default function CeoGreeting() {
                 src="/ceo-avatar.png"
                 alt="Abdel-Salam Abdel-Aziz Haggar"
                 width={52} height={52}
+                data-observe
                 style={{ objectFit: "cover", width: "100%", height: "100%", display: "block" }}
               />
             </div>

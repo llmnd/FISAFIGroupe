@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { initScrollHandler } from "@/scripts/scroll-optimizations";
 
 interface ScrollParallaxProps {
   children: React.ReactNode;
@@ -68,17 +69,19 @@ export const ScrollParallax: React.FC<ScrollParallaxProps> = ({
         if (!isVisibleRef.current) return;
 
         // PERF: pas de getBoundingClientRect() — on utilise scrollY + baseTop
-        const scrolled  = window.scrollY - baseTopRef.current;
+        const scrolled = window.scrollY - baseTopRef.current;
         const yTransform = scrolled * strength * 0.15; // amplitude réduite
 
         container.style.transform = `translateY(${yTransform}px)`;
       });
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const cleanup = initScrollHandler(onScroll);
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      try {
+        cleanup();
+      } catch (e) {}
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       io.disconnect();
     };
