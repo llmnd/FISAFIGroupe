@@ -104,15 +104,24 @@ app.setErrorHandler((error: unknown, request, reply) => {
 // Start server
 const start = async () => {
   try {
-    // Test email connection
-    await emailService.testConnection();
-
     await app.listen({
       port: config.server.port,
       host: config.server.host,
     });
     console.log(`🚀 Server running at http://${config.server.host}:${config.server.port}`);
     console.log(`📚 API Docs at http://${config.server.host}:${config.server.port}/api/v1`);
+
+    // Run SMTP connection test in background so it cannot block the server startup.
+    (async () => {
+      try {
+        const ok = await emailService.testConnection();
+        if (!ok) {
+          console.warn('[📧 Email Service] SMTP not configured or failed to connect. Continuing without blocking startup.');
+        }
+      } catch (err) {
+        console.error('[📧 Email Service] Async SMTP test failed:', err);
+      }
+    })();
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

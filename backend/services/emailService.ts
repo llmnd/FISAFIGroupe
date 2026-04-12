@@ -26,6 +26,10 @@ const createTransporter = () => {
       user: emailFrom,
       pass: emailPassword || '',
     },
+    // Timeouts to prevent long blocking during startup/deploys
+    connectionTimeout: 5000, // ms
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
   });
 };
 
