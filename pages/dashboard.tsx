@@ -520,12 +520,7 @@ export default function DashboardPage() {
       <Head>
         <title>Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap"
-          rel="stylesheet"
-        />
+        
         <style>{`
           *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
           :root {
