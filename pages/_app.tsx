@@ -27,6 +27,51 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, []);
 
+  // Fix for mobile/Chrome/Edge UI chrome (address bar) causing viewport height jumps.
+  // Sets a dynamic `--vh` CSS variable based on the real inner height (uses visualViewport when available).
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const setVh = () => {
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      const vh = h * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    // initial
+    setVh();
+
+    // throttle via rAF
+    let rafId: number | null = null;
+    const onResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setVh();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('orientationchange', onResize, { passive: true });
+    if (window.visualViewport && window.visualViewport.addEventListener) {
+      window.visualViewport.addEventListener('resize', onResize);
+    }
+
+    // also update when page becomes visible again
+    const onVisibility = () => setVh();
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      if (window.visualViewport && window.visualViewport.removeEventListener) {
+        window.visualViewport.removeEventListener('resize', onResize);
+      }
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   return (
     <LanguageProvider>
       <ThemeProvider>
