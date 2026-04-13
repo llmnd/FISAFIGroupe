@@ -64,6 +64,12 @@
     overflow-anchor: none;
 }
 
+/* Désactiver le scroll lissé sur moteurs Blink (Chrome / Edge) pour éviter jitter */
+html.blink-no-smooth {
+    scroll-behavior: auto !important;
+    -webkit-overflow-scrolling: auto !important;
+}
+
 html, body {
     /* Empêche le chaînage de scroll entre éléments (ex: modal -> page) */
     

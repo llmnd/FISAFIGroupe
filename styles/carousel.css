@@ -14,11 +14,17 @@
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
   flex: 1;
   padding: 0.5rem 0;
+}
+
+/* Activer smooth scroll pour carrousels sauf si le navigateur a la classe
+   `blink-no-smooth` (ex: Chrome/Edge) pour éviter le jitter à l'inversion */
+html:not(.blink-no-smooth) .carousel-container {
+  scroll-behavior: smooth;
 }
 
 .carousel-container::-webkit-scrollbar {

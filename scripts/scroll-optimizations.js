@@ -12,7 +12,7 @@
  */
 export function addPassiveEventListener(target, event, handler, opts = {}) {
   try {
-    target.addEventListener(event, Object.assign({ passive: true }, opts));
+    target.addEventListener(event, handler, Object.assign({ passive: true }, opts));
   } catch (e) {
     // fallback to boolean options for older browsers
     target.addEventListener(event, handler, true);

@@ -161,7 +161,12 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
                   data-observe
                   style={{ objectFit: "cover", width: "100%", height: "auto", display: "block" }}
                 />
-                <div className="service-card-badge">↗</div>
+                <div className="service-card-badge" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M7 17L17 7" />
+                    <path d="M7 7h10v10" />
+                  </svg>
+                </div>
               </div>
               <div className="service-card-content">
                 <h3 className="service-card-title">{service.name}</h3>
