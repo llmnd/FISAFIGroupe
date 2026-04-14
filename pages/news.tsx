@@ -85,7 +85,7 @@ export default function News() {
     num: "01",
     name: "Suivez nos actualités",
     desc: "Restez informé de toutes nos innovations, publications et événements",
-    img: "/20.jpeg"
+    img: "https://i.pinimg.com/736x/66/1f/3f/661f3fc1bb00293ee3cbe882c33c0007.jpg"
   };
 
   return (

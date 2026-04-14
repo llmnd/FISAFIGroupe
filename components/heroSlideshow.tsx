@@ -26,24 +26,24 @@ const DEFAULT_SLIDES = [
 ];
 
 const SERVICES_SLIDES = [
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", alt: "Services – réseaux", type: "video",
+  { src: "https://i.pinimg.com/736x/80/41/99/8041992ed3076083dc5ad1e7f5c90181.jpg", alt: "Services – réseaux", type: "image",
     eyebrow: "Réseaux", title: "Réseaux &\n<em>Télécommunications</em>" },
-  { src: "/6.jpeg", alt: "Services – infrastructure", type: "image",
+  { src: "https://i.pinimg.com/1200x/e8/ce/0f/e8ce0fd1ffe096dee7d7b85b261b626f.jpg", alt: "Services – infrastructure", type: "image",
     eyebrow: "Infrastructure", title: "Infrastructure IT &\n<em>Virtualisation</em>" },
-  { src: "/7.jpeg", alt: "Services – cybersécurité", type: "image",
+  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "Services – cybersécurité", type: "image",
     eyebrow: "Sécurité", title: "Cybersécurité &\n<em>Protection</em>" },
-  { src: "/8.jpeg", alt: "Services – conseil", type: "image",
+  { src: "https://i.pinimg.com/1200x/41/e4/8f/41e48f226597daf5235a91aabd887093.jpg", alt: "Services – conseil", type: "image",
     eyebrow: "Conseil", title: "Conseil &\n<em>Accompagnement</em>" },
 ];
 
 const TRAINING_SLIDES = [
   { src: "/17.jpeg", alt: "Formation – 1", type: "image",
     eyebrow: "Formation", title: "Sessions\n<em>Présentielles</em>" },
-  { src: "/18.jpeg", alt: "Formation – 2", type: "image",
+  { src: "https://i.pinimg.com/1200x/0d/30/9b/0d309bbc802545f9ef289357a3179b89.jpg", alt: "Formation – 2", type: "image",
     eyebrow: "E-Learning", title: "Parcours\n<em>en ligne</em>" },
-  { src: "/1.jpeg", alt: "Formation – 3", type: "image",
+  { src: "https://i.pinimg.com/1200x/e3/b6/bf/e3b6bf124f2adde2af34ca329537e957.jpg", alt: "Formation – 3", type: "image",
     eyebrow: "Hybride", title: "Mode\n<em>Hybride</em>" },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775500291/hzpqyeflhuofqnit3nch.mp4", alt: "Formation – 4", type: "video",
+  { src: "https://i.pinimg.com/1200x/89/99/d7/8999d73efcc283ab877e96e23278ae03.jpg", alt: "Formation – 4", type: "image",
     eyebrow: "Certifications", title: "Préparation aux\n<em>certifications</em>" },
 ];
 
@@ -242,6 +242,7 @@ export default function HeroSlideshow({
           min-height: 100svh;
           display: flex;
           flex-direction: row;
+          /* keep overflow hidden so footer overlay can create the concave cut */
           overflow: hidden;
           background: var(--bg);
           isolation: isolate;
@@ -484,6 +485,7 @@ export default function HeroSlideshow({
 
         video { display: block; pointer-events: none; }
         video::-webkit-media-controls { display: none !important; }
+        /* removed hero arc: footer will render the concave overlay */
       `}</style>
     </section>
   );

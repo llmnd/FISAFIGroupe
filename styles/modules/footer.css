@@ -22,6 +22,35 @@ html.dark footer {
   transition: background-color 300ms ease, color 300ms ease;
 }
 
+/* Create concave top overlay to visually cut into the previous hero section */
+.footer-main {
+  position: relative;
+  overflow: visible;
+  z-index: 20; /* ensure it overlays previous section for the concave effect */
+}
+
+.footer-main::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -7.5vw; /* adjust to control how much it intrudes into hero */
+  transform: translateX(-50%);
+  width: 220vw; /* wide to make a smooth full-width arc */
+  height: calc(10vw + 48px); /* responsive amplitude */
+  background: #0b1520; /* matches hero dark background — tweak if hero uses gradient */
+  border-radius: 50%/100%;
+  z-index: 5; /* sits above footer main background/content */
+  pointer-events: none;
+  box-shadow: 0 -18px 30px rgba(5,12,30,0.12);
+}
+
+@media (max-width: 520px) {
+  .footer-main::before {
+    top: -11vw;
+    height: calc(16vw + 32px);
+  }
+}
+
 html.dark .footer-main {
   background-color: var(--white);
   color: #e4e6eb;

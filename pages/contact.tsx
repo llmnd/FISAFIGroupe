@@ -6,8 +6,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 
-const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
-
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
@@ -61,14 +59,36 @@ export default function Contact() {
 
       <Header />
 
-      <HeroSlideshow />
+      {/* HERO */}
+      <section className="hero" data-observe>
+        <div className="hero-bg" />
+        <div className="hero-lines">
+          <div className="hero-line" />
+          <div className="hero-line" />
+          <div className="hero-line" />
+        </div>
+        <div className="hero-orbs">
+          <div className="hero-orb" />
+          <div className="hero-orb" />
+        </div>
+        <div className="hero-overlay" />
+
+        <div className="hero-content">
+          <div className="hero-eyebrow">Parlons de votre projet</div>
+          <h1 className="hero-title">
+            Nous<br />
+            <em>contacter</em>
+          </h1>
+          <p className="hero-sub">
+            Exprimez vos besoins et découvrez comment nous pouvons accompagner votre transformation technologique.
+          </p>
+        </div>
+      </section>
 
       <div className="divider" />
 
       {/* CONTACT SECTION */}
       <section className="section" id="contact-form">
-        <div className="section-eyebrow reveal">Nous sommes à votre écoute</div>
-        <h2 className="section-title reveal reveal-delay-1">Amenez votre<br />vision</h2>
 
         <div className="contact-grid">
           {/* Infos */}

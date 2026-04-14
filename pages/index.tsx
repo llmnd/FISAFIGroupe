@@ -231,7 +231,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Cloud & Virtualisation", 
               desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.",
-              img: "https://i.pinimg.com/1200x/11/73/0e/11730e8efe165364e8ebc2587ba4bbc7.jpg",
+              img: "https://i.pinimg.com/1200x/e8/ce/0f/e8ce0fd1ffe096dee7d7b85b261b626f.jpg",
             },
           ].map((cap, i) => (
             <div 

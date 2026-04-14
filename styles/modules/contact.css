@@ -169,7 +169,7 @@
 
 /* Contact Form Page - Light Background Section */
 #contact-form {
-  background: linear-gradient(135deg, #f8f9fa 0%, #f0f3f7 100%);
+  background: var(--mist);
 }
 
 #contact-form .contact-info {

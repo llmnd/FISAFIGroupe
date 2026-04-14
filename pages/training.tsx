@@ -273,7 +273,7 @@ export default function FormationPage() {
       num: "01", 
       name: "Administration Réseaux & Télécoms", 
       desc: "Conception, installation, maintenance et sécurisation des infrastructures réseaux et télécom.", 
-      img: "/19.jpeg",
+      img: "https://i.pinimg.com/736x/ec/0d/98/ec0d98d60bd7c28f8e33230613722189.jpg",
       hours: "40H",
       level: "Intermédiaire"
     },
@@ -281,7 +281,7 @@ export default function FormationPage() {
       num: "02", 
       name: "Infrastructure IT & Virtualisation", 
       desc: "Déploiement de serveurs, gestion des données, virtualisation et cloud computing.", 
-      img: "/18.jpeg",
+      img: "https://i.pinimg.com/1200x/a0/c7/4e/a0c74e96fa09208693505f5f99b6ee9c.jpg",
       hours: "35H",
       level: "Avancé"
     },
@@ -289,7 +289,7 @@ export default function FormationPage() {
       num: "03", 
       name: "Cybersécurité & Digital Trust", 
       desc: "Sécurité informatique, protection des données, audit de sécurité et conformité.", 
-      img: "/21.jpeg",
+      img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg",
       hours: "45H",
       level: "Avancé"
     },
@@ -297,7 +297,7 @@ export default function FormationPage() {
       num: "04", 
       name: "Certification Professionnelle", 
       desc: "Préparation aux certifications reconnues internationales (Cisco, CompTIA, Microsoft, etc.).", 
-      img: "/17.jpeg",
+      img: "https://i.pinimg.com/1200x/c4/71/08/c4710899d8cbe32a8c247b6b0103a283.jpg",
       hours: "30H",
       level: "Variable"
     },
@@ -342,8 +342,7 @@ export default function FormationPage() {
         </div>
       </div>
 
-      {/* CATALOGUE */}
-      <section className="section" id="catalogue">
+      <section className="section" id="catalogue" style={{ background: "var(--mist)" }}>
         <div className="section-eyebrow">Nos offres de formation</div>
         <h2 className="section-title">Catalogue de<br />formations</h2>
         
