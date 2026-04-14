@@ -237,7 +237,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Ingénierie Réseaux", 
               desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.",
-              img: "https://i.pinimg.com/1200x/57/df/ae/57dfae030ee331215028f549c928ae83.jpg",
+              img: "https://i.pinimg.com/1200x/b6/e5/b4/b6e5b453d85cc0aef72de3c1e3c75177.jpg",
             },
             { 
               title: "Solutions Sécurité", 
