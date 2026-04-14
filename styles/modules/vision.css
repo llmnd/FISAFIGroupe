@@ -2,7 +2,7 @@
 
 .vision-section {
   position: relative;
-  padding: 6rem 1.5rem;
+  padding: 3rem 1.5rem 6rem;
   background: var(--mist);
   overflow: hidden;
 }
@@ -43,7 +43,7 @@
   line-height: 1;
   color: rgba(255,255,255,0.10);
   position: absolute;
-  top: -0.5rem;
+  top: 1rem;
   left: 1rem;
   pointer-events: none;
   user-select: none;
@@ -55,7 +55,7 @@
   text-transform: uppercase;
   color: var(--orange);
   margin-bottom: 1.5rem;
-  margin-top: 2.5rem;
+  margin-top: 0.5rem;
   position: relative;
   z-index: 1;
 }
@@ -72,10 +72,11 @@
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(1.3rem, 3vw, 1.6rem);
   font-style: italic;
-  font-weight: 300;
+  font-weight: 800;
   color: #fff;
   line-height: 1.7;
   margin: 0;
+  top : 1rem;
 }
 
 /* Atouts — en dessous de la vision box, sur fond clair */

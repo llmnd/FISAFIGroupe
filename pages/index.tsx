@@ -296,7 +296,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <h2 className="section-title">Pourquoi<br />FISAFI ?</h2>
 
         <div className="vision-box" style={{
-          backgroundImage: 'url(https://i.pinimg.com/736x/93/6c/64/936c64c304681938df8fdafeb8b2a2f3.jpg)',
+          backgroundImage: 'url(https://i.pinimg.com/736x/e1/a2/a7/e1a2a73729b6d7fbda9f7d534b5dc216.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -307,6 +307,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
           justifyContent: 'flex-start',
           minHeight: '200px',
           padding: '3rem 6rem 6rem',
+          borderRadius: '50px',
         }}>
           <div style={{
             position: 'absolute',
@@ -315,7 +316,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             zIndex: 0,
           }} />
           {/* Grand guillemet décoratif */}
-          <div className="vision-quote-mark" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>&ldquo;</div>
+          <div className="vision-quote-mark" style={{ position: 'relative', zIndex: 3, color: '#fff' }}>&ldquo;</div>
 
           <div className="vision-label" style={{ position: 'relative', zIndex: 1 }}>Notre vision</div>
 
@@ -333,11 +334,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
     fontSize: 'clamp(1rem, 2.5vw, 1.4rem)',
     fontFamily: '"Cormorant Garamond", "Georgia", serif',
     fontWeight: 600,
-    lineHeight: 1.75,
-    letterSpacing: '0.01em',
-    maxWidth: '65ch',
-    textRendering: 'optimizeLegibility',
-    WebkitFontSmoothing: 'antialiased',
+   
   }}
 >
   Partenaire de référence en Afrique, nous bâtissons ensemble une infrastructure numérique performante, sécurisée et durable.
@@ -369,7 +366,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/736x/b6/21/9b/b6219b57285d14e889f0a52e8ec9b7ad.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
             { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/9b/aa/22/9baa22f8ed8cf3bda2d8d309f572bc86.jpg", type: "image" },
             { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
