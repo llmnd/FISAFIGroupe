@@ -13,28 +13,28 @@ export default function Services() {
       num: "01",
       name: "Réseaux & Télécommunications",
       desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.",
-      img: "/19.jpeg",
+      img: "https://i.pinimg.com/1200x/57/df/ae/57dfae030ee331215028f549c928ae83.jpg",
       tags: ["Infrastructure", "Réseau", "Télécom"]
     },
     {
       num: "02",
       name: "Informatique & Infrastructures IT",
       desc: "Audit, déploiement et maintenance de systèmes d'information performants et sécurisés.",
-      img: "/18.jpeg",
+      img: "https://i.pinimg.com/736x/bb/77/72/bb7772074ede4af7dd24a843856c691a.jpg",
       tags: ["IT", "Infrastructure", "Cloud"]
     },
     {
       num: "03",
       name: "Sécurité & Cybersécurité",
       desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.",
-      img: "/21.jpeg",
+      img: "https://i.pinimg.com/1200x/f7/bb/86/f7bb86887c98e380274ba9e49f151fd1.jpg",
       tags: ["Sécurité", "Cyberdéfense", "Audit"]
     },
     {
       num: "04",
       name: "Conseil & Accompagnement Stratégique",
       desc: "Études, formations et conseil pour anticiper les mutations numériques et piloter vos transformations.",
-      img: "/22.jpeg",
+      img: "https://i.pinimg.com/1200x/58/bf/03/58bf039cae701af3e44489ca310e07c2.jpg",
       tags: ["Conseil", "Stratégie", "Formation"]
     },
   ];
