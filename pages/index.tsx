@@ -105,7 +105,7 @@ export default function Home() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '400px',
+          minHeight: '300px',
         }}>
           <div style={{
             position: 'absolute',
