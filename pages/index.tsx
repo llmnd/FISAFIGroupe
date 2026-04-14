@@ -82,11 +82,10 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>FiSAFi Groupe — L&apos;Expertise qui fait la Différence</title>
+        <title>FiSAFi Groupe Solutions Informatiques Dakar</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        
       </Head>
 
       <Header />
@@ -97,7 +96,7 @@ export default function Home() {
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
         <div className="about-strip-left" style={{
-          backgroundImage: 'url(https://i.pinimg.com/1200x/e6/22/62/e622624b689e3c604bb26604e4bf008a.jpg)',
+          backgroundImage: 'url(https://i.pinimg.com/1200x/fc/c5/bd/fcc5bdfc15baee69bc7ef71806c1f9fe.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

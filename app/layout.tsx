@@ -7,7 +7,7 @@ import "@/styles/globals.css";
 import ScrollManager from "@/components/ScrollManager";
 
 export const metadata: Metadata = {
-  title: "FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal",
+  title: "FiSAFi Groupe Solutions Informatiques Dakar",
   description:
     "Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 896 59 39",
   keywords: [
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: "https://fisafigroupe.com",
-    title: "FiSAFi Groupe — Cabinet IT & Réseaux | Dakar",
+    title: "FiSAFi Groupe Solutions Informatiques Dakar",
     description:
-      "Cabinet de conseil en IT, réseaux, cybersécurité et formations. Expertise reconnue en infrastructure cloud, télécoms et solutions sécurisées au Sénégal.",
+      "Cabinet de conseil en IT, réseaux, cybersécurité et formations. Expertise reconnue en infrastructure cloud, télécoms et solutions sécurisées au Sénégal",
     images: [
       {
         url: "https://fisafigroupe.com/logo.jpeg",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FiSAFi Groupe — Cabinet IT & Réseaux",
+    title: "FiSAFi Groupe Solutions Informatiques Dakar",
     description:
       "Expertise IT, réseaux, cybersécurité et formations certifiantes à Dakar, Sénégal",
     images: ["https://fisafigroupe.com/logo.jpeg"],
@@ -57,6 +57,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://fisafigroupe.com",
     languages: { "fr-FR": "https://fisafigroupe.com" },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon/favicon.ico", sizes: "any" },
+      { url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/favicon/apple-touch-icon.png",
   },
 };
 

@@ -4,6 +4,11 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon/favicon-96x96.png" sizes="96x96" type="image/png" />
+        <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicon/site.webmanifest" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
