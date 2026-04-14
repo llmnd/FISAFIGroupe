@@ -295,19 +295,53 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <div className="section-eyebrow">Notre philosophie</div>
         <h2 className="section-title">Pourquoi<br />FISAFI ?</h2>
 
-        <div className="vision-box">
+        <div className="vision-box" style={{
+          backgroundImage: 'url(https://i.pinimg.com/736x/93/6c/64/936c64c304681938df8fdafeb8b2a2f3.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          minHeight: '200px',
+          padding: '3rem 6rem 6rem',
+        }}>
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.25)',
+            zIndex: 0,
+          }} />
           {/* Grand guillemet décoratif */}
-          <div className="vision-quote-mark">&ldquo;</div>
+          <div className="vision-quote-mark" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>&ldquo;</div>
 
-          <div className="vision-label">Notre vision</div>
+          <div className="vision-label" style={{ position: 'relative', zIndex: 1 }}>Notre vision</div>
 
-          <div className="vision-box-inner">
-            <p className="vision-text">
-              Devenir le partenaire de référence en Afrique dans l&apos;expertise,
-              l&apos;ingénierie et le conseil technologique, en contribuant activement
-              à la construction d&apos;infrastructures numériques performantes,
-              sécurisées et durables.
-            </p>
+          <div className="vision-box-inner" style={{ 
+            position: 'relative', 
+            zIndex: 1,
+            borderLeft: 'none',
+            paddingLeft: 0,
+            textAlign: 'center'
+          }}>
+            <p
+  className="vision-text"
+  style={{
+    color: '#fff',
+    fontSize: 'clamp(1rem, 2.5vw, 1.4rem)',
+    fontFamily: '"Cormorant Garamond", "Georgia", serif',
+    fontWeight: 600,
+    lineHeight: 1.75,
+    letterSpacing: '0.01em',
+    maxWidth: '65ch',
+    textRendering: 'optimizeLegibility',
+    WebkitFontSmoothing: 'antialiased',
+  }}
+>
+  Partenaire de référence en Afrique, nous bâtissons ensemble une infrastructure numérique performante, sécurisée et durable.
+</p>
           </div>
         </div>
 
@@ -335,7 +369,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/1200x/29/ef/3a/29ef3a431144f441021ba0fd321d8ab2.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/736x/b6/21/9b/b6219b57285d14e889f0a52e8ec9b7ad.jpg", type: "image" },
             { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/9b/aa/22/9baa22f8ed8cf3bda2d8d309f572bc86.jpg", type: "image" },
             { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
