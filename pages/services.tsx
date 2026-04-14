@@ -27,7 +27,7 @@ export default function Services() {
       num: "03",
       name: "Sécurité & Cybersécurité",
       desc: "Protection des données, audit de sécurité et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte.",
-      img: "https://i.pinimg.com/1200x/f7/bb/86/f7bb86887c98e380274ba9e49f151fd1.jpg",
+      img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg",
       tags: ["Sécurité", "Cyberdéfense", "Audit"]
     },
     {
@@ -52,7 +52,7 @@ export default function Services() {
       <Header />
 
       {/* ─── HERO SLIDESHOW ─── */}
-      <HeroSlideshow variant="services" />
+      <HeroSlideshow variant="services" ctaText="Nos formations" ctaHref="/training" />
 
       <div className="divider" />
 

@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: #0d1f4e;
-  padding: 1rem 0;
+  padding: 0;
 }
 
 @media (max-width: 600px) {

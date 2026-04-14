@@ -96,8 +96,24 @@ export default function Home() {
 
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
-        <div className="about-strip-left">
-          <p className="about-quote">
+        <div className="about-strip-left" style={{
+          backgroundImage: 'url(https://i.pinimg.com/1200x/e6/22/62/e622624b689e3c604bb26604e4bf008a.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+        }}>
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.2)',
+            zIndex: 1,
+          }} />
+          <p className="about-quote" style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff' }}>
             « Pensez grand.<br />Pensez digital.<br />Pensez FISAFI. »
           </p>
         </div>
@@ -135,7 +151,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
           {[
             { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/1200x/b6/e5/b4/b6e5b453d85cc0aef72de3c1e3c75177.jpg", tags: ["INFRASTRUCTURE", "NETWORKING"] },
             { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
-            { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
+            { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
             { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnons dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", tags: ["CONSEIL", "STRATÉGIE"] },
           ].map((service, i) => (
             <div 
@@ -221,7 +237,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Ingénierie Réseaux", 
               desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.",
-              img: "https://i.pinimg.com/736x/72/ca/23/72ca23db69c94e037f9ac20be6222543.jpg",
+              img: "https://i.pinimg.com/1200x/57/df/ae/57dfae030ee331215028f549c928ae83.jpg",
             },
             { 
               title: "Solutions Sécurité", 
@@ -319,9 +335,9 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/736x/ed/a3/94/eda3945e4636ae02cdd4bb7bff772370.jpg", type: "image" },
-            { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/736x/2d/85/a7/2d85a74061bce155cad15c1171265493.jpg", type: "image" },
-            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/1200x/29/ef/3a/29ef3a431144f441021ba0fd321d8ab2.jpg", type: "image" },
+            { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/9b/aa/22/9baa22f8ed8cf3bda2d8d309f572bc86.jpg", type: "image" },
+            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
           ].map((area, i) => (
             <div key={area.name} className="area-card-item">

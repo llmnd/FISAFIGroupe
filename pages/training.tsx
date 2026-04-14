@@ -317,7 +317,7 @@ export default function FormationPage() {
 
       <Header />
 
-      <HeroSlideshow variant="training" />
+      <HeroSlideshow variant="training" ctaText="Nos actualités" ctaHref="/news" />
 
       {/* ESPACE FORMATION */}
       <div className="about-strip">

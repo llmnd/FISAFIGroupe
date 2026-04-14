@@ -53,8 +53,14 @@ const FADE_TXT  = 480;
 
 export default function HeroSlideshow({
   variant = "home",
+  hideCTA = false,
+  ctaText = "Nos services",
+  ctaHref = "/services",
 }: {
   variant?: "home" | "services" | "training";
+  hideCTA?: boolean;
+  ctaText?: string;
+  ctaHref?: string;
 }) {
   const slides =
     variant === "services" ? SERVICES_SLIDES :
@@ -206,15 +212,17 @@ export default function HeroSlideshow({
 
         {/* CTA — ancré en bas */}
         <div className="hs-bottom">
-          <div className="hs-actions">
-            <Link href="/services" className="hs-btn-primary">
-              <span>Nos services</span>
-              <span className="hs-btn-arrow" aria-hidden />
-            </Link>
-            <Link href="/#contact" className="hs-btn-ghost">
-              <span>Nous contacter</span>
-            </Link>
-          </div>
+          {!hideCTA && (
+            <div className="hs-actions">
+              <Link href={ctaHref} className="hs-btn-primary">
+                <span>{ctaText}</span>
+                <span className="hs-btn-arrow" aria-hidden />
+              </Link>
+              <Link href="/#contact" className="hs-btn-ghost">
+                <span>Nous contacter</span>
+              </Link>
+            </div>
+          )}
 
           <nav className="hs-dots" aria-label="Navigation">
             {slides.map((_, i) => (
