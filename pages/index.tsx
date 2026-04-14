@@ -326,7 +326,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
             { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/9b/aa/22/9baa22f8ed8cf3bda2d8d309f572bc86.jpg", type: "image" },
             { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", type: "image" },
-            { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/736x/fc/1f/3e/fc1f3e0aae27c447ab48784db2ae8c8c.jpg", type: "image" },
+            { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/1200x/41/e4/8f/41e48f226597daf5235a91aabd887093.jpg", type: "image" },
           ].map((area, i) => (
             <div key={area.name} className="area-card-item">
               <div className="area-card">
