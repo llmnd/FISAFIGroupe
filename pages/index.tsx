@@ -242,7 +242,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Solutions Sécurité", 
               desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.",
-              img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg",
+              img: "https://i.pinimg.com/736x/72/53/5c/72535c1e0e4d94563fae27ad8a016139.jpg",
             },
             { 
               title: "Cloud & Virtualisation", 
