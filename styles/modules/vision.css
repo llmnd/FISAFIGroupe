@@ -57,22 +57,23 @@
   margin-bottom: 1.5rem;
   margin-top: 0.5rem;
   position: relative;
+  text-align: center;
   z-index: 1;
 }
 
 .vision-box-inner {
-  border-left: 3px solid transparent;
-  border-image: linear-gradient(180deg, var(--orange) 0%, var(--blue) 100%) 1;
+  border-left: 3px solid var(--orange);
   padding-left: 1.5rem;
   position: relative;
   z-index: 1;
+  /* supprimé : border-image gradient (incompatible avec border-left seul) */
 }
 
 .vision-text {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(1.3rem, 3vw, 1.6rem);
   font-style: italic;
-  font-weight: 800;
+  font-weight: 300;
   color: #fff;
   line-height: 1.7;
   margin: 0;

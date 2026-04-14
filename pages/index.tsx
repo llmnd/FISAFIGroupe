@@ -242,7 +242,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
             { 
               title: "Solutions Sécurité", 
               desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.",
-              img: "https://i.pinimg.com/736x/72/53/5c/72535c1e0e4d94563fae27ad8a016139.jpg",
+              img: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg",
             },
             { 
               title: "Cloud & Virtualisation", 
@@ -290,74 +290,32 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         </div>
       </section>
 
-      {/* ─── VISION ─── */}
       <section className="vision-section" id="vision">
         <div className="section-eyebrow">Notre philosophie</div>
         <h2 className="section-title">Pourquoi<br />FISAFI ?</h2>
 
-        <div className="vision-box" style={{
-          backgroundImage: 'url(https://i.pinimg.com/736x/e1/a2/a7/e1a2a73729b6d7fbda9f7d534b5dc216.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          minHeight: '200px',
-          padding: '3rem 6rem 6rem',
-          borderRadius: '50px',
-        }}>
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.25)',
-            zIndex: 0,
-          }} />
-          {/* Grand guillemet décoratif */}
-          <div className="vision-quote-mark" style={{ position: 'relative', zIndex: 3, color: '#fff' }}>&ldquo;</div>
-
-          <div className="vision-label" style={{ position: 'relative', zIndex: 1 }}>Notre vision</div>
-
-          <div className="vision-box-inner" style={{ 
-            position: 'relative', 
-            zIndex: 1,
-            borderLeft: 'none',
-            paddingLeft: 0,
-            textAlign: 'center'
-          }}>
-            <p
-  className="vision-text"
-  style={{
-    color: '#fff',
-    fontSize: 'clamp(1rem, 2.5vw, 1.4rem)',
-    fontFamily: '"Cormorant Garamond", "Georgia", serif',
-    fontWeight: 600,
-   
-  }}
->
-  Partenaire de référence en Afrique, nous bâtissons ensemble une infrastructure numérique performante, sécurisée et durable.
-</p>
+        <div
+          className="vision-box"
+          style={{
+            backgroundImage: "url(https://i.pinimg.com/736x/e1/a2/a7/e1a2a73729b6d7fbda9f7d534b5dc216.jpg)",
+          }}
+        >
+          <div className="vision-box-overlay" />
+          <div className="vision-box-body">
+            <span className="vision-quote-mark">&ldquo;</span>
+            <div className="vision-label">Notre vision</div>
+            <div className="vision-box-inner">
+              <p className="vision-text">
+                Partenaire de référence en Afrique, nous bâtissons ensemble une infrastructure numérique performante, sécurisée et durable.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Atouts — conservés mais séparés sous la vision box */}
         <div className="atouts-list">
-          {[
-            "Expertise technique de haut niveau, ancrée dans les réalités africaines",
-            "Partenaire de confiance pour vos projets technologiques complexes",
-            "Solutions sur mesure, innovantes et adaptées à votre contexte",
-            "Accompagnement global, fiable et orienté résultats",
-            "Engagement qualité, performance et sécurité à chaque mission",
-          ].map((text) => (
-            <div className="atout-item" key={text}>
-              <div className="atout-dot" />
-              <div className="atout-text">{text}</div>
-            </div>
-          ))}
         </div>
       </section>
+
 
       {/* ─── AREA CARDS GRID ─── */}
       <section className="section" style={{ background: "var(--mist)", paddingTop: "4rem", paddingBottom: "4rem" }}>
