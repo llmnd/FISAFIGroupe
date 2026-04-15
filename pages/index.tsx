@@ -7,6 +7,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
+const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"), { ssr: false });
 
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -95,27 +96,7 @@ export default function Home() {
 
       {/* ─── ABOUT STRIP ─── */}
       <div className="about-strip">
-        <div className="about-strip-left" style={{
-          backgroundImage: 'url(https://i.pinimg.com/1200x/fc/c5/bd/fcc5bdfc15baee69bc7ef71806c1f9fe.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '300px',
-        }}>
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.2)',
-            zIndex: 1,
-          }} />
-          <p className="about-quote" style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff' }}>
-            « Pensez grand.<br />Pensez digital.<br />Pensez FISAFI. »
-          </p>
-        </div>
+        <AboutStripSlideshow />
         <div className="about-strip-right">
           <p className="about-text">
             FISAFI GROUPE <br />

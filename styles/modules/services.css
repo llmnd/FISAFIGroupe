@@ -95,7 +95,6 @@
 .service-card-media {
   position: relative;
   width: 100%;
-  border-radius: var(--radius-card);
   overflow: hidden;
   background: #f3f0ec;
   box-shadow: var(--shadow-card);

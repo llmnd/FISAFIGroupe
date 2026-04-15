@@ -247,7 +247,7 @@ export default function HeroSlideshow({
           --txt-fade: ${FADE_TXT}ms;
           position: relative;
           width: 100%;
-          min-height: 100svh;
+          min-height: 70vh;
           display: flex;
           flex-direction: row;
           /* keep overflow hidden so footer overlay can create the concave cut */
@@ -305,30 +305,32 @@ export default function HeroSlideshow({
           position: relative;
           z-index: 10;
           width: 45%;
-          min-height: 100svh;
+          min-height: 70vh;
           display: flex;
           flex-direction: column;
           /* Texte en haut, CTA en bas */
-          justify-content: space-between;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
           /* padding-top = hauteur header (~62px) + espace respiration */
-          padding: 5.5rem 3.5rem 3.5rem 5rem;
+          padding: 2.5rem 3.5rem 2.5rem 5rem;
           flex-shrink: 0;
         }
         @media (max-width: 1100px) {
-          .hs-text-panel { padding: 5.5rem 2.5rem 3.5rem 3rem; width: 50%; }
+          .hs-text-panel { padding: 2.5rem 2.5rem 2.5rem 3rem; width: 50%; }
         }
         @media (max-width: 900px) {
           .hs-text-panel {
             position: absolute; inset: 0;
             width: 100%;
-            padding: 5rem 1.75rem 3.5rem;
-            align-items: flex-start;
-            justify-content: space-between;
+            padding: 3rem 1.75rem 2.5rem;
+            align-items: center;
+            justify-content: center;
             background: linear-gradient(to bottom, rgba(11,21,32,0.3) 0%, rgba(11,21,32,0.5) 50%, rgba(11,21,32,0.8) 100%);
           }
         }
         @media (max-width: 600px) {
-          .hs-text-panel { padding: 4.5rem 1.5rem 3rem; }
+          .hs-text-panel { padding: 2.5rem 1.5rem; }
         }
 
         /* ── Barre verticale ── */
@@ -356,6 +358,10 @@ export default function HeroSlideshow({
           transition: opacity var(--txt-fade) ease, transform var(--txt-fade) ease;
           opacity: 1;
           transform: translateY(0);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 2.5rem;
         }
         .hs-inner--fading { opacity: 0; transform: translateY(10px); }
 
@@ -363,18 +369,19 @@ export default function HeroSlideshow({
         .hs-eyebrow {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 0.85rem;
-          margin-bottom: 1.25rem;
+          margin-bottom: 1rem;
           opacity: 0;
           animation: hsFadeUp var(--txt-fade) 0.05s forwards;
         }
         .hs-eyebrow-line {
-          display: block; width: 2rem; height: 1px;
+          display: block; width: 1.5rem; height: 1px;
           background: var(--accent); flex-shrink: 0;
         }
         .hs-eyebrow-text {
           font-family: 'Jost', sans-serif;
-          font-size: 10px; font-weight: 400;
+          font-size: 9px; font-weight: 400;
           letter-spacing: 0.38em; text-transform: uppercase;
           color: rgba(255,255,255,0.55);
         }
@@ -383,8 +390,8 @@ export default function HeroSlideshow({
         .hs-title {
           font-family: 'Cormorant Garamond', serif;
           font-weight: 300;
-          font-size: clamp(3rem, 5.5vw, 5.5rem);
-          line-height: 1.04;
+          font-size: clamp(2.5rem, 4vw, 4.2rem);
+          line-height: 1.1;
           letter-spacing: -0.02em;
           color: #fff;
           margin: 0;
@@ -401,28 +408,32 @@ export default function HeroSlideshow({
         .hs-bottom {
           display: flex;
           flex-direction: column;
-          gap: 2rem;
+          gap: 1.5rem;
+          align-items: center;
+          margin-top: auto;
+          padding-bottom: 2rem;
         }
 
         /* ── Actions ── */
         .hs-actions {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1rem;
           flex-wrap: wrap;
           opacity: 0;
           animation: hsFadeUp var(--txt-fade) 0.18s forwards;
         }
-        @media (max-width: 600px) { .hs-actions { gap: 1rem; } }
+        @media (max-width: 600px) { .hs-actions { gap: 0.75rem; } }
 
         .hs-btn-primary {
-          display: inline-flex; align-items: center; gap: 1.25rem;
+          display: inline-flex; align-items: center; gap: 1rem;
           font-family: 'Jost', sans-serif;
-          font-size: 10px; font-weight: 400;
+          font-size: 9px; font-weight: 400;
           letter-spacing: 0.36em; text-transform: uppercase;
           color: #0b1520; background: #fff;
           text-decoration: none;
-          padding: 1.1rem 2.4rem;
+          padding: 0.85rem 2rem;
           position: relative; overflow: hidden;
           transition: color 0.35s; flex-shrink: 0;
         }
@@ -456,7 +467,7 @@ export default function HeroSlideshow({
 
         .hs-btn-ghost {
           font-family: 'Jost', sans-serif;
-          font-size: 10px; font-weight: 300;
+          font-size: 9px; font-weight: 300;
           letter-spacing: 0.28em; text-transform: uppercase;
           color: rgba(255,255,255,0.35);
           text-decoration: none;
@@ -468,7 +479,10 @@ export default function HeroSlideshow({
 
         /* ── Dots ── */
         .hs-dots {
-          display: flex; align-items: center; gap: 8px;
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          gap: 8px;
           opacity: 0;
           animation: hsFadeIn var(--txt-fade) 0.22s forwards;
         }

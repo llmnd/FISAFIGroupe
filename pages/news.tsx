@@ -26,11 +26,11 @@ export default function News() {
   const [isClient, setIsClient] = useState(false);
 
   // Couleurs et icônes par catégorie
-  const categoryStyles: Record<string, { bg: string; icon: string; color: string }> = {
-    'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff' },
-    'Innovations': { bg: 'linear-gradient(135deg, #9333ea 0%, #d946ef 100%)', icon: '💡', color: '#fff' },
-    'Événements': { bg: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)', icon: '📅', color: '#fff' },
-    'Veille sectorielle': { bg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', icon: '📊', color: '#fff' },
+  const categoryStyles: Record<string, { bg: string; icon: string; color: string; image?: string }> = {
+    'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff', image: 'https://i.pinimg.com/736x/0f/97/73/0f9773ccab2dba7dcd624037adaf1150.jpg' },
+    'Innovations': { bg: 'linear-gradient(135deg, #9333ea 0%, #d946ef 100%)', icon: '💡', color: '#fff', image: 'https://i.pinimg.com/1200x/e6/af/85/e6af85fda4983083c99b2defcffa522d.jpg' },
+    'Événements': { bg: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)', icon: '📅', color: '#fff', image: 'https://i.pinimg.com/1200x/37/a7/f0/37a7f0f2f1afe68709caeca3864a54ca.jpg' },
+    'Veille sectorielle': { bg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', icon: '📊', color: '#fff', image: 'https://i.pinimg.com/1200x/94/3d/2f/943d2ff5420ae964310707f12d04bb2d.jpg' },
   };
 
   const getCategoryStyle = (category: string) => {
@@ -232,7 +232,7 @@ export default function News() {
             {[1, 2, 3].map((i) => (
               <div key={i} className="service-card" style={{ opacity: 0.6 }}>
                 <div className="service-card-media">
-                  <div style={{ background: '#e8e8e8', width: '100%', aspectRatio: '16/9', borderRadius: '16px' }} />
+                  <div style={{ background: '#e8e8e8', width: '100%', aspectRatio: '4/3' }} />
                 </div>
                 <div className="service-card-content">
                   <div style={{ height: '24px', background: '#e8e8e8', width: '80%', marginBottom: '0.8rem' }} />
@@ -262,11 +262,20 @@ export default function News() {
                         data-observe
                         style={{ objectFit: "cover", width: "100%", height: "auto" }}
                       />
+                    ) : getCategoryStyle(article.category || '').image ? (
+                      <Image
+                        src={getCategoryStyle(article.category || '').image!}
+                        alt={article.category || 'Article'}
+                        width={400}
+                        height={250}
+                        data-observe
+                        style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                      />
                     ) : (
                       <div style={{ 
                         background: getCategoryStyle(article.category || '').bg,
                         width: '100%', 
-                        aspectRatio: '16/9',
+                        aspectRatio: '4/3',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
