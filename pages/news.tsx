@@ -23,10 +23,28 @@ export default function News() {
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  // Couleurs et icônes par catégorie
+  const categoryStyles: Record<string, { bg: string; icon: string; color: string }> = {
+    'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff' },
+    'Innovations': { bg: 'linear-gradient(135deg, #9333ea 0%, #d946ef 100%)', icon: '💡', color: '#fff' },
+    'Événements': { bg: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)', icon: '📅', color: '#fff' },
+    'Veille sectorielle': { bg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', icon: '📊', color: '#fff' },
+  };
+
+  const getCategoryStyle = (category: string) => {
+    return categoryStyles[category] || {
+      bg: 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
+      icon: '📰',
+      color: '#fff'
+    };
+  };
 
   useEffect(() => {
     // Token check for potential future use
     // const token = localStorage.getItem("token");
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
@@ -50,6 +68,14 @@ export default function News() {
   }, [selectedCategory]);
 
   useEffect(() => {
+    if (!isClient) return;
+    
+    // Ajouter la classe visible aux éléments immédiatement si en viewport
+    const revealElements = document.querySelectorAll(".reveal");
+    revealElements.forEach((el) => {
+      el.classList.add("visible");
+    });
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -61,9 +87,10 @@ export default function News() {
       },
       { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+    
+    revealElements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [isClient]);
 
   const categories = [
     'tous',
@@ -237,21 +264,19 @@ export default function News() {
                       />
                     ) : (
                       <div style={{ 
-                        background: 'linear-gradient(135deg, #f5f5f5, #e8e8e8)', 
+                        background: getCategoryStyle(article.category || '').bg,
                         width: '100%', 
                         aspectRatio: '16/9',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#999',
-                        fontSize: '14px'
+                        color: getCategoryStyle(article.category || '').color,
+                        fontSize: '3rem',
+                        fontWeight: 'bold'
                       }}>
-                        Illustration
+                        {getCategoryStyle(article.category || '').icon}
                       </div>
                     )}
-                    <div className="service-card-badge">
-                      {String(article.id).padStart(2, '0')}
-                    </div>
                   </div>
                   <div className="service-card-content">
                     <div className="service-card-tags">
