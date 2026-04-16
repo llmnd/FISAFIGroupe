@@ -17,7 +17,7 @@ const DEFAULT_SLIDES = [
   { src: "https://i.pinimg.com/736x/11/3e/07/113e07e1f302bfe5beb3cbc89bb0bfff.jpg", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>" },
-  { src: "https://i.pinimg.com/1200x/b7/cd/17/b7cd17abaea1ce1d21e2bb8c0d4cdd4e.jpg", alt: "FiSAFi – services managés", type: "image",
+  { src: "https://i.pinimg.com/1200x/8b/44/d3/8b44d3273328cbd867f3c7307632d63d.jpg", alt: "FiSAFi – services managés", type: "image",
     eyebrow: "Services Managés",
     title: "Support technique\n<em>24/7</em>" },
   { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 5", type: "image",
