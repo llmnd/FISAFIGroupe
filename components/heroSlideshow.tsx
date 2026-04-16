@@ -8,16 +8,16 @@ const DEFAULT_SLIDES = [
   { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – cybersécurité", type: "video",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>" },
-  { src: "https://i.pinimg.com/736x/37/2d/ff/372dffb1d5ea2ee7cc442cbc3bb2255c.jpg", alt: "FiSAFi – slide 1", type: "image",
+  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>" },
   { src: "https://i.pinimg.com/1200x/1a/52/56/1a52565e2ab3c33edce6e907dd0482a6.jpg", alt: "FiSAFi – cybersécurité avancée", type: "image",
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>" },
-  { src: "https://i.pinimg.com/1200x/67/8b/43/678b433e1a5441c427e4bd5d78f11926.jpg", alt: "FiSAFi – slide 3", type: "image",
+  { src: "https://i.pinimg.com/736x/11/3e/07/113e07e1f302bfe5beb3cbc89bb0bfff.jpg", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>" },
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – services managés", type: "video",
+  { src: "https://i.pinimg.com/1200x/b7/cd/17/b7cd17abaea1ce1d21e2bb8c0d4cdd4e.jpg", alt: "FiSAFi – services managés", type: "image",
     eyebrow: "Services Managés",
     title: "Support technique\n<em>24/7</em>" },
   { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 5", type: "image",
@@ -220,6 +220,7 @@ export default function HeroSlideshow({
               </Link>
               <Link href="/#contact" className="hs-btn-ghost">
                 <span>Nous contacter</span>
+                <span className="hs-btn-arrow" aria-hidden />
               </Link>
             </div>
           )}
@@ -411,7 +412,7 @@ export default function HeroSlideshow({
           gap: 1.5rem;
           align-items: center;
           margin-top: auto;
-          padding-bottom: 2rem;
+          padding-bottom: 0rem;
         }
 
         /* ── Actions ── */
@@ -419,63 +420,62 @@ export default function HeroSlideshow({
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 1rem;
+          gap: 1.2rem;
           flex-wrap: wrap;
           opacity: 0;
           animation: hsFadeUp var(--txt-fade) 0.18s forwards;
         }
-        @media (max-width: 600px) { .hs-actions { gap: 0.75rem; } }
+        @media (max-width: 600px) { .hs-actions { gap: 0.9rem; } }
 
         .hs-btn-primary {
-          display: inline-flex; align-items: center; gap: 1rem;
+          display: inline-flex; align-items: center; gap: 0.8rem;
           font-family: 'Jost', sans-serif;
           font-size: 9px; font-weight: 400;
           letter-spacing: 0.36em; text-transform: uppercase;
-          color: #0b1520; background: #fff;
+          color: rgba(255,255,255,0.55);
           text-decoration: none;
-          padding: 0.85rem 2rem;
-          position: relative; overflow: hidden;
-          transition: color 0.35s; flex-shrink: 0;
+          transition: color 0.25s;
+          padding: 0;
+          position: relative; 
+          overflow: hidden;
+          flex-shrink: 0;
         }
         .hs-btn-primary::before {
-          content: ''; position: absolute; inset: 0;
-          background: var(--accent);
-          transform: scaleX(0); transform-origin: left;
-          transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
-          z-index: 0;
+          display: none;
         }
-        .hs-btn-primary:hover::before { transform: scaleX(1); }
-        .hs-btn-primary:hover { color: #fff; }
+        .hs-btn-primary:hover { 
+          color: rgba(255,255,255,0.9);
+        }
         .hs-btn-primary span { position: relative; z-index: 1; }
 
         .hs-btn-arrow {
           position: relative; z-index: 1;
           display: inline-block;
-          width: 16px; height: 1px;
+          width: 12px; height: 1px;
           background: currentColor; flex-shrink: 0;
           transition: transform 0.25s;
         }
         .hs-btn-arrow::after {
           content: ''; position: absolute;
-          right: 0; top: -3px;
-          width: 6px; height: 6px;
-          border-right: 1px solid currentColor;
-          border-top: 1px solid currentColor;
+          right: 0; top: -2px;
+          width: 4px; height: 4px;
+          border-right: 0.5px solid currentColor;
+          border-top: 0.5px solid currentColor;
           transform: rotate(45deg);
         }
-        .hs-btn-primary:hover .hs-btn-arrow { transform: translateX(4px); }
+        .hs-btn-primary:hover .hs-btn-arrow { transform: translateX(2px); }
 
         .hs-btn-ghost {
+          display: inline-flex; align-items: center; gap: 0.8rem;
           font-family: 'Jost', sans-serif;
           font-size: 9px; font-weight: 300;
           letter-spacing: 0.28em; text-transform: uppercase;
           color: rgba(255,255,255,0.35);
           text-decoration: none;
           transition: color 0.25s;
-          border-bottom: 1px solid rgba(255,255,255,0.12);
-          padding-bottom: 2px;
+          padding: 0;
         }
-        .hs-btn-ghost:hover { color: rgba(255,255,255,0.8); }
+        .hs-btn-ghost:hover { color: rgba(255,255,255,0.9); }
 
         /* ── Dots ── */
         .hs-dots {
