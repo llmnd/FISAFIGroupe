@@ -5,22 +5,22 @@ import Image from "next/image";
 import Link from "next/link";
 
 const DEFAULT_SLIDES = [
-  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – cybersécurité", type: "image",
+  { src: "https://i.pinimg.com/originals/4e/db/10/4edb10e76f50f41bee6bef63f696f50e.gif", alt: "FiSAFi – cybersécurité", type: "image",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>" },
-  { src: "https://i.pinimg.com/1200x/2e/30/d8/2e30d8bd3a1f97b8301829256c21a91b.jpg", alt: "FiSAFi – slide 1", type: "image",
+  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>" },
   { src: "https://i.pinimg.com/1200x/1a/52/56/1a52565e2ab3c33edce6e907dd0482a6.jpg", alt: "FiSAFi – cybersécurité avancée", type: "image",
     eyebrow: "Conseil Technologique",
     title: "Solutions IT de\n<em>classe mondiale</em>" },
-  { src: "https://i.pinimg.com/736x/11/3e/07/113e07e1f302bfe5beb3cbc89bb0bfff.jpg", alt: "FiSAFi – slide 3", type: "image",
+  { src: "https://i.pinimg.com/originals/79/a6/cc/79a6cc3163bcd2d964488d8ae62d03df.gif", alt: "FiSAFi – slide 3", type: "image",
     eyebrow: "Transformation Digitale",
     title: "Modernisez votre\n<em>infrastructure</em>" },
-  { src: "https://i.pinimg.com/1200x/8b/44/d3/8b44d3273328cbd867f3c7307632d63d.jpg", alt: "FiSAFi – services managés", type: "image",
+  { src: "https://i.pinimg.com/1200x/ef/0c/cc/ef0ccc82b12a227c18a1597868097308.jpg", alt: "FiSAFi – services managés", type: "image",
     eyebrow: "Services Managés",
     title: "Support technique\n<em>24/7</em>" },
-  { src: "https://i.pinimg.com/1200x/19/e4/bf/19e4bfa6fe888fb8abe79d75fe3f3f9e.jpg", alt: "FiSAFi – slide 5", type: "image",
+  { src: "https://i.pinimg.com/originals/14/e3/f8/14e3f8b54c14417611cfb6477c86c09d.gif", alt: "FiSAFi – slide 5", type: "image",
     eyebrow: "Solutions Personnalisées",
     title: "Vos défis,\n<em>nos solutions</em>" },
 ];

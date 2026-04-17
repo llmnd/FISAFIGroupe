@@ -4,11 +4,11 @@ import React, { useEffect, useState, useRef } from "react";
 
 const ABOUT_SLIDES = [
   {
-    src: "https://i.pinimg.com/1200x/fc/c5/bd/fcc5bdfc15baee69bc7ef71806c1f9fe.jpg",
+    src: "https://i.pinimg.com/originals/7d/07/a2/7d07a255678962d30d8717dcf5dbd266.gif",
     alt: "FiSAFi – About 1",
   },
   {
-    src: "https://i.pinimg.com/1200x/db/88/e4/db88e4904b1e4e1409100f34c10a025e.jpg",
+    src: "https://i.pinimg.com/originals/2f/ab/f3/2fabf3ceb5a35b51a70e27137d56e4d2.gif",
     alt: "FiSAFi – About 2",
   },
   {
