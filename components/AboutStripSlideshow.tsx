@@ -8,7 +8,7 @@ const ABOUT_SLIDES = [
     alt: "FiSAFi – About 1",
   },
   {
-    src: "https://i.pinimg.com/1200x/66/59/92/665992b8a62084b18cc50bddbecdb718.jpg",
+    src: "https://i.pinimg.com/1200x/db/88/e4/db88e4904b1e4e1409100f34c10a025e.jpg",
     alt: "FiSAFi – About 2",
   },
   {

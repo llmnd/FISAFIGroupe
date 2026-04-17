@@ -5,10 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 const DEFAULT_SLIDES = [
-  { src: "https://res.cloudinary.com/dcs9vkwe0/video/upload/q_auto/f_auto/v1775477690/vzcc5hhwqnlvhi8exxn4.mp4", alt: "FiSAFi – cybersécurité", type: "video",
+  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – cybersécurité", type: "image",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>" },
-  { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – slide 1", type: "image",
+  { src: "https://i.pinimg.com/1200x/2e/30/d8/2e30d8bd3a1f97b8301829256c21a91b.jpg", alt: "FiSAFi – slide 1", type: "image",
     eyebrow: "Infrastructure Résiliente",
     title: "Performance et\n<em>sécurité garanties</em>" },
   { src: "https://i.pinimg.com/1200x/1a/52/56/1a52565e2ab3c33edce6e907dd0482a6.jpg", alt: "FiSAFi – cybersécurité avancée", type: "image",
@@ -47,9 +47,9 @@ const TRAINING_SLIDES = [
     eyebrow: "Certifications", title: "Préparation aux\n<em>certifications</em>" },
 ];
 
-const INTERVAL  = 7000;
-const FADE_BG   = 1200;
-const FADE_TXT  = 480;
+const INTERVAL = 7000;
+const FADE_BG  = 1200;
+const FADE_TXT = 480;
 
 export default function HeroSlideshow({
   variant = "home",
@@ -101,8 +101,8 @@ export default function HeroSlideshow({
     setBgFading(true);
     setTextFading(true);
     setCurrent(next);
-    setTimeout(() => { const v = videoRefs.current[next]; if (v) playVideoWithRetry(v); }, 50);
-    setTimeout(() => setTextFading(false), FADE_BG * 0.35);
+    setTimeout(() => { const v = videoRefs.current[next]; if (v) playVideoWithRetry(v); }, 80);
+    setTimeout(() => setTextFading(false), FADE_BG * 0.4);
     setTimeout(() => { setPrev(null); setBgFading(false); }, FADE_BG);
   };
 
@@ -113,8 +113,8 @@ export default function HeroSlideshow({
         setPrev(c);
         setBgFading(true);
         setTextFading(true);
-        setTimeout(() => { const v = videoRefs.current[next]; if (v) playVideoWithRetry(v); }, 50);
-        setTimeout(() => setTextFading(false), FADE_BG * 0.35);
+        setTimeout(() => { const v = videoRefs.current[next]; if (v) playVideoWithRetry(v); }, 80);
+        setTimeout(() => setTextFading(false), FADE_BG * 0.4);
         setTimeout(() => { setPrev(null); setBgFading(false); }, FADE_BG);
         return next;
       });
@@ -147,8 +147,8 @@ export default function HeroSlideshow({
   return (
     <section className="hs-root">
 
-      {/* ══ MEDIA PANEL (droite) ══ */}
-      <div className="hs-media-panel">
+      {/* ══ ZONE IMAGE ══ */}
+      <div className="hs-media-wrap">
         {slides.map((slide, idx) => (
           <div
             key={idx}
@@ -172,7 +172,6 @@ export default function HeroSlideshow({
                   video.load();
                   setTimeout(() => playVideoWithRetry(video), 100);
                 }}
-                style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", display: "block" }}
               />
             ) : (
               <Image
@@ -180,25 +179,21 @@ export default function HeroSlideshow({
                 alt={slide.alt}
                 fill
                 priority={idx === 0}
-                sizes="60vw"
-                data-observe
-                style={{ objectFit: "contain", objectPosition: "center" }}
+                sizes="100vw"
+                style={{ objectFit: "contain", objectPosition: "top" }}
               />
             )}
-            <div className="hs-media-fade" />
           </div>
         ))}
       </div>
 
-      {/* ══ TEXT PANEL (gauche) ══ */}
+      {/* ══ ZONE TEXTE (sous l'image) ══ */}
       <div className="hs-text-panel">
 
-        {/* Barre verticale */}
         <div className="hs-vbar">
           <div className="hs-vbar-fill" key={current} />
         </div>
 
-        {/* Texte — ancré en haut */}
         <div className={`hs-inner${textFading ? " hs-inner--fading" : ""}`}>
           <div className="hs-eyebrow">
             <span className="hs-eyebrow-line" />
@@ -210,7 +205,6 @@ export default function HeroSlideshow({
           />
         </div>
 
-        {/* CTA — ancré en bas */}
         <div className="hs-bottom">
           {!hideCTA && (
             <div className="hs-actions">
@@ -224,7 +218,6 @@ export default function HeroSlideshow({
               </Link>
             </div>
           )}
-
           <nav className="hs-dots" aria-label="Navigation">
             {slides.map((_, i) => (
               <button
@@ -243,106 +236,75 @@ export default function HeroSlideshow({
 
         .hs-root {
           --accent: ${accent};
-          --bg:     #0b1520;
+          --bg: #0b1520;
           --bg-fade: ${FADE_BG}ms;
           --txt-fade: ${FADE_TXT}ms;
-          position: relative;
           width: 100%;
-          min-height: 70vh;
           display: flex;
-          flex-direction: row;
-          /* keep overflow hidden so footer overlay can create the concave cut */
-          overflow: hidden;
+          flex-direction: column;
           background: var(--bg);
+          overflow: hidden;
           isolation: isolate;
         }
 
-        /* ── Media panel ── */
-        .hs-media-panel {
-          position: absolute;
-          top: 0; right: 0;
-          width: 55%;
-          height: 100%;
-          z-index: 0;
-        }
-        @media (max-width: 900px) {
-          .hs-media-panel { width: 100%; }
+        /* ── Zone image ── */
+        .hs-media-wrap {
+          position: relative;
+          width: 100%;
+          /* hauteur responsive : grande sur desktop, raisonnable sur mobile */
+          height: clamp(260px, 52vw, 68vh);
+          flex-shrink: 0;
+          background: var(--bg);
         }
 
         .hs-slide {
           position: absolute; inset: 0;
           opacity: 0;
-          transition: opacity var(--bg-fade) cubic-bezier(0.4,0,0.2,1);
-          will-change: opacity;
+          transform: scale(0.97) translateZ(0);
+          transition: opacity var(--bg-fade) cubic-bezier(0.25,0.46,0.45,0.94),
+                      transform var(--bg-fade) cubic-bezier(0.25,0.46,0.45,0.94);
+          will-change: opacity, transform;
         }
-        .hs-slide--active  { opacity: 1; z-index: 2; }
-        .hs-slide--leaving { opacity: 0; z-index: 1; }
+        .hs-slide--active {
+          opacity: 1; z-index: 2;
+          transform: scale(1) translateZ(0);
+        }
+        .hs-slide--leaving {
+          opacity: 0; z-index: 1;
+          transform: scale(1.03) translateZ(0);
+        }
 
-        .hs-media-fade {
+        .hs-slide video {
           position: absolute; inset: 0;
-          background: linear-gradient(
-            to right,
-            var(--bg) 0%,
-            rgba(11,21,32,0.7) 20%,
-            rgba(11,21,32,0.15) 50%,
-            rgba(11,21,32,0) 85%
-          );
-          z-index: 3;
+          width: 100%; height: 100%;
+          object-fit: contain;
+          object-position: top;
+          display: block;
           pointer-events: none;
         }
-        @media (max-width: 900px) {
-          .hs-media-fade {
-            background: linear-gradient(
-              135deg,
-              rgba(11,21,32,0.9) 0%,
-              rgba(11,21,32,0.6) 40%,
-              rgba(11,21,32,0.2) 80%
-            );
-          }
-        }
+        .hs-slide video::-webkit-media-controls { display: none !important; }
 
-        /* ── Text panel ── */
+        /* ── Zone texte ── */
         .hs-text-panel {
           position: relative;
-          z-index: 10;
-          width: 45%;
-          min-height: 70vh;
+          width: 100%;
+          background: var(--bg);
           display: flex;
           flex-direction: column;
-          /* Texte en haut, CTA en bas */
-          justify-content: center;
           align-items: center;
           text-align: center;
-          /* padding-top = hauteur header (~62px) + espace respiration */
-          padding: 2.5rem 3.5rem 2.5rem 5rem;
-          flex-shrink: 0;
-        }
-        @media (max-width: 1100px) {
-          .hs-text-panel { padding: 2.5rem 2.5rem 2.5rem 3rem; width: 50%; }
-        }
-        @media (max-width: 900px) {
-          .hs-text-panel {
-            position: absolute; inset: 0;
-            width: 100%;
-            padding: 3rem 1.75rem 2.5rem;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(to bottom, rgba(11,21,32,0.3) 0%, rgba(11,21,32,0.5) 50%, rgba(11,21,32,0.8) 100%);
-          }
-        }
-        @media (max-width: 600px) {
-          .hs-text-panel { padding: 2.5rem 1.5rem; }
+          padding: 2.5rem 2rem 2.5rem;
+          gap: 2rem;
         }
 
-        /* ── Barre verticale ── */
         .hs-vbar {
           position: absolute;
-          left: 2.5rem; top: 18%; bottom: 18%;
+          left: 2rem; top: 1.5rem; bottom: 1.5rem;
           width: 1px;
-          background: rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.07);
           overflow: hidden;
         }
-        @media (max-width: 900px) { .hs-vbar { display: none; } }
+        @media (max-width: 600px) { .hs-vbar { display: none; } }
 
         .hs-vbar-fill {
           position: absolute;
@@ -356,25 +318,21 @@ export default function HeroSlideshow({
 
         /* ── Inner text ── */
         .hs-inner {
-          transition: opacity var(--txt-fade) ease, transform var(--txt-fade) ease;
+          transition: opacity var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94),
+                      transform var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94);
           opacity: 1;
           transform: translateY(0);
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin-bottom: 2.5rem;
         }
         .hs-inner--fading { opacity: 0; transform: translateY(10px); }
 
-        /* ── Eyebrow ── */
         .hs-eyebrow {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.85rem;
-          margin-bottom: 1rem;
+          display: flex; align-items: center; justify-content: center;
+          gap: 0.85rem; margin-bottom: 0.9rem;
           opacity: 0;
-          animation: hsFadeUp var(--txt-fade) 0.05s forwards;
+          animation: hsFadeUp var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94) 0.02s forwards;
         }
         .hs-eyebrow-line {
           display: block; width: 1.5rem; height: 1px;
@@ -384,48 +342,34 @@ export default function HeroSlideshow({
           font-family: 'Jost', sans-serif;
           font-size: 9px; font-weight: 400;
           letter-spacing: 0.38em; text-transform: uppercase;
-          color: rgba(255,255,255,0.55);
+          color: rgba(255,255,255,0.5);
         }
 
-        /* ── Title ── */
         .hs-title {
           font-family: 'Cormorant Garamond', serif;
           font-weight: 300;
-          font-size: clamp(2.5rem, 4vw, 4.2rem);
+          font-size: clamp(2.2rem, 5vw, 4rem);
           line-height: 1.1;
           letter-spacing: -0.02em;
           color: #fff;
           margin: 0;
           opacity: 0;
-          animation: hsFadeUp var(--txt-fade) 0.1s forwards;
+          animation: hsFadeUp var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94) 0.08s forwards;
         }
         .hs-title em { font-style: italic; color: var(--accent); font-weight: 300; }
 
-        @media (max-width: 600px) {
-          .hs-title { font-size: clamp(2.4rem, 10vw, 3.5rem); }
-        }
-
-        /* ── Bottom zone ── */
+        /* ── Bottom ── */
         .hs-bottom {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-          align-items: center;
-          margin-top: auto;
-          padding-bottom: 0rem;
+          display: flex; flex-direction: column;
+          align-items: center; gap: 1.4rem;
         }
 
-        /* ── Actions ── */
         .hs-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.2rem;
-          flex-wrap: wrap;
+          display: flex; flex-direction: column;
+          align-items: center; gap: 1.1rem;
           opacity: 0;
-          animation: hsFadeUp var(--txt-fade) 0.18s forwards;
+          animation: hsFadeUp var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94) 0.14s forwards;
         }
-        @media (max-width: 600px) { .hs-actions { gap: 0.9rem; } }
 
         .hs-btn-primary {
           display: inline-flex; align-items: center; gap: 0.8rem;
@@ -434,26 +378,16 @@ export default function HeroSlideshow({
           letter-spacing: 0.36em; text-transform: uppercase;
           color: rgba(255,255,255,0.55);
           text-decoration: none;
-          transition: color 0.25s;
-          padding: 0;
-          position: relative; 
-          overflow: hidden;
-          flex-shrink: 0;
+          transition: color 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
         }
-        .hs-btn-primary::before {
-          display: none;
-        }
-        .hs-btn-primary:hover { 
-          color: rgba(255,255,255,0.9);
-        }
-        .hs-btn-primary span { position: relative; z-index: 1; }
+        .hs-btn-primary:hover { color: rgba(255,255,255,0.95); }
 
         .hs-btn-arrow {
-          position: relative; z-index: 1;
           display: inline-block;
           width: 12px; height: 1px;
           background: currentColor; flex-shrink: 0;
-          transition: transform 0.25s;
+          position: relative;
+          transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
         }
         .hs-btn-arrow::after {
           content: ''; position: absolute;
@@ -463,51 +397,42 @@ export default function HeroSlideshow({
           border-top: 0.5px solid currentColor;
           transform: rotate(45deg);
         }
-        .hs-btn-primary:hover .hs-btn-arrow { transform: translateX(2px); }
+        .hs-btn-primary:hover .hs-btn-arrow { transform: translateX(3px); }
 
         .hs-btn-ghost {
           display: inline-flex; align-items: center; gap: 0.8rem;
           font-family: 'Jost', sans-serif;
           font-size: 9px; font-weight: 300;
           letter-spacing: 0.28em; text-transform: uppercase;
-          color: rgba(255,255,255,0.35);
+          color: rgba(255,255,255,0.3);
           text-decoration: none;
-          transition: color 0.25s;
-          padding: 0;
+          transition: color 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
         }
         .hs-btn-ghost:hover { color: rgba(255,255,255,0.9); }
 
-        /* ── Dots ── */
         .hs-dots {
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          gap: 8px;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
           opacity: 0;
-          animation: hsFadeIn var(--txt-fade) 0.22s forwards;
+          animation: hsFadeIn var(--txt-fade) cubic-bezier(0.25,0.46,0.45,0.94) 0.18s forwards;
         }
         .hs-dot {
           width: 20px; height: 1px;
-          background: rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.18);
           border: none; padding: 0; cursor: pointer;
-          transition: background 0.3s, width 0.3s;
+          transition: background 0.35s cubic-bezier(0.25,0.46,0.45,0.94),
+                      width 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
         }
         .hs-dot--active { background: var(--accent); width: 40px; }
         .hs-dot:hover:not(.hs-dot--active) { background: rgba(255,255,255,0.45); }
 
-        /* ── Keyframes ── */
         @keyframes hsFadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes hsFadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-
-        video { display: block; pointer-events: none; }
-        video::-webkit-media-controls { display: none !important; }
-        /* removed hero arc: footer will render the concave overlay */
       `}</style>
     </section>
   );
