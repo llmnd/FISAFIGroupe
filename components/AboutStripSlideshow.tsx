@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 
 const ABOUT_SLIDES = [
   {
-    src: "https://i.pinimg.com/originals/7d/07/a2/7d07a255678962d30d8717dcf5dbd266.gif",
+    src: "https://i.pinimg.com/1200x/fc/c5/bd/fcc5bdfc15baee69bc7ef71806c1f9fe.jpg",
     alt: "FiSAFi – About 1",
   },
   {
