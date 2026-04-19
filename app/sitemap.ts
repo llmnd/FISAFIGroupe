@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://fisafigroupe.com';
+  const baseUrl = 'https://www.fisafigroupe.com';
 
   // Routes statiques principales
   const staticRoutes: MetadataRoute.Sitemap = [
