@@ -136,8 +136,27 @@ export default function SessionsPage() {
   return (
     <>
       <Head>
-        <title>Calendrier des Sessions — FiSAFi Groupe</title>
+        <title>Sessions & Calendrier | Formations IT | FiSAFi Groupe</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charSet="UTF-8" />
+        <meta name="theme-color" content="#1e40af" />
+        <meta name="description" content="Consulter le calendrier des sessions de formation IT disponibles. Inscrivez-vous dès maintenant." />
+        <meta name="keywords" content="sessions, calendrier formation, inscription, formations IT" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <link rel="canonical" href="https://fisafigroupe.com/sessions" />
+        <meta property="og:title" content="Sessions & Calendrier | FiSAFi Groupe" />
+        <meta property="og:description" content="Calendrier des sessions de formation IT" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/sessions" />
+        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Sessions | FiSAFi Groupe" />
+        <meta name="twitter:description" content="Sessions de formation IT disponibles" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
       </Head>
 
       <Header />

@@ -306,13 +306,29 @@ export default function FormationPage() {
   return (
     <>
       <Head>
-        <title>Formations — FiSAFi Groupe</title>
+        <title>Formations IT Certifiantes | Dakar, Sénégal | FiSAFi Groupe</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
+        <meta name="description" content="Formations IT professionnelles : réseaux, cybersecurité, cloud et administration système. Certifications reconnues à Dakar." />
+        <meta name="keywords" content="formations IT, certification, réseaux, cybersecurité, cloud, Dakar" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <link rel="canonical" href="https://fisafigroupe.com/training" />
+        <meta property="og:title" content="Formations IT Certifiantes | FiSAFi Groupe" />
+        <meta property="og:description" content="Formations professionnelles en IT, réseaux et cybersecurité" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/training" />
+        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Formations IT | FiSAFi Groupe" />
+        <meta name="twitter:description" content="Formations certifiantes en IT et cybersecurité" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
       </Head>
 
       <Header />

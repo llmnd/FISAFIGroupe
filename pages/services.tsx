@@ -42,11 +42,27 @@ export default function Services() {
   return (
     <>
       <Head>
-        <title>Nos services — FiSAFi Groupe</title>
+        <title>Services IT & Réseaux | Cybersecurité, Cloud, Infrastructure | FiSAFi</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        
+        <meta name="description" content="Services complets IT : réseaux, cybersecurité, cloud computing, infrastructure IT et formations. Solutions adaptées à votre contexte au Sénégal." />
+        <meta name="keywords" content="services IT, réseaux, cybersecurité, cloud, infrastructure IT, Dakar, Sénégal" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <link rel="canonical" href="https://fisafigroupe.com/services" />
+        <meta property="og:title" content="Services Informatiques Complets | FiSAFi Groupe" />
+        <meta property="og:description" content="Réseaux • Cybersecurité • Cloud • Infrastructure IT • Support technique 24/7" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/services" />
+        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Services IT & Réseaux | FiSAFi Groupe" />
+        <meta name="twitter:description" content="Services IT : réseaux, cybersecurité, cloud, infrastructure à Dakar" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
       </Head>
 
       <Header />

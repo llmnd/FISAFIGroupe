@@ -83,10 +83,28 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>FiSAFi Groupe Solutions Informatiques Dakar</title>
+        <title>FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
+        <meta name="description" content="Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 896 59 39" />
+        <meta name="keywords" content="cabinet IT Dakar, conseil informatique Sénégal, ingénierie réseaux Dakar, cybersécurité Sénégal, infrastructure cloud Dakar, consultant IT Afrique, formation IT Sénégal, services informatiques, support technique 24/7, FiSAFi" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <link rel="canonical" href="https://fisafigroupe.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:url" content="https://fisafigroupe.com" />
+        <meta property="og:title" content="FiSAFi Groupe — Expert IT & Réseaux" />
+        <meta property="og:description" content="Cabinet de conseil en IT spécialisé en réseaux, cybersécurité et solutions cloud à Dakar" />
+        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="FiSAFi Groupe Solutions Informatiques Dakar" />
+        <meta name="twitter:description" content="Expertise IT, réseaux, cybersécurité et formations certifiantes à Dakar, Sénégal" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:creator" content="@fisafigroupe" />
       </Head>
 
       <Header />

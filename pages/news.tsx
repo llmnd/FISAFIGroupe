@@ -25,6 +25,10 @@ export default function News() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
 
+  // Metadata for Head
+  const pageTitle = "Actualités IT, Télécoms & Tech | FiSAFi Groupe | Dakar";
+  const pageDescription = "Suivez les dernières actualités technologiques, tendances IT et conseils pratiques pour votre infrastructure. Actualisé régulièrement.";
+
   // Couleurs et icônes par catégorie
   const categoryStyles: Record<string, { bg: string; icon: string; color: string; image?: string }> = {
     'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff', image: 'https://i.pinimg.com/736x/0f/97/73/0f9773ccab2dba7dcd624037adaf1150.jpg' },
@@ -118,11 +122,27 @@ export default function News() {
   return (
     <>
       <Head>
-        <title>Actualités & Publications — FiSAFi Groupe</title>
+        <title>{pageTitle}</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        
+        <meta name="description" content={pageDescription} />
+        <meta name="keywords" content="actualités, IT, télécoms, tech, tendances, innovation, Dakar" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <link rel="canonical" href="https://fisafigroupe.com/news" />
+        <meta property="og:title" content="Actualités & Tendances Tech | FiSAFi Groupe" />
+        <meta property="og:description" content="Articles techniques, tendances IT et innovations technologiques" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/news" />
+        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Actualités Tech | FiSAFi Groupe" />
+        <meta name="twitter:description" content="Suivez les tendances IT et actualités technologiques" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
       </Head>
 
       <Header />

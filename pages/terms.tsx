@@ -5,8 +5,19 @@ export default function Terms() {
   return (
     <>
       <Head>
-        <title>Conditions d'Utilisation | FISAFI Groupe</title>
-        <meta name="description" content="Conditions d'utilisation de FISAFI Groupe" />
+        <title>Conditions d'Utilisation | FiSAFi Groupe</title>
+        <meta name="description" content="Conditions d'utilisation du site FiSAFi Groupe. Droits et obligations." />
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta name="theme-color" content="#1e40af" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://fisafigroupe.com/terms" />
+        <meta property="og:title" content="Conditions d'Utilisation | FiSAFi Groupe" />
+        <meta property="og:description" content="Conditions générales d'utilisation" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/terms" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
       </Head>
 
       <main style={{ marginTop: '110px' }}>

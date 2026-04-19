@@ -5,8 +5,19 @@ export default function Privacy() {
   return (
     <>
       <Head>
-        <title>Politique de Confidentialité | FISAFI Groupe</title>
-        <meta name="description" content="Politique de confidentialité de FISAFI Groupe" />
+        <title>Politique de Confidentialité | FiSAFi Groupe</title>
+        <meta name="description" content="Politique de confidentialité de FiSAFi Groupe. Comment nous protégeons vos données." />
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta name="theme-color" content="#1e40af" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://fisafigroupe.com/privacy" />
+        <meta property="og:title" content="Politique de Confidentialité | FiSAFi Groupe" />
+        <meta property="og:description" content="Politique de confidentialité et protection des données" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fisafigroupe.com/privacy" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="FiSAFi Groupe" />
       </Head>
 
       <main style={{ marginTop: '110px' }}>

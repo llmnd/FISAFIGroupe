@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import Head from "next/head";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import styles from "./search.module.css";
@@ -8,7 +9,18 @@ type Item = { href: string; title: string };
 
 export default function SearchPage({ q, results }: { q: string; results: Item[] }) {
   return (
-    <main className={styles.root}>
+    <>
+      <Head>
+        <title>Recherche | FiSAFi Groupe</title>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta name="theme-color" content="#1e40af" />
+        <meta name="description" content="Recherchez des articles, formations et ressources IT sur le site de FiSAFi Groupe." />
+        <meta name="keywords" content="recherche, articles, ressources" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://fisafigroupe.com/search" />
+      </Head>
+      <main className={styles.root}>
       <h1 className={styles.title}>Résultats de recherche
         <span className={styles.count}>{results.length ? `${results.length} résultat(s)` : ""}</span>
       </h1>
@@ -35,7 +47,8 @@ export default function SearchPage({ q, results }: { q: string; results: Item[] 
           ))}
         </ul>
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
