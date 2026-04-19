@@ -16,7 +16,6 @@ Disallow: /admin/
 Disallow: /admin-dashboard
 Disallow: /dashboard
 Disallow: /login
-Disallow: /sessions
 Disallow: /_next/
 Disallow: *.json$
 
