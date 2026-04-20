@@ -54,12 +54,12 @@ export default function Contact() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        <meta name="description" content="Contactez FiSAFi pour une consultation gratuite. Tél : +221 78 896 59 39 — Dakar, Sénégal. Réponse garantie sous 24h." />
+        <meta name="description" content="Contactez FiSAFi pour une consultation gratuite. Tél : +221 78 781 22 97 — Dakar, Sénégal. Réponse garantie sous 24h." />
         <meta name="keywords" content="contact IT, consultant Dakar, support technique, devis IT, Sénégal" />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
         <link rel="canonical" href="https://fisafigroupe.com/contact" />
         <meta property="og:title" content="Nous Contacter | FiSAFi Groupe" />
-        <meta property="og:description" content="Prenez contact pour une audit IT gratuit. +221 78 896 59 39" />
+        <meta property="og:description" content="Prenez contact pour une audit IT gratuit. +221 78 781 22 97" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fisafigroupe.com/contact" />
         <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
@@ -69,7 +69,7 @@ export default function Contact() {
         <meta property="og:site_name" content="FiSAFi Groupe" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Contact | FiSAFi Groupe" />
-        <meta name="twitter:description" content="Contactez FiSAFi pour une consultation. +221 78 896 59 39" />
+        <meta name="twitter:description" content="Contactez FiSAFi pour une consultation. +221 78 781 22 97" />
         <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
       </Head>
 
@@ -111,7 +111,7 @@ export default function Contact() {
           <div className="contact-info reveal">
             <div className="contact-item">
               <div className="contact-label">Téléphone Sénégal</div>
-              <a href="tel:+221788965939" className="contact-value">+221 78 896 59 39</a>
+              <a href="tel:+221787812297" className="contact-value">+221 78 781 22 97</a>
             </div>
             <div className="contact-item">
               <div className="contact-label">Téléphone Tchad</div>

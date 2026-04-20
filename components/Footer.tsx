@@ -41,8 +41,8 @@ export default function Footer() {
             <h4 className="footer-section-title">Contact</h4>
             <ul className="footer-list">
               <li>
-                <a href="tel:+22178896593939">
-                  +221 78 896 59 39
+                <a href="tel:+221787812297">
+                  +221 78 781 22 97
                 </a>
               </li>
               <li>

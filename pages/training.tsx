@@ -492,11 +492,11 @@ export default function FormationPage() {
         </form>
 
         <div className="contact-items" style={{ marginTop: '3rem' }}>
-          <a href="tel:+221788965939" className="contact-item">
+          <a href="tel:+221787812297" className="contact-item">
             <div className="contact-icon">✆</div>
             <div className="contact-info">
               <div className="contact-label">Téléphone</div>
-              <div className="contact-value">+221 78 896 59 39</div>
+              <div className="contact-value">+221 78 781 22 97</div>
             </div>
           </a>
           <a href="mailto:formations@fisafigroupe.com" className="contact-item">

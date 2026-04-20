@@ -9,7 +9,7 @@ import ScrollManager from "@/components/ScrollManager";
 export const metadata: Metadata = {
   title: "FiSAFi Groupe Solutions Informatiques Dakar",
   description:
-    "Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 896 59 39",
+    "Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 781 22 97",
   keywords: [
     "cabinet IT Dakar",
     "conseil informatique Sénégal",
@@ -123,7 +123,7 @@ export default function RootLayout({
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Support",
-      telephone: "+221788965939",
+      telephone: "+221787812297",
       email: "contact@fisafigroupe.com",
       areaServed: ["SN", "TD", "AF"],
       availableLanguage: ["fr", "en"],

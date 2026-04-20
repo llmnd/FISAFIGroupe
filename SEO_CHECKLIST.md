@@ -104,7 +104,7 @@ curl https://fisafigroupe.com/robots.txt
   - Service Informatique
   - Bureau de Conseil en Gestion
 - [ ] Ajouter adresse : « Liberté 6 Extension, Dakar, Sénégal »
-- [ ] Ajouter phone : +221 78 896 59 39
+- [ ] Ajouter phone : +221 78 781 22 97
 - [ ] Ajouter website : https://fisafigroupe.com
 - [ ] Ajouter horaires d'ouverture
 - [ ] Publier photos & logo

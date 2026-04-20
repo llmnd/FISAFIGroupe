@@ -104,7 +104,7 @@ export default function Terms() {
               </p>
               <p>
                 Email : <a href="mailto:contact@fisafi.com">contact@fisafi.com</a><br />
-                Téléphone : <a href="tel:+22178896593939">+221 78 896 59 39</a>
+                Téléphone : <a href="tel:+221787812297">+221 78 781 22 97</a>
               </p>
             </section>
 

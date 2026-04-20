@@ -68,11 +68,11 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Contact FiSAFi Groupe | Consultant IT Dakar | Réponse 24h',
-  description: 'Contactez FiSAFi pour une consultation gratuite. Tél : +221 78 896 59 39 — Dakar, Sénégal. Réponse garantie sous 24h.',
+  description: 'Contactez FiSAFi pour une consultation gratuite. Tél : +221 78 781 22 97 — Dakar, Sénégal. Réponse garantie sous 24h.',
   keywords: ['contact IT', 'consultant Dakar', 'support technique', 'devis IT'],
   openGraph: {
     title: 'Nous Contacter | FiSAFi Groupe',
-    description: 'Prenez contact pour une audit IT gratuit. +221 78 896 59 39',
+    description: 'Prenez contact pour une audit IT gratuit. +221 78 781 22 97',
     url: 'https://fisafigroupe.com/contact',
   },
 };

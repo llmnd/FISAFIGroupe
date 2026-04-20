@@ -23,7 +23,7 @@
 |-------|---------------|-------|------------------|
 | `/` | cabinet conseil IT Dakar | FiSAFi Groupe — Cabinet de Conseil IT & Réseaux | Dakar | Cabinet de conseil IT, réseaux et télécoms. 10+ projets réalisés. Expert cybersécurité, cloud et infrastructure. |
 | `/services` | services informatiques Sénégal | Services IT Sénégal \| Réseaux, Sécurité, Cloud | FiSAFi vous offre des solutions complètes : réseaux, cybersécurité, cloud & infrastructure IT au Sénégal. |
-| `/contact` | contact consultant IT Dakar | Contactez FiSAFi — Consultant IT Dakar | Besoin d'expertise IT ? Contactez FiSAFi Groupe à Dakar. +221 78 896 59 39. Réponse 24h. |
+| `/contact` | contact consultant IT Dakar | Contactez FiSAFi — Consultant IT Dakar | Besoin d'expertise IT ? Contactez FiSAFi Groupe à Dakar. +221 78 781 22 97. Réponse 24h. |
 | `/news` | actualités IT Sénégal | Actualités IT, Télécoms & Tech Sénégal | Suivez les dernières actualités technologiques, conseils IT et tendances sector. |
 | `/training` | formation IT Sénégal | Formations Réseaux, Sécurité & Cloud au Sénégal | Formations professionnelles certifiantes : réseaux, cybersécurité, cloud. À Dakar. |
 

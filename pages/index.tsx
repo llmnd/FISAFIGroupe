@@ -41,8 +41,8 @@ const PinIcon = () => (
 const contactItems = [
   {
     label: "Téléphone Sénégal",
-    value: "+221 78 896 59 39",
-    href: "tel:+221788965939",
+    value: "+221 78 781 22 97",
+    href: "tel:+221787812297",
     icon: <PhoneIcon />,
     highlight: true,
   },
@@ -87,7 +87,7 @@ export default function Home() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        <meta name="description" content="Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 896 59 39" />
+        <meta name="description" content="Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 781 22 97" />
         <meta name="keywords" content="cabinet IT Dakar, conseil informatique Sénégal, ingénierie réseaux Dakar, cybersécurité Sénégal, infrastructure cloud Dakar, consultant IT Afrique, formation IT Sénégal, services informatiques, support technique 24/7, FiSAFi" />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
         <link rel="canonical" href="https://fisafigroupe.com" />

@@ -465,8 +465,8 @@ export default function Header() {
 
                 <div className="header-info-item">
                   <span className="header-info-label">Téléphone</span>
-                  <a href="tel:+221788965939" className="header-info-value header-info-link">
-                    +221 78 896 59 39
+                  <a href="tel:+221787812297" className="header-info-value header-info-link">
+                    +221 78 781 22 97
                   </a>
                 </div>
 

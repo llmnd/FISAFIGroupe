@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const DEFAULT_SLIDES = [
-  { src: "https://i.pinimg.com/originals/4e/db/10/4edb10e76f50f41bee6bef63f696f50e.gif", alt: "FiSAFi – cybersécurité", type: "image",
+  { src: "https://i.pinimg.com/originals/de/c3/9f/dec39fb225fd16cdce4562a10c520549.gif", alt: "FiSAFi – cybersécurité", type: "image",
     eyebrow: "Cybersécurité Avancée",
     title: "Protégé contre\nles <em>menaces</em>" },
   { src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", alt: "FiSAFi – slide 1", type: "image",
