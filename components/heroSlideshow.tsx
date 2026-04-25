@@ -384,31 +384,6 @@ export default function HeroSlideshow({
       width: 1px;
       transition: background 0.45s ease;
     }
-
-    /* Spiral holes */
-    .hs-card-holes {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      width: 2.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-evenly;
-      align-items: center;
-      gap: 0;
-      pointer-events: none;
-      z-index: 3;
-    }
-    .hs-hole {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--bg2);
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.25);
-      flex-shrink: 0;
-    }
-
     .hs-card-body {
       padding: 1.5rem 1.8rem 1.9rem 3.2rem;
       position: relative;
@@ -757,13 +732,7 @@ export default function HeroSlideshow({
                         className="hs-card-margin"
                         style={{ background: hexRgba(p.accent, 0.2) }}
                       />
-
-                      {/* Spiral holes */}
-                      <div className="hs-card-holes">
-                        {[...Array(5)].map((_, hi) => (
-                          <div key={hi} className="hs-hole" />
-                        ))}
-                      </div>
+                      
 
                       <div className="hs-card-body">
                         <span
