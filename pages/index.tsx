@@ -6,8 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
-const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"), { ssr: false });
+const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
+const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"));
 
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
