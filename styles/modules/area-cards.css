@@ -23,9 +23,7 @@
 
 /* ─── CARD ITEM ─── */
 .area-card-item {
-  opacity: 0;
-  animation: fadeInUp 0.6s ease-out forwards;
-  animation-delay: var(--delay, 0s);
+  opacity: 1;
 }
 
 /* ─── CARD MAIN ─── */
@@ -37,11 +35,7 @@
   border-radius: 12px;
   padding: 0;
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
-}
-
-.area-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* ─── MEDIA (Image/Video) ─── */
@@ -59,11 +53,10 @@
   height: auto;
   display: block;
   object-fit: cover;
-  transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
 }
 
 .area-card:hover .area-card-media img {
-  transform: scale(1.05);
+  /* hover effect removed for Safari stability */
 }
 
 /* ─── CARD CONTENT ─── */
@@ -97,14 +90,9 @@
   position: absolute;
   bottom: 0;
   left: 1.5rem;
-  width: 0;
+  width: calc(100% - 3rem);
   height: 2px;
   background: var(--orange);
-  transition: width 0.35s cubic-bezier(0.33, 0.66, 0.66, 1);
-}
-
-.area-card:hover .area-card-accent {
-  width: calc(100% - 3rem);
 }
 
 /* ─── RESPONSIVE ─── */
@@ -129,14 +117,3 @@
   }
 }
 
-/* ─── ANIMATIONS ─── */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}

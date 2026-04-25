@@ -120,10 +120,14 @@ export default function HeroSlideshow({
 
   const updateCurrent = useCallback((idx: number) => {
     if (idx === currentRef.current) return;
-    setPrevIdx(currentRef.current);
-    setImgKey(k => k + 1);
-    currentRef.current = idx;
-    setCurrent(idx);
+    try {
+      setPrevIdx(currentRef.current);
+      setImgKey(k => k + 1);
+      currentRef.current = idx;
+      setCurrent(idx);
+    } catch (e) {
+      console.error("Update current error:", e);
+    }
   }, []);
 
   const pauseAuto = useCallback(() => {
@@ -133,51 +137,108 @@ export default function HeroSlideshow({
   }, []);
 
   const goTo = useCallback((idx: number) => {
-    const track = cardsTrackRef.current;
-    if (!track) return;
-    const targetX = track.clientWidth * idx;
-    isProgrammaticScroll.current = true;
-    updateCurrent(idx);
-    track.scrollTo({ left: targetX, behavior: "smooth" });
-    const release = () => { isProgrammaticScroll.current = false; track.removeEventListener("scrollend", release); };
-    track.addEventListener("scrollend", release, { once: true });
-    setTimeout(() => { if (isProgrammaticScroll.current) { track.removeEventListener("scrollend", release); isProgrammaticScroll.current = false; } }, 700);
+    try {
+      const track = cardsTrackRef.current;
+      if (!track || !track.parentElement) return; // Check if DOM exists
+      
+      const targetX = track.clientWidth * idx;
+      if (targetX < 0 || !isFinite(targetX)) return; // Sanity check
+      
+      isProgrammaticScroll.current = true;
+      updateCurrent(idx);
+      // Safari-safe scroll without smooth behavior
+      track.scrollLeft = targetX;
+      setTimeout(() => { 
+        if (cardsTrackRef.current) isProgrammaticScroll.current = false;
+      }, 100);
+    } catch (e) {
+      console.error("GoTo error:", e);
+      isProgrammaticScroll.current = false;
+    }
   }, [updateCurrent]);
 
   useEffect(() => {
     if (!autoEnabled) return;
-    autoTimer.current = setInterval(() => goTo((currentRef.current + 1) % slides.length), 8000);
-    return () => clearInterval(autoTimer.current);
+    autoTimer.current = setInterval(() => {
+      goTo((currentRef.current + 1) % slides.length);
+    }, 8000);
+    
+    return () => {
+      if (autoTimer.current) clearInterval(autoTimer.current);
+    };
   }, [autoEnabled, slides.length, goTo]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoTimer.current) clearInterval(autoTimer.current);
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     const track = cardsTrackRef.current;
     if (!track) return;
-    let t: ReturnType<typeof setTimeout> | null = null;
+    
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+    
     const handleScroll = () => {
       if (isProgrammaticScroll.current) return;
       pauseAuto();
-      if (t) clearTimeout(t);
-      t = setTimeout(() => {
-        const idx = Math.round(track.scrollLeft / track.clientWidth);
-        updateCurrent(Math.max(0, Math.min(idx, slides.length - 1)));
-        t = null;
+      
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        try {
+          const idx = Math.round(track.scrollLeft / track.clientWidth);
+          const safeIdx = Math.max(0, Math.min(idx, slides.length - 1));
+          updateCurrent(safeIdx);
+        } catch (e) {
+          console.error("Scroll error:", e);
+        }
+        scrollTimer = null;
       }, 80);
     };
+    
     track.addEventListener("scroll", handleScroll, { passive: true });
-    return () => { track.removeEventListener("scroll", handleScroll); if (t) clearTimeout(t); };
+    
+    return () => { 
+      track.removeEventListener("scroll", handleScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
+    };
   }, [pauseAuto, updateCurrent, slides.length]);
 
   const attachDrag = useCallback((el: HTMLDivElement) => {
     let dragging = false, startX = 0, startLeft = 0;
-    const onDown  = (e: MouseEvent) => { dragging = true; startX = e.pageX; startLeft = el.scrollLeft; el.style.cursor = "grabbing"; el.style.userSelect = "none"; pauseAuto(); el.style.scrollBehavior = "auto"; };
-    const onMove  = (e: MouseEvent) => { if (!dragging) return; el.scrollLeft = startLeft - (e.pageX - startX); };
-    const onUp    = () => { dragging = false; el.style.cursor = "grab"; el.style.removeProperty("user-select"); el.style.scrollBehavior = "smooth"; };
+    
+    const onDown  = (e: MouseEvent) => { 
+      dragging = true; 
+      startX = e.pageX; 
+      startLeft = el.scrollLeft; 
+      el.style.cursor = "grabbing"; 
+      el.style.userSelect = "none"; 
+      pauseAuto();
+    };
+    
+    const onMove  = (e: MouseEvent) => { 
+      if (!dragging) return; 
+      el.scrollLeft = startLeft - (e.pageX - startX); 
+    };
+    
+    const onUp    = () => { 
+      dragging = false; 
+      el.style.cursor = "grab"; 
+      el.style.removeProperty("user-select"); 
+    };
+    
     el.addEventListener("mousedown", onDown);
-    el.addEventListener("mousemove", onMove);
-    el.addEventListener("mouseup",   onUp);
-    el.addEventListener("mouseleave", onUp);
-    return () => { el.removeEventListener("mousedown", onDown); el.removeEventListener("mousemove", onMove); el.removeEventListener("mouseup", onUp); el.removeEventListener("mouseleave", onUp); };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    
+    return () => { 
+      el.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
   }, [pauseAuto]);
 
   useEffect(() => {

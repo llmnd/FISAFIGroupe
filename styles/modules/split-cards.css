@@ -9,20 +9,9 @@
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Stagger des cartes — désactiver en mobile */
-@media (min-width: 769px) {
-  .split-card:nth-child(1) { animation-delay: 0s; }
-  .split-card:nth-child(2) { animation-delay: 0.2s; }
-  .split-card:nth-child(3) { animation-delay: 0.4s; }
-}
-
-
-
-@media (min-width: 768px) {
   .split-card {
     grid-template-columns: 1fr 1fr;
   }
-}
 
 
 /* ─── CONTENT ─── */
@@ -34,47 +23,15 @@
   gap: 1.5rem;
   position: relative;
   background: var(--white);
-  animation: contentFadeIn 0.9s cubic-bezier(0.23, 1, 0.320, 1) forwards;
 }
 
 /* Mobile: animation simplifiée */
 @media (max-width: 768px) {
   .split-card-content {
-    animation: contentFadeInMobile 0.3s ease-out forwards;
     padding: 2.5rem 1.5rem;
   }
 }
 
-@keyframes contentFadeInMobile {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes contentFadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-/* Stagger des cartes — désactiver en mobile */
-@media (min-width: 769px) {
-  .split-card:nth-child(1) .split-card-content { animation-delay: 0.2s; }
-  .split-card:nth-child(2) .split-card-content { animation-delay: 0.4s; }
-  .split-card:nth-child(3) .split-card-content { animation-delay: 0.6s; }
-}
-
-@media (max-width: 768px) {
-  .split-card:nth-child(1) .split-card-content { animation-delay: 0s; }
-  .split-card:nth-child(2) .split-card-content { animation-delay: 0s; }
-  .split-card:nth-child(3) .split-card-content { animation-delay: 0s; }
-}
 
 /* Rail décoratif vertical — détail industriel subtil */
 
@@ -140,13 +97,7 @@
   object-fit: cover;
   display: block;
   filter: brightness(0.96) saturate(0.85);
-  /* Animation de révélation progressive de l'image */
 }
-
-
-
-
-
 /* ─── COMPACT (image réduite à gauche) ─── */
 .split-card.compact {
   grid-template-columns: 220px 1fr;

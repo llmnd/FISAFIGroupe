@@ -21,9 +21,8 @@
   inset: 0;
   z-index: 100;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background: rgba(255,255,255,0.02);
   opacity: var(--grain-opacity);
-  mix-blend-mode: overlay;
 }
 
 /* ── Image Container ─────────────────────── */
@@ -40,21 +39,20 @@
 .hs-img-layer {
   position: absolute;
   inset: 0;
-  will-change: opacity, transform;
 }
 .hs-img-layer--prev {
-  animation: hs-fadeOut 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: hs-fadeOut 0.72s ease-out forwards;
 }
 .hs-img-layer--curr {
-  animation: hs-fadeIn 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: hs-fadeIn 0.72s ease-in forwards;
 }
 @keyframes hs-fadeOut {
-  0%   { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.03); }
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes hs-fadeIn {
-  0%   { opacity: 0; transform: scale(1.04); }
-  100% { opacity: 1; transform: scale(1); }
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 /* Multi-layer gradient vignette */
@@ -113,7 +111,7 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: auto;
   overscroll-behavior-x: contain;
   cursor: grab;
   background: var(--bg2);
@@ -148,7 +146,6 @@
   z-index: 10;
   flex-shrink: 0;
   position: relative;
-  transition: background 0.45s ease;
   opacity: 0.88;
 }
 .hs-pin::before {
@@ -169,22 +166,15 @@
   border-radius: 4px;
   transition: background 0.45s ease;
 }
-.hs-ghost--far  { transform: rotate(3.8deg) translateY(6px) translateX(2px); z-index: 0; opacity: 0.55; }
-.hs-ghost--near { transform: rotate(-2.4deg) translateY(4px) translateX(-1px); z-index: 1; opacity: 0.78; }
+.hs-ghost--far  { z-index: 0; opacity: 0.55; }
+.hs-ghost--near { z-index: 1; opacity: 0.78; }
 
 .hs-card {
   position: relative;
   z-index: 2;
   border-radius: 4px;
   overflow: hidden;
-  transform: rotate(-0.6deg);
-  transition: background 0.45s ease;
-  box-shadow:
-    0 1px 1px rgba(0,0,0,0.10),
-    0 3px 6px rgba(0,0,0,0.12),
-    0 8px 20px rgba(0,0,0,0.18),
-    0 20px 40px rgba(0,0,0,0.24),
-    0 40px 64px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
 }
 
 /* Red margin line */
@@ -194,7 +184,6 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  transition: background 0.45s ease;
 }
 .hs-card-body {
   padding: 1.5rem 1.8rem 1.9rem 3.2rem;
@@ -212,7 +201,6 @@
   letter-spacing: 0.1em;
   line-height: 1;
   margin-bottom: 0.55rem;
-  transition: color 0.45s ease;
 }
 
 .hs-card-rule {
@@ -293,7 +281,6 @@
   top: 0;
   left: 0;
   right: 0;
-  transition: height 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.45s ease;
   border-radius: 0 0 2px 2px;
 }
 /* Small accent cap on bar fill */
@@ -307,7 +294,6 @@
   border-radius: 50%;
   background: var(--hs-accent, #7C6AF5);
   opacity: 0.6;
-  transition: background 0.45s ease;
 }
 @media (max-width: 480px) {
   .hs-vbar { display: none; }
@@ -431,9 +417,9 @@
 
 /* ── Card entrance animation ─────────────── */
 @keyframes hs-cardSlideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .hs-card-scene {
-  animation: hs-cardSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hs-cardSlideIn 0.5s ease-in-out both;
 }
