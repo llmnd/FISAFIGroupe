@@ -26,17 +26,22 @@ export function addPassiveEventListener(target, event, handler, opts = {}) {
  * @returns {Function}
  */
 export function rafThrottle(fn) {
-  let ticking = false;
+  let rafId = null;
   let lastArgs = null;
+  
   return function throttled(...args) {
     lastArgs = args;
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(() => {
-        fn.apply(this, lastArgs);
-        ticking = false;
-      });
+    
+    // Annuler le RAF précédent si pas encore exécuté
+    if (rafId !== null) {
+      return;
     }
+    
+    // Planifier l'exécution au prochain frame
+    rafId = requestAnimationFrame(() => {
+      fn.apply(this, lastArgs);
+      rafId = null;
+    });
   };
 }
 
@@ -48,7 +53,10 @@ export function rafThrottle(fn) {
 export function initScrollHandler(handler) {
   const wrapped = rafThrottle(handler);
   addPassiveEventListener(window, 'scroll', wrapped);
-  return () => window.removeEventListener('scroll', wrapped);
+  
+  return () => {
+    window.removeEventListener('scroll', wrapped);
+  };
 }
 
 /**

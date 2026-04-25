@@ -57,6 +57,9 @@
      - Règles générales et classes utilitaires
      ============================== */
 
+/* 16. Performance CSS Containment */
+@import './modules/performance.css';
+
 /* Disable smooth on Blink via class injected in _app.tsx */
 html.blink-no-smooth {
     scroll-behavior: auto !important;

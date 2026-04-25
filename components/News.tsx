@@ -1,27 +1,37 @@
-export default function News() {
-  const newsItems = [
-    {
-      category: 'Articles techniques',
-      description: 'Contenus approfondis sur nos domaines d\'expertise',
-      img: '/20.jpeg',
-    },
-    {
-      category: 'Innovations',
-      description: 'Découvrez nos dernières solutions et projets',
-      img: '/21.jpeg',
-    },
-    {
-      category: 'Événements',
-      description: 'Participation et sponsoring de conférences et salons',
-      img: '/20.jpeg',
-    },
-    {
-      category: 'Veille sectorielle',
-      description: 'Restez informé des tendances de l\'industrie',
-      img: '/20.jpeg',
-    },
-  ];
+"use client";
 
+import Image from "next/image";
+
+interface NewsItem {
+  category: string;
+  description: string;
+  img: string;
+}
+
+const newsItems: NewsItem[] = [
+  {
+    category: 'Articles techniques',
+    description: 'Contenus approfondis sur nos domaines d\'expertise',
+    img: '/20.jpeg',
+  },
+  {
+    category: 'Innovations',
+    description: 'Découvrez nos dernières solutions et projets',
+    img: '/21.jpeg',
+  },
+  {
+    category: 'Événements',
+    description: 'Participation et sponsoring de conférences et salons',
+    img: '/20.jpeg',
+  },
+  {
+    category: 'Veille sectorielle',
+    description: 'Restez informé des tendances de l\'industrie',
+    img: '/20.jpeg',
+  },
+];
+
+export default function News() {
   return (
     <section id="news" className="py-16 sm:py-20 md:py-32 px-4 sm:px-6 bg-neutral-50">
       <div className="max-w-7xl mx-auto">
@@ -33,30 +43,32 @@ export default function News() {
           {newsItems.map((item, index) => (
             <div
               key={index}
-              className="p-6 sm:p-8 border border-neutral-200 hover:border-neutral-900 hover:shadow-sm transition group cursor-pointer active:bg-neutral-100"
-              style={{
-                backgroundImage: `url(${item.img})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                position: 'relative',
-                minHeight: '280px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-              }}
+              className="relative overflow-hidden rounded-lg min-h-[280px] group cursor-pointer border border-neutral-200 hover:border-neutral-900 hover:shadow-sm transition"
+              style={{ contain: "layout style paint" }}
             >
+              {/* Image optimisée avec lazy loading */}
+              <Image
+                src={item.img}
+                alt={item.category}
+                fill
+                loading="lazy"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover w-full h-full"
+                unoptimized={false}
+              />
+              
               {/* Overlay gradient */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.7))',
-                pointerEvents: 'none',
-                borderRadius: 'inherit',
-              }} />
-              <h3 className="text-lg sm:text-xl font-light text-neutral-900 mb-2 sm:mb-3 group-hover:text-neutral-700 transition" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>
-                ✅ {item.category}
-              </h3>
-              <p className="text-sm sm:text-base text-neutral-600 font-light leading-relaxed" style={{ position: 'relative', zIndex: 1, color: '#fff' }}>{item.description}</p>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70 pointer-events-none" />
+              
+              {/* Content */}
+              <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-light text-white mb-2 sm:mb-3 group-hover:text-neutral-100 transition">
+                  ✅ {item.category}
+                </h3>
+                <p className="text-sm sm:text-base text-white/90 font-light leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>

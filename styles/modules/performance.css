@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════
+   PERFORMANCE OPTIMIZATIONS - CSS Containment
+   Réduit les reflows/repaints au scrolling
+   ═══════════════════════════════════════════════════════════ */
+
+/* Conteneurs de sections — isoler pour éviter la recalculation en cascade */
+section {
+  contain: layout style paint;
+}
+
+/* Images et cartes — isoler pour lazy-load efficace */
+img {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Grid/Flex containers — isoler les enfants */
+.grid, .flex, [class*="grid-"], [class*="flex-"] {
+  contain: layout;
+}
+
+/* Articles/posts/cards */
+article, 
+[class*="card"],
+[class*="item"],
+[class*="slide"] {
+  contain: layout style paint;
+}
+
+/* Listes — isoler pour scrolling rapide */
+ul, ol, .list {
+  contain: content;
+}
+
+/* Elements animés — activer uniquement quand visible */
+@supports (contain: size) {
+  .scroll-animate,
+  .animate-in,
+  [data-observe] {
+    contain: size layout style paint;
+  }
+}
+
+/* Hero sections — isoler le background */
+[class*="hero"],
+[class*="banner"],
+[class*="slideshow"] {
+  contain: paint;
+  will-change: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Éviter les layout thrashing sur le scroll */
+.hero-content,
+.about-strip,
+.section-content {
+  will-change: auto;
+  contain: layout style;
+}
+
+/* Navigation — isoler pour éviter de recalculer le layout sous elle */
+header, nav, .navbar {
+  contain: layout style;
+  backface-visibility: hidden;
+}
+
+/* Footer — isoler pour éviter d'affecter le scroll */
+footer {
+  contain: layout style paint;
+}
+
+/* Modal/Overlay — isoler pour éviter le layout jank */
+[class*="modal"], 
+[class*="overlay"],
+[class*="dialog"] {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* Parallax/Scroll effects — doivent être légèrement moins optimisés pour fonctionner */
+[class*="parallax"],
+[style*="transform"] {
+  will-change: transform;
+  contain: paint;
+}
+
+/* Désactiver certains containments si ça casse le layout */
+@supports not (contain: size) {
+  /* Fallback pour vieux navigateurs */
+  section, article { contain: layout style paint; }
+}
+
+/* Optimisation du scrolling — réduire la charge de travail */
+html {
+  overflow-y: scroll; /* Évite les jumps du layout en changeant la scrollbar */
+}
+
+/* Images lazyloadées */
+img[loading="lazy"] {
+  contain: layout style paint;
+}
+
+/* Débounce le scroll pour les éléments data-observe */
+[data-observe] {
+  contain: content;
+  /* IntersectionObserver va gérer la visibilité */
+}
