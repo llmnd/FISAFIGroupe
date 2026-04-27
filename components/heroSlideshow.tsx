@@ -45,6 +45,9 @@ const DEFAULT_SLIDES: Slide[] = [
   { src: "https://i.pinimg.com/1200x/51/22/c9/5122c9f061de79ba51b94401f8638dbf.jpg", alt: "FiSAFi – solutions",
     eyebrow: "Solutions Personnalisées",
     desc: "Des réponses technologiques conçues spécifiquement pour les enjeux de votre secteur." },
+  { src: "https://i.pinimg.com/736x/61/09/bc/6109bccb8949ef32b1729baaad627b42.jpg", alt: "FiSAFi – fibre optique",
+    eyebrow: "Fibre Optique & WDM",
+    desc: "Expert WDM, déploiement aérien et souterrain, suivi et contrôle des travaux haute capacité." },
 ];
 
 const SERVICES_SLIDES: Slide[] = [
