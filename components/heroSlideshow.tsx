@@ -45,7 +45,7 @@ const DEFAULT_SLIDES: Slide[] = [
   { src: "https://i.pinimg.com/1200x/51/22/c9/5122c9f061de79ba51b94401f8638dbf.jpg", alt: "FiSAFi – solutions",
     eyebrow: "Solutions Personnalisées",
     desc: "Des réponses technologiques conçues spécifiquement pour les enjeux de votre secteur." },
-  { src: "https://i.pinimg.com/736x/61/09/bc/6109bccb8949ef32b1729baaad627b42.jpg", alt: "FiSAFi – fibre optique",
+    { src: "https://i.pinimg.com/1200x/51/22/c9/5122c9f061de79ba51b94401f8638dbf.jpg", alt: "FiSAFi – solutions",
     eyebrow: "Fibre Optique & WDM",
     desc: "Expert WDM, déploiement aérien et souterrain, suivi et contrôle des travaux haute capacité." },
 ];
@@ -144,27 +144,13 @@ export default function HeroSlideshow({
       const track = cardsTrackRef.current;
       if (!track || !track.parentElement) return; // Check if DOM exists
       
-      // Calculer le zoom pour corriger les dimensions
-      const zoom = window.devicePixelRatio || 1;
-      const trackWidth = track.clientWidth;
-      const targetX = trackWidth * idx;
-      
-      // Sanity checks
-      if (targetX < 0 || !isFinite(targetX) || trackWidth <= 0) return;
+      const targetX = track.clientWidth * idx;
+      if (targetX < 0 || !isFinite(targetX)) return; // Sanity check
       
       isProgrammaticScroll.current = true;
       updateCurrent(idx);
-      
-      // Safari-safe scroll: pas de smooth behavior au zoom
-      const isZoomed = document.documentElement.classList.contains('zoomed');
-      if (isZoomed) {
-        // Au zoom, skip les animations
-        track.scrollLeft = targetX;
-      } else {
-        // Comportement normal
-        track.scrollLeft = targetX;
-      }
-      
+      // Safari-safe scroll without smooth behavior
+      track.scrollLeft = targetX;
       setTimeout(() => { 
         if (cardsTrackRef.current) isProgrammaticScroll.current = false;
       }, 100);
@@ -206,17 +192,7 @@ export default function HeroSlideshow({
       if (scrollTimer) clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         try {
-          const track = cardsTrackRef.current;
-          if (!track) return;
-          
-          const trackWidth = track.clientWidth;
-          if (trackWidth <= 0) return; // Skip si dimensions invalides
-          
-          // Protéger contre les calculs au zoom
-          const isZoomed = document.documentElement.classList.contains('zoomed');
-          const delayTime = isZoomed ? 150 : 80; // Plus de temps au zoom
-          
-          const idx = Math.round(track.scrollLeft / trackWidth);
+          const idx = Math.round(track.scrollLeft / track.clientWidth);
           const safeIdx = Math.max(0, Math.min(idx, slides.length - 1));
           updateCurrent(safeIdx);
         } catch (e) {
@@ -237,41 +213,34 @@ export default function HeroSlideshow({
   const attachDrag = useCallback((el: HTMLDivElement) => {
     let dragging = false, startX = 0, startLeft = 0;
     
-    const onDown  = (e: PointerEvent) => { 
-      // Ignorer le drag au zoom sur tactile
-      const isZoomed = document.documentElement.classList.contains('zoomed');
-      if (isZoomed && e.pointerType === 'touch') return;
-      
+    const onDown  = (e: MouseEvent) => { 
       dragging = true; 
       startX = e.pageX; 
       startLeft = el.scrollLeft; 
       el.style.cursor = "grabbing"; 
       el.style.userSelect = "none"; 
-      el.style.willChange = "scroll-position";
       pauseAuto();
     };
     
-    const onMove  = (e: PointerEvent) => { 
+    const onMove  = (e: MouseEvent) => { 
       if (!dragging) return; 
-      const delta = e.pageX - startX;
-      el.scrollLeft = startLeft - delta;
+      el.scrollLeft = startLeft - (e.pageX - startX); 
     };
     
     const onUp    = () => { 
       dragging = false; 
       el.style.cursor = "grab"; 
-      el.style.removeProperty("user-select");
-      el.style.removeProperty("will-change");
+      el.style.removeProperty("user-select"); 
     };
     
-    el.addEventListener("pointerdown", onDown as EventListener);
-    document.addEventListener("pointermove", onMove as EventListener);
-    document.addEventListener("pointerup", onUp as EventListener);
+    el.addEventListener("mousedown", onDown);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
     
     return () => { 
-      el.removeEventListener("pointerdown", onDown as EventListener);
-      document.removeEventListener("pointermove", onMove as EventListener);
-      document.removeEventListener("pointerup", onUp as EventListener);
+      el.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
     };
   }, [pauseAuto]);
 
