@@ -83,12 +83,12 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>FiSAFi Groupe — Cabinet IT & Réseaux | Dakar, Sénégal</title>
+        <title>FiSAFi Groupe | Cabinet IT & Réseaux | Dakar, Sénégal</title>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        <meta name="description" content="Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 781 22 97" />
-        <meta name="keywords" content="cabinet IT Dakar, conseil informatique Sénégal, ingénierie réseaux Dakar, cybersécurité Sénégal, infrastructure cloud Dakar, consultant IT Afrique, formation IT Sénégal, services informatiques, support technique 24/7, FiSAFi" />
+        <meta name="description" content="Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité, Cloud & Formations. Expert WDM, déploiement aérien/souterrain. 10+ années à Dakar. +221 78 781 22 97" />
+        <meta name="keywords" content="cabinet IT Dakar, télécoms Sénégal, fibre optique Dakar, expert réseau WDM, déploiement fibre optique, ingénierie réseaux Dakar, cybersécurité Sénégal, infrastructure cloud Dakar, consultant IT Afrique, formation IT Sénégal, services informatiques, support technique 24/7, solutions télécommunications" />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
         <link rel="canonical" href="https://fisafigroupe.com" />
         <meta property="og:type" content="website" />
@@ -279,7 +279,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <div className="section-eyebrow">Domaines d&apos;expertise</div>
         <h2 className="section-title">Nos compétences<br />clés</h2>
         <div className="comp-grid">
-          {["Réseaux & Télécoms", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
+          {["Réseaux & Télécoms", "Fibre Optique WDM", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
             <div key={name} className="comp-item">
               <div className="comp-icon" />
               <div className="comp-name">{name}</div>
@@ -322,10 +322,10 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux complexes, fiables et performantes", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
-            { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/9b/aa/22/9baa22f8ed8cf3bda2d8d309f572bc86.jpg", type: "image" },
-            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/originals/9c/18/fd/9c18fdf528054ff9ff7ddfae62ee107a.gif", type: "image" },
-            { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/1200x/41/e4/8f/41e48f226597daf5235a91aabd887093.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux, fibre optique WDM et télécommunications haute performance", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
+            { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/db/31/53/db315328dfae0f0bbda614be50b75b43.jpg", type: "image" },
+            { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/736x/53/3e/52/533e52f1f29a8c0c248156235ce88bbf.jpg", type: "image" },
+            { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/1200x/7e/08/d4/7e08d403064e4afe167924fd655516a0.jpg", type: "image" },
           ].map((area, i) => (
             <div key={area.name} className="area-card-item">
               <div className="area-card">
@@ -347,6 +347,137 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ─── CLIENTS & PARTENAIRES ─── */}
+      <section className="section" style={{ paddingTop: "4rem", paddingBottom: "4rem" }}>
+        <div className="section-eyebrow">Nos références</div>
+        <h2 className="section-title">Clients &<br />Partenaires</h2>
+        
+        <div style={{ 
+          maxWidth: "600px", 
+          margin: "3rem auto 0",
+          display: "flex",
+          gap: "2rem",
+          alignItems: "center",
+          padding: "0 1rem"
+        }}>
+          {/* NS2I Card - Service Style */}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.4rem",
+            cursor: "pointer",
+            position: "relative",
+            flex: "1"
+          }}>
+            {/* Card Media */}
+            <div style={{
+              position: "relative",
+              width: "100%",
+              overflow: "hidden",
+              background: "#f3f0ec",
+              borderRadius: "26px",
+              padding: "2.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "140px",
+              boxShadow: "0 2px 8px rgba(0,0,0,.02)",
+              border: "0.5px solid rgba(0,0,0,.04)",
+              transition: "all 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+              isolation: "isolate"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,.05), 0 20px 40px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04)";
+              e.currentTarget.style.transform = "translateZ(0) scale(1.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,.02)";
+              e.currentTarget.style.transform = "translateZ(0) scale(1)";
+            }}>
+              <Image
+                src="/NS2I.jpeg"
+                alt="NS2I - Partenaire stratégique"
+                width={200}
+                height={80}
+                style={{ 
+                  objectFit: "contain", 
+                  width: "100%", 
+                  height: "auto"
+                }}
+              />
+              {/* Grain texture */}
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.035'/%3E%3C/svg%3E\")",
+                backgroundSize: "180px 180px",
+                opacity: 0.6,
+                pointerEvents: "none",
+                zIndex: 10,
+                mixBlendMode: "overlay",
+                borderRadius: "26px"
+              }} />
+            </div>
+
+            {/* Card Content */}
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+              padding: "0 0.35rem"
+            }}>
+              <h3 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "1.5rem",
+                fontWeight: 350,
+                color: "#0b1829",
+                margin: 0,
+                lineHeight: 1.2,
+                letterSpacing: "-0.015em"
+              }}>
+                NS2I
+              </h3>
+              <p style={{
+                fontSize: "0.95rem",
+                color: "#666",
+                margin: 0,
+                lineHeight: 1.6
+              }}>
+                Partenaire stratégique pour l&apos;infrastructure numérique et les télécommunications en Afrique
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.55rem",
+              marginTop: "0.2rem"
+            }}>
+              {["IT & Télécoms", "Fibre Optique", "Infrastructure"].map((tag, i) => (
+                <span key={tag} style={{
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.13em",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  padding: "0.28rem 0.8rem",
+                  borderRadius: "40px",
+                  display: "inline-block",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  ...(i === 0 && { background: "rgba(30, 64, 175, 0.1)", color: "#1e40af", border: "0.5px solid rgba(30, 64, 175, 0.2)" }),
+                  ...(i === 1 && { background: "rgba(229, 90, 0, 0.1)", color: "#e55a00", border: "0.5px solid rgba(229, 90, 0, 0.2)" }),
+                  ...(i === 2 && { background: "rgba(5, 150, 105, 0.1)", color: "#059669", border: "0.5px solid rgba(5, 150, 105, 0.2)" })
+                }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

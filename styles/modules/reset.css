@@ -4,6 +4,9 @@ html {
   box-sizing: border-box;
   scroll-behavior: auto; 
   overflow-y: scroll; /* Force scrollbar presence for consistent layout */
+  touch-action: manipulation;  /* Désactiver le double-tap zoom sur tactile */
+  -webkit-text-size-adjust: 100%;  /* Empêcher l'auto-zoom du texte en mobile */
+  -moz-text-size-adjust: 100%;
 }
 
 /* Désactiver smooth scroll en mobile pour éviter les bugs */
@@ -28,6 +31,10 @@ body {
   background: var(--mist);
   -webkit-font-smoothing: antialiased;
   /* overflow-x: hidden removed - was causing scroll jank */
+  /* Protéger contre les recalculs excessifs au zoom */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   /* Use max-width or padding on container instead */
 }
 

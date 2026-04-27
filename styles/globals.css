@@ -11,6 +11,9 @@
 /* 2. Reset & Base Styles */
 @import './modules/reset.css';
 
+/* 2.5. Zoom Optimization */
+@import './modules/zoom-optimization.css';
+
 /* 3. Navigation & Header */
 @import './modules/nav.css';
 

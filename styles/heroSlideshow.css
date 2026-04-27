@@ -33,6 +33,7 @@
   background: var(--bg);
   user-select: none;
   overflow: hidden;
+  contain: layout paint;  /* Isoler les reflows */
 }
 
 /* Crossfade: outgoing slide */
@@ -45,6 +46,11 @@
 }
 .hs-img-layer--curr {
   animation: hs-fadeIn 0.72s ease-in forwards;
+}
+/* Désactiver les animations au zoom */
+html.zoomed .hs-img-layer--prev,
+html.zoomed .hs-img-layer--curr {
+  animation: none !important;
 }
 @keyframes hs-fadeOut {
   0%   { opacity: 1; }
@@ -108,21 +114,29 @@
   width: 100%;
   display: flex;
   overflow-x: scroll;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: none;  /* Désactiver snap pour éviter les bugs au zoom */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-overflow-scrolling: auto;
-  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;  /* Momentum scrolling sur iOS */
+  overscroll-behavior-x: auto;  /* Permet le overscroll sur mobile */
   cursor: grab;
   background: var(--bg2);
+  touch-action: pan-x pinch-zoom;  /* Autoriser drag horizontal et pinch, pas double-tap */
+  /* Protéger contre les recalculs au zoom */
+  contain: layout style;
+  will-change: auto;
 }
 .hs-cards-track:active { cursor: grabbing; }
 .hs-cards-track::-webkit-scrollbar { display: none; }
+/* Désactiver les animations au zoom */
+html.zoomed .hs-cards-track {
+  scroll-behavior: auto !important;
+}
 
 .hs-card-slide {
   flex: 0 0 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-align: none;
+  scroll-snap-stop: none;
   display: flex;
   justify-content: center;
   align-items: flex-start;

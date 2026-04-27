@@ -1,0 +1,117 @@
+/* ─── ZOOM OPTIMIZATION ─── */
+/* Optimisations spécifiques pour éviter les recalculs excessifs au zoom */
+
+/* Protéger contre le pinch-to-zoom et Safari bugs */
+html {
+  /* Bloquer le pinch-to-zoom mais permettre le scroll */
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  
+  /* Safari spécifique: désactiver le zoom via gestes */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
+body {
+  /* Éviter les recalculs lors du zoom */
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+  
+  /* Safari: empêcher le débordement lors du zoom */
+  -webkit-user-select: none;
+  -webkit-user-magnifiable: no;
+}
+
+/* Protéger les éléments avec transforms */
+[class*="slide"],
+[class*="fade"],
+[class*="animate"],
+[class*="carousel"],
+.slideshow,
+.hero-section,
+.parallax,
+[data-animate] {
+  will-change: auto;  /* Utiliser auto sauf pendant l'animation */
+  contain: layout style paint;  /* Isoler les recalculs du DOM */
+}
+
+/* Éléments fixes/sticky - restreindre les recalculs */
+header,
+nav,
+[class*="fixed"],
+[class*="sticky"],
+.floating-logo,
+.floating-menu {
+  contain: layout style;
+  will-change: transform;
+  /* Safari: empêcher le repositionnement lors du zoom */
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+}
+
+/* Images - éviter les recalculs de layout */
+img,
+picture {
+  contain: style paint;
+  /* Éviter les recalculs de dimension */
+  display: block;
+  /* Safari: empêcher le zoom des images */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-magnifiable: no;
+  touch-action: manipulation;
+}
+
+/* Sections - isoler les reflows */
+section,
+article,
+main {
+  contain: layout style;
+  overscroll-behavior: auto;
+  touch-action: manipulation;
+}
+
+/* Boutons et interactions - éviter le redémarrage du layout */
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Réduire les recalculs de scroll */
+[data-scroll] {
+  will-change: auto;
+}
+
+/* Éléments en transition de scroll */
+[data-observe] {
+  contain: layout style paint;
+}
+
+/* iOS Safari: empêcher le zoom sur input focus */
+input,
+textarea,
+select {
+  font-size: 16px;  /* iOS: zoom si < 16px on input focus */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Désactiver le overscroll (iOS: effet de rebond) */
+@supports (overscroll-behavior: contain) {
+  html, body {
+    overscroll-behavior: none;
+  }
+}
+
+/* Permettre la sélection de texte */
+p, span, li, label, h1, h2, h3, h4, h5, h6 {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+}
+

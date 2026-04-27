@@ -141,13 +141,27 @@ export default function HeroSlideshow({
       const track = cardsTrackRef.current;
       if (!track || !track.parentElement) return; // Check if DOM exists
       
-      const targetX = track.clientWidth * idx;
-      if (targetX < 0 || !isFinite(targetX)) return; // Sanity check
+      // Calculer le zoom pour corriger les dimensions
+      const zoom = window.devicePixelRatio || 1;
+      const trackWidth = track.clientWidth;
+      const targetX = trackWidth * idx;
+      
+      // Sanity checks
+      if (targetX < 0 || !isFinite(targetX) || trackWidth <= 0) return;
       
       isProgrammaticScroll.current = true;
       updateCurrent(idx);
-      // Safari-safe scroll without smooth behavior
-      track.scrollLeft = targetX;
+      
+      // Safari-safe scroll: pas de smooth behavior au zoom
+      const isZoomed = document.documentElement.classList.contains('zoomed');
+      if (isZoomed) {
+        // Au zoom, skip les animations
+        track.scrollLeft = targetX;
+      } else {
+        // Comportement normal
+        track.scrollLeft = targetX;
+      }
+      
       setTimeout(() => { 
         if (cardsTrackRef.current) isProgrammaticScroll.current = false;
       }, 100);
@@ -189,7 +203,17 @@ export default function HeroSlideshow({
       if (scrollTimer) clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         try {
-          const idx = Math.round(track.scrollLeft / track.clientWidth);
+          const track = cardsTrackRef.current;
+          if (!track) return;
+          
+          const trackWidth = track.clientWidth;
+          if (trackWidth <= 0) return; // Skip si dimensions invalides
+          
+          // Protéger contre les calculs au zoom
+          const isZoomed = document.documentElement.classList.contains('zoomed');
+          const delayTime = isZoomed ? 150 : 80; // Plus de temps au zoom
+          
+          const idx = Math.round(track.scrollLeft / trackWidth);
           const safeIdx = Math.max(0, Math.min(idx, slides.length - 1));
           updateCurrent(safeIdx);
         } catch (e) {
@@ -210,34 +234,41 @@ export default function HeroSlideshow({
   const attachDrag = useCallback((el: HTMLDivElement) => {
     let dragging = false, startX = 0, startLeft = 0;
     
-    const onDown  = (e: MouseEvent) => { 
+    const onDown  = (e: PointerEvent) => { 
+      // Ignorer le drag au zoom sur tactile
+      const isZoomed = document.documentElement.classList.contains('zoomed');
+      if (isZoomed && e.pointerType === 'touch') return;
+      
       dragging = true; 
       startX = e.pageX; 
       startLeft = el.scrollLeft; 
       el.style.cursor = "grabbing"; 
       el.style.userSelect = "none"; 
+      el.style.willChange = "scroll-position";
       pauseAuto();
     };
     
-    const onMove  = (e: MouseEvent) => { 
+    const onMove  = (e: PointerEvent) => { 
       if (!dragging) return; 
-      el.scrollLeft = startLeft - (e.pageX - startX); 
+      const delta = e.pageX - startX;
+      el.scrollLeft = startLeft - delta;
     };
     
     const onUp    = () => { 
       dragging = false; 
       el.style.cursor = "grab"; 
-      el.style.removeProperty("user-select"); 
+      el.style.removeProperty("user-select");
+      el.style.removeProperty("will-change");
     };
     
-    el.addEventListener("mousedown", onDown);
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    el.addEventListener("pointerdown", onDown as EventListener);
+    document.addEventListener("pointermove", onMove as EventListener);
+    document.addEventListener("pointerup", onUp as EventListener);
     
     return () => { 
-      el.removeEventListener("mousedown", onDown);
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      el.removeEventListener("pointerdown", onDown as EventListener);
+      document.removeEventListener("pointermove", onMove as EventListener);
+      document.removeEventListener("pointerup", onUp as EventListener);
     };
   }, [pauseAuto]);
 

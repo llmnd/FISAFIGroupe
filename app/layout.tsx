@@ -3,16 +3,20 @@ import { ReactNode } from "react";
 import { Cormorant_Garamond, Outfit, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from "@/context/ThemeContext";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
-import "@/styles/globals.css";
 import ScrollManager from "@/components/ScrollManager";
+import { ZoomOptimizer } from "@/components/ZoomOptimizer";
+import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "FiSAFi Groupe Solutions Informatiques Dakar",
+  title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
   description:
-    "Cabinet de conseil en technologie, informatique et ingénierie. Réseaux, cybersécurité, cloud, formations IT à Dakar. 10+ années d'expertise. +221 78 781 22 97",
+    "Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité, Cloud & Formations. WDM, Déploiement Aérien/Souterrain. 10+ années à Dakar. +221 78 781 22 97",
   keywords: [
     "cabinet IT Dakar",
-    "conseil informatique Sénégal",
+    "télécoms Sénégal",
+    "fibre optique Dakar",
+    "expert réseau WDM",
+    "déploiement fibre optique",
     "ingénierie réseaux Dakar",
     "cybersécurité Sénégal",
     "infrastructure cloud Dakar",
@@ -20,6 +24,7 @@ export const metadata: Metadata = {
     "formation IT Sénégal",
     "services informatiques",
     "support technique 24/7",
+    "solutions télécommunications",
   ],
   authors: [{ name: "FiSAFi Groupe" }],
   creator: "FiSAFi Groupe",
@@ -30,9 +35,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: "https://fisafigroupe.com",
-    title: "FiSAFi Groupe Solutions Informatiques Dakar",
+    title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
     description:
-      "Cabinet de conseil en IT, réseaux, cybersécurité et formations. Expertise reconnue en infrastructure cloud, télécoms et solutions sécurisées au Sénégal",
+      "Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité. 10+ années d'expertise en Afrique de l'Ouest.",
     images: [
       {
         url: "https://fisafigroupe.com/logo.jpeg",
@@ -46,9 +51,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FiSAFi Groupe Solutions Informatiques Dakar",
+    title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
     description:
-      "Expertise IT, réseaux, cybersécurité et formations certifiantes à Dakar, Sénégal",
+      "Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité et formations certifiantes à Dakar, Sénégal",
     images: ["https://fisafigroupe.com/logo.jpeg"],
     creator: "@fisafigroupe",
   },
@@ -72,7 +77,9 @@ export const metadata: Metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,  /* Désactiver complètement le zoom sur mobile pour éviter les bugs */
+  minimumScale: 1,
+  userScalable: false,  /* Désactiver pinch-to-zoom et double-tap zoom */
   viewportFit: "cover",
   themeColor: "#1e40af",
 };
@@ -197,10 +204,22 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}})();`,
           }}
         />
+
+        {/* ── Block Pinch-to-Zoom (Mobile) ───────────────────────── */}
+        {/*
+          Ce script bloque le pinch-to-zoom sur mobile IMMÉDIATEMENT
+          avant que React charge, pour éviter les bugs au zoom
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var lastTouchEnd=0;document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});document.addEventListener('touchend',function(e){var now=Date.now();if(now-lastTouchEnd<=300)e.preventDefault();lastTouchEnd=now},{passive:false});document.addEventListener('wheel',function(e){if(e.ctrlKey||e.metaKey)e.preventDefault()},{passive:false})})();`,
+          }}
+        />
       </head>
       <body>
         <ThemeProvider>
           <ScrollManager />
+          <ZoomOptimizer />
           <SmoothScrollProvider />
           {children}
         </ThemeProvider>
