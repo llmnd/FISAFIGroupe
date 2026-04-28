@@ -70,7 +70,7 @@ export default function FloatingLogo() {
           aria-expanded={isOpen}
         >
           <Image
-            src="/logo.jpeg"
+            src="/favicon/web-app-manifest-192x192.png"
             alt="FiSAFi"
             width={56}
             height={56}

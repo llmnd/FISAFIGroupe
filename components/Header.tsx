@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { initScrollHandler } from "@/scripts/scroll-optimizations";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,14 +25,6 @@ const IconPlus = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2.5" strokeLinecap="round">
     <path d="M12 5v14M5 12h14"/>
-  </svg>
-);
-
-const IconBell = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </svg>
 );
 
@@ -87,28 +78,37 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const SOCIALS = [
-  { href: "https://www.facebook.com/share/179K7oUPAA/",               Icon: IconFacebook,  label: "Facebook",  className: "" },
-  { href: "https://www.linkedin.com/company/fisafi-groupe-suarl/",     Icon: IconLinkedin,  label: "LinkedIn",  className: "" },
-  { href: "https://www.instagram.com/",                                Icon: IconInstagram, label: "Instagram", className: "instagram" },
+  { href: "https://www.facebook.com/share/179K7oUPAA/",             Icon: IconFacebook,  label: "Facebook",  className: "" },
+  { href: "https://www.linkedin.com/company/fisafi-groupe-suarl/",   Icon: IconLinkedin,  label: "LinkedIn",  className: "" },
+  { href: "https://www.instagram.com/",                              Icon: IconInstagram, label: "Instagram", className: "instagram" },
 ];
 
 /* ─── Component ──────────────────────────────────────────── */
 export default function Header() {
-  const [mobileOpen,   setMobileOpen]   = useState(false);
-  const [showSocials,  setShowSocials]  = useState(false);
-  const [showSearch,   setShowSearch]   = useState(false);
+  const [mobileOpen,    setMobileOpen]    = useState(false);
+  const [showSocials,   setShowSocials]   = useState(false);
+  const [showSearch,    setShowSearch]    = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [scrolled,     setScrolled]     = useState(false);
-  const [scrollPct,    setScrollPct]    = useState(0);
-  const [isLoggedIn,   setIsLoggedIn]   = useState(false);
+  // Use two discrete boolean states instead of continuous scrollPct for React renders
+  // The actual scrollPct is written via RAF directly to the DOM element
+  const [scrolled,      setScrolled]      = useState(false);
+  const [isLoggedIn,    setIsLoggedIn]    = useState(false);
+
   const pathname = usePathname();
+
+  // Refs
+  const headerRef       = useRef<HTMLElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  const socialBarRef    = useRef<HTMLDivElement>(null);
+  const socialsRef      = useRef<HTMLDivElement>(null);
+  const searchRef       = useRef<HTMLInputElement>(null);
+  const shareButtonRef  = useRef<HTMLButtonElement>(null);
+  const socialPopupRef  = useRef<HTMLDivElement>(null);
   const [socialPopupStyle, setSocialPopupStyle] = useState<React.CSSProperties>({});
 
-  const headerRef  = useRef<HTMLElement>(null);
-  const socialsRef = useRef<HTMLDivElement>(null);
-  const searchRef  = useRef<HTMLInputElement>(null);
-  const shareButtonRef = useRef<HTMLButtonElement>(null);
-  const socialPopupRef = useRef<HTMLDivElement>(null);
+  // RAF ref — avoids setState on every scroll frame
+  const rafIdRef        = useRef<number | null>(null);
+  const lastScrolledRef = useRef(false);
 
   /* Auth check */
   useEffect(() => {
@@ -118,21 +118,56 @@ export default function Header() {
   /* Body scroll lock when drawer open */
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  /* Scroll → progress bar + update social bar position */
+  /* ─── Scroll: RAF-throttled, direct DOM writes for progress + opacity ───
+   *
+   * Pattern:
+   *  • scrollY is read once per rAF tick (not per event)
+   *  • Progress bar width + social bar opacity are written directly to DOM
+   *    → zero React re-renders during scroll
+   *  • Only "scrolled" boolean triggers a React setState (max 2 updates total)
+   * ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    const cleanup = initScrollHandler(() => {
-      const scrollTop = window.scrollY;
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      const isScrolled = scrollTop > 10;
-      setScrolled(isScrolled);
-      setScrollPct(docH > 0 ? (scrollTop / docH) * 100 : 0);
-    });
-    return () => cleanup();
+    const onScroll = () => {
+      if (rafIdRef.current !== null) return; // already scheduled
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+
+        const scrollTop = window.scrollY;
+        const docH = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docH > 0 ? (scrollTop / docH) * 100 : 0;
+        const isScrolled = scrollTop > 10;
+
+        // Direct DOM write → no re-render
+        if (progressFillRef.current) {
+          progressFillRef.current.style.width = `${pct}%`;
+        }
+        if (socialBarRef.current) {
+          const opacity = Math.max(0, 1 - pct / 30);
+          socialBarRef.current.style.opacity = String(opacity);
+        }
+
+        // Only setState when threshold changes (max 2 renders total)
+        if (isScrolled !== lastScrolledRef.current) {
+          lastScrolledRef.current = isScrolled;
+          setScrolled(isScrolled);
+        }
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
   }, []);
 
-  /* Click outside to close popups */
+  /* Click outside to close socials popup */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -150,7 +185,10 @@ export default function Header() {
 
   /* Focus search input when overlay opens */
   useEffect(() => {
-    if (showSearch) setTimeout(() => searchRef.current?.focus(), 80);
+    if (showSearch) {
+      const t = setTimeout(() => searchRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
   }, [showSearch]);
 
   /* Keyboard shortcuts */
@@ -172,35 +210,26 @@ export default function Header() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  /* Compute popup position dynamically */
+  /* ─── Social popup: computed position (viewport-safe) ── */
   const handleToggleSocials = useCallback(() => {
     setShowSocials(v => {
       const next = !v;
       if (next && shareButtonRef.current) {
-        const btn = shareButtonRef.current.getBoundingClientRect();
-        const POPUP_WIDTH = 240; // 3 × 72px + 2 × 8px gap + 2 × 14px padding
-        const MARGIN = 12;       // screen margin
-        const viewportW = window.innerWidth;
-
-        // Vertical position: just below the button
-        const top = btn.bottom + MARGIN;
-
-        // Horizontal position: try to align with button's left edge,
-        // but clamp to stay in viewport
-        let left = btn.left;
-        if (left + POPUP_WIDTH > viewportW - MARGIN) {
-          // Overflows right → anchor to right of button
-          left = btn.right - POPUP_WIDTH;
-        }
-        left = Math.max(MARGIN, left); // never off-screen left
-
+        const btn        = shareButtonRef.current.getBoundingClientRect();
+        const POPUP_W    = 248;
+        const MARGIN     = 12;
+        const viewportW  = window.innerWidth;
+        const top        = btn.bottom + MARGIN;
+        let   left       = btn.left;
+        if (left + POPUP_W > viewportW - MARGIN) left = btn.right - POPUP_W;
+        left = Math.max(MARGIN, left);
         setSocialPopupStyle({ top, left, right: "auto", position: "fixed" });
       }
       return next;
     });
   }, []);
 
-  /* Shared socials grid */
+  /* ─── Socials grid (shared between popup and drawer) ── */
   const SocialsGrid = () => (
     <div className="social-grid">
       {SOCIALS.map(({ href, Icon, label, className }, i) => (
@@ -228,9 +257,13 @@ export default function Header() {
         suppressHydrationWarning
       >
         {/* Logo */}
-        <Link href="/" className="header-logo" onClick={(e) => { e.preventDefault(); setShowInfoModal(true); }}>
+        <Link
+          href="/"
+          className="header-logo"
+          onClick={(e) => { e.preventDefault(); setShowInfoModal(true); }}
+        >
           <Image
-            src="/logo.jpeg"
+            src="/favicon/web-app-manifest-192x192.png"
             alt="FiSAFi Groupe"
             width={50}
             height={50}
@@ -257,7 +290,6 @@ export default function Header() {
 
         {/* Action zone */}
         <div className="header-actions">
-          {/* Search */}
           <button
             className="header-icon-btn"
             onClick={() => setShowSearch(true)}
@@ -267,7 +299,6 @@ export default function Header() {
             <IconSearch />
           </button>
 
-          {/* Plus */}
           <button
             className="header-plus-btn"
             aria-label="Nouveau"
@@ -278,9 +309,6 @@ export default function Header() {
 
           <div className="header-divider" />
 
-          <div className="header-divider" />
-
-          {/* Avatar / Login */}
           {isLoggedIn ? (
             <Link href="/dashboard" className="header-avatar-btn" aria-label="Mon compte">
               <div className="header-avatar-inner">FS</div>
@@ -305,20 +333,15 @@ export default function Header() {
           <span className="burger-line" />
         </button>
 
-        {/* Progress Bar */}
+        {/* Progress Bar — width written via ref (zero React renders) */}
         <div className="header-progress" aria-hidden="true">
-          <div
-            className="header-progress-fill"
-            style={{ width: `${scrollPct}%` }}
-          />
+          <div ref={progressFillRef} className="header-progress-fill" />
         </div>
       </header>
 
       {/* ── Social & Flags Bar ── */}
-      <div 
-        className="header-social-flags-bar"
-        style={{ opacity: Math.max(0, 1 - scrollPct / 30) }}
-      >
+      {/* opacity written via ref during scroll */}
+      <div ref={socialBarRef} className="header-social-flags-bar">
         <div className="bar-content">
           <div className="bar-socials">
             <button
@@ -343,17 +366,20 @@ export default function Header() {
           </div>
 
           <div className="bar-flags">
-            <span className="flag">🇸🇳</span>
-            <div className="flags-divider"></div>
-            <span className="flag">🇹🇩</span>
+            <span className="flag" role="img" aria-label="Sénégal">🇸🇳</span>
+            <div className="flags-divider" aria-hidden="true" />
+            <span className="flag" role="img" aria-label="Tchad">🇹🇩</span>
           </div>
         </div>
       </div>
 
       {/* ── Mobile Drawer ── */}
+      {/* aria-hidden when closed for screen readers */}
       <nav
         className={`header-drawer${mobileOpen ? " open" : ""}`}
         aria-label="Menu mobile"
+        aria-hidden={!mobileOpen}
+        inert={!mobileOpen ? "inert" : undefined}
       >
         <div className="header-drawer-inner">
           <ul className="header-drawer-nav">
@@ -362,10 +388,10 @@ export default function Header() {
                 <Link
                   href={href}
                   className={`header-drawer-link${pathname === href ? " active" : ""}`}
-                  onClick={() => { closeMobile(); }}
+                  onClick={closeMobile}
                 >
                   {label}
-                  <span className="drawer-chevron">›</span>
+                  <span className="drawer-chevron" aria-hidden="true">›</span>
                 </Link>
               </li>
             ))}
@@ -405,17 +431,18 @@ export default function Header() {
           className="header-search-overlay open"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSearch(false); }}
           role="dialog"
+          aria-modal="true"
           aria-label="Recherche"
-          style={{ position: 'fixed', inset: 0, zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         >
           <div className="header-search-box">
             <IconSearch />
             <input
               ref={searchRef}
               className="header-search-input"
-              type="text"
+              type="search"
               placeholder="Rechercher…"
               aria-label="Recherche"
+              autoComplete="off"
             />
             <span className="header-search-kbd">Échap</span>
           </div>
@@ -428,8 +455,8 @@ export default function Header() {
           className="header-info-overlay"
           onClick={() => setShowInfoModal(false)}
           role="dialog"
+          aria-modal="true"
           aria-label="À propos de FiSAFi Groupe"
-          style={{ position: 'fixed', inset: 0, zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         >
           <div className="header-info-modal" onClick={(e) => e.stopPropagation()}>
             <button
@@ -443,7 +470,7 @@ export default function Header() {
             <div className="header-info-content">
               <div className="header-info-logo">
                 <Image
-                  src="/logo.jpeg"
+                  src="/favicon/web-app-manifest-192x192.png"
                   alt="FiSAFi Groupe"
                   width={80}
                   height={80}
@@ -462,21 +489,18 @@ export default function Header() {
                   <span className="header-info-label">Localisation</span>
                   <span className="header-info-value">Liberté 6 Extension, Dakar Sénégal</span>
                 </div>
-
                 <div className="header-info-item">
                   <span className="header-info-label">Téléphone</span>
                   <a href="tel:+221787812297" className="header-info-value header-info-link">
                     +221 78 781 22 97
                   </a>
                 </div>
-
                 <div className="header-info-item">
                   <span className="header-info-label">Email</span>
                   <a href="mailto:contact@fisafigroupe.com" className="header-info-value header-info-link">
                     contact@fisafigroupe.com
                   </a>
                 </div>
-
                 <div className="header-info-item">
                   <span className="header-info-label">Spécialités</span>
                   <span className="header-info-value">Réseaux • IT • Cybersécurité • Conseil</span>

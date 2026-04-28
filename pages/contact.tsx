@@ -62,15 +62,15 @@ export default function Contact() {
         <meta property="og:description" content="Prenez contact pour une audit IT gratuit. +221 78 781 22 97" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fisafigroupe.com/contact" />
-        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
-        <meta property="og:image:width" content="1200" />
+        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Contact | FiSAFi Groupe" />
         <meta name="twitter:description" content="Contactez FiSAFi pour une consultation. +221 78 781 22 97" />
-        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
       </Head>
 
       <Header />

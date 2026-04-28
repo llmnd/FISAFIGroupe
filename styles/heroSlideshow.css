@@ -126,15 +126,15 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 2.4rem 2rem 1.8rem;
+  /* Padding généreux pour laisser respirer les ombres latérales */
+  padding: 2.6rem 3rem 2rem;
 }
 
-/* ── Card Stack (skeuomorphic notebook) ──── */
+/* ── Card Stack (paper layers via box-shadow) ── */
 .hs-card-scene {
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 32px 48px rgba(0,0,0,0.42));
 }
 
 /* Washi-tape pin */
@@ -160,21 +160,59 @@
   position: relative;
   width: clamp(248px, 76vw, 322px);
 }
-.hs-ghost {
-  position: absolute;
-  inset: 0;
-  border-radius: 4px;
-  transition: background 0.45s ease;
-}
-.hs-ghost--far  { z-index: 0; opacity: 0.55; }
-.hs-ghost--near { z-index: 1; opacity: 0.78; }
 
+/* Ghost divs désactivés — les ombres portées remplacent tout */
+.hs-ghost { display: none; }
+
+/* ── La carte principale ─────────────────── */
 .hs-card {
   position: relative;
   z-index: 2;
   border-radius: 4px;
+  /*
+    overflow: visible — CRUCIAL pour que les ombres décalées
+    (qui simulent les feuilles derrière) restent visibles.
+    L'intérieur est géré par .hs-card-inner avec overflow hidden.
+  */
+  overflow: visible;
+
+  /*
+    Système de feuilles empilées par box-shadow :
+
+    Couche 1 (feuille la plus proche) :
+      - offset X/Y léger  → simule un décalage de 1–2mm
+      - spread négatif    → la feuille est légèrement plus petite
+      - couleur = ghostBg1 (via CSS var injectée inline)
+
+    Couche 2 (feuille du fond) :
+      - offset X/Y plus grand
+      - encore plus petite (spread encore plus négatif)
+      - couleur = ghostBg2, plus sombre
+
+    Entre chaque feuille : une ombre de bordure très fine et sombre
+    qui donne l'épaisseur du papier.
+
+    Ombre générale douce sous l'ensemble.
+  */
+  box-shadow:
+    /* ── Feuille 1 ── */
+    5px 5px 0 -1px var(--hs-sheet1, #e8e3f7),
+    5px 5px 0  0   rgba(0, 0, 0, 0.09),
+
+    /* ── Feuille 2 ── */
+    10px 10px 0 -1px var(--hs-sheet2, #ddd7f2),
+    10px 10px 0  0   rgba(0, 0, 0, 0.07),
+
+    /* ── Ombre portée douce sous la pile ── */
+    2px 18px 32px rgba(0, 0, 0, 0.18),
+    0   6px  12px rgba(0, 0, 0, 0.10);
+}
+
+/* Clipper interne — remplace overflow hidden sur .hs-card */
+.hs-card-inner {
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  position: relative;
 }
 
 /* Red margin line */
@@ -230,7 +268,7 @@
 }
 
 /* Subtle bottom fade on card */
-.hs-card::after {
+.hs-card-inner::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -251,8 +289,6 @@
   align-items: stretch;
   overflow: hidden;
 }
-
-/* panel: no ambient glow */
 
 /* Vertical progress bar */
 .hs-vbar {

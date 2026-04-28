@@ -82,28 +82,44 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>FiSAFi Groupe | Cabinet IT & Réseaux | Dakar, Sénégal</title>
+            <Head>
+        {/* ✅ TITLE — ce qui s'affiche en violet/bleu dans Google (~60 car.) */}
+        <title>FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar</title>
+
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
-        <meta name="description" content="Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité, Cloud & Formations. Expert WDM, déploiement aérien/souterrain. 10+ années à Dakar. +221 78 781 22 97" />
-        <meta name="keywords" content="cabinet IT Dakar, télécoms Sénégal, fibre optique Dakar, expert réseau WDM, déploiement fibre optique, ingénierie réseaux Dakar, cybersécurité Sénégal, infrastructure cloud Dakar, consultant IT Afrique, formation IT Sénégal, services informatiques, support technique 24/7, solutions télécommunications" />
+
+        {/* ✅ DESCRIPTION — le texte qui s'affiche sous le titre dans Google (~155 car.) */}
+        <meta
+          name="description"
+          content="Expert réseau & télécoms, spécialiste fibre optique WDM. Déploiement fibre aérien & souterrain, suivi/contrôle de travaux, cybersécurité, cloud. 10+ ans d'expertise à Dakar, Sénégal."
+        />
+
+        <meta
+          name="keywords"
+          content="expert fibre optique Dakar, télécoms Sénégal, déploiement fibre optique aérien souterrain, expert réseau WDM, ingénierie réseaux Dakar, suivi travaux fibre optique, cabinet IT Dakar, cybersécurité Sénégal, infrastructure cloud, formation IT, consultant télécoms Afrique, FTTH FTTX Sénégal"
+        />
+
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
         <link rel="canonical" href="https://fisafigroupe.com" />
+
+        {/* ✅ Open Graph (partage réseaux sociaux) */}
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:url" content="https://fisafigroupe.com" />
-        <meta property="og:title" content="FiSAFi Groupe — Expert IT & Réseaux" />
-        <meta property="og:description" content="Cabinet de conseil en IT spécialisé en réseaux, cybersécurité et solutions cloud à Dakar" />
-        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
-        <meta property="og:image:width" content="1200" />
+        <meta property="og:title" content="FiSAFi Groupe — Expert Fibre Optique, Réseaux & Télécoms | Dakar" />
+        <meta property="og:description" content="Spécialiste fibre optique WDM, déploiement aérien/souterrain, suivi de travaux, réseaux & télécoms. Cabinet IT à Dakar avec 10+ ans d'expertise." />
+        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
+
+        {/* ✅ Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="FiSAFi Groupe Solutions Informatiques Dakar" />
-        <meta name="twitter:description" content="Expertise IT, réseaux, cybersécurité et formations certifiantes à Dakar, Sénégal" />
-        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:title" content="FiSAFi Groupe | Expert Fibre Optique & Télécoms Dakar" />
+        <meta name="twitter:description" content="Expert WDM, déploiement fibre optique aérien/souterrain, réseaux & télécoms à Dakar, Sénégal." />
+        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
         <meta name="twitter:creator" content="@fisafigroupe" />
       </Head>
 

@@ -804,7 +804,7 @@ export default function DashboardPage() {
           <div className="dash-topbar">
             {/* Mobile circular logo */}
             <div className="dash-mobile-logo" aria-hidden="true">
-              <Image src="/logo.jpeg" alt="FiSAFi Groupe" width={72} height={72} priority />
+              <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
             </div>
             <div className="topbar-logo">Fi<span>SAFI</span></div>
             <button

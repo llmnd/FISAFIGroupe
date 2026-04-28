@@ -134,15 +134,15 @@ export default function News() {
         <meta property="og:description" content="Articles techniques, tendances IT et innovations technologiques" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fisafigroupe.com/news" />
-        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
-        <meta property="og:image:width" content="1200" />
+        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Actualités Tech | FiSAFi Groupe" />
         <meta name="twitter:description" content="Suivez les tendances IT et actualités technologiques" />
-        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
       </Head>
 
       <Header />

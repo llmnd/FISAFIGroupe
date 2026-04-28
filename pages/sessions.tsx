@@ -148,15 +148,15 @@ export default function SessionsPage() {
         <meta property="og:description" content="Calendrier des sessions de formation IT" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fisafigroupe.com/sessions" />
-        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
-        <meta property="og:image:width" content="1200" />
+        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Sessions | FiSAFi Groupe" />
         <meta name="twitter:description" content="Sessions de formation IT disponibles" />
-        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
       </Head>
 
       <Header />

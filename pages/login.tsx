@@ -293,7 +293,7 @@ export default function LoginPage() {
           {/* ── Logo image (remplace "Fi SAFI Groupe" en texte) ── */}
           <a href="/" className="l-logo">
             <Image
-              src="/logo.jpeg"
+              src="/favicon/web-app-manifest-192x192.png"
               alt="FiSAFi Groupe"
               width={140}
               height={60}
@@ -338,7 +338,7 @@ export default function LoginPage() {
         <div className="l-form-wrap">
           {/* Mobile circular logo (visible on small screens) */}
           <div className="l-mobile-logo" aria-hidden="true">
-            <Image src="/logo.jpeg" alt="FiSAFi Groupe" width={72} height={72} priority />
+            <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
           </div>
           <div className="l-mode-pill">
             <button className={`l-pill-btn${isLogin ? " active" : ""}`}  onClick={() => switchMode(true)}>Connexion</button>

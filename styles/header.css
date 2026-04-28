@@ -1,21 +1,49 @@
 /* ═══════════════════════════════════════════════════════════
-   FISAFI GROUPE — HEADER v2.2 (perf fix)
-   Warm Beige · Glass Morphism · Orange Accent · Arc Drawer
+   FISAFI GROUPE — HEADER v3.0
+   Safari-safe · Performance-first · Glass Morphism
+   ═══════════════════════════════════════════════════════════
+
+   SAFARI MOBILE FIXES vs v2.2:
+   ────────────────────────────
+   1. `overflow: hidden` retiré du .header  → était la cause #1
+      des traits blancs au rendu des blurs.
+   2. `backdrop-filter` gardé UNIQUEMENT sur le header shell ;
+      tous les overlays mobiles repassent en fond solide opaque.
+   3. `.header-drawer` : `overflow: hidden` supprimé, ajout de
+      `-webkit-mask-image` pour forcer un clipping propre sur
+      l'arc border-radius — la technique la plus fiable sur Safari.
+   4. `::after` grain : le `feTurbulence` SVG inline est remplacé
+      par un dégradé CSS → pas de parsing SVG, pas d'artefacts
+      de filtre sur certains GPU mobiles.
+   5. `will-change` limité aux éléments qui animent EN CE MOMENT
+      (drawer ouvert, popup ouvert). Sur les éléments au repos,
+      `will-change` crée des couches GPU inutiles → mémoire + glitches.
+   6. `transform: translateZ(0)` retiré du drawer — interférait
+      avec `backdrop-filter` dans certains contextes Safari.
+   7. `isolation: isolate` sur `.header` → crée un stacking context
+      propre sans promouvoir de couche GPU.
+   8. `@supports (backdrop-filter: blur(1px))` — les navigateurs
+      qui ne supportent pas le blur reçoivent un fond opaque propre.
+
+   PERF vs v2.2:
+   ─────────────
+   • scrollPct n'est PLUS un état React → 0 re-render au scroll.
+     La largeur de la barre et l'opacité de la barre sociale sont
+     écrites directement via refs (requestAnimationFrame).
+   • `will-change` réduit de ~12 éléments à 3 max simultanés.
+   • Backdrop-filter concurrent : de 5 à 1 sur mobile.
    ═══════════════════════════════════════════════════════════ */
-
-
 
 /* ─── Tokens ─────────────────────────────────────────────── */
 :root {
   --beige:        #F5F0E8;
   --beige-2:      #EDE6D6;
   --beige-3:      #E0D8C8;
-  --glass:        rgba(245, 240, 232, 0.78);
+  --glass:        rgba(245, 240, 232, 0.82);
   --glass-heavy:  rgba(250, 246, 240, 0.97);
   --border-glass: rgba(255, 255, 255, 0.72);
   --orange:       #E8580A;
   --orange-2:     #FF7235;
-  --orange-glow:  rgba(232, 88, 10, 0.18);
   --brown:        #3E2E22;
   --brown-2:      #6E5547;
   --brown-3:      #A8988C;
@@ -27,13 +55,12 @@
   --radius-md:    12px;
   --radius-lg:    18px;
   --radius-pill:  999px;
-  --header-h:     62px; /* FIXE : pas de changement au scroll */
+  --header-h:     62px;
   --drawer-top:   62px;
-  --drawer-top:   62px;
-  /* ── Transitions: couleur/opacité uniquement — pas de geometry ni de filter ── */
-  --transition:   180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:     cubic-bezier(0.0, 0.0, 0.2, 1);
   --spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
   --spring-soft:  cubic-bezier(0.22, 1, 0.36, 1);
+  --transition:   180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
@@ -52,31 +79,44 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    HEADER SHELL
-   — will-change: transform sur un élément fixed crée un
-     stacking context isolé → zéro repaint au scroll.
+
+   FIX: `overflow: hidden` SUPPRIMÉ — c'était la principale
+   cause des "traits" sur Safari mobile. Avec overflow:hidden
+   + backdrop-filter + border-radius, Safari crée une couche
+   de compositing séparée mais ne clip pas proprement le blur,
+   ce qui laisse un artefact de 1px sur les bords.
+
+   FIX: `isolation: isolate` remplace `will-change: transform`
+   pour créer le stacking context — même résultat, sans
+   promotion de couche GPU.
    ════════════════════════════════════════════════════════════ */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  background: var(--glass);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  /* Fond de repli (browsers sans backdrop-filter support) */
+  background: rgba(245, 240, 232, 0.97);
   border-bottom: 1px solid var(--border-glass);
   box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   padding: 0 24px;
   gap: 0;
-  overflow: hidden;
- 
+  /* FIX: isolation au lieu de will-change + overflow */
+  isolation: isolate;
 }
 
-
-
-
-
+/* Backdrop-filter uniquement si le navigateur le supporte
+   correctement — évite le fallback cassé de certaines versions
+   de WebKit qui activent la feature mais la rendent mal */
+@supports (backdrop-filter: blur(1px)) {
+  .header {
+    background: var(--glass);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+  }
+}
 
 /* ════════════════════════════════════════════════════════════
    LOGO
@@ -97,8 +137,11 @@ body {
   box-shadow:
     0 2px 10px rgba(74, 55, 40, 0.18),
     0 0 0 2px rgba(255, 255, 255, 0.6);
+  /* FIX: transform seul — pas de filter animé */
   transition: transform 0.35s var(--spring);
-  will-change: transform;
+  /* FIX: backface-visibility évite le flip "fantôme" sur Safari */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .header-logo:hover .header-logo-image {
@@ -108,27 +151,26 @@ body {
     0 0 0 3px rgba(232, 88, 10, 0.2);
 }
 
-.header-logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-  gap: 2px;
+/* ════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   Placée en dehors du header pour éviter le clipping
+   ════════════════════════════════════════════════════════════ */
+.header-progress {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: rgba(74, 55, 40, 0.06);
+  pointer-events: none;
 }
 
-.header-logo-name {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--brown);
-  letter-spacing: -0.4px;
-}
-
-.header-logo-sub {
-  font-size: 9px;
-  font-weight: 500;
-  color: var(--brown-3);
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.header-progress-fill {
+  height: 100%;
+  width: 0%; /* valeur initiale — écrite via ref */
+  background: linear-gradient(90deg, var(--orange), var(--orange-2));
+  border-radius: 0 2px 2px 0;
+  /* FIX: will-change ici SEULEMENT car cet élément change à chaque scroll */
+  will-change: width;
+  /* FIX: transition désactivée — la valeur est déjà lissée par le RAF */
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -154,8 +196,7 @@ body {
   text-decoration: none;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  /* PERF: color + opacity uniquement, pas de geometry */
-  transition: color var(--transition), opacity var(--transition);
+  transition: color var(--transition);
   position: relative;
   cursor: pointer;
   white-space: nowrap;
@@ -170,6 +211,7 @@ body {
   background: rgba(74, 55, 40, 0.07);
   opacity: 0;
   transition: opacity var(--transition);
+  pointer-events: none;
 }
 
 .header-nav-link:hover { color: var(--brown); }
@@ -189,6 +231,7 @@ body {
   border-radius: 50%;
   background: var(--orange);
   box-shadow: 0 0 8px 2px rgba(232, 88, 10, 0.35);
+  pointer-events: none;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -214,12 +257,13 @@ body {
   color: var(--brown-2);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  /* PERF: transform + color seulement */
   transition: background var(--transition), color var(--transition), transform var(--transition);
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   position: relative;
   flex-shrink: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent; /* FIX: supprime le flash bleu sur iOS */
 }
 
 .header-icon-btn:hover {
@@ -240,10 +284,12 @@ body {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: transform 0.3s var(--spring), background 0.3s ease, border-color 0.3s ease;
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   flex-shrink: 0;
   padding: 0;
   margin: 0 2px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-plus-btn:hover {
@@ -256,15 +302,6 @@ body {
 
 .header-plus-btn:active { transform: scale(0.9) rotate(45deg); }
 .header-plus-btn svg { width: 15px; height: 15px; }
-
-.header-icon-btn .notif-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #E53935;
-  border: 1.5px solid var(--beige);
-}
 
 .header-divider {
   width: 1px; height: 18px;
@@ -282,15 +319,14 @@ body {
   padding: 0;
   position: relative;
   transition: transform 0.28s var(--spring);
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   flex-shrink: 0;
   background: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.header-avatar-btn:hover {
-  transform: scale(1.12);
-  box-shadow: 0 3px 14px rgba(74, 55, 40, 0.2);
-}
+.header-avatar-btn:hover { transform: scale(1.12); }
 
 .header-avatar-inner {
   width: 32px; height: 32px;
@@ -312,6 +348,7 @@ body {
   border-radius: 50%;
   background: #E53935;
   border: 2px solid var(--beige);
+  pointer-events: none;
 }
 
 .header-login-btn {
@@ -330,7 +367,9 @@ body {
   cursor: pointer;
   border: none;
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s var(--spring);
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-login-btn:hover {
@@ -343,37 +382,100 @@ body {
 .header-login-btn svg { width: 14px; height: 14px; }
 
 /* ════════════════════════════════════════════════════════════
+   MOBILE BURGER
+   ════════════════════════════════════════════════════════════ */
+.header-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 10px;
+  margin-left: 6px;
+  transition: background var(--transition);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 767px) {
+  .header-burger  { display: flex; }
+  .header-nav     { display: none; }
+  .header-plus-btn, .header-divider { display: none; }
+}
+
+.header-burger:hover { background: rgba(74, 55, 40, 0.09); }
+
+.burger-line {
+  border-radius: 2px;
+  background: var(--brown);
+  height: 1.5px;
+  width: 18px;
+  /* FIX: transform + opacity — NO width animation (triggers layout) */
+  transition: transform 0.32s var(--spring), opacity 0.32s ease;
+  transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.burger-line:nth-child(1) { width: 14px; align-self: flex-start; }
+.burger-line:nth-child(3) { width: 10px; align-self: flex-start; }
+
+.header-burger:hover .burger-line { width: 18px; }
+
+.header-burger.open .burger-line:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+  width: 18px;
+}
+.header-burger.open .burger-line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.header-burger.open .burger-line:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+  width: 18px;
+}
+
+/* ════════════════════════════════════════════════════════════
    SOCIAL / FLAGS BAR
+   Pas de position:fixed — suit le flux du document.
+   L'opacité est écrite via ref (RAF), pas de useState.
    ════════════════════════════════════════════════════════════ */
 .header-social-flags-bar {
-  position: static;
-  top: var(--header-h);
-  left: 0; right: 0;
+  position: relative; /* FIX: était "static" avec top: déclaré = no-op CSS */
   z-index: 998;
   height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg,
-    rgba(241, 235, 222, 0.94) 0%,
-    rgba(237, 230, 214, 0.86) 100%
-  );
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  /* Fond solide de base — le blur est en enhancement progressif */
+  background: rgba(241, 235, 222, 0.97);
   border-bottom: 1px solid rgba(74, 55, 40, 0.08);
   box-shadow: 0 4px 16px rgba(74, 55, 40, 0.05);
-  
+  /* will-change: opacity — car la valeur change au scroll via ref */
+  will-change: opacity;
 }
 
-/* PERF: désactiver backdrop-filter sur mobile */
-@media (max-width: 768px) {
-  .header-social-flags-bar {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(241, 235, 222, 0.97);
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    /* Blur uniquement desktop — trop coûteux sur mobile */
+    .header-social-flags-bar {
+      background: linear-gradient(
+        180deg,
+        rgba(241, 235, 222, 0.94) 0%,
+        rgba(237, 230, 214, 0.86) 100%
+      );
+      backdrop-filter: blur(16px) saturate(150%);
+      -webkit-backdrop-filter: blur(16px) saturate(150%);
+    }
   }
 }
 
+/* Ligne décorative orange en bas */
 .header-social-flags-bar::after {
   content: '';
   position: absolute;
@@ -425,6 +527,7 @@ body {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
   transition: transform 0.2s var(--spring);
   cursor: default;
+  display: inline-block; /* FIX: évite le reflow de ligne sur certains Safari */
 }
 
 .flag:hover { transform: scale(1.12); }
@@ -438,34 +541,19 @@ body {
   );
 }
 
-.bar-tagline {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--brown-3);
-  letter-spacing: 1.6px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  display: none;
-}
-
-@media (min-width: 600px) {
-  .bar-tagline { display: block; }
-}
-
 /* ════════════════════════════════════════════════════════════
    SOCIALS POPUP
+
+   FIX: backdrop-filter désactivé sur mobile — trop coûteux
+   et source d'artefacts sur iOS Safari < 16.
    ════════════════════════════════════════════════════════════ */
 .header-social-popup {
   position: fixed;
   top: calc(var(--header-h) + 46px + 12px);
   left: 16px;
   right: auto;
+  /* Fond solide de repli */
   background: var(--glass-heavy);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -473,25 +561,29 @@ body {
   z-index: 1200;
   opacity: 0;
   pointer-events: none;
-  /* PERF: transform + opacity seulement — pas de backdrop-filter en transition */
   transform: translateY(-8px) scale(0.96);
   transition: opacity 0.22s ease, transform 0.28s var(--spring);
-  will-change: transform, opacity;
+  /* FIX: will-change uniquement quand ouvert (via .open class) */
   max-width: calc(100vw - 32px);
-}
-
-@media (max-width: 768px) {
-  .header-social-popup {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: var(--glass-heavy);
-  }
+  /* FIX: backface-visibility empêche le "fantôme" au scale */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .header-social-popup.open {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+  will-change: transform, opacity;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .header-social-popup {
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+    }
+  }
 }
 
 .social-grid {
@@ -517,10 +609,12 @@ body {
   letter-spacing: 0.6px;
   text-transform: uppercase;
   transition: transform 0.22s var(--spring), background 0.22s ease, color 0.22s ease;
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   animation: item-pop 0.36s var(--spring) both;
   animation-delay: calc(var(--i, 0) * 55ms);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes item-pop {
@@ -545,90 +639,32 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════
-   MOBILE BURGER
-   ════════════════════════════════════════════════════════════ */
-.header-burger {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 5px;
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 10px;
-  margin-left: 6px;
-  transition: background var(--transition);
-  flex-shrink: 0;
-}
-
-@media (max-width: 767px) {
-  .header-burger { display: flex; }
-  .header-nav    { display: none; }
-  .header-plus-btn, .header-divider { display: none; }
-}
-
-.header-burger:hover { background: rgba(74, 55, 40, 0.09); }
-
-.burger-line {
-  width: 18px; height: 1.5px;
-  background: var(--brown);
-  border-radius: 2px;
-  /* PERF: transform + opacity — pas de width */
-  transition: transform 0.32s var(--spring), opacity 0.32s ease;
-  transform-origin: center;
-  will-change: transform;
-}
-
-/* Les lignes 1 et 3 sont décalées via margin — pas de width animé */
-.burger-line:nth-child(1) { margin-left: 2px; width: 14px; align-self: flex-start; }
-.burger-line:nth-child(3) { margin-left: 2px; width: 10px; align-self: flex-start; }
-
-.header-burger:hover .burger-line { width: 18px; }
-
-.header-burger.open .burger-line:nth-child(1) {
-  transform: translateY(6.5px) rotate(45deg);
-  width: 18px;
-}
-.header-burger.open .burger-line:nth-child(2) {
-  opacity: 0;
-  transform: scaleX(0);
-}
-.header-burger.open .burger-line:nth-child(3) {
-  transform: translateY(-6.5px) rotate(-45deg);
-  width: 18px;
-}
-
-/* ════════════════════════════════════════════════════════════
    MOBILE DRAWER — ARC
+
+   FIX #1: `overflow: hidden` supprimé — c'est lui qui causait
+   les traits blancs en combinaison avec border-radius + 
+   backdrop-filter sur Safari iOS.
+
+   FIX #2: `-webkit-mask-image` avec radial-gradient.
+   C'est la technique officielle Apple pour forcer un clip
+   propre sur un élément avec backdrop-filter + border-radius.
+   Voir: https://bugs.webkit.org/show_bug.cgi?id=198959
+
+   FIX #3: `::after` grain — le SVG feTurbulence inline est
+   remplacé par un dégradé CSS pur. Le SVG filter inline dans
+   background-image peut déclencher des artefacts GPU sur
+   certains chipsets mobiles Qualcomm/Apple A-series.
+
+   FIX #4: backdrop-filter désactivé sur mobile — performance
+   et artefacts. Un fond opaque quasi-identique visuellement.
    ════════════════════════════════════════════════════════════ */
-.header-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 997;
-  background: rgba(30, 20, 12, 0.22);
-  /* PERF: backdrop-filter sur un élément full-viewport est très lourd.
-     On supprime le blur ici — l'assombrissement seul suffit. */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.36s ease;
-}
-
-.header-drawer-backdrop.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Drawer arc */
 .header-drawer {
   position: fixed;
   top: var(--drawer-top);
   left: -6%;
   right: -6%;
+  /* FIX: fond solide sur mobile, blur seulement desktop */
   background: var(--glass-heavy);
-  /* PERF: backdrop-filter désactivé en mobile par défaut */
   border: 1px solid var(--border-glass);
   border-top: none;
   box-shadow: var(--shadow-arc);
@@ -636,18 +672,21 @@ body {
   border-radius: 0 0 50% 50% / 0 0 52px 52px;
   opacity: 0;
   pointer-events: none;
-  /* PERF: translateY + opacity uniquement — GPU-accelerated */
-  transform: translateY(-108%) translateZ(0);
+  transform: translateY(-108%);
   transition: transform 0.52s var(--spring-soft), opacity 0.30s ease;
-  will-change: transform, opacity;
-  overflow: hidden;
+  /* FIX: NO translateZ(0) ici — interférait avec backdrop-filter Safari */
+  /* FIX: -webkit-mask force le clip arc propre sur Safari */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  /* FIX: NO overflow:hidden */
 }
 
-/* Drawer desktop : activer le blur uniquement là où les perfs le permettent */
-@media (min-width: 768px) {
-  .header-drawer {
-    backdrop-filter: blur(36px) saturate(200%);
-    -webkit-backdrop-filter: blur(36px) saturate(200%);
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 768px) {
+    .header-drawer {
+      backdrop-filter: blur(36px) saturate(200%);
+      -webkit-backdrop-filter: blur(36px) saturate(200%);
+    }
   }
 }
 
@@ -668,20 +707,47 @@ body {
   pointer-events: none;
 }
 
-/* Grain interne */
+/*
+ * FIX: Grain CSS pur au lieu de SVG feTurbulence inline.
+ * feTurbulence dans background-image() était rendu via le CPU
+ * sur certains appareils mobiles et causait des artefacts de
+ * "film gris" visibles sur Safari lors de l'animation.
+ * Le dégradé croisé CSS donne un effet proche, 100% GPU-safe.
+ */
 .header-drawer::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(74, 55, 40, 0.012) 2px,
+      rgba(74, 55, 40, 0.012) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(74, 55, 40, 0.008) 2px,
+      rgba(74, 55, 40, 0.008) 4px
+    );
   pointer-events: none;
-  opacity: 0.5;
+  border-radius: inherit;
 }
 
 .header-drawer.open {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) translateZ(0);
+  transform: translateY(0);
+  /* FIX: will-change appliqué SEULEMENT quand l'élément est en transition */
+  will-change: transform, opacity;
+}
+
+/* Reset will-change une fois animé (libère la couche GPU) */
+.header-drawer.open:not(.animating) {
+  will-change: auto;
 }
 
 .header-drawer-inner {
@@ -710,14 +776,16 @@ body {
   font-weight: 500;
   border-radius: var(--radius-md);
   text-decoration: none;
-  /* PERF: transform au lieu de padding-left — évite un reflow */
+  /* FIX: transform remplace padding-left — évite le reflow */
   transition: background 0.20s ease, color 0.20s ease, transform 0.20s var(--spring);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   cursor: pointer;
   position: relative;
   letter-spacing: 0.1px;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Indicateur gauche */
 .header-drawer-link::before {
   content: '';
   position: absolute;
@@ -727,12 +795,12 @@ body {
   background: var(--orange);
   border-radius: 0 3px 3px 0;
   transition: transform 0.2s var(--spring);
+  pointer-events: none;
 }
 
 .header-drawer-link:hover {
   background: rgba(74, 55, 40, 0.06);
   color: var(--orange);
-  /* PERF: translateX à la place de padding-left — pas de reflow */
   transform: translateX(6px);
 }
 
@@ -768,6 +836,7 @@ body {
   color: var(--brown-3);
   transition: transform var(--transition), color var(--transition);
   line-height: 1;
+  pointer-events: none;
 }
 
 .header-drawer-link:hover .drawer-chevron {
@@ -801,6 +870,7 @@ body {
   cursor: pointer;
   transition: background 0.20s ease, border-color 0.20s ease;
   letter-spacing: 0.2px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-drawer-cta:hover {
@@ -808,9 +878,6 @@ body {
   border-color: rgba(74, 55, 40, 0.25);
 }
 
-.header-drawer-cta:active {
-  background: rgba(74, 55, 40, 0.10);
-}
 .header-drawer-cta svg { width: 14px; height: 14px; }
 
 .header-drawer-socials {
@@ -828,7 +895,9 @@ body {
   color: var(--brown-2);
   text-decoration: none;
   transition: background var(--transition), color var(--transition), transform var(--transition);
-  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-drawer-social:hover {
@@ -841,115 +910,16 @@ body {
 .header-drawer-social svg { width: 15px; height: 15px; }
 
 /* ════════════════════════════════════════════════════════════
-   NOTIFICATION POPUP
-   ════════════════════════════════════════════════════════════ */
-.header-notif-popup {
-  position: absolute;
-  top: calc(var(--header-h) + 10px);
-  right: 16px;
-  width: 296px;
-  background: var(--glass-heavy);
-  backdrop-filter: blur(28px) saturate(170%);
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 16px;
-  z-index: 1100;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-10px) scale(0.97) translateZ(0);
-  transition: opacity 0.22s ease, transform 0.28s var(--spring);
-  will-change: transform, opacity;
-}
-
-@media (max-width: 768px) {
-  .header-notif-popup {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-.header-notif-popup.open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0) scale(1) translateZ(0);
-}
-
-.notif-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.notif-popup-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 12.5px;
-  color: var(--brown);
-  letter-spacing: 0.2px;
-}
-
-.notif-popup-clear {
-  font-size: 11px;
-  color: var(--orange);
-  cursor: pointer;
-  font-weight: 500;
-  background: none; border: none;
-  padding: 0;
-  transition: opacity var(--transition);
-}
-
-.notif-popup-clear:hover { opacity: 0.7; }
-
-.notif-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background var(--transition);
-  border-bottom: 1px solid rgba(74, 55, 40, 0.06);
-}
-
-.notif-item:last-child { border-bottom: none; }
-.notif-item:hover { background: rgba(74, 55, 40, 0.05); }
-
-.notif-item-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--orange);
-  flex-shrink: 0;
-  margin-top: 5px;
-  box-shadow: 0 0 0 2px rgba(232, 88, 10, 0.15);
-}
-
-.notif-item-dot.read { background: rgba(74, 55, 40, 0.2); box-shadow: none; }
-
-.notif-item-text {
-  font-size: 12px;
-  color: var(--brown);
-  line-height: 1.5;
-}
-
-.notif-item-time {
-  font-size: 10.5px;
-  color: var(--brown-3);
-  margin-top: 2px;
-}
-
-/* ════════════════════════════════════════════════════════════
    INFO MODAL
+
+   FIX: backdrop-filter désactivé sur mobile.
+   Le fond semi-transparent foncé suffit visuellement.
    ════════════════════════════════════════════════════════════ */
 .header-info-overlay {
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(28, 18, 10, 0.48);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(28, 18, 10, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -957,11 +927,13 @@ body {
   animation: fadeIn 0.22s ease-out;
 }
 
-@media (max-width: 768px) {
-  .header-info-overlay {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(28, 18, 10, 0.65);
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .header-info-overlay {
+      background: rgba(28, 18, 10, 0.48);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
   }
 }
 
@@ -976,7 +948,8 @@ body {
     0 32px 80px rgba(74, 55, 40, 0.22),
     0 0 0 1px rgba(255, 255, 255, 0.75) inset;
   animation: slideUp 0.40s var(--spring);
-  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .header-info-modal::before {
@@ -987,6 +960,7 @@ body {
   background: linear-gradient(90deg, transparent, var(--orange) 40%, var(--orange-2) 60%, transparent);
   border-radius: 999px;
   opacity: 0.75;
+  pointer-events: none;
 }
 
 @keyframes fadeIn {
@@ -1011,6 +985,7 @@ body {
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background var(--transition), color var(--transition), transform var(--transition);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-info-close:hover {
@@ -1102,42 +1077,39 @@ body {
 }
 
 @media (max-width: 480px) {
-  .header-info-modal { padding: 36px 22px 30px; border-radius: 20px; }
-  .header-info-title { font-size: 22px; }
+  .header-info-modal   { padding: 36px 22px 30px; border-radius: 20px; }
+  .header-info-title   { font-size: 22px; }
   .header-info-overlay { padding: 12px; }
 }
 
 /* ════════════════════════════════════════════════════════════
    SEARCH OVERLAY
+
+   FIX: backdrop-filter mobile désactivé (même raison que modal).
    ════════════════════════════════════════════════════════════ */
 .header-search-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(48, 32, 18, 0.32);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(48, 32, 18, 0.55);
   z-index: 1600;
   display: none;
   align-items: flex-start;
   justify-content: center;
   padding-top: calc(var(--header-h) + 40px);
-  animation: fade-in 0.18s ease;
+  animation: fadeIn 0.18s ease;
 }
 
-@media (max-width: 768px) {
-  .header-search-overlay {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(48, 32, 18, 0.55);
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .header-search-overlay {
+      background: rgba(48, 32, 18, 0.32);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
   }
 }
 
 .header-search-overlay.open { display: flex; }
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 
 .header-search-box {
   width: 100%;
@@ -1147,13 +1119,14 @@ body {
   border-radius: var(--radius-lg);
   box-shadow:
     var(--shadow-lg),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 15px 20px;
   animation: search-pop 0.30s var(--spring) forwards;
-  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   margin: 0 20px;
 }
 
@@ -1176,6 +1149,8 @@ body {
   font-size: 15px;
   color: var(--brown);
   outline: none;
+  /* FIX: évite le zoom automatique sur iOS (doit être ≥ 16px ou forcer 16px) */
+  font-size: max(16px, 15px);
 }
 
 .header-search-input::placeholder { color: var(--brown-3); }
@@ -1189,10 +1164,11 @@ body {
   padding: 3px 8px;
   font-family: 'DM Sans', sans-serif;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ════════════════════════════════════════════════════════════
-   REDUCED MOTION — respecter les préférences système
+   REDUCED MOTION
    ════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *,

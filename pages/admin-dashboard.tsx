@@ -1175,7 +1175,7 @@ export default function AdminDashboard() {
           <header className="mob-topbar">
             <div style={{ display:"flex",alignItems:"center",gap:"0.625rem" }}>
               <div className="mob-mobile-logo" aria-hidden="true">
-                <Image src="/logo.jpeg" alt="FiSAFi" width={72} height={72} priority />
+                <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi" width={72} height={72} priority />
               </div>
               <div className="mob-logo">Fi<span>SAFI</span></div>
             </div>

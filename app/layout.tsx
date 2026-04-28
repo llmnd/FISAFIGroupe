@@ -40,11 +40,11 @@ export const metadata: Metadata = {
       "Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité. 10+ années d'expertise en Afrique de l'Ouest.",
     images: [
       {
-        url: "https://fisafigroupe.com/logo.jpeg",
-        width: 1200,
-        height: 630,
+        url: "https://fisafigroupe.com/favicon/web-app-manifest-512x512.png",
+        width: 512,
+        height: 512,
         alt: "FiSAFi Groupe - Cabinet IT Dakar",
-        type: "image/jpeg",
+        type: "image/png",
       },
     ],
     siteName: "FiSAFi Groupe",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
     description:
       "Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité et formations certifiantes à Dakar, Sénégal",
-    images: ["https://fisafigroupe.com/logo.jpeg"],
+    images: ["https://fisafigroupe.com/favicon/web-app-manifest-512x512.png"],
     creator: "@fisafigroupe",
   },
   /* viewport et themeColor se gèrent via l'export viewport/themeColor dans Next 13+ */
@@ -115,9 +115,9 @@ export default function RootLayout({
     url: "https://fisafigroupe.com",
     logo: {
       "@type": "ImageObject",
-      url: "https://fisafigroupe.com/logo.jpeg",
-      width: 1200,
-      height: 630,
+      url: "https://fisafigroupe.com/favicon/web-app-manifest-512x512.png",
+      width: 512,
+      height: 512,
     },
     description:
       "Cabinet de conseil en technologie, ingénierie, formation et import-export basé à Dakar, Sénégal.",

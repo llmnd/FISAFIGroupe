@@ -318,15 +318,15 @@ export default function FormationPage() {
         <meta property="og:description" content="Formations professionnelles en IT, réseaux et cybersecurité" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fisafigroupe.com/training" />
-        <meta property="og:image" content="https://fisafigroupe.com/logo.jpeg" />
-        <meta property="og:image:width" content="1200" />
+        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Formations IT | FiSAFi Groupe" />
         <meta name="twitter:description" content="Formations certifiantes en IT et cybersecurité" />
-        <meta name="twitter:image" content="https://fisafigroupe.com/logo.jpeg" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/favicon.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </Head>
