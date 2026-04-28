@@ -39,7 +39,7 @@ const DEFAULT_SLIDES: Slide[] = [
   { src: "https://i.pinimg.com/originals/79/a6/cc/79a6cc3163bcd2d964488d8ae62d03df.gif", alt: "FiSAFi – transformation",
     eyebrow: "Transformation Digitale",
     desc: "Accompagnement sur mesure pour faire évoluer votre SI vers les standards de demain." },
-  { src: "https://i.pinimg.com/1200x/23/1f/43/231f436e0565a056debf3c3330a20ff4.jpg", alt: "FiSAFi – services managés",
+  { src: "https://i.pinimg.com/736x/7b/07/1b/7b071b6ed5d8f96c3f09728987ff2a8c.jpg", alt: "FiSAFi – services managés",
     eyebrow: "Services Managés 24/7",
     desc: "Une équipe dédiée disponible à toute heure pour assurer la continuité de vos opérations." },
   { src: "https://i.pinimg.com/originals/1b/bd/90/1bbd90eb39091d1e84a018aae664a15d.gif", alt: "FiSAFi – solutions",
