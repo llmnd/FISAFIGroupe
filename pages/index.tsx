@@ -110,8 +110,9 @@ export default function Home() {
         <meta property="og:url" content="https://fisafigroupe.com" />
         <meta property="og:title" content="FiSAFi Groupe — Expert Fibre Optique, Réseaux & Télécoms | Dakar" />
         <meta property="og:description" content="Spécialiste fibre optique WDM, déploiement aérien/souterrain, suivi de travaux, réseaux & télécoms. Cabinet IT à Dakar avec 10+ ans d'expertise." />
-        <meta property="og:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
-        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image" content="https://fisafigroupe.com/share.jpeg" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="FiSAFi Groupe" />
 
@@ -119,7 +120,7 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="FiSAFi Groupe | Expert Fibre Optique & Télécoms Dakar" />
         <meta name="twitter:description" content="Expert WDM, déploiement fibre optique aérien/souterrain, réseaux & télécoms à Dakar, Sénégal." />
-        <meta name="twitter:image" content="https://fisafigroupe.com/favicon/web-app-manifest-512x512.png" />
+        <meta name="twitter:image" content="https://fisafigroupe.com/share.jpeg" />
         <meta name="twitter:creator" content="@fisafigroupe" />
       </Head>
 
