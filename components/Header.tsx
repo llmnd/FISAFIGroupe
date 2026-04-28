@@ -379,7 +379,7 @@ export default function Header() {
         className={`header-drawer${mobileOpen ? " open" : ""}`}
         aria-label="Menu mobile"
         aria-hidden={!mobileOpen}
-        inert={!mobileOpen ? "inert" : undefined}
+        inert={!mobileOpen ? true : undefined}
       >
         <div className="header-drawer-inner">
           <ul className="header-drawer-nav">
