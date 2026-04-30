@@ -108,7 +108,7 @@ export default function Home() {
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:url" content="https://fisafigroupe.com" />
-        <meta property="og:title" content="FiSAFi Groupe — Expert Fibre Optique, Réseaux & Télécoms | Dakar" />
+        <meta property="og:title" content="FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar" />
         <meta property="og:description" content="Spécialiste fibre optique, déploiement aérien/souterrain, suivi de travaux, réseaux & télécoms. Cabinet IT à Dakar avec 10+ ans d'expertise." />
         <meta property="og:image" content="https://fisafigroupe.com/share.jpeg" />
         <meta property="og:image:type" content="image/jpeg" />
