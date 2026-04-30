@@ -1,5 +1,11 @@
 /* ─── NAVIGATION & HEADER ─── */
 
+/* ════════════════════════════════════════════════════════════
+   FIX v3.2: Safari compositing artifacts
+   ✓ Removed unconditional backdrop-filter
+   ✓ Added @supports check (desktop only)
+   ✓ Added isolation:auto on mobile
+   ════════════════════════════════════════════════════════════ */
 .h-nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -10,12 +16,29 @@
   justify-content: space-between;
   padding: 0 1.25rem;
   background: rgba(245,244,240,0.98);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-bottom: 0.5px solid var(--line);
 }
 
-/* Social & Flags Bar */
+/* Desktop: backdrop-filter justified by visual effect */
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .h-nav {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  }
+}
+
+/* Mobile: prevent stacking context artifact */
+@media (max-width: 768px) {
+  .h-nav {
+    isolation: auto;
+  }
+}
+
+/* Social & Flags Bar 
+   FIX v3.2: backdrop-filter behind @supports + mobile isolation
+ */
 .header-social-flags-bar {
   position: relative;
   top: 0;
@@ -24,13 +47,28 @@
   z-index: 199;
   height: 50px;
   background: rgba(245,244,240,0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border-bottom: 0.5px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity 0.3s ease;
+}
+
+/* Desktop: glass effect */
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .header-social-flags-bar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  }
+}
+
+/* Mobile: prevent GPU seams */
+@media (max-width: 768px) {
+  .header-social-flags-bar {
+    isolation: auto;
+  }
 }
 
 .bar-content {
@@ -255,7 +293,6 @@
   right: 0;
   min-width: 190px;
   background: rgba(245,244,240,0.98);
-  backdrop-filter: blur(12px);
   border-top: 2px solid var(--blue);
   border-bottom: 0.5px solid var(--line);
   border-left: 0.5px solid var(--line);
@@ -264,6 +301,15 @@
   display: none; 
   flex-direction: column; 
   z-index: 300;
+}
+
+/* Desktop only: glass effect */
+@supports (backdrop-filter: blur(1px)) {
+  @media (min-width: 769px) {
+    .h-dropdown {
+      backdrop-filter: blur(12px);
+    }
+  }
 }
 
 .h-dropdown.open { 

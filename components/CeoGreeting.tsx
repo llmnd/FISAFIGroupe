@@ -46,7 +46,6 @@ const CEO_STYLES = `
     position: fixed;
     inset: 0;
     background: rgba(5,15,40,0.7);
-    backdrop-filter: blur(6px);
     z-index: 999999;
     display: flex;
     align-items: center;
@@ -55,6 +54,15 @@ const CEO_STYLES = `
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    /* FIX v3.2: @supports guard for backdrop-filter + mobile override */
+    isolation: auto;
+  }
+  @supports (backdrop-filter: blur(1px)) {
+    @media (min-width: 769px) {
+      .ceo-modal-overlay {
+        backdrop-filter: blur(6px);
+      }
+    }
   }
   .ceo-modal-overlay.open {
     opacity: 1;

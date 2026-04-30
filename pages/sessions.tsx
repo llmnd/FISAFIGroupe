@@ -959,10 +959,10 @@ export default function SessionsPage() {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
             z-index: 40;
             animation: fadeIn 0.2s ease;
           }
+          @supports(backdrop-filter:blur(1px)){@media(min-width:769px){.sheet-backdrop{backdrop-filter:blur(4px);}}}
           .bottom-sheet {
             display: flex;
             flex-direction: column;

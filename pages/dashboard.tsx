@@ -597,14 +597,15 @@ export default function DashboardPage() {
           }
           .sidebar-logout:hover { background:rgba(229,90,0,0.3); color:#fff; }
 
-          /* ── TOPBAR (mobile) ── */
+          /* ══ TOPBAR (mobile) ══ FIX v3.2: @supports guard for backdrop-filter */
           .dash-topbar {
             position:sticky; top:0; z-index:30;
             display:flex; align-items:center; justify-content:space-between;
             padding:0 1rem; height:56px;
-            background:rgba(245,244,240,0.95); backdrop-filter:blur(12px);
+            background:rgba(245,244,240,0.95);
             border-bottom:0.5px solid var(--line);
           }
+          @supports(backdrop-filter:blur(1px)){@media(min-width:900px){.dash-topbar{backdrop-filter:blur(12px);}}}
           @media(min-width:900px) { .dash-topbar { display:none; } }
           .topbar-logo { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); }
           .topbar-logo span { color:var(--orange); }

@@ -94,7 +94,8 @@ const LOGIN_CSS = `
   .l-headline em { font-style: italic; color: rgba(255,255,255,0.38); }
   .l-body { font-size: 12.5px; line-height: 1.9; color: rgba(255,255,255,0.38); font-weight: 300; max-width: 30ch; animation: fadeUp 0.9s 0.5s both; }
   .l-stats { display: flex; gap: 1rem; margin-top: 2.5rem; animation: fadeUp 0.9s 0.65s both; }
-  .l-stat { border: 0.5px solid rgba(255,255,255,0.1); padding: 0.6rem 1rem; backdrop-filter: blur(8px); background: rgba(255,255,255,0.03); }
+  .l-stat { border: 0.5px solid rgba(255,255,255,0.1); padding: 0.6rem 1rem; background: rgba(255,255,255,0.03); }
+  @supports(backdrop-filter:blur(1px)){.l-stat{backdrop-filter:blur(8px);}}
   .l-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: rgba(255,255,255,0.85); font-weight: 300; line-height: 1; margin-bottom: 4px; }
   .l-stat-label { font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
   .l-sig { display: flex; align-items: center; justify-content: space-between; border-top: 0.5px solid rgba(255,255,255,0.07); padding-top: 1.25rem; animation: fadeUp 0.9s 0.8s both; }

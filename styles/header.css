@@ -1,37 +1,27 @@
 /* ═══════════════════════════════════════════════════════════
-   FISAFI GROUPE — HEADER v3.0
+   FISAFI GROUPE — HEADER v3.1
    Safari-safe · Performance-first · Glass Morphism
-   ═══════════════════════════════════════════════════════════
 
-   SAFARI MOBILE FIXES vs v2.2:
+   FIXES vs v3.0:
    ────────────────────────────
-   1. `overflow: hidden` retiré du .header  → était la cause #1
-      des traits blancs au rendu des blurs.
-   2. `backdrop-filter` gardé UNIQUEMENT sur le header shell ;
-      tous les overlays mobiles repassent en fond solide opaque.
-   3. `.header-drawer` : `overflow: hidden` supprimé, ajout de
-      `-webkit-mask-image` pour forcer un clipping propre sur
-      l'arc border-radius — la technique la plus fiable sur Safari.
-   4. `::after` grain : le `feTurbulence` SVG inline est remplacé
-      par un dégradé CSS → pas de parsing SVG, pas d'artefacts
-      de filtre sur certains GPU mobiles.
-   5. `will-change` limité aux éléments qui animent EN CE MOMENT
-      (drawer ouvert, popup ouvert). Sur les éléments au repos,
-      `will-change` crée des couches GPU inutiles → mémoire + glitches.
-   6. `transform: translateZ(0)` retiré du drawer — interférait
-      avec `backdrop-filter` dans certains contextes Safari.
-   7. `isolation: isolate` sur `.header` → crée un stacking context
-      propre sans promouvoir de couche GPU.
-   8. `@supports (backdrop-filter: blur(1px))` — les navigateurs
-      qui ne supportent pas le blur reçoivent un fond opaque propre.
-
-   PERF vs v2.2:
-   ─────────────
-   • scrollPct n'est PLUS un état React → 0 re-render au scroll.
-     La largeur de la barre et l'opacité de la barre sociale sont
-     écrites directement via refs (requestAnimationFrame).
-   • `will-change` réduit de ~12 éléments à 3 max simultanés.
-   • Backdrop-filter concurrent : de 5 à 1 sur mobile.
+   1. `isolation: isolate` désactivé sur mobile → était la cause
+      des "traits" noirs au toucher sur Safari iOS. Sans
+      backdrop-filter actif, isolation créait une couche composite
+      dont les bords étaient visibles au touch event.
+   2. `will-change: opacity` retiré du base style de la barre
+      sociale → la couche GPU persistante laissait un joint
+      visible. RAF écrit directement sur le DOM = pas besoin de
+      will-change en permanence.
+   3. `transform: translateZ(0)` ajouté sur `.header-progress-fill`
+      uniquement → isole la barre orange dans sa propre couche,
+      évite le "seam" entre header et contenu sans effets de bord
+      (pas de backdrop-filter enfant ici, donc pas de conflit).
+   4. `contain: layout style` sur les éléments statiques → réduit
+      les calculs de layout inutiles sur scroll.
+   5. `@layer` retiré (compat Next.js App Router).
+   6. Toutes les transitions `color/background` groupées sur les
+      propriétés animables uniquement (évite de déclencher
+      composite pour des peint-only props).
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Tokens ─────────────────────────────────────────────── */
@@ -80,22 +70,21 @@ body {
 /* ════════════════════════════════════════════════════════════
    HEADER SHELL
 
-   FIX: `overflow: hidden` SUPPRIMÉ — c'était la principale
-   cause des "traits" sur Safari mobile. Avec overflow:hidden
-   + backdrop-filter + border-radius, Safari crée une couche
-   de compositing séparée mais ne clip pas proprement le blur,
-   ce qui laisse un artefact de 1px sur les bords.
+   FIX v3.1: `isolation: isolate` retiré du bloc de base et
+   restreint au desktop uniquement (où backdrop-filter est actif
+   et justifie le stacking context).
 
-   FIX: `isolation: isolate` remplace `will-change: transform`
-   pour créer le stacking context — même résultat, sans
-   promotion de couche GPU.
+   Sur mobile sans backdrop-filter :
+   - isolation + position:fixed + touch event = traits noirs
+     visibles à l'intersection des tuiles de rendu GPU.
+   - Solution : isolation:auto sur mobile, le stacking context
+     est géré par z-index seul.
    ════════════════════════════════════════════════════════════ */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  /* Fond de repli (browsers sans backdrop-filter support) */
   background: rgba(245, 240, 232, 0.97);
   border-bottom: 1px solid var(--border-glass);
   box-shadow: var(--shadow-md);
@@ -103,13 +92,24 @@ body {
   align-items: center;
   padding: 0 24px;
   gap: 0;
-  /* FIX: isolation au lieu de will-change + overflow */
-  isolation: isolate;
+  /* FIX v3.1: isolation seulement sur desktop (voir @media ci-dessous) */
 }
 
-/* Backdrop-filter uniquement si le navigateur le supporte
-   correctement — évite le fallback cassé de certaines versions
-   de WebKit qui activent la feature mais la rendent mal */
+/* Desktop uniquement : backdrop-filter justifie isolation */
+@media (min-width: 769px) {
+  .header {
+    isolation: isolate;
+  }
+}
+
+/* FIX v3.1: mobile = isolation:auto → supprime la couche GPU
+   responsable des traits noirs au toucher sur Safari iOS */
+@media (max-width: 768px) {
+  .header {
+    isolation: auto;
+  }
+}
+
 @supports (backdrop-filter: blur(1px)) {
   .header {
     background: var(--glass);
@@ -129,6 +129,8 @@ body {
   flex-shrink: 0;
   margin-right: 32px;
   cursor: pointer;
+  /* contain: layout → empêche le logo d'affecter le layout global */
+  contain: layout;
 }
 
 .header-logo-image {
@@ -137,9 +139,7 @@ body {
   box-shadow:
     0 2px 10px rgba(74, 55, 40, 0.18),
     0 0 0 2px rgba(255, 255, 255, 0.6);
-  /* FIX: transform seul — pas de filter animé */
   transition: transform 0.35s var(--spring);
-  /* FIX: backface-visibility évite le flip "fantôme" sur Safari */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -153,7 +153,11 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    PROGRESS BAR
-   Placée en dehors du header pour éviter le clipping
+
+   FIX v3.1: `transform: translateZ(0)` sur le fill uniquement.
+   Isole la barre dans sa propre couche composite → supprime le
+   "seam" de 1px entre le header et le contenu de la page lors
+   du scroll. Safe ici car pas de backdrop-filter enfant.
    ════════════════════════════════════════════════════════════ */
 .header-progress {
   position: absolute;
@@ -161,16 +165,19 @@ body {
   height: 2px;
   background: rgba(74, 55, 40, 0.06);
   pointer-events: none;
+  /* contain: strict → empêche ce div d'influencer le layout parent */
+  contain: strict;
 }
 
 .header-progress-fill {
   height: 100%;
-  width: 0%; /* valeur initiale — écrite via ref */
+  width: 0%;
   background: linear-gradient(90deg, var(--orange), var(--orange-2));
   border-radius: 0 2px 2px 0;
-  /* FIX: will-change ici SEULEMENT car cet élément change à chaque scroll */
   will-change: width;
-  /* FIX: transition désactivée — la valeur est déjà lissée par le RAF */
+  /* FIX v3.1: couche dédiée → évite le "seam" header/page */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -196,6 +203,7 @@ body {
   text-decoration: none;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
+  /* Sépare color (paint) de background (composite) */
   transition: color var(--transition);
   position: relative;
   cursor: pointer;
@@ -247,6 +255,8 @@ body {
   border-radius: var(--radius-pill);
   padding: 4px 6px;
   box-shadow: inset 0 1px 2px rgba(74, 55, 40, 0.04);
+  /* contain: layout → le groupe d'actions n'affecte pas le layout header */
+  contain: layout;
 }
 
 .header-icon-btn {
@@ -257,13 +267,14 @@ body {
   color: var(--brown-2);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  /* Uniquement transform → compositor thread, pas de layout/paint */
   transition: background var(--transition), color var(--transition), transform var(--transition);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   position: relative;
   flex-shrink: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent; /* FIX: supprime le flash bleu sur iOS */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-icon-btn:hover {
@@ -415,7 +426,7 @@ body {
   background: var(--brown);
   height: 1.5px;
   width: 18px;
-  /* FIX: transform + opacity — NO width animation (triggers layout) */
+  /* transform + opacity uniquement → compositor thread */
   transition: transform 0.32s var(--spring), opacity 0.32s ease;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
@@ -442,27 +453,27 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    SOCIAL / FLAGS BAR
-   Pas de position:fixed — suit le flux du document.
-   L'opacité est écrite via ref (RAF), pas de useState.
+
+   FIX v3.1: `will-change: opacity` retiré du sélecteur de base.
+   Le RAF écrit directement sur le DOM → aucun hint GPU nécessaire.
+   Ajouter will-change en permanence ici créait une couche composite
+   dont le bord était visible comme trait noir au toucher sur iOS.
    ════════════════════════════════════════════════════════════ */
 .header-social-flags-bar {
-  position: relative; /* FIX: était "static" avec top: déclaré = no-op CSS */
+  position: relative;
   z-index: 998;
   height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fond solide de base — le blur est en enhancement progressif */
   background: rgba(241, 235, 222, 0.97);
   border-bottom: 1px solid rgba(74, 55, 40, 0.08);
   box-shadow: 0 4px 16px rgba(74, 55, 40, 0.05);
-  /* will-change: opacity — car la valeur change au scroll via ref */
-  will-change: opacity;
+  /* FIX v3.1: will-change retiré d'ici. Plus de couche GPU permanente. */
 }
 
 @supports (backdrop-filter: blur(1px)) {
   @media (min-width: 769px) {
-    /* Blur uniquement desktop — trop coûteux sur mobile */
     .header-social-flags-bar {
       background: linear-gradient(
         180deg,
@@ -527,7 +538,7 @@ body {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
   transition: transform 0.2s var(--spring);
   cursor: default;
-  display: inline-block; /* FIX: évite le reflow de ligne sur certains Safari */
+  display: inline-block;
 }
 
 .flag:hover { transform: scale(1.12); }
@@ -543,16 +554,12 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    SOCIALS POPUP
-
-   FIX: backdrop-filter désactivé sur mobile — trop coûteux
-   et source d'artefacts sur iOS Safari < 16.
    ════════════════════════════════════════════════════════════ */
 .header-social-popup {
   position: fixed;
   top: calc(var(--header-h) + 46px + 12px);
   left: 16px;
   right: auto;
-  /* Fond solide de repli */
   background: var(--glass-heavy);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
@@ -563,9 +570,7 @@ body {
   pointer-events: none;
   transform: translateY(-8px) scale(0.96);
   transition: opacity 0.22s ease, transform 0.28s var(--spring);
-  /* FIX: will-change uniquement quand ouvert (via .open class) */
   max-width: calc(100vw - 32px);
-  /* FIX: backface-visibility empêche le "fantôme" au scale */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -574,6 +579,7 @@ body {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+  /* will-change seulement pendant l'animation d'ouverture */
   will-change: transform, opacity;
 }
 
@@ -608,7 +614,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  transition: transform 0.22s var(--spring), background 0.22s ease, color 0.22s ease;
+  transition: transform 0.22s var(--spring), background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   animation: item-pop 0.36s var(--spring) both;
@@ -640,30 +646,12 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    MOBILE DRAWER — ARC
-
-   FIX #1: `overflow: hidden` supprimé — c'est lui qui causait
-   les traits blancs en combinaison avec border-radius + 
-   backdrop-filter sur Safari iOS.
-
-   FIX #2: `-webkit-mask-image` avec radial-gradient.
-   C'est la technique officielle Apple pour forcer un clip
-   propre sur un élément avec backdrop-filter + border-radius.
-   Voir: https://bugs.webkit.org/show_bug.cgi?id=198959
-
-   FIX #3: `::after` grain — le SVG feTurbulence inline est
-   remplacé par un dégradé CSS pur. Le SVG filter inline dans
-   background-image peut déclencher des artefacts GPU sur
-   certains chipsets mobiles Qualcomm/Apple A-series.
-
-   FIX #4: backdrop-filter désactivé sur mobile — performance
-   et artefacts. Un fond opaque quasi-identique visuellement.
    ════════════════════════════════════════════════════════════ */
 .header-drawer {
   position: fixed;
   top: var(--drawer-top);
   left: -6%;
   right: -6%;
-  /* FIX: fond solide sur mobile, blur seulement desktop */
   background: var(--glass-heavy);
   border: 1px solid var(--border-glass);
   border-top: none;
@@ -674,11 +662,8 @@ body {
   pointer-events: none;
   transform: translateY(-108%);
   transition: transform 0.52s var(--spring-soft), opacity 0.30s ease;
-  /* FIX: NO translateZ(0) ici — interférait avec backdrop-filter Safari */
-  /* FIX: -webkit-mask force le clip arc propre sur Safari */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
   mask-image: radial-gradient(white, black);
-  /* FIX: NO overflow:hidden */
 }
 
 @supports (backdrop-filter: blur(1px)) {
@@ -707,13 +692,7 @@ body {
   pointer-events: none;
 }
 
-/*
- * FIX: Grain CSS pur au lieu de SVG feTurbulence inline.
- * feTurbulence dans background-image() était rendu via le CPU
- * sur certains appareils mobiles et causait des artefacts de
- * "film gris" visibles sur Safari lors de l'animation.
- * Le dégradé croisé CSS donne un effet proche, 100% GPU-safe.
- */
+/* Grain CSS pur — pas de SVG feTurbulence (artefacts GPU mobile) */
 .header-drawer::after {
   content: '';
   position: absolute;
@@ -741,11 +720,10 @@ body {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
-  /* FIX: will-change appliqué SEULEMENT quand l'élément est en transition */
   will-change: transform, opacity;
 }
 
-/* Reset will-change une fois animé (libère la couche GPU) */
+/* Libère la couche GPU une fois l'animation terminée */
 .header-drawer.open:not(.animating) {
   will-change: auto;
 }
@@ -776,7 +754,7 @@ body {
   font-weight: 500;
   border-radius: var(--radius-md);
   text-decoration: none;
-  /* FIX: transform remplace padding-left — évite le reflow */
+  /* transform remplace padding-left → évite le reflow */
   transition: background 0.20s ease, color 0.20s ease, transform 0.20s var(--spring);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -894,7 +872,7 @@ body {
   cursor: pointer;
   color: var(--brown-2);
   text-decoration: none;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
+  transition: background var(--transition), color var(--transition), transform var(--transition), border-color var(--transition);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   -webkit-tap-highlight-color: transparent;
@@ -911,9 +889,6 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    INFO MODAL
-
-   FIX: backdrop-filter désactivé sur mobile.
-   Le fond semi-transparent foncé suffit visuellement.
    ════════════════════════════════════════════════════════════ */
 .header-info-overlay {
   position: fixed;
@@ -1084,8 +1059,6 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    SEARCH OVERLAY
-
-   FIX: backdrop-filter mobile désactivé (même raison que modal).
    ════════════════════════════════════════════════════════════ */
 .header-search-overlay {
   position: fixed;
@@ -1146,11 +1119,10 @@ body {
   border: none;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  /* min 16px → évite le zoom auto sur iOS */
+  font-size: max(16px, 15px);
   color: var(--brown);
   outline: none;
-  /* FIX: évite le zoom automatique sur iOS (doit être ≥ 16px ou forcer 16px) */
-  font-size: max(16px, 15px);
 }
 
 .header-search-input::placeholder { color: var(--brown-3); }

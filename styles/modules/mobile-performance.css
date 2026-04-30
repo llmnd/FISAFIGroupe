@@ -3,39 +3,53 @@
    Désactiver les effets coûteux sur mobile
    ═══════════════════════════════════════════════════════════ */
 
-/* Désactiver tous les backdrop-filter sur mobile (très lourd GPU) */
+/* ════════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE OPTIMIZATIONS v3.2
+   FIX: Safer @supports-aware overrides to prevent GPU seams
+   ════════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
+  /* Only strip backdrop-filter on elements that had @supports wrapper */
   .header,
-  .header-nav-drawer,
+  .h-nav,
+  .header-social-flags-bar,
+  .h-dropdown,
   .menu-backdrop,
-  .header-search-box,
-  .search-query-backdrop,
-  .header-profile-backdrop,
-  .overlay-blur,
-  [style*="backdrop-filter"] {
+  .header-nav-drawer {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Simplifier les backgrounds au lieu d'utiliser blur */
-  .header {
-    background: rgba(255, 255, 255, 0.95) !important;
+  /* Simplifier les backgrounds (already solid on mobile from @supports) */
+  .header,
+  .h-nav {
+    background: rgba(245, 244, 240, 0.98) !important;
   }
 
-  /* Enlever les will-change qui saturrent la mémoire GPU */
-  [style*="will-change"] {
+  /* Remove persistent will-change (use only during animations) */
+  .header-progress-fill,
+  .header-social-popup.open {
+    will-change: width, transform, opacity;
+  }
+
+  /* Static elements: no will-change */
+  header, nav, [class*="fixed"], [class*="sticky"] {
     will-change: auto !important;
   }
 
-  /* Désactiver les box-shadows lourds */
+  /* Reduce heavy shadows only on interactive elements */
   .header,
   .service-modal,
   .floating-logo-btn {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
   }
 
-  /* Optimiser les transitions sur mobile */
-  * {
+  /* Moderate transition speed (not all elements) */
+  .h-nav,
+  .h-dropdown,
+  .h-mobile-menu,
+  .header-burger,
+  .burger-line {
     transition-duration: 0.2s !important;
   }
 }

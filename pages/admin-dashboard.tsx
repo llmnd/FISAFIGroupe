@@ -877,8 +877,9 @@ export default function AdminDashboard() {
           .desk-only{display:none;}
           @media(min-width:900px){.mob-only{display:none;}.desk-only{display:block;}}
 
-          /* ── ACTION SHEET ── */
-          .sheet-backdrop{position:fixed;inset:0;z-index:200;background:rgba(11,24,41,0.45);backdrop-filter:blur(6px);animation:fadeIn 0.2s;}
+          /* ══ ACTION SHEET ══ FIX v3.2: @supports guard for backdrop-filter */
+          .sheet-backdrop{position:fixed;inset:0;z-index:200;background:rgba(11,24,41,0.45);animation:fadeIn 0.2s;}
+          @supports(backdrop-filter:blur(1px)){@media(min-width:769px){.sheet-backdrop{backdrop-filter:blur(6px);}}}
           .sheet{
             position:fixed;bottom:0;left:0;right:0;z-index:201;
             background:var(--white);
@@ -939,8 +940,9 @@ export default function AdminDashboard() {
           .fab svg{width:19px;height:19px;}
           @media(min-width:900px){.fab{bottom:2rem;right:2.5rem;}}
 
-          /* ── MODAL ── */
-          .modal-backdrop{position:fixed;inset:0;z-index:200;background:rgba(11,24,41,0.45);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s;}
+          /* ══ MODAL ══ FIX v3.2: @supports guard for backdrop-filter */
+          .modal-backdrop{position:fixed;inset:0;z-index:200;background:rgba(11,24,41,0.45);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s;}
+          @supports(backdrop-filter:blur(1px)){@media(min-width:769px){.modal-backdrop{backdrop-filter:blur(6px);}}}
           @media(min-width:600px){.modal-backdrop{align-items:center;}}
           .modal{
             background:var(--white);border-top:2px solid var(--blue);

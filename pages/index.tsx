@@ -93,12 +93,12 @@ export default function Home() {
         {/* ✅ DESCRIPTION — le texte qui s'affiche sous le titre dans Google (~155 car.) */}
         <meta
           name="description"
-          content="Expert réseau & télécoms, spécialiste fibre optique WDM. Déploiement fibre aérien & souterrain, suivi/contrôle de travaux, cybersécurité, cloud. 10+ ans d'expertise à Dakar, Sénégal."
+          content="Expert réseau & télécoms, spécialiste fibre optique. Déploiement fibre aérien & souterrain, suivi/contrôle de travaux, cybersécurité, cloud. 10+ ans d'expertise à Dakar, Sénégal."
         />
 
         <meta
           name="keywords"
-          content="expert fibre optique Dakar, télécoms Sénégal, déploiement fibre optique aérien souterrain, expert réseau WDM, ingénierie réseaux Dakar, suivi travaux fibre optique, cabinet IT Dakar, cybersécurité Sénégal, infrastructure cloud, formation IT, consultant télécoms Afrique, FTTH FTTX Sénégal"
+          content="expert fibre optique Dakar, télécoms Sénégal, déploiement fibre optique aérien souterrain, expert réseau, ingénierie réseaux Dakar, suivi travaux fibre optique, cabinet IT Dakar, cybersécurité Sénégal, infrastructure cloud, formation IT, consultant télécoms Afrique, FTTH FTTX Sénégal"
         />
 
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
@@ -109,7 +109,7 @@ export default function Home() {
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:url" content="https://fisafigroupe.com" />
         <meta property="og:title" content="FiSAFi Groupe — Expert Fibre Optique, Réseaux & Télécoms | Dakar" />
-        <meta property="og:description" content="Spécialiste fibre optique WDM, déploiement aérien/souterrain, suivi de travaux, réseaux & télécoms. Cabinet IT à Dakar avec 10+ ans d'expertise." />
+        <meta property="og:description" content="Spécialiste fibre optique, déploiement aérien/souterrain, suivi de travaux, réseaux & télécoms. Cabinet IT à Dakar avec 10+ ans d'expertise." />
         <meta property="og:image" content="https://fisafigroupe.com/share.jpeg" />
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:width" content="1200" />
@@ -119,7 +119,7 @@ export default function Home() {
         {/* ✅ Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="FiSAFi Groupe | Expert Fibre Optique & Télécoms Dakar" />
-        <meta name="twitter:description" content="Expert WDM, déploiement fibre optique aérien/souterrain, réseaux & télécoms à Dakar, Sénégal." />
+        <meta name="twitter:description" content="Déploiement fibre optique aérien/souterrain, réseaux & télécoms à Dakar, Sénégal." />
         <meta name="twitter:image" content="https://fisafigroupe.com/share.jpeg" />
         <meta name="twitter:creator" content="@fisafigroupe" />
       </Head>
@@ -298,7 +298,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         <div className="section-eyebrow">Domaines d&apos;expertise</div>
         <h2 className="section-title">Nos compétences<br />clés</h2>
         <div className="comp-grid">
-          {["Réseaux & Télécoms", "Fibre Optique WDM", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
+          {["Réseaux & Télécoms", "Fibre Optique", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name, i) => (
             <div key={name} className="comp-item">
               <div className="comp-icon" />
               <div className="comp-name">{name}</div>
@@ -341,7 +341,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
         
         <div className="area-cards-grid">
           {[
-            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux, fibre optique WDM et télécommunications haute performance", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
+            { name: "Réseaux & Télécoms", desc: "Conception, déploiement et optimisation d'infrastructures réseaux, fibre optique et télécommunications haute performance", img: "https://i.pinimg.com/1200x/25/0b/fd/250bfdd334adaa0cb9257c6141a00bb1.jpg", type: "image" },
             { name: "Infrastructure IT", desc: "Audit, déploiement et maintenance de systèmes d'information sécurisés et scalables", img: "https://i.pinimg.com/1200x/db/31/53/db315328dfae0f0bbda614be50b75b43.jpg", type: "image" },
             { name: "Sécurité Digitale", desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes", img: "https://i.pinimg.com/736x/53/3e/52/533e52f1f29a8c0c248156235ce88bbf.jpg", type: "image" },
             { name: "Conseil Stratégique", desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets", img: "https://i.pinimg.com/1200x/7e/08/d4/7e08d403064e4afe167924fd655516a0.jpg", type: "image" },
@@ -405,8 +405,7 @@ Partenaire stratégique pour l’avenir numérique de l’Afrique.
               minHeight: "140px",
               boxShadow: "0 2px 8px rgba(0,0,0,.02)",
               border: "0.5px solid rgba(0,0,0,.04)",
-              transition: "all 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-              isolation: "isolate"
+              transition: "all 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,.05), 0 20px 40px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04)";
