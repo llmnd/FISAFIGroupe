@@ -25,10 +25,10 @@ const MARKET_BANNER_STYLES = `
     gap: 16px;
     width: 100%;
     max-width: 780px;
-    background: rgba(12, 10, 18, 0.88);
+    background: rgba(14, 14, 70, 0.92);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(212, 175, 95, 0.2);
+    border: 1px solid rgba(244, 121, 32, 0.3);
     border-radius: 16px;
     padding: 14px 18px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -41,7 +41,7 @@ const MARKET_BANNER_STYLES = `
     left: 15%;
     right: 15%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 95, 0.45), transparent);
+    background: linear-gradient(90deg, transparent, rgba(244, 121, 32, 0.5), transparent);
   }
 
   .mb-left {
@@ -57,8 +57,8 @@ const MARKET_BANNER_STYLES = `
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(212, 175, 95, 0.1);
-    border: 1px solid rgba(212, 175, 95, 0.2);
+    background: rgba(244, 121, 32, 0.15);
+    border: 1px solid rgba(244, 121, 32, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,7 +76,7 @@ const MARKET_BANNER_STYLES = `
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 15px;
     font-weight: 600;
-    color: #F0E6C8;
+    color: #E8E4FF;
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -84,14 +84,14 @@ const MARKET_BANNER_STYLES = `
   }
 
   .mb-title span {
-    color: #D4AF5F;
+    color: #F47920;
   }
 
   .mb-subtitle {
     font-family: 'Outfit', sans-serif;
     font-size: 11.5px;
     font-weight: 300;
-    color: rgba(240, 230, 200, 0.4);
+    color: rgba(200, 196, 255, 0.45);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -109,8 +109,8 @@ const MARKET_BANNER_STYLES = `
     align-items: center;
     gap: 5px;
     padding: 7px 16px;
-    background: linear-gradient(135deg, #D4AF5F, #C49A3A);
-    color: #0C0A12;
+    background: linear-gradient(135deg, #F47920, #D4620F);
+    color: #ffffff;
     text-decoration: none;
     border-radius: 100px;
     font-family: 'Outfit', sans-serif;
@@ -127,7 +127,7 @@ const MARKET_BANNER_STYLES = `
   .mb-divider {
     width: 1px;
     height: 20px;
-    background: rgba(212, 175, 95, 0.15);
+    background: rgba(244, 121, 32, 0.2);
   }
 
   .mb-close {
@@ -137,8 +137,8 @@ const MARKET_BANNER_STYLES = `
     width: 28px;
     height: 28px;
     background: transparent;
-    color: rgba(240, 230, 200, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(200, 196, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     cursor: pointer;
     font-size: 12px;
@@ -146,8 +146,8 @@ const MARKET_BANNER_STYLES = `
   }
 
   .mb-close:hover {
-    color: rgba(240, 230, 200, 0.7);
-    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(200, 196, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.18);
   }
 
   @media (max-width: 540px) {
@@ -175,7 +175,6 @@ export default function MarketBanner({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Utilise sessionStorage: disparaît au refresh/fermeture de l'onglet
       const isDismissed = sessionStorage.getItem(dismissKey);
       setIsVisible(!isDismissed);
     }
@@ -183,7 +182,6 @@ export default function MarketBanner({
 
   const handleClose = () => {
     if (typeof window !== "undefined") {
-      // Enregistre seulement pour cette session
       sessionStorage.setItem(dismissKey, "true");
     }
     setIsVisible(false);
@@ -197,10 +195,14 @@ export default function MarketBanner({
       <div className="mb-root">
         <div className="mb-card">
           <div className="mb-left">
-            <div className="mb-badge">🛍️</div>
+            <div className="mb-badge">🍫</div>
             <div className="mb-text">
-              <div className="mb-title">FiSAFi <span>Market</span></div>
-              <div className="mb-subtitle">Découvrez notre plateforme marketplace</div>
+              <div className="mb-title">
+                FiSAFi <span>Market</span>
+              </div>
+              <div className="mb-subtitle">
+                Découvrez notre plateforme marketplace
+              </div>
             </div>
           </div>
           <div className="mb-right">

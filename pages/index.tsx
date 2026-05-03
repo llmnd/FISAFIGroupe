@@ -87,7 +87,7 @@ export default function Home() {
         <title>FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar</title>
 
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover"></meta>
         <meta name="theme-color" content="#1e40af" />
 
         {/* ✅ DESCRIPTION — le texte qui s'affiche sous le titre dans Google (~155 car.) */}

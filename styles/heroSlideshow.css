@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600;700&display=swap');
 
-/* ── Root ───────────────────────────────── */
+/* ══════════════════════════════════════════════
+   ROOT
+   ══════════════════════════════════════════════ */
 .hs-root {
-  --bg: #080f18;
-  --bg2: #0d1a28;
-  --grain-opacity: 0.038;
+  --bg:  #080f18;
+  --bg2: #0c1825;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -14,18 +15,22 @@
   position: relative;
 }
 
-/* Subtle grain texture overlay */
+/* Grain overlay */
 .hs-root::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 100;
+  z-index: 200;
   pointer-events: none;
-  background: rgba(255,255,255,0.02);
-  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.028;
+  mix-blend-mode: overlay;
 }
 
-/* ── Image Container ─────────────────────── */
+/* ══════════════════════════════════════════════
+   IMAGE CONTAINER
+   ══════════════════════════════════════════════ */
 .hs-image-container {
   position: relative;
   height: clamp(260px, 54vw, 70vh);
@@ -35,24 +40,23 @@
   overflow: hidden;
 }
 
-/* Crossfade: outgoing slide */
 .hs-img-layer {
   position: absolute;
   inset: 0;
 }
 .hs-img-layer--prev {
-  animation: hs-fadeOut 0.72s ease-out forwards;
+  animation: hs-fadeOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 .hs-img-layer--curr {
-  animation: hs-fadeIn 0.72s ease-in forwards;
+  animation: hs-fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 @keyframes hs-fadeOut {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.015); }
 }
 @keyframes hs-fadeIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
+  from { opacity: 0; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 /* Multi-layer gradient vignette */
@@ -62,16 +66,16 @@
   inset: 0;
   background:
     linear-gradient(to bottom,
-      rgba(8,15,24,0.12) 0%,
-      transparent 35%,
-      rgba(8,15,24,0.18) 60%,
-      rgba(8,15,24,0.72) 100%
+      rgba(8,15,24,0.10) 0%,
+      transparent 30%,
+      rgba(8,15,24,0.20) 62%,
+      rgba(8,15,24,0.80) 100%
     ),
     linear-gradient(to right,
-      rgba(8,15,24,0.22) 0%,
-      transparent 30%,
-      transparent 70%,
-      rgba(8,15,24,0.22) 100%
+      rgba(8,15,24,0.25) 0%,
+      transparent 28%,
+      transparent 72%,
+      rgba(8,15,24,0.25) 100%
     );
   pointer-events: none;
   z-index: 4;
@@ -80,30 +84,97 @@
 /* Slide counter */
 .hs-slide-num {
   position: absolute;
-  bottom: 16px;
-  right: 20px;
+  bottom: 18px;
+  right: 22px;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 12px;
   font-style: italic;
   font-weight: 400;
-  color: rgba(255,255,255,0.38);
-  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.12em;
   z-index: 10;
 }
 
-/* Animated accent line at bottom of image */
+/* Accent line at bottom */
 .hs-image-bar {
   position: absolute;
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(to right, transparent, var(--hs-accent), transparent);
   z-index: 10;
-  transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94), background 0.45s ease;
-  opacity: 0.7;
+  transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background 0.45s ease;
+  opacity: 0.72;
 }
 
-/* ── Cards Track ─────────────────────────── */
+/* ══════════════════════════════════════════════
+   TEXT PANEL
+   ══════════════════════════════════════════════ */
+.hs-text-panel {
+  position: relative;
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+/* Subtle top separator */
+.hs-text-panel::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent,
+    rgba(var(--hs-accent-rgb, 124,106,245), 0.25) 30%,
+    rgba(var(--hs-accent-rgb, 124,106,245), 0.25) 70%,
+    transparent
+  );
+  transition: background 0.45s ease;
+}
+
+/* ══════════════════════════════════════════════
+   VERTICAL PROGRESS BAR
+   ══════════════════════════════════════════════ */
+.hs-vbar {
+  position: absolute;
+  left: 1.6rem;
+  top: 1.6rem;
+  bottom: 5rem;
+  width: 1px;
+  background: rgba(255,255,255,0.05);
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+}
+.hs-vbar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0 0 2px 2px;
+  transition: height 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background 0.45s ease;
+}
+.hs-vbar-fill::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: -1.5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--hs-accent, #7C6AF5);
+  opacity: 0.75;
+  transition: background 0.45s ease;
+}
+@media (max-width: 480px) {
+  .hs-vbar { display: none; }
+}
+
+/* ══════════════════════════════════════════════
+   CARDS TRACK
+   ══════════════════════════════════════════════ */
 .hs-cards-track {
   width: 100%;
   display: flex;
@@ -126,216 +197,237 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  /* Padding généreux pour laisser respirer les ombres latérales */
-  padding: 2.6rem 3rem 2rem;
+  /* Espace généreux : les feuilles décalées doivent rester visibles */
+  padding: 2.4rem 3.2rem 2.2rem 3.2rem;
 }
 
-/* ── Card Stack (paper layers via box-shadow) ── */
+/* ══════════════════════════════════════════════
+   CARD SCENE & WASHI PIN
+   ══════════════════════════════════════════════ */
 .hs-card-scene {
   display: flex;
   flex-direction: column;
   align-items: center;
+  animation: hs-sceneIn 0.55s cubic-bezier(0.34, 1.15, 0.64, 1) both;
+}
+@keyframes hs-sceneIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Washi-tape pin */
 .hs-pin {
-  width: 44px;
-  height: 14px;
+  width: 48px;
+  height: 15px;
   border-radius: 2px;
-  margin-bottom: -2px;
-  z-index: 10;
+  margin-bottom: -3px;
+  z-index: 20;
   flex-shrink: 0;
   position: relative;
   opacity: 0.88;
+  /* Légère ombre pour le relief du papier collant */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
 }
 .hs-pin::before {
   content: '';
   position: absolute;
-  inset: 2px;
-  background: rgba(255,255,255,0.16);
+  inset: 3px;
+  background: rgba(255,255,255,0.14);
   border-radius: 1px;
 }
-
-.hs-stack {
-  position: relative;
-  width: clamp(248px, 76vw, 322px);
+/* Petits traits sur le washi-tape */
+.hs-pin::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 6px,
+    rgba(255,255,255,0.06) 6px,
+    rgba(255,255,255,0.06) 7px
+  );
 }
 
-/* Ghost divs désactivés — les ombres portées remplacent tout */
-.hs-ghost { display: none; }
+/* ══════════════════════════════════════════════
+   STACK — les trois feuilles
+   ══════════════════════════════════════════════ */
+.hs-stack {
+  position: relative;
+  width: clamp(252px, 78vw, 328px);
+  /*
+    Espace en bas et à droite pour accueillir les feuilles
+    qui dépassent via transform: rotate + translate.
+    Sans ce padding, elles seraient coupées par l'overflow du parent.
+  */
+  padding-bottom: 22px;
+  padding-right: 22px;
+}
 
-/* ── La carte principale ─────────────────── */
+/* ── Feuilles fantômes (papier derrière) ──── */
+.hs-ghost {
+  display: block;                    /* RÉACTIVÉ */
+  position: absolute;
+  border-radius: 4px;
+  /* Même largeur que la carte principale
+     (le padding-right du .hs-stack ne compte pas ici) */
+  width: calc(100% - 22px);        /* compense le padding-right */
+  top: 0;
+  bottom: 22px;                     /* compense le padding-bottom */
+  z-index: 1;
+  /* Bordure fine pour simuler l'épaisseur du papier */
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/*
+  Feuille la plus proche de la carte principale :
+  décalée de ~6px vers la droite + bas, rotation de 1.8°.
+  Légèrement plus sombre que la carte.
+*/
+.hs-ghost--near {
+  transform-origin: top center;
+  transform: rotate(1.8deg) translate(5px, 5px);
+  box-shadow:
+    1px 5px 12px rgba(0,0,0,0.10),
+    0   2px  4px rgba(0,0,0,0.07);
+}
+
+/*
+  Feuille du fond : encore plus décalée et plus inclinée.
+  La plus sombre des deux.
+*/
+.hs-ghost--far {
+  transform-origin: top center;
+  transform: rotate(3.5deg) translate(10px, 9px);
+  box-shadow:
+    1px 5px 14px rgba(0,0,0,0.08),
+    0   2px  4px rgba(0,0,0,0.05);
+}
+
+/* ══════════════════════════════════════════════
+   CARTE PRINCIPALE
+   ══════════════════════════════════════════════ */
 .hs-card {
   position: relative;
   z-index: 2;
   border-radius: 4px;
-  /*
-    overflow: visible — CRUCIAL pour que les ombres décalées
-    (qui simulent les feuilles derrière) restent visibles.
-    L'intérieur est géré par .hs-card-inner avec overflow hidden.
-  */
+  /* overflow: visible pour que les feuilles fantômes
+     positionnées à l'intérieur du .hs-stack restent visibles */
   overflow: visible;
 
-  /*
-    Système de feuilles empilées par box-shadow :
+  /* Légère inclinaison opposée aux feuilles pour contrebalancer */
+  transform: rotate(-0.5deg);
+  transform-origin: top center;
 
-    Couche 1 (feuille la plus proche) :
-      - offset X/Y léger  → simule un décalage de 1–2mm
-      - spread négatif    → la feuille est légèrement plus petite
-      - couleur = ghostBg1 (via CSS var injectée inline)
-
-    Couche 2 (feuille du fond) :
-      - offset X/Y plus grand
-      - encore plus petite (spread encore plus négatif)
-      - couleur = ghostBg2, plus sombre
-
-    Entre chaque feuille : une ombre de bordure très fine et sombre
-    qui donne l'épaisseur du papier.
-
-    Ombre générale douce sous l'ensemble.
-  */
+  /* Ombre portée principale sous la pile complète */
   box-shadow:
-    /* ── Feuille 1 ── */
-    5px 5px 0 -1px var(--hs-sheet1, #e8e3f7),
-    5px 5px 0  0   rgba(0, 0, 0, 0.09),
+    0  12px 40px rgba(0,0,0,0.22),
+    0   4px 12px rgba(0,0,0,0.14),
+    0   1px  3px rgba(0,0,0,0.10);
 
-    /* ── Feuille 2 ── */
-    10px 10px 0 -1px var(--hs-sheet2, #ddd7f2),
-    10px 10px 0  0   rgba(0, 0, 0, 0.07),
-
-    /* ── Ombre portée douce sous la pile ── */
-    2px 18px 32px rgba(0, 0, 0, 0.18),
-    0   6px  12px rgba(0, 0, 0, 0.10);
+  /* Transition fluide lors du changement de slide */
+  transition: box-shadow 0.45s ease;
 }
 
-/* Clipper interne — remplace overflow hidden sur .hs-card */
+/* ── Inner clipper ── */
 .hs-card-inner {
   border-radius: 4px;
   overflow: hidden;
   position: relative;
+  /* Les lignes de cahier sont injectées en backgroundImage via le style inline */
+  background-position-y: 52px;
 }
 
-/* Red margin line */
-.hs-card-margin {
-  position: absolute;
-  left: 2.5rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-}
-.hs-card-body {
-  padding: 1.5rem 1.8rem 1.9rem 3.2rem;
-  position: relative;
-  z-index: 2;
-}
-
-/* Index number */
-.hs-card-num {
-  display: block;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 13.5px;
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  line-height: 1;
-  margin-bottom: 0.55rem;
-}
-
-.hs-card-rule {
-  width: 22px;
-  height: 1px;
-  margin-bottom: 0.7rem;
-  transition: background 0.45s ease;
-}
-
-.hs-card-title {
-  font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(1.05rem, 3.6vw, 1.32rem);
-  font-weight: 600;
-  color: #16100b;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.7rem;
-}
-
-.hs-card-desc {
-  font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(0.82rem, 2.4vw, 0.92rem);
-  font-weight: 300;
-  color: #645a51;
-  line-height: 1.66;
-  margin: 0;
-}
-
-/* Subtle bottom fade on card */
+/* Fade doux en bas de la carte */
 .hs-card-inner::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 28px;
-  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.028));
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.03));
   pointer-events: none;
   z-index: 5;
 }
 
-/* ── Text Panel ──────────────────────────── */
-.hs-text-panel {
-  position: relative;
-  background: var(--bg2);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-/* Vertical progress bar */
-.hs-vbar {
+/* ── Ligne de marge verticale ── */
+.hs-card-margin {
   position: absolute;
-  left: 1.6rem;
-  top: 1.4rem;
-  bottom: 4.6rem;
+  left: 2.6rem;
+  top: 0;
+  bottom: 0;
   width: 1px;
-  background: rgba(255,255,255,0.055);
-  overflow: visible;
-  pointer-events: none;
-  z-index: 10;
-}
-.hs-vbar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -1px;
-  width: 3px;
-  height: 6px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.08);
-}
-.hs-vbar-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  border-radius: 0 0 2px 2px;
-}
-/* Small accent cap on bar fill */
-.hs-vbar-fill::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: -1px;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--hs-accent, #7C6AF5);
-  opacity: 0.6;
-}
-@media (max-width: 480px) {
-  .hs-vbar { display: none; }
+  z-index: 3;
 }
 
-/* ── Bottom Controls ─────────────────────── */
+/* ── Corps de la carte ── */
+.hs-card-body {
+  padding: 1.6rem 1.8rem 2rem 3.4rem;
+  position: relative;
+  z-index: 4;
+}
+
+/* Numéro */
+.hs-card-num {
+  display: block;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+  transition: color 0.45s ease;
+}
+
+/* Séparateur horizontal */
+.hs-card-rule {
+  width: 24px;
+  height: 1px;
+  margin-bottom: 0.75rem;
+  transition: background 0.45s ease;
+}
+
+/* Titre */
+.hs-card-title {
+  font-family: 'Jost', Arial, sans-serif;
+  font-size: clamp(1.05rem, 3.6vw, 1.28rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+  margin: 0 0 0.75rem;
+  transition: color 0.45s ease;
+}
+
+/* Description */
+.hs-card-desc {
+  font-family: 'Jost', Arial, sans-serif;
+  font-size: clamp(0.82rem, 2.4vw, 0.9rem);
+  font-weight: 300;
+  color: #6a5f56;
+  line-height: 1.7;
+  margin: 0 0 1.1rem;
+}
+
+/* ── Tag accent ── */
+.hs-card-tag {
+  display: inline-block;
+  font-family: 'Jost', Arial, sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+  transition: background 0.45s ease, color 0.45s ease, border-color 0.45s ease;
+}
+
+/* ══════════════════════════════════════════════
+   BOTTOM CONTROLS
+   ══════════════════════════════════════════════ */
 .hs-bottom {
   position: relative;
   z-index: 5;
@@ -343,16 +435,15 @@
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  padding: 0 2rem 2.6rem;
+  padding: 0 2rem 2.8rem;
 }
 
-/* Thin decorative line above bottom */
 .hs-bottom::before {
   content: '';
   display: block;
   width: 100%;
   height: 1px;
-  background: rgba(255,255,255,0.038);
+  background: rgba(255,255,255,0.04);
   margin-bottom: 0.1rem;
 }
 
@@ -363,13 +454,15 @@
   gap: 1rem;
 }
 
-.hs-btn-primary, .hs-btn-ghost {
+/* ── Boutons ── */
+.hs-btn-primary,
+.hs-btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 1rem;
   font-family: 'Jost', Arial, sans-serif;
-  font-size: 9.5px;
-  letter-spacing: 0.32em;
+  font-size: 9px;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
   text-decoration: none;
   transition: color 0.28s ease, letter-spacing 0.28s ease;
@@ -377,22 +470,22 @@
 }
 .hs-btn-primary {
   font-weight: 400;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.52);
 }
 .hs-btn-ghost {
   font-weight: 300;
-  color: rgba(255,255,255,0.24);
-  letter-spacing: 0.25em;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 0.26em;
 }
-.hs-btn-primary:hover { color: rgba(255,255,255,0.92); letter-spacing: 0.36em; }
-.hs-btn-ghost:hover   { color: rgba(255,255,255,0.72); letter-spacing: 0.28em; }
+.hs-btn-primary:hover { color: rgba(255,255,255,0.90); letter-spacing: 0.38em; }
+.hs-btn-ghost:hover   { color: rgba(255,255,255,0.68); letter-spacing: 0.30em; }
 
-/* Animated arrow */
+/* Flèche animée */
 .hs-btn-arrow {
   display: inline-flex;
   align-items: center;
   overflow: hidden;
-  width: 20px;
+  width: 22px;
   height: 10px;
   position: relative;
   flex-shrink: 0;
@@ -413,8 +506,8 @@
   position: absolute;
   right: 0;
   top: 50%;
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   border-right: 1px solid currentColor;
   border-top: 1px solid currentColor;
   transform: translateY(-50%) rotate(45deg);
@@ -422,10 +515,12 @@
 }
 .hs-btn-primary:hover .hs-btn-arrow::before { transform: translateY(-50%) translateX(5px); }
 .hs-btn-primary:hover .hs-btn-arrow::after  { transform: translateY(-50%) rotate(45deg) translateX(3px); }
-.hs-btn-ghost:hover .hs-btn-arrow::before  { transform: translateY(-50%) translateX(4px); }
-.hs-btn-ghost:hover .hs-btn-arrow::after   { transform: translateY(-50%) rotate(45deg) translateX(2px); }
+.hs-btn-ghost:hover   .hs-btn-arrow::before { transform: translateY(-50%) translateX(4px); }
+.hs-btn-ghost:hover   .hs-btn-arrow::after  { transform: translateY(-50%) rotate(45deg) translateX(2px); }
 
-/* ── Dot Navigation ──────────────────────── */
+/* ══════════════════════════════════════════════
+   DOT NAVIGATION
+   ══════════════════════════════════════════════ */
 .hs-dots {
   display: flex;
   align-items: center;
@@ -434,28 +529,22 @@
 }
 .hs-dot {
   height: 2px;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.10);
   border: none;
   padding: 0;
   cursor: pointer;
   border-radius: 2px;
-  transition: background 0.42s ease, width 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.42s ease;
+  transition:
+    background 0.42s ease,
+    width 0.42s cubic-bezier(0.34, 1.2, 0.64, 1),
+    opacity 0.42s ease;
   width: 18px;
 }
 .hs-dot--active {
-  width: 42px;
-  opacity: 0.9;
+  width: 44px;
+  opacity: 0.92;
 }
 .hs-dot:hover:not(.hs-dot--active) {
-  background: rgba(255,255,255,0.32);
+  background: rgba(255,255,255,0.28);
   width: 26px;
-}
-
-/* ── Card entrance animation ─────────────── */
-@keyframes hs-cardSlideIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.hs-card-scene {
-  animation: hs-cardSlideIn 0.5s ease-in-out both;
 }

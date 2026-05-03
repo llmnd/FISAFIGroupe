@@ -104,7 +104,7 @@ select {
 /* Désactiver le overscroll (iOS: effet de rebond) */
 @supports (overscroll-behavior: contain) {
   html, body {
-    overscroll-behavior: none;
+    overscroll-behavior: auto;
   }
 }
 

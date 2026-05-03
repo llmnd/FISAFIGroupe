@@ -6,13 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 
 /* ─── SVG Icons ─────────────────────────────────────────── */
-const IconStar = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-  </svg>
-);
-
 const IconSearch = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -65,7 +58,7 @@ const IconInstagram = () => (
   </svg>
 );
 
-/* ─── Nav Items ──────────────────────────────────────────── */
+/* ─── Constants ──────────────────────────────────────────── */
 type NavItem = { label: string; href: string };
 
 const NAV_ITEMS: NavItem[] = [
@@ -78,10 +71,32 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const SOCIALS = [
-  { href: "https://www.facebook.com/share/179K7oUPAA/",             Icon: IconFacebook,  label: "Facebook",  className: "" },
-  { href: "https://www.linkedin.com/company/fisafi-groupe-suarl/",   Icon: IconLinkedin,  label: "LinkedIn",  className: "" },
-  { href: "https://www.instagram.com/",                              Icon: IconInstagram, label: "Instagram", className: "instagram" },
+  { href: "https://www.facebook.com/share/179K7oUPAA/",            Icon: IconFacebook,  label: "Facebook",  className: "" },
+  { href: "https://www.linkedin.com/company/fisafi-groupe-suarl/",  Icon: IconLinkedin,  label: "LinkedIn",  className: "" },
+  { href: "https://www.instagram.com/",                             Icon: IconInstagram, label: "Instagram", className: "instagram" },
 ];
+
+/* ─── SocialsGrid — défini HORS du composant parent ─────────
+ * Si défini à l'intérieur, React le considère comme un nouveau
+ * type de composant à chaque render et le démonte/remonte.
+ * ─────────────────────────────────────────────────────────── */
+const SocialsGrid = () => (
+  <div className="social-grid">
+    {SOCIALS.map(({ href, Icon, label, className }, i) => (
+      <a
+        key={label}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`social-item${className ? ` ${className}` : ""}`}
+        style={{ "--i": i } as React.CSSProperties}
+      >
+        <Icon />
+        <span>{label}</span>
+      </a>
+    ))}
+  </div>
+);
 
 /* ─── Component ──────────────────────────────────────────── */
 export default function Header() {
@@ -89,58 +104,48 @@ export default function Header() {
   const [showSocials,   setShowSocials]   = useState(false);
   const [showSearch,    setShowSearch]    = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  // Use two discrete boolean states instead of continuous scrollPct for React renders
-  // The actual scrollPct is written via RAF directly to the DOM element
   const [scrolled,      setScrolled]      = useState(false);
   const [isLoggedIn,    setIsLoggedIn]    = useState(false);
 
   const pathname = usePathname();
 
-  // Refs
-  const headerRef       = useRef<HTMLElement>(null);
-  const progressFillRef = useRef<HTMLDivElement>(null);
-  const socialBarRef    = useRef<HTMLDivElement>(null);
-  const socialsRef      = useRef<HTMLDivElement>(null);
-  const searchRef       = useRef<HTMLInputElement>(null);
-  const shareButtonRef  = useRef<HTMLButtonElement>(null);
-  const socialPopupRef  = useRef<HTMLDivElement>(null);
-  const [socialPopupStyle, setSocialPopupStyle] = useState<React.CSSProperties>({});
+  /* ─── Refs ─────────────────────────────────────────────── */
+  const progressFillRef  = useRef<HTMLDivElement>(null);
+  const socialBarRef     = useRef<HTMLDivElement>(null);
+  const searchRef        = useRef<HTMLInputElement>(null);
+  const shareButtonRef   = useRef<HTMLButtonElement>(null);
+  const socialPopupRef   = useRef<HTMLDivElement>(null);
+  const rafIdRef         = useRef<number | null>(null);
+  const lastScrolledRef  = useRef(false);
 
-  // RAF ref — avoids setState on every scroll frame
-  const rafIdRef        = useRef<number | null>(null);
-  const lastScrolledRef = useRef(false);
-
-  /* Auth check */
+  /* ─── Auth (localStorage côté client uniquement) ───────── */
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("token"));
   }, []);
 
-  /* Body scroll lock when drawer open */
+  /* ─── Body scroll lock ──────────────────────────────────── */
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  /* ─── Scroll: RAF-throttled, direct DOM writes for progress + opacity ───
+  /* ─── Scroll — RAF throttlé, écriture directe sur le DOM ──
    *
-   * Pattern:
-   *  • scrollY is read once per rAF tick (not per event)
-   *  • Progress bar width + social bar opacity are written directly to DOM
-   *    → zero React re-renders during scroll
-   *  • Only "scrolled" boolean triggers a React setState (max 2 updates total)
-   * ──────────────────────────────────────────────────────────────────────── */
+   * Zéro setState au scroll.
+   * Seul le passage du seuil "scrolled" déclenche un re-render
+   * (2 fois max : false→true et true→false).
+   * ─────────────────────────────────────────────────────────*/
   useEffect(() => {
     const onScroll = () => {
-      if (rafIdRef.current !== null) return; // already scheduled
+      if (rafIdRef.current !== null) return;
       rafIdRef.current = requestAnimationFrame(() => {
         rafIdRef.current = null;
 
         const scrollTop = window.scrollY;
-        const docH = document.documentElement.scrollHeight - window.innerHeight;
-        const pct = docH > 0 ? (scrollTop / docH) * 100 : 0;
+        const docH      = document.documentElement.scrollHeight - window.innerHeight;
+        const pct       = docH > 0 ? (scrollTop / docH) * 100 : 0;
         const isScrolled = scrollTop > 10;
 
-        // Direct DOM write → no re-render
         if (progressFillRef.current) {
           progressFillRef.current.style.width = `${pct}%`;
         }
@@ -149,7 +154,6 @@ export default function Header() {
           socialBarRef.current.style.opacity = String(opacity);
         }
 
-        // Only setState when threshold changes (max 2 renders total)
         if (isScrolled !== lastScrolledRef.current) {
           lastScrolledRef.current = isScrolled;
           setScrolled(isScrolled);
@@ -167,31 +171,29 @@ export default function Header() {
     };
   }, []);
 
-  /* Click outside to close socials popup */
+  /* ─── Click outside → ferme le popup socials ───────────── */
   useEffect(() => {
+    if (!showSocials) return; // n'attache l'écouteur que si le popup est ouvert
     const handler = (e: MouseEvent) => {
       if (
-        socialPopupRef.current &&
-        !socialPopupRef.current.contains(e.target as Node) &&
-        shareButtonRef.current &&
-        !shareButtonRef.current.contains(e.target as Node)
+        socialPopupRef.current  && !socialPopupRef.current.contains(e.target as Node) &&
+        shareButtonRef.current  && !shareButtonRef.current.contains(e.target as Node)
       ) {
         setShowSocials(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [showSocials]);
 
-  /* Focus search input when overlay opens */
+  /* ─── Focus input quand l'overlay s'ouvre ──────────────── */
   useEffect(() => {
-    if (showSearch) {
-      const t = setTimeout(() => searchRef.current?.focus(), 80);
-      return () => clearTimeout(t);
-    }
+    if (!showSearch) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 80);
+    return () => clearTimeout(t);
   }, [showSearch]);
 
-  /* Keyboard shortcuts */
+  /* ─── Raccourcis clavier ────────────────────────────────── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -210,52 +212,35 @@ export default function Header() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  /* ─── Social popup: computed position (viewport-safe) ── */
+  /* ─── Toggle popup socials — position viewport-safe ────── */
   const handleToggleSocials = useCallback(() => {
-    setShowSocials(v => {
-      const next = !v;
-      if (next && shareButtonRef.current) {
+    setShowSocials(prev => {
+      if (prev) return false;
+      // On calcule la position uniquement à l'ouverture
+      if (shareButtonRef.current) {
         const btn        = shareButtonRef.current.getBoundingClientRect();
         const POPUP_W    = 248;
         const MARGIN     = 12;
         const viewportW  = window.innerWidth;
-        const top        = btn.bottom + MARGIN;
         let   left       = btn.left;
         if (left + POPUP_W > viewportW - MARGIN) left = btn.right - POPUP_W;
         left = Math.max(MARGIN, left);
-        setSocialPopupStyle({ top, left, right: "auto", position: "fixed" });
+        // On écrit directement sur le ref DOM → pas de setState supplémentaire
+        if (socialPopupRef.current) {
+          socialPopupRef.current.style.top   = `${btn.bottom + MARGIN}px`;
+          socialPopupRef.current.style.left  = `${left}px`;
+          socialPopupRef.current.style.right = "auto";
+        }
       }
-      return next;
+      return true;
     });
   }, []);
 
-  /* ─── Socials grid (shared between popup and drawer) ── */
-  const SocialsGrid = () => (
-    <div className="social-grid">
-      {SOCIALS.map(({ href, Icon, label, className }, i) => (
-        <a
-          key={label}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`social-item ${className}`}
-          style={{ "--i": i } as React.CSSProperties}
-        >
-          <Icon />
-          <span>{label}</span>
-        </a>
-      ))}
-    </div>
-  );
-
   return (
     <>
-      {/* ── Header ── */}
-      <header
-        ref={headerRef}
-        className={`header${scrolled ? " scrolled" : ""}`}
-        suppressHydrationWarning
-      >
+      {/* ── Header ──────────────────────────────────────── */}
+      <header className={`header${scrolled ? " scrolled" : ""}`}>
+
         {/* Logo */}
         <Link
           href="/"
@@ -325,7 +310,7 @@ export default function Header() {
         <button
           className={`header-burger${mobileOpen ? " open" : ""}`}
           onClick={() => setMobileOpen(v => !v)}
-          aria-label="Menu"
+          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={mobileOpen}
         >
           <span className="burger-line" />
@@ -333,14 +318,15 @@ export default function Header() {
           <span className="burger-line" />
         </button>
 
-        {/* Progress Bar — width written via ref (zero React renders) */}
+        {/* Barre de progression — largeur écrite via ref (0 re-render) */}
         <div className="header-progress" aria-hidden="true">
           <div ref={progressFillRef} className="header-progress-fill" />
         </div>
       </header>
 
-      {/* ── Social & Flags Bar ── */}
-      {/* opacity written via ref during scroll */}
+      {/* ── Social / Flags Bar ──────────────────────────────
+       *  Opacité écrite via ref (RAF) → 0 re-render
+       * ─────────────────────────────────────────────────── */}
       <div ref={socialBarRef} className="header-social-flags-bar">
         <div className="bar-content">
           <div className="bar-socials">
@@ -355,11 +341,13 @@ export default function Header() {
             >
               <IconShare />
             </button>
+
+            {/* Popup socials — position CSS fixe, ajustée via ref à l'ouverture */}
             <div
               ref={socialPopupRef}
               className={`header-social-popup${showSocials ? " open" : ""}`}
-              style={socialPopupStyle}
               role="menu"
+              aria-hidden={!showSocials}
             >
               <SocialsGrid />
             </div>
@@ -373,13 +361,14 @@ export default function Header() {
         </div>
       </div>
 
-      {/* ── Mobile Drawer ── */}
-      {/* aria-hidden when closed for screen readers */}
+      {/* ── Mobile Drawer ────────────────────────────────── */}
       <nav
         className={`header-drawer${mobileOpen ? " open" : ""}`}
         aria-label="Menu mobile"
         aria-hidden={!mobileOpen}
-        inert={!mobileOpen ? true : undefined}
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore — attribut HTML5 non encore typé dans React
+        inert={mobileOpen ? undefined : ""}
       >
         <div className="header-drawer-inner">
           <ul className="header-drawer-nav">
@@ -425,10 +414,10 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* ── Search Overlay ── */}
+      {/* ── Search Overlay ───────────────────────────────── */}
       {showSearch && (
         <div
-          className="header-search-overlay open"
+          className="header-search-overlay"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSearch(false); }}
           role="dialog"
           aria-modal="true"
@@ -441,15 +430,16 @@ export default function Header() {
               className="header-search-input"
               type="search"
               placeholder="Rechercher…"
-              aria-label="Recherche"
+              aria-label="Champ de recherche"
               autoComplete="off"
+              spellCheck={false}
             />
-            <span className="header-search-kbd">Échap</span>
+            <span className="header-search-kbd" aria-hidden="true">Échap</span>
           </div>
         </div>
       )}
 
-      {/* ── Info Modal ── */}
+      {/* ── Info Modal ───────────────────────────────────── */}
       {showInfoModal && (
         <div
           className="header-info-overlay"
