@@ -1,0 +1,432 @@
+/* ──────────────────────────────────────────────────────────────
+   SECTION PARTENAIRES — Carousel Bleu Nuit
+   ────────────────────────────────────────────────────────────── */
+
+/* ─── CONTENEUR ─── */
+.partners-section {
+  position: relative;
+  padding: 8rem 2rem;
+  background: linear-gradient(135deg, #041025 0%, #0c2541 50%, #081429 100%);
+  overflow: hidden;
+}
+
+.partners-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(30, 90, 160, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(20, 50, 120, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.partners-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ─── EN-TÊTE ─── */
+.partners-header {
+  text-align: center;
+  margin-bottom: 5rem;
+}
+
+.partners-eyebrow {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: #d0ecff;
+  margin-bottom: 1.5rem;
+  display: block;
+  opacity: 1;
+}
+
+.partners-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 300;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.partners-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: #e8f4ff;
+  margin-top: 1.5rem;
+  line-height: 1.7;
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 1;
+}
+
+/* ─── GRILLE PARTENAIRES (Hidden pour Carousel) ─── */
+.partners-grid {
+  display: none;
+}
+
+/* ─── CARTE PARTENAIRE ─── */
+.partner-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  opacity: 0;
+}
+
+.partner-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── LOGO ZONE — TRANSARENT POUR NS2I ─── */
+.partner-logo-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: transparent;
+  border-radius: 8px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.partner-logo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.partner-logo img {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.partner-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.partner-logo-placeholder svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.4;
+}
+
+.partner-logo-placeholder span {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ─── CONTENU PARTENAIRE ─── */
+.partner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.partner-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 350;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.partner-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: #e8f4ff;
+  margin: 0;
+  line-height: 1.65;
+  flex: 1;
+}
+
+/* ─── TAGS PARTENAIRE — COULEURS VARIÉES ─── */
+.partner-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: auto;
+}
+
+.partner-tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  border-radius: 20px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Couleurs variées pour les tags */
+.partner-tag:nth-child(1) {
+  background: rgba(168, 212, 255, 0.15);
+  color: #a8d4ff;
+  border: 1px solid rgba(168, 212, 255, 0.4);
+}
+
+.partner-tag:nth-child(2) {
+  background: rgba(100, 255, 200, 0.12);
+  color: #64ffc8;
+  border: 1px solid rgba(100, 255, 200, 0.35);
+}
+
+.partner-tag:nth-child(3) {
+  background: rgba(255, 180, 100, 0.12);
+  color: #ffb464;
+  border: 1px solid rgba(255, 180, 100, 0.35);
+}
+
+.partner-tag:nth-child(4) {
+  background: rgba(200, 120, 255, 0.12);
+  color: #c878ff;
+  border: 1px solid rgba(200, 120, 255, 0.35);
+}
+
+.partner-tag:nth-child(5) {
+  background: rgba(255, 100, 150, 0.12);
+  color: #ff6496;
+  border: 1px solid rgba(255, 100, 150, 0.35);
+}
+
+
+
+
+/* ─── SECTION CLIENTS ─── */
+.clients-section {
+  margin-top: 8rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.clients-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.clients-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 300;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.clients-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 3rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .clients-list {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem;
+  }
+}
+
+.client-item {
+  text-align: center;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+}
+
+.client-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: #e8f4ff;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+/* ─── ACCESSIBILITÉ ─── */
+@media (prefers-reduced-motion: reduce) {
+  .partner-card,
+  .partner-logo img,
+  .partner-name,
+  .partner-tag,
+  .client-item {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .partners-section {
+    padding: 5rem 0;
+  }
+
+  .partners-inner {
+    padding: 0 1.5rem;
+  }
+
+  .partners-header {
+    margin-bottom: 3.5rem;
+  }
+
+  .partners-grid {
+    gap: 3rem 2rem;
+  }
+
+  .partner-logo-zone {
+    min-height: 160px;
+  }
+
+  .partner-content {
+    gap: 0.8rem;
+  }
+
+  .clients-section {
+    margin-top: 5rem;
+  }
+
+  .clients-list {
+    gap: 2rem;
+  }
+}
+
+/* ─── CAROUSEL PARTENAIRES ─── */
+.carousel-partners .carousel-container {
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.carousel-partners .carousel-container > * {
+  flex: 0 0 auto;
+  width: clamp(280px, 45vw, 400px);
+}
+
+@media (min-width: 768px) {
+  .carousel-partners .carousel-container > * {
+    width: clamp(320px, 35vw, 420px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-partners .carousel-container > * {
+    width: 380px;
+  }
+}
+
+/* Style des items carousel */
+.carousel-item.partner-card {
+  opacity: 1;
+  animation: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+
+.carousel-item.partner-card .partner-logo-zone {
+  aspect-ratio: 1;
+  min-height: auto;
+  background: transparent;
+  border-radius: 8px;
+  border: none;
+}
+
+.carousel-item.partner-card .partner-logo img {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.carousel-item.partner-card .partner-content {
+  gap: 0.8rem;
+}
+
+.carousel-item.partner-card .partner-name {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #ffffff;
+}
+
+.carousel-item.partner-card .partner-desc {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #e8f4ff;
+}
+/* Tags dans le carousel */
+.carousel-item.partner-card .partner-tag {
+  font-size: 0.58rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+}
+
+.carousel-item.partner-card .partner-tag:nth-child(1) {
+  background: rgba(168, 212, 255, 0.15);
+  border: 1px solid rgba(168, 212, 255, 0.4);
+  color: #a8d4ff;
+}
+
+.carousel-item.partner-card .partner-tag:nth-child(2) {
+  background: rgba(100, 255, 200, 0.12);
+  border: 1px solid rgba(100, 255, 200, 0.35);
+  color: #64ffc8;
+}
+
+.carousel-item.partner-card .partner-tag:nth-child(3) {
+  background: rgba(255, 180, 100, 0.12);
+  border: 1px solid rgba(255, 180, 100, 0.35);
+  color: #ffb464;
+}

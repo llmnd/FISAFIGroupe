@@ -53,15 +53,57 @@
 /* 15. Dark Mode Overrides */
 @import './modules/dark-mode.css';
 
+/* 16. Performance CSS Containment */
+@import './modules/performance.css';
+
+/* 17. Image Container Utilities */
+/* ─── Conteneurs d'images uniformes (aspect-ratio 4/3) ─── */
+.img-container-4-3 {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8f7f6 0%, #f0ede9 100%);
+}
+
+.img-container-4-3 img,
+.img-container-4-3 video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Variante avec bordure subtile */
+.img-container-4-3.card {
+  border-radius: 16px;
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 0.5px rgba(0, 0, 0, 0.02);
+}
+
+/* Variante avec transition au survol */
+.img-container-4-3.interactive {
+  transition:
+    box-shadow .4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform .4s cubic-bezier(0.22, 1.2, 0.36, 0.97);
+}
+
+.img-container-4-3.interactive:hover {
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.05),
+    0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transform: translateZ(0) scale(1.01);
+}
+
 /* ==============================
      OPTIMISATIONS SCROLL / NAV
      - Sans animations complexes
      - Améliore la robustesse et la réactivité lors du scroll
      - Règles générales et classes utilitaires
      ============================== */
-
-/* 16. Performance CSS Containment */
-@import './modules/performance.css';
 
 /* Disable smooth on Blink via class injected in _app.tsx */
 html.blink-no-smooth {

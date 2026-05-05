@@ -83,20 +83,26 @@
 }
 
 
-/* ─── IMAGE ─── */
+/* ─── IMAGE — Aspect-ratio 4/3 strict ─── */
 .split-card-image {
   position: relative;
   overflow: hidden;
-  min-height: 320px;
-  background: #e8e4df;
+  aspect-ratio: 4/3;
+  background: linear-gradient(135deg, #e8e4df 0%, #ddd9d2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow .4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform .4s cubic-bezier(0.22, 1.2, 0.36, 0.97);
 }
 
 .split-card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
   filter: brightness(0.96) saturate(0.85);
+  transition: filter .55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 /* ─── COMPACT (image réduite à gauche) ─── */
 .split-card.compact {
@@ -120,15 +126,17 @@
 
 .split-card.compact .split-card-image {
   order: -1;
+  aspect-ratio: auto;
+  width: 100%;
+  height: auto;
   min-height: 140px;
-  height: 100%;
-  max-height: unset;
 }
 
 @media (max-width: 767px) {
   .split-card.compact .split-card-image {
-    min-height: 180px;
-    height: 180px;
+    aspect-ratio: 16/9;
+    min-height: unset;
+    height: auto;
   }
 }
 

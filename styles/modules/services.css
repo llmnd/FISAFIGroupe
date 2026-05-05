@@ -39,6 +39,19 @@
   gap: 4.5rem 2.5rem;
   margin-bottom: 3rem;
   position: relative;
+  will-change: auto;
+}
+
+/* Observer la grille une seule fois, pas chaque carte */
+.services-grid[data-observe] {
+  opacity: 1;
+  transition: opacity 0s ease;
+  pointer-events: auto;
+}
+
+/* Les cartes héritent la visibilité de leur parent grille */
+.services-grid.is-visible .service-card {
+  animation: revealCard .75s var(--ease-expo) forwards;
 }
 
 @media (min-width: 640px) {
@@ -95,12 +108,14 @@
 .service-card-media {
   position: relative;
   width: 100%;
+  aspect-ratio: 4/3;
   overflow: hidden;
-  background: #f3f0ec;
+  background: linear-gradient(135deg, #f3f0ec 0%, #e8e4df 100%);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   transition:
     box-shadow .55s var(--ease-silk),
-    border-radius .4s var(--ease-silk);
+    transform .55s var(--ease-watch);
   /* Pseudo-container pour les effets superposés */
   isolation: isolate;
 }
@@ -110,6 +125,25 @@
 
 /* Brillance lenticulaire — lumière rasante */
 
+
+/* ─── IMAGE UNIVERSELLE — Aspect-ratio 4/3 strict ────────────── */
+.image-container-4-3,
+.service-card-media,
+.service-image-wrapper,
+.area-card-media {
+  aspect-ratio: 4/3 !important;
+}
+
+.image-container-4-3 img,
+.service-card-media img,
+.service-image-wrapper img,
+.area-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
 
 /* ─── BADGE ────────────────────────────────────────────────── */
 .service-card-badge {
@@ -211,10 +245,11 @@
 .services-grid-new {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 2.5rem;
   margin-bottom: 2rem;
 }
-@media (min-width: 640px)  { .services-grid-new { grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 640px)  { .services-grid-new { grid-template-columns: repeat(2,1fr); gap: 2.5rem; } }
+@media (min-width: 1024px) { .services-grid-new { grid-template-columns: repeat(3,1fr); gap: 2.5rem; } }
 
 /* ─── CARTE FORMATION ──────────────────────────────────────── */
 .service-card-new {
@@ -252,9 +287,14 @@
 .service-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16/11;
+  aspect-ratio: 4/3;
   overflow: hidden;
   background: linear-gradient(145deg, #f0ede9, #e5e1dc);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow .55s var(--ease-silk),
+    transform .55s var(--ease-watch);
 }
 
 .service-image-wrapper img {
@@ -264,7 +304,7 @@
   object-position: center;
   display: block;
   transition: transform .95s var(--ease-expo);
-  transform-origin: center 55%;
+  transform-origin: center 50%;
   backface-visibility: hidden;
 }
 

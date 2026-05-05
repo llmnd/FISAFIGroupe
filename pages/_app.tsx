@@ -9,6 +9,7 @@ import '../styles/floating-logo.css';
 import '../styles/carousel.css';
 import '../styles/footer-enhanced.css';
 import '../styles/modules/mobile-performance.css';
+import '../styles/modules/partners.css';
 
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;

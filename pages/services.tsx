@@ -86,10 +86,13 @@ export default function Services() {
                   alt={service.name}
                   width={400}
                   height={300}
-                  data-observe
-                  style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  style={{ width: "100%", height: "100%" }}
                 />
-                <div className="service-card-badge">{service.num}</div>
+                <div className="service-card-badge" aria-hidden="true">
+                  {service.num}
+                </div>
               </div>
               <div className="service-card-content">
                 <h3 className="service-card-title">{service.name}</h3>

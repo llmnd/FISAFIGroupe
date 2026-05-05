@@ -147,3 +147,21 @@ html:not(.blink-no-smooth) .carousel-container {
     right: 40px;
   }
 }
+
+/* ─── PARTNERS CAROUSEL ─── */
+.carousel-partners .carousel-container > * {
+  flex: 0 0 auto;
+  width: clamp(280px, 45vw, 400px);
+}
+
+@media (min-width: 768px) {
+  .carousel-partners .carousel-container > * {
+    width: clamp(320px, 35vw, 420px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-partners .carousel-container > * {
+    width: 380px;
+  }
+}

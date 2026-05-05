@@ -5,7 +5,7 @@ import { rafThrottle, addPassiveEventListener } from "@/scripts/scroll-optimizat
 
 interface CarouselProps {
   children: React.ReactNode[];
-  variant?: "services" | "news";
+  variant?: "services" | "news" | "partners";
 }
 
 const ChevronLeft = () => (
