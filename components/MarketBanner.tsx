@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 const MARKET_BANNER_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Outfit:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Outfit:wght@300;400;500&display=swap');
 
   .mb-root {
     position: fixed;
@@ -25,59 +25,78 @@ const MARKET_BANNER_STYLES = `
     gap: 16px;
     width: 100%;
     max-width: 780px;
-    background: rgba(14, 14, 70, 0.92);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(244, 121, 32, 0.3);
-    border-radius: 16px;
-    padding: 14px 18px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    background: rgba(10, 10, 36, 0.96);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 15px 18px;
+    box-shadow:
+      0 0 0 1px rgba(244, 121, 32, 0.12) inset,
+      0 8px 40px rgba(0, 0, 0, 0.6),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    overflow: hidden;
+  }
+
+  .mb-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(244, 121, 32, 0.6), transparent);
+    opacity: 0.7;
   }
 
   .mb-card::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 15%;
-    right: 15%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(244, 121, 32, 0.5), transparent);
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 80px;
+    background: radial-gradient(ellipse, rgba(244,121,32,0.08) 0%, transparent 70%);
+    pointer-events: none;
   }
 
   .mb-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 13px;
     flex: 1;
     min-width: 0;
   }
 
   .mb-badge {
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(244, 121, 32, 0.15);
-    border: 1px solid rgba(244, 121, 32, 0.3);
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: linear-gradient(145deg, rgba(244,121,32,0.18), rgba(244,121,32,0.06));
+    border: 1px solid rgba(244, 121, 32, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 17px;
+    box-shadow: 0 2px 8px rgba(244,121,32,0.12);
   }
 
   .mb-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     min-width: 0;
   }
 
   .mb-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 15px;
+    font-size: 15.5px;
     font-weight: 600;
-    color: #E8E4FF;
+    color: #F0EEFF;
     line-height: 1.2;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -85,16 +104,19 @@ const MARKET_BANNER_STYLES = `
 
   .mb-title span {
     color: #F47920;
+    font-style: italic;
+    font-weight: 400;
   }
 
   .mb-subtitle {
     font-family: 'Outfit', sans-serif;
     font-size: 11.5px;
     font-weight: 300;
-    color: rgba(200, 196, 255, 0.45);
+    color: rgba(180, 175, 220, 0.4);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: 0.02em;
   }
 
   .mb-right {
@@ -107,59 +129,70 @@ const MARKET_BANNER_STYLES = `
   .mb-cta {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     padding: 7px 16px;
-    background: linear-gradient(135deg, #F47920, #D4620F);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(240, 238, 255, 0.85);
     text-decoration: none;
     border-radius: 100px;
     font-family: 'Outfit', sans-serif;
     font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
+    font-weight: 400;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  .mb-cta:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #fff;
   }
 
   .mb-divider {
     width: 1px;
-    height: 20px;
-    background: rgba(244, 121, 32, 0.2);
+    height: 22px;
+    background: rgba(255, 255, 255, 0.07);
   }
 
   .mb-close {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: transparent;
-    color: rgba(200, 196, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(240, 238, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 50%;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
 
   .mb-close:hover {
-    color: rgba(200, 196, 255, 0.7);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
   }
 
   @media (max-width: 540px) {
     .mb-root { padding: 10px 12px; }
-    .mb-card { padding: 11px 13px; border-radius: 13px; }
-    .mb-title { font-size: 14px; }
+    .mb-card { padding: 11px 13px; border-radius: 14px; }
+    .mb-title { font-size: 14.5px; }
     .mb-subtitle { font-size: 11px; }
   }
 
   @media (min-width: 900px) {
     .mb-root { padding: 16px 32px; }
-    .mb-card { padding: 15px 22px; }
+    .mb-card { padding: 16px 22px; }
     .mb-title { font-size: 16px; }
   }
 `;
@@ -212,7 +245,7 @@ export default function MarketBanner({
               rel="noopener noreferrer"
               className="mb-cta"
             >
-              Visiter →
+              Visiter <span style={{ opacity: 0.55, fontSize: "11px" }}>→</span>
             </a>
             <div className="mb-divider" />
             <button

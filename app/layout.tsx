@@ -3,14 +3,13 @@ import { ReactNode } from "react";
 import { Cormorant_Garamond, Outfit, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from "@/context/ThemeContext";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
-import ScrollManager from "@/components/ScrollManager";
 import { ZoomOptimizer } from "@/components/ZoomOptimizer";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
+  title: "FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar",
   description:
-    "Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité, Cloud & Formations. WDM, Déploiement Aérien/Souterrain. 10+ années à Dakar. +221 78 781 22 97",
+    "Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité et formations certifiantes à Dakar, Sénégal.",
   keywords: [
     "cabinet IT Dakar",
     "télécoms Sénégal",
@@ -35,9 +34,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: "https://fisafigroupe.com",
-    title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
+    title: "FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar",
     description:
-      "Partenaire stratégique pour l'avenir numérique de l'Afrique. Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité. 10+ années d'expertise en Afrique de l'Ouest.",
+      "Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité et formations certifiantes à Dakar, Sénégal.",
     images: [
       {
         url: "https://fisafigroupe.com/favicon/web-app-manifest-512x512.png",
@@ -51,7 +50,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FiSAFi Groupe — Cabinet IT & Télécoms | Dakar, Sénégal",
+    title: "FiSAFi Groupe | Expert Fibre Optique, Réseaux & Télécoms | Dakar",
     description:
       "Expertise IT, Réseaux, Télécoms, Fibre Optique, Cybersécurité et formations certifiantes à Dakar, Sénégal",
     images: ["https://fisafigroupe.com/favicon/web-app-manifest-512x512.png"],
@@ -218,7 +217,6 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <ScrollManager />
           <ZoomOptimizer />
           <SmoothScrollProvider />
           {children}

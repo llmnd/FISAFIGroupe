@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import ServicesGrid from "@/components/servicesgrid";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
 const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"));
 const CardCarousel = dynamic(() => import("@/components/CardCarousel"));
@@ -96,21 +97,19 @@ const areaCards = [
     index: "03",
     name: "Sécurité Digitale",
     desc: "Protection données, audit compliance et défense contre les menaces cyber émergentes et persistantes.",
-    img: "https://i.pinimg.com/736x/53/3e/52/533e52f1f29a8c0c248156235ce88bbf.jpg",
+    img: "https://i.pinimg.com/originals/f3/ee/fd/f3eefd19e2232ce49cea31ba67fd49c3.gif",
     tag: "Cyberdéfense",
   },
   {
     index: "04",
     name: "Conseil Stratégique",
     desc: "Stratégie technologique, transformation digitale et accompagnement expert de vos projets de grande envergure.",
-    img: "https://i.pinimg.com/1200x/7e/08/d4/7e08d403064e4afe167924fd655516a0.jpg",
+    img: "https://i.pinimg.com/originals/b2/64/55/b264551345f9b289cb6a8c4b8ab9b591.gif",
     tag: "Conseil",
   },
 ];
 
 export default function Home() {
-  const [selectedService, setSelectedService] = useState<any>(null);
-
   return (
     <>
       <Head>
@@ -173,89 +172,7 @@ export default function Home() {
       </div>
 
       {/* ─── SERVICES ─── */}
-      <section className="section" id="services">
-        <div className="section-eyebrow">Nos offres</div>
-        <h2 className="section-title">Solutions<br />complètes</h2>
-
-        <div className="services-grid" data-observe>
-          {[
-            { num: "01", name: "Réseaux & Télécommunications", fullDesc: "Nos experts en réseaux et télécommunications conçoivent, déploient et modernisent des infrastructures robustes adaptées à vos besoins spécifiques. Nous assurons performance, sécurité et scalabilité à chaque étape.", img: "https://i.pinimg.com/originals/ff/04/31/ff0431d11ff6b73e937280252f58f371.gif", tags: ["INFRASTRUCTURE", "NETWORKING"] },
-            { num: "02", name: "Informatique & Infrastructures IT", fullDesc: "Nous auditions vos systèmes, identifions les optimisations nécessaires et déployons des solutions IT performantes. Maintenance proactive et support continu garantis.", img: "https://i.pinimg.com/1200x/ba/98/28/ba9828f1dedbac62fde7444b2aab978a.jpg", tags: ["IT", "INFRASTRUCTURE"] },
-            { num: "03", name: "Sécurité & Cybersécurité", fullDesc: "Protection complète de vos données et infrastructures. Audits de sécurité, tests de pénétration, et mise en place de solutions de cyberdéfense adaptées aux menaces actuelles.", img: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg", tags: ["SÉCURITÉ", "PROTECTION"] },
-            { num: "04", name: "Conseil & Accompagnement Stratégique", fullDesc: "Nous vous accompagnez dans votre transformation digitale avec des études stratégiques, formations personnalisées et conseil expert pour anticiper les mutations numériques.", img: "https://i.pinimg.com/originals/bb/0c/c7/bb0cc783196fa9b2119864ff90eb5702.gif", tags: ["CONSEIL", "STRATÉGIE"] },
-            { num: "05", name: "Fibre Optique & Ingénierie Réseau", fullDesc: "Nous vous accompagnons dans vos projets fibre optique avec des études de déploiement, formations techniques et conseil expert pour garantir performance, débit et pérennité de votre infrastructure.", img: "https://i.pinimg.com/1200x/23/e1/36/23e136d0c010468805abcc11b6adf877.jpg", tags: ["FIBRE", "RÉSEAU"] },
-            { num: "06", name: "Déploiement Réseau Fibre Optique", fullDesc: "Nous réalisons votre déploiement fibre optique, que ce soit en aérien ou en souterrain, avec un suivi rigoureux des travaux, un contrôle qualité permanent et une coordination complète des équipes sur le terrain.", img: "https://i.pinimg.com/1200x/15/50/e0/1550e00f9f4ff4edf4ec89c2b826abd5.jpg", tags: ["DÉPLOIEMENT", "FIBRE", "SUIVI CHANTIER"] },
-          ].map((service) => (
-            <div
-              key={service.num}
-              className="service-card"
-              onClick={() => setSelectedService(service)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSelectedService(service);
-                }
-              }}
-            >
-              <div className="service-card-media">
-                <Image
-                  src={service.img}
-                  alt={service.name}
-                  width={400}
-                  height={300}
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-                <div className="service-card-badge" aria-hidden>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                  </svg>
-                </div>
-              </div>
-              <div className="service-card-content">
-                <h3 className="service-card-title">{service.name}</h3>
-                <div className="service-card-tags">
-                  {service.tags?.map((tag) => (
-                    <span key={tag} className="service-tag">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── MODAL SERVICE ─── */}
-      {selectedService && (
-        <div
-          className="service-modal-backdrop"
-          onClick={() => setSelectedService(null)}
-          onKeyDown={(e) => { if (e.key === "Escape") setSelectedService(null); }}
-          role="dialog"
-          aria-modal="true"
-          tabIndex={-1}
-        >
-          <div className="service-modal" onClick={(e) => e.stopPropagation()} role="document">
-            <button
-              className="service-modal-close"
-              onClick={() => setSelectedService(null)}
-              aria-label="Fermer le modal"
-              type="button"
-            >
-              ✕
-            </button>
-            <div className="service-modal-content">
-              <div className="service-modal-num">{selectedService.num}</div>
-              <h2 className="service-modal-title">{selectedService.name}</h2>
-              <p className="service-modal-desc">{selectedService.fullDesc}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <ServicesGrid />
       <div className="divider" />
 
       {/* ─── SPLIT CARDS (CAPABILITIES) ─── */}

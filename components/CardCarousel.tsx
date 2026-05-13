@@ -24,6 +24,7 @@ export default function CardCarousel({ children, variant = "services" }: Carouse
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkScroll = () => {
     if (scrollContainerRef.current) {
@@ -45,6 +46,42 @@ export default function CardCarousel({ children, variant = "services" }: Carouse
       window.removeEventListener("resize", wrapped);
     };
   }, []);
+
+  // Auto-scroll pour services carousel
+  useEffect(() => {
+    if (variant !== "services") return;
+
+    const startAutoScroll = () => {
+      autoScrollIntervalRef.current = setInterval(() => {
+        if (scrollContainerRef.current) {
+          const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+          const scrollAmount = 280; // Largeur d'une carte environ
+
+          if (scrollLeft + clientWidth >= scrollWidth - 50) {
+            // Retour au début
+            scrollContainerRef.current.scrollTo({
+              left: 0,
+              behavior: "smooth",
+            });
+          } else {
+            // Scroll forward
+            scrollContainerRef.current.scrollBy({
+              left: scrollAmount,
+              behavior: "smooth",
+            });
+          }
+        }
+      }, 4000); // Scroll toutes les 4 secondes
+    };
+
+    startAutoScroll();
+
+    return () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+      }
+    };
+  }, [variant]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {

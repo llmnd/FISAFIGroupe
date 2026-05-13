@@ -51,7 +51,7 @@
 
 /* Les cartes héritent la visibilité de leur parent grille */
 .services-grid.is-visible .service-card {
-  animation: revealCard .75s var(--ease-expo) forwards;
+  animation: revealCard 0.65s var(--ease-expo) forwards;
 }
 
 @media (min-width: 640px) {
@@ -72,22 +72,23 @@
   transform: translateZ(0);
   backface-visibility: hidden;
   
+  /* État initial : invisible et hors de place */
+  opacity: 0;
+  transform: scale(0.95) translateY(12px) translateZ(0);
 }
 
-/* Stagger subtil — desktop seulement */
+/* Stagger plus rapide et fluide — desktop seulement */
 @media (min-width: 769px) {
-  .service-card:nth-child(1) { animation-delay: .0s; }
-  .service-card:nth-child(2) { animation-delay: .05s; }
-  .service-card:nth-child(3) { animation-delay: .1s; }
-  .service-card:nth-child(4) { animation-delay: .15s; }
-  .service-card:nth-child(5) { animation-delay: .2s; }
-  .service-card:nth-child(6) { animation-delay: .25s; }
+  .service-card:nth-child(1) { animation-delay: 0.0s; }
+  .service-card:nth-child(2) { animation-delay: 0.08s; }
+  .service-card:nth-child(3) { animation-delay: 0.16s; }
+  .service-card:nth-child(4) { animation-delay: 0.24s; }
+  .service-card:nth-child(5) { animation-delay: 0.32s; }
+  .service-card:nth-child(6) { animation-delay: 0.40s; }
 }
 
-/* Mobile: pas de délais, animations rapides */
+/* Mobile: pas de délais, animations synchronisées */
 @media (max-width: 768px) {
-  .service-card {
-  }
   .service-card:nth-child(1) { animation-delay: 0s; }
   .service-card:nth-child(2) { animation-delay: 0s; }
   .service-card:nth-child(3) { animation-delay: 0s; }
@@ -145,6 +146,12 @@
   display: block;
 }
 
+/* Animation de révélation des images avec blur-out progressif */
+.services-grid.is-visible .service-card-media img {
+  animation: revealImage 0.65s var(--ease-expo) forwards;
+  will-change: transform, opacity;
+}
+
 /* ─── BADGE ────────────────────────────────────────────────── */
 .service-card-badge {
   position: absolute;
@@ -155,6 +162,12 @@
   background: rgba(255,255,255,.97);
   border-radius: var(--radius-badge);
   display: flex;
+  /* Animation du badge avec délai */
+}
+
+.services-grid.is-visible .service-card-badge {
+  animation: revealBadge 0.65s var(--ease-spring) forwards;
+  will-change: transform, opacity;
   align-items: center;
   justify-content: center;
   font-family: 'Outfit', sans-serif;
@@ -180,6 +193,13 @@
   flex-direction: column;
   gap: .75rem;
   padding: 0 .35rem;
+  /* Animation du contenu après la révélation de la carte */
+  opacity: 0;
+}
+
+.services-grid.is-visible .service-card-content {
+  animation: fadeInText 0.45s var(--ease-silk) forwards;
+  animation-delay: 0.35s;
 }
 
 .service-card-title {
@@ -251,6 +271,24 @@
 @media (min-width: 640px)  { .services-grid-new { grid-template-columns: repeat(2,1fr); gap: 2.5rem; } }
 @media (min-width: 1024px) { .services-grid-new { grid-template-columns: repeat(3,1fr); gap: 2.5rem; } }
 
+/* Appliquer les animations au scroll */
+.services-grid-new.is-visible .service-card-new {
+  animation: revealCard 0.65s var(--ease-expo) forwards;
+}
+
+@media (min-width: 769px) {
+  .services-grid-new.is-visible .service-card-new:nth-child(1) { animation-delay: 0.0s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(2) { animation-delay: 0.08s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(3) { animation-delay: 0.16s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(4) { animation-delay: 0.24s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(5) { animation-delay: 0.32s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(6) { animation-delay: 0.40s; }
+}
+
+@media (max-width: 768px) {
+  .services-grid-new.is-visible .service-card-new { animation-delay: 0s !important; }
+}
+
 /* ─── CARTE FORMATION ──────────────────────────────────────── */
 .service-card-new {
   display: flex;
@@ -263,8 +301,9 @@
   border: .5px solid rgba(0,0,0,.04);
   position: relative;
   isolation: isolate;
+  /* État initial : invisible */
   opacity: 0;
-  animation: revealCard .75s var(--ease-expo) forwards;
+  transform: scale(0.90) translateY(24px);
   transition:
     box-shadow .55s var(--ease-silk),
     transform  .55s var(--ease-watch),
@@ -502,6 +541,114 @@
   --tilt-y: 0deg;
 }
 
+/* ─── KEYFRAMES DES ANIMATIONS ─────────────────────────────── */
+/* Animation de révélation des cartes — OPTIMISÉE pour performance */
+@keyframes revealCard {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px) translateZ(0);
+  }
+  60% {
+    opacity: 0.9;
+    transform: scale(0.98) translateY(4px) translateZ(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0) translateZ(0);
+  }
+}
+
+/* Animation des images — sans filter blur (trop lourd) */
+@keyframes revealImage {
+  0% {
+    opacity: 0;
+    transform: scale(1.05) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Animation du badge — simple et rapide */
+@keyframes revealBadge {
+  0% {
+    opacity: 0;
+    transform: scale(0.75) rotate(-15deg);
+  }
+  70% {
+    opacity: 0.9;
+    transform: scale(1.08) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Animation du texte — révélation douce après la carte */
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation modale — apparition du fond semi-transparent */
+@keyframes fadeBackdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animation modale — levée du contenu modal */
+@keyframes riseModal {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── OPTIMISATIONS GPU POUR ANIMATIONS ────────────────────── */
+/* Activez GPU acceleration pendant les animations critiques */
+.service-card {
+  will-change: auto;  /* Ne pas activer persistemment — causes tremblement */
+}
+
+.services-grid.is-visible .service-card {
+  will-change: opacity, transform;  /* GPU acceleration pendant animation */
+}
+
+/* Les cartes reviennent à la normal après l'animation */
+.service-card[data-animated="true"] {
+  will-change: auto;
+}
+
+.service-card-new {
+  will-change: auto;
+}
+
+.service-card-new[data-animated="true"] {
+  will-change: auto;
+}
+
+/* Optimisation des images dans les cartes */
+.service-card-media img,
+.service-image-wrapper img {
+  will-change: auto;
+  content-visibility: auto;  /* Lazy rendering des images non-visibles */
+}
 
 /* ─── MODE SOMBRE ──────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {

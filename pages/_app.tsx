@@ -29,6 +29,53 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, []);
 
+  // ─── GLOBAL SCROLL ANIMATIONS (Optimized avec MutationObserver) ──────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { 
+        threshold: 0.05,
+        rootMargin: '0px 0px -40px 0px'
+      }
+    );
+
+    // Observer les éléments existants ET futurs avec MutationObserver
+    const observeElements = () => {
+      document.querySelectorAll('[data-observe], .services-grid, .services-grid-new').forEach((el) => {
+        if (!el.classList.contains('is-visible')) {
+          observer.observe(el);
+        }
+      });
+    };
+
+    // Première observation
+    observeElements();
+
+    // MutationObserver pour capturer les nouveaux éléments
+    const mutationObserver = new MutationObserver(() => {
+      observeElements();
+    });
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, []);
+
   // Fix for mobile/Chrome/Edge UI chrome (address bar) causing viewport height jumps.
   // Sets a dynamic `--vh` CSS variable based on the real inner height (uses visualViewport when available).
   useEffect(() => {
