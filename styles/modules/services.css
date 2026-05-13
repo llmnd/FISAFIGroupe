@@ -4,19 +4,50 @@
    Chaque courbe de Bézier, un geste de maître.
    ══════════════════════════════════════════════════════════════ */
 
+/* ─── OPTIMISATIONS MOBILE D'ABORD ────────────────────────── */
+@media (max-width: 768px) {
+  /* Réduire les animations sur mobile */
+  :root {
+    --ease-silk:          ease-in-out;
+    --ease-spring:        ease-out;
+    --ease-expo:          ease-out;
+  }
+
+  /* Skeleton loading amélioré */
+  @keyframes skeletonShimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  .sg-skeleton {
+    background-image: linear-gradient(
+      90deg,
+      #f0f0f0 0%,
+      #f8f8f8 20%,
+      #f0f0f0 40%
+    );
+    background-size: 1000px 100%;
+    animation: skeletonShimmer 2s infinite;
+    border-radius: 26px;
+  }
+
+  .sg-skeleton-shimmer {
+    display: none !important;
+  }
+}
+
 /* ─── FONDATIONS CINÉTIQUES ───────────────────────────────── */
-/* Courbes inspirées du mouvement d'un balancier horloger */
 :root {
   --radius-card:        26px;
   --radius-card-sm:     20px;
   --radius-badge:       50%;
 
   /* Quatre tempéraments cinétiques distincts */
-  --ease-silk:          cubic-bezier(0.25, 0.46, 0.45, 0.94);   /* fluide, sans aspérité */
-  --ease-spring:        cubic-bezier(0.34, 1.56, 0.64, 1);      /* rebond organique */
-  --ease-expo:          cubic-bezier(0.16, 1, 0.3, 1);          /* décélération exponentielle */
-  --ease-anticipate:    cubic-bezier(0.68, -0.6, 0.32, 1.6);    /* recul avant élan */
-  --ease-watch:         cubic-bezier(0.22, 1.2, 0.36, 0.97);    /* mécanique d'horlogerie */
+  --ease-silk:          cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring:        cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:          cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-anticipate:    cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --ease-watch:         cubic-bezier(0.22, 1.2, 0.36, 0.97);
 
   /* Ombres stratifiées — lumière volumétrique */
   --shadow-ambient:     0 1px 2px rgba(0,0,0,.02), 0 2px 4px rgba(0,0,0,.02);
@@ -28,7 +59,7 @@
   --shadow-badge:       0 4px 14px rgba(0,0,0,.08);
   --shadow-badge-hover: 0 10px 28px rgba(0,0,0,.15);
 
-  /* Filtre grain SVG intégré (texture sensorielle) */
+  /* Filtre grain SVG intégré */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.035'/%3E%3C/svg%3E");
 }
 
@@ -42,16 +73,14 @@
   will-change: auto;
 }
 
-/* Observer la grille une seule fois, pas chaque carte */
 .services-grid[data-observe] {
   opacity: 1;
   transition: opacity 0s ease;
   pointer-events: auto;
 }
 
-/* Les cartes héritent la visibilité de leur parent grille */
 .services-grid.is-visible .service-card {
-  animation: revealCard 0.65s var(--ease-expo) forwards;
+  animation: revealCard 0.7s var(--ease-expo) forwards;
 }
 
 @media (min-width: 640px) {
@@ -61,43 +90,26 @@
   .services-grid { grid-template-columns: repeat(3, 1fr); gap: 3.5rem 2.5rem; }
 }
 
-/* ─── CARTE DE SERVICE — Architecture principale ───────────── */
+/* ─── CARTE DE SERVICE — DESIGN PREMIUM PERMANENT ──────────── */
 .service-card {
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 1.2rem;
   cursor: pointer;
   text-decoration: none;
   position: relative;
   transform: translateZ(0);
   backface-visibility: hidden;
+  background: transparent;
+  border-radius: var(--radius-card);
+  transform: translateY(-6px) translateZ(0);
+  box-shadow: var(--shadow-card-lift);
   
-  /* État initial : invisible et hors de place */
+  /* État initial */
   opacity: 0;
-  transform: scale(0.95) translateY(12px) translateZ(0);
 }
 
-/* Stagger plus rapide et fluide — desktop seulement */
-@media (min-width: 769px) {
-  .service-card:nth-child(1) { animation-delay: 0.0s; }
-  .service-card:nth-child(2) { animation-delay: 0.08s; }
-  .service-card:nth-child(3) { animation-delay: 0.16s; }
-  .service-card:nth-child(4) { animation-delay: 0.24s; }
-  .service-card:nth-child(5) { animation-delay: 0.32s; }
-  .service-card:nth-child(6) { animation-delay: 0.40s; }
-}
-
-/* Mobile: pas de délais, animations synchronisées */
-@media (max-width: 768px) {
-  .service-card:nth-child(1) { animation-delay: 0s; }
-  .service-card:nth-child(2) { animation-delay: 0s; }
-  .service-card:nth-child(3) { animation-delay: 0s; }
-  .service-card:nth-child(4) { animation-delay: 0s; }
-  .service-card:nth-child(5) { animation-delay: 0s; }
-  .service-card:nth-child(6) { animation-delay: 0s; }
-}
-
-/* ─── MEDIA DE CARTE ───────────────────────────────────────── */
+/* ─── MEDIA DE CARTE — AVEC OVERLAY PREMIUM PERMANENT ──────── */
 .service-card-media {
   position: relative;
   width: 100%;
@@ -107,9 +119,37 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   transition:
-    box-shadow .55s var(--ease-silk),
-    transform .55s var(--ease-watch);
+    box-shadow .6s var(--ease-silk),
+    transform .6s var(--ease-watch);
   isolation: isolate;
+}
+
+/* Overlay dégradé premium — PERMANENT */
+.service-card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 40%,
+    rgba(0,0,0,0.6) 100%
+  );
+  opacity: 1;
+  transition: opacity .5s var(--ease-silk);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Image avec zoom subtil — PERMANENT */
+.service-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transform: scale(1.05);
+  transition: transform .8s var(--ease-expo);
+  will-change: transform;
 }
 
 .image-container-4-3,
@@ -119,48 +159,41 @@
   aspect-ratio: 4/3 !important;
 }
 
-.image-container-4-3 img,
-.service-card-media img,
-.service-image-wrapper img,
-.area-card-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-}
-
-.services-grid.is-visible .service-card-media img {
-  animation: revealImage 0.65s var(--ease-expo) forwards;
-  will-change: transform, opacity;
-}
-
-/* ─── BADGE ────────────────────────────────────────────────── */
+/* ─── BADGE — DESIGN MINIMALISTE ET ÉLÉGANT — PERMANENT ────── */
 .service-card-badge {
   position: absolute;
-  bottom: 14px;
-  right: 14px;
-  width: 48px;
-  height: 48px;
-  background: rgba(255,255,255,.97);
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(4px);
   border-radius: var(--radius-badge);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #1a1a1a;
   letter-spacing: .02em;
-  box-shadow: var(--shadow-badge);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   transition:
     background .4s var(--ease-spring),
-    color       .4s var(--ease-spring),
-    transform   .45s var(--ease-spring),
-    box-shadow  .4s var(--ease-silk);
+    transform .45s var(--ease-spring),
+    box-shadow .4s var(--ease-silk);
   z-index: 5;
-  outline: 1px solid rgba(255,255,255,.6);
-  outline-offset: -2px;
+  border: 1px solid rgba(255,255,255,0.3);
+  transform: scale(1.1) rotate(0deg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  background: #fff;
+}
+
+.service-card-badge svg {
+  width: 18px;
+  height: 18px;
+  stroke: #1a1a1a;
+  stroke-width: 1.8;
 }
 
 .services-grid.is-visible .service-card-badge {
@@ -168,72 +201,99 @@
   will-change: transform, opacity;
 }
 
-/* ─── CONTENU TEXTUEL ──────────────────────────────────────── */
+/* ─── CONTENU TEXTUEL — TYPOGRAPHIE RAFFINÉE ───────────────── */
 .service-card-content {
   display: flex;
   flex-direction: column;
-  gap: .75rem;
-  padding: 0 .35rem;
+  gap: .6rem;
+  padding: 0 0.25rem;
   opacity: 0;
 }
 
 .services-grid.is-visible .service-card-content {
-  animation: fadeInText 0.45s var(--ease-silk) forwards;
+  animation: fadeInText 0.5s var(--ease-silk) forwards;
   animation-delay: 0.35s;
 }
 
+/* Titre avec soulignement — PERMANENT */
 .service-card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
-  font-weight: 350;
-  color: var(--ink);
+  font-size: clamp(1.3rem, 3.5vw, 1.8rem);
+  font-weight: 400;
+  color: #1a1a1a;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.15;
   letter-spacing: -.015em;
   position: relative;
-  background-image: linear-gradient(110deg, var(--ink) 0%, var(--orange, #c06030) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% 100%;
-  background-position: 0% 50%;
-  transition: background-position .6s var(--ease-expo);
+  display: inline-block;
 }
 
-/* ─── TAGS ─────────────────────────────────────────────────── */
+/* Soulignement décoratif — PERMANENT */
+.service-card-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #c06030, #e0854a);
+  transition: width .5s var(--ease-expo);
+}
+
+/* ─── TAGS — DESIGN RAFFINÉ ─────────────────────────────────── */
 .service-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: .55rem;
-  margin-top: .2rem;
+  gap: .45rem;
+  margin-top: .15rem;
+}
+
+/* Centrer les tags quand il y en a exactement 2 */
+.service-card-tags:has(> .service-tag:nth-child(2):last-child) {
+  justify-content: center;
 }
 
 .service-tag {
   font-family: 'Outfit', sans-serif;
-  font-size: .62rem;
-  letter-spacing: .13em;
+  font-size: .58rem;
+  letter-spacing: .12em;
   font-weight: 500;
   text-transform: uppercase;
-  padding: .28rem .8rem;
-  border-radius: 40px;
+  padding: .2rem .7rem;
+  border-radius: 30px;
   display: inline-block;
   white-space: nowrap;
   transition:
-    transform   .3s var(--ease-spring),
+    transform .3s var(--ease-spring),
     letter-spacing .3s var(--ease-silk),
-    box-shadow  .3s var(--ease-silk);
-  background: rgba(0,0,0,.03);
-  color: var(--steel, #666);
-  border: .5px solid rgba(0,0,0,.05);
+    box-shadow .3s var(--ease-silk),
+    background .3s var(--ease-silk),
+    color .3s var(--ease-silk);
+  
+  background: rgba(0,0,0,.04);
+  color: #555;
+  border: none;
 }
 
-/* Palette chromatique précise — six teintes distinctes */
-.service-tag:nth-child(1) { background: rgba(0,0,0,.025);        color: #555;     border-color: rgba(0,0,0,.04); }
-.service-tag:nth-child(2) { background: rgba(139,94,60,.07);     color: #7a5232;  border-color: rgba(139,94,60,.12); }
-.service-tag:nth-child(3) { background: rgba(46,125,50,.06);     color: #2a6e2f;  border-color: rgba(46,125,50,.1); }
-.service-tag:nth-child(4) { background: rgba(108,99,181,.06);    color: #5d55a8;  border-color: rgba(108,99,181,.1); }
-.service-tag:nth-child(5) { background: rgba(198,89,17,.06);     color: #b55210;  border-color: rgba(198,89,17,.1); }
-.service-tag:nth-child(6) { background: rgba(20,110,140,.06);    color: #1a6f8c;  border-color: rgba(20,110,140,.1); }
+/* Palettes chromatiques uniques par tag */
+.service-tag[data-tag="INFRASTRUCTURE"] { background: rgba(255, 145, 77, 0.15); color: #d97a4a; }
+.service-tag[data-tag="NETWORKING"] { background: rgba(150, 100, 255, 0.15); color: #9d4ad9; }
+.service-tag[data-tag="IT"] { background: rgba(100, 180, 255, 0.15); color: #4a8fd9; }
+.service-tag[data-tag="SÉCURITÉ"] { background: rgba(255, 100, 100, 0.15); color: #d94a4a; }
+.service-tag[data-tag="PROTECTION"] { background: rgba(255, 150, 150, 0.15); color: #d97474; }
+.service-tag[data-tag="CONSEIL"] { background: rgba(100, 200, 120, 0.15); color: #61cc6f; }
+.service-tag[data-tag="STRATÉGIE"] { background: rgba(130, 220, 140, 0.15); color: #66c570; }
+.service-tag[data-tag="FIBRE"] { background: rgba(255, 180, 100, 0.15); color: #d9944a; }
+.service-tag[data-tag="RÉSEAU"] { background: rgba(100, 200, 255, 0.15); color: #4a9fd9; }
+.service-tag[data-tag="DÉPLOIEMENT"] { background: rgba(255, 220, 100, 0.15); color: #d9b94a; }
+.service-tag[data-tag="SUIVI CHANTIER"] { background: rgba(220, 130, 80, 0.15); color: #d97a4a; }
+
+.service-tag:hover {
+  transform: translateY(-1px);
+}
+
+/* ─── SUPPRESSION DES EFFETS HOVER ──────────────────────────── */
+/* On supprime tous les :hover qui ne sont plus nécessaires */
 
 /* ─── GRILLE FORMATIONS ────────────────────────────────────── */
 .services-grid-new {
@@ -278,7 +338,7 @@
   transform: scale(0.90) translateY(24px);
   transition:
     box-shadow .55s var(--ease-silk),
-    transform  .55s var(--ease-watch),
+    transform .55s var(--ease-watch),
     border-color .3s var(--ease-silk);
 }
 
@@ -353,7 +413,7 @@
   outline-offset: -2px;
   transition:
     background .4s var(--ease-spring),
-    transform  .45s var(--ease-spring),
+    transform .45s var(--ease-spring),
     outline-color .3s;
 }
 
@@ -558,7 +618,7 @@
   
   .service-modal-title {
     font-size: 2rem !important;
-    white-space: normal !important; /* Sur mobile, on laisse couper */
+    white-space: normal !important;
   }
   
   .service-modal-desc {
@@ -572,22 +632,15 @@
   }
 }
 
-/* ─── INCLINAISON MAGNÉTIQUE (JS requis) ───────────────────── */
-.service-card,
-.service-card-new {
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
-}
-
 /* ─── KEYFRAMES DES ANIMATIONS ─────────────────────────────── */
 @keyframes revealCard {
   0% {
     opacity: 0;
-    transform: scale(0.92) translateY(20px) translateZ(0);
+    transform: scale(0.93) translateY(25px) translateZ(0);
   }
   60% {
     opacity: 0.9;
-    transform: scale(0.98) translateY(4px) translateZ(0);
+    transform: scale(0.98) translateY(5px) translateZ(0);
   }
   100% {
     opacity: 1;
@@ -598,7 +651,7 @@
 @keyframes revealImage {
   0% {
     opacity: 0;
-    transform: scale(1.05) translateY(-4px);
+    transform: scale(1.08) translateY(-6px);
   }
   100% {
     opacity: 1;
@@ -609,11 +662,11 @@
 @keyframes revealBadge {
   0% {
     opacity: 0;
-    transform: scale(0.75) rotate(-15deg);
+    transform: scale(0.7) rotate(-10deg);
   }
-  70% {
+  60% {
     opacity: 0.9;
-    transform: scale(1.08) rotate(0deg);
+    transform: scale(1.05) rotate(2deg);
   }
   100% {
     opacity: 1;
@@ -624,7 +677,7 @@
 @keyframes fadeInText {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -652,7 +705,7 @@
   }
 }
 
-/* ─── OPTIMISATIONS GPU POUR ANIMATIONS ────────────────────── */
+/* ─── OPTIMISATIONS GPU ────────────────────────────────────── */
 .service-card {
   will-change: auto;
 }
@@ -661,22 +714,66 @@
   will-change: opacity, transform;
 }
 
-.service-card[data-animated="true"] {
-  will-change: auto;
-}
-
-.service-card-new {
-  will-change: auto;
-}
-
-.service-card-new[data-animated="true"] {
-  will-change: auto;
-}
-
 .service-card-media img,
 .service-image-wrapper img {
   will-change: auto;
   content-visibility: auto;
+}
+
+/* ─── OPTIMISATIONS SCROLL MOBILE ──────────────────────────── */
+@media (max-width: 768px) {
+  .services-grid {
+    will-change: auto;
+  }
+
+  .service-card {
+    will-change: auto;
+    /* Réduire les shadows mobiles */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .service-card-media {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    /* Désactiver les transitions complexes */
+    transition: none !important;
+  }
+
+  .service-card-badge {
+    transition: opacity 0.2s ease !important;
+  }
+
+  /* Smooth scrolling performance */
+  main {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Réduire les stagger delays sur mobile */
+  @media (max-width: 768px) {
+    .service-card:nth-child(1) { animation-delay: 0s !important; }
+    .service-card:nth-child(2) { animation-delay: 0s !important; }
+    .service-card:nth-child(3) { animation-delay: 0s !important; }
+    .service-card:nth-child(4) { animation-delay: 0s !important; }
+    .service-card:nth-child(5) { animation-delay: 0s !important; }
+    .service-card:nth-child(6) { animation-delay: 0s !important; }
+  }
+
+  /* Skeleton rapide */
+  .service-card-media {
+    background: #f5f5f5;
+  }
+
+  /* Modal optimisé mobile */
+  .service-modal {
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    border-radius: 20px !important;
+    will-change: auto !important;
+  }
+
+  .service-modal-title {
+    font-size: 1.8rem !important;
+  }
 }
 
 /* ─── MODE SOMBRE ──────────────────────────────────────────── */
@@ -686,21 +783,68 @@
     --shadow-card-lift: 0 8px 20px rgba(0,0,0,.4), 0 20px 40px rgba(0,0,0,.4);
     --shadow-card-float:0 16px 40px rgba(0,0,0,.5), 0 40px 80px rgba(0,0,0,.5);
   }
-  .service-card-media  { background: #1a1a1e; }
-  .service-card-new    { background: #111116; border-color: rgba(255,255,255,.06); }
-  .service-content     { background: #111116; }
-  .service-name-new    { color: #eee; }
-  .service-desc-new    { color: #888; }
-  .service-tag         { background: rgba(255,255,255,.05); color: #999; border-color: rgba(255,255,255,.07); }
+  
+  .service-card-title {
+    color: #f0ede9;
+  }
+  .service-card-title::after {
+    background: linear-gradient(90deg, #e0854a, #f0a56a);
+  }
+  .service-tag {
+    background: rgba(255,255,255,.05);
+    color: #999;
+  }
+  .service-card-badge {
+    background: rgba(30,30,35,0.9);
+    color: #f0ede9;
+    border-color: rgba(255,255,255,0.1);
+  }
+  .service-card-badge svg {
+    stroke: #f0ede9;
+  }
+  .service-card-media {
+    background: #1a1a1e;
+  }
+  
+  .service-card-new {
+    background: #111116;
+    border-color: rgba(255,255,255,.06);
+  }
+  .service-content {
+    background: #111116;
+  }
+  .service-name-new {
+    color: #eee;
+  }
+  .service-desc-new {
+    color: #888;
+  }
   
   /* Modal en mode sombre */
-  .service-modal       { background: rgba(16,16,20,.98); }
-  .service-modal-title { color: #f0ede9; }
-  .service-modal-desc  { color: #aaa; }
-  .service-modal-close { background: rgba(255,255,255,.06); color: #aaa; }
-  .service-modal-close:hover { background: #f0ede9; color: #111; }
-  .modal-cta            { background: #f0ede9; color: #111; }
-  .modal-cta:hover      { background: #fff; }
+  .service-modal {
+    background: rgba(16,16,20,.98);
+  }
+  .service-modal-title {
+    color: #f0ede9;
+  }
+  .service-modal-desc {
+    color: #aaa;
+  }
+  .service-modal-close {
+    background: rgba(255,255,255,.06);
+    color: #aaa;
+  }
+  .service-modal-close:hover {
+    background: #f0ede9;
+    color: #111;
+  }
+  .modal-cta {
+    background: #f0ede9;
+    color: #111;
+  }
+  .modal-cta:hover {
+    background: #fff;
+  }
 }
 
 /* ─── ACCESSIBILITÉ ────────────────────────────────────────── */

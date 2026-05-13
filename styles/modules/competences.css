@@ -32,6 +32,12 @@
   border: 0.5px solid rgba(255,255,255,0.06); 
 }
 
+.comp-item:nth-child(5) {
+  grid-column: 1 / -1;
+  width: 50%;
+  margin: 0 auto;
+}
+
 .comp-item {
   background: var(--ink);
   padding: 2rem 1.5rem;

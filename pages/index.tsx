@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
@@ -109,7 +110,27 @@ const areaCards = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [selectedService, setSelectedService] = useState<any>(null);
+
+  // Bloquer le scroll du body quand le modal est ouvert
+  useEffect(() => {
+    if (selectedService) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = scrollbarWidth + 'px';
+    } else {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0px';
+    }
+    return () => {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0px';
+    };
+  }, [selectedService]);
 
   return (
     <>
@@ -219,7 +240,7 @@ export default function Home() {
                 <h3 className="service-card-title">{service.name}</h3>
                 <div className="service-card-tags">
                   {service.tags?.map((tag) => (
-                    <span key={tag} className="service-tag">{tag}</span>
+                    <span key={tag} className="service-tag" data-tag={tag}>{tag}</span>
                   ))}
                 </div>
               </div>
@@ -259,7 +280,10 @@ export default function Home() {
               
               {/* Bouton d'action */}
               <div style={{ marginTop: '2rem' }}>
-                <button className="modal-cta">Nous contacter</button>
+                <button className="modal-cta" onClick={() => {
+                  setSelectedService(null);
+                  router.push('/contact');
+                }}>Nous contacter</button>
               </div>
             </div>
           </div>

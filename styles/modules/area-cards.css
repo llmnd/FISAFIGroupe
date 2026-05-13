@@ -150,6 +150,32 @@
   padding: 0.22rem 0.6rem;
   border-radius: 3px;
   border: 1px solid rgba(229,90,0,0.18);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Couleurs légères différentes par indice */
+.area-card-item:nth-child(1) .area-card-tag { 
+  background: rgba(255, 107, 107, 0.15); 
+  color: #d94a4a; 
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+.area-card-item:nth-child(2) .area-card-tag { 
+  background: rgba(100, 180, 255, 0.15); 
+  color: #4a8fd9; 
+  border-color: rgba(100, 180, 255, 0.25);
+}
+
+.area-card-item:nth-child(3) .area-card-tag { 
+  background: rgba(130, 200, 100, 0.15); 
+  color: #4ad95c; 
+  border-color: rgba(130, 200, 100, 0.25);
+}
+
+.area-card-item:nth-child(4) .area-card-tag { 
+  background: rgba(180, 120, 255, 0.15); 
+  color: #9d4ad9; 
+  border-color: rgba(180, 120, 255, 0.25);
 }
 
 .area-card-arrow {
