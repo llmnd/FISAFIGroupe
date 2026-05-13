@@ -97,14 +97,6 @@
   .service-card:nth-child(6) { animation-delay: 0s; }
 }
 
-
-/* Halo de proximité — se révèle avant même le survol */
-
-
-/* Ligne de signature — croît depuis l'origine */
-
-
-
 /* ─── MEDIA DE CARTE ───────────────────────────────────────── */
 .service-card-media {
   position: relative;
@@ -117,17 +109,9 @@
   transition:
     box-shadow .55s var(--ease-silk),
     transform .55s var(--ease-watch);
-  /* Pseudo-container pour les effets superposés */
   isolation: isolate;
 }
 
-/* Texture grain — pellicule photographique argentique */
-
-
-/* Brillance lenticulaire — lumière rasante */
-
-
-/* ─── IMAGE UNIVERSELLE — Aspect-ratio 4/3 strict ────────────── */
 .image-container-4-3,
 .service-card-media,
 .service-image-wrapper,
@@ -146,7 +130,6 @@
   display: block;
 }
 
-/* Animation de révélation des images avec blur-out progressif */
 .services-grid.is-visible .service-card-media img {
   animation: revealImage 0.65s var(--ease-expo) forwards;
   will-change: transform, opacity;
@@ -162,12 +145,6 @@
   background: rgba(255,255,255,.97);
   border-radius: var(--radius-badge);
   display: flex;
-  /* Animation du badge avec délai */
-}
-
-.services-grid.is-visible .service-card-badge {
-  animation: revealBadge 0.65s var(--ease-spring) forwards;
-  will-change: transform, opacity;
   align-items: center;
   justify-content: center;
   font-family: 'Outfit', sans-serif;
@@ -186,6 +163,10 @@
   outline-offset: -2px;
 }
 
+.services-grid.is-visible .service-card-badge {
+  animation: revealBadge 0.65s var(--ease-spring) forwards;
+  will-change: transform, opacity;
+}
 
 /* ─── CONTENU TEXTUEL ──────────────────────────────────────── */
 .service-card-content {
@@ -193,7 +174,6 @@
   flex-direction: column;
   gap: .75rem;
   padding: 0 .35rem;
-  /* Animation du contenu après la révélation de la carte */
   opacity: 0;
 }
 
@@ -211,8 +191,6 @@
   line-height: 1.2;
   letter-spacing: -.015em;
   position: relative;
-
-  /* Transition de couleur via clip-path pour le dégradé */
   background-image: linear-gradient(110deg, var(--ink) 0%, var(--orange, #c06030) 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -221,7 +199,6 @@
   background-position: 0% 50%;
   transition: background-position .6s var(--ease-expo);
 }
-
 
 /* ─── TAGS ─────────────────────────────────────────────────── */
 .service-card-tags {
@@ -245,13 +222,10 @@
     transform   .3s var(--ease-spring),
     letter-spacing .3s var(--ease-silk),
     box-shadow  .3s var(--ease-silk);
-
-  /* Base */
   background: rgba(0,0,0,.03);
   color: var(--steel, #666);
   border: .5px solid rgba(0,0,0,.05);
 }
-
 
 /* Palette chromatique précise — six teintes distinctes */
 .service-tag:nth-child(1) { background: rgba(0,0,0,.025);        color: #555;     border-color: rgba(0,0,0,.04); }
@@ -271,7 +245,6 @@
 @media (min-width: 640px)  { .services-grid-new { grid-template-columns: repeat(2,1fr); gap: 2.5rem; } }
 @media (min-width: 1024px) { .services-grid-new { grid-template-columns: repeat(3,1fr); gap: 2.5rem; } }
 
-/* Appliquer les animations au scroll */
 .services-grid-new.is-visible .service-card-new {
   animation: revealCard 0.65s var(--ease-expo) forwards;
 }
@@ -301,7 +274,6 @@
   border: .5px solid rgba(0,0,0,.04);
   position: relative;
   isolation: isolate;
-  /* État initial : invisible */
   opacity: 0;
   transform: scale(0.90) translateY(24px);
   transition:
@@ -321,7 +293,6 @@
   z-index: 10;
   mix-blend-mode: overlay;
 }
-
 
 .service-image-wrapper {
   position: relative;
@@ -346,8 +317,6 @@
   transform-origin: center 50%;
   backface-visibility: hidden;
 }
-
-
 
 /* Voile de profondeur */
 .service-overlay {
@@ -388,8 +357,6 @@
     outline-color .3s;
 }
 
-
-
 /* ─── CONTENU FORMATION ────────────────────────────────────── */
 .service-content {
   display: flex;
@@ -410,7 +377,6 @@
   transition: color .3s var(--ease-silk);
 }
 
-
 .service-desc-new {
   font-family: 'Outfit', sans-serif;
   font-size: .83rem;
@@ -421,11 +387,16 @@
   letter-spacing: .008em;
 }
 
-/* ─── MODAL PREMIUM ────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   ─── MODAL PREMIUM — ULTRA LARGE ────────────────────────────
+   ══════════════════════════════════════════════════════════════ */
+
 .service-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4,4,8,.88);
+  background: rgba(4,4,8,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -435,106 +406,173 @@
 }
 
 .service-modal {
-  background: rgba(255,255,255,.99);
-  border-radius: 36px;
-  padding: 3rem;
-  max-width: 640px;
-  width: 100%;
-  max-height: 85vh;
+  background: rgba(16,16,20,.98);
+  border-radius: 32px;
+  
+  /* 🔥 ULTRA LARGE — 1200px */
+  max-width: 1200px !important;
+  width: 100% !important;
+  max-height: 90vh;
+  
+  padding: 3rem !important;
   overflow-y: auto;
-  box-shadow:
-    0 16px 40px rgba(0,0,0,.10),
-    0 0 0 .5px rgba(255,255,255,.25);
+  
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.06);
   position: relative;
   animation: riseModal .65s var(--ease-spring) both;
   transform-origin: 50% 60%;
-  background-image: var(--grain);
-  background-blend-mode: multiply;
+  
+  /* Structure en 2 colonnes */
+  display: flex;
+  flex-direction: row;
+  gap: 0;
 }
-
 
 .service-modal-close {
   position: absolute;
-  top: 1.6rem;
-  right: 1.6rem;
-  background: rgba(0,0,0,.04);
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.08);
   border: none;
-  color: var(--steel, #666);
+  color: rgba(255,255,255,0.8);
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 18px;
-  outline: .5px solid rgba(0,0,0,.07);
-  outline-offset: -1px;
-  transition:
-    background .35s var(--ease-spring),
-    color      .3s,
-    transform  .4s var(--ease-spring),
-    outline-color .3s;
+  font-size: 20px;
+  transition: background .35s var(--ease-spring), transform .4s var(--ease-spring);
+  z-index: 1001;
 }
 .service-modal-close:hover {
-  background: var(--ink, #111);
-  color: #fff;
+  background: rgba(255,255,255,0.2);
   transform: rotate(90deg) scale(1.06);
-  outline-color: transparent;
 }
 
-.service-modal-num {
-  font-family: 'Outfit', sans-serif;
-  font-size: .68rem;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--orange, #c06030);
-  margin-bottom: .85rem;
-  display: block;
+/* ─── COLONNE GAUCHE — NUMÉRO ────────────────────────────── */
+.service-modal-left {
+  flex: 0 0 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding-right: 1rem;
 }
 
+.service-modal-num-display {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(4rem, 8vw, 6rem);
+  font-weight: 300;
+  color: rgba(255,255,255,0.12);
+  line-height: 1;
+}
+
+/* ─── COLONNE DROITE — CONTENU ────────────────────────────── */
+.service-modal-right {
+  flex: 1;
+  padding-left: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 🔥 TITRE FORCÉ SUR UNE SEULE LIGNE */
 .service-modal-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 2.5rem;
+  font-size: clamp(2.8rem, 5vw, 4.2rem) !important;
   font-weight: 300;
-  color: var(--ink, #111);
-  margin: 0 0 1.5rem;
-  line-height: 1.2;
-  letter-spacing: -.025em;
+  color: #f0ede9;
+  margin: 0 0 1rem 0;
+  line-height: 1.1 !important;
+  letter-spacing: -0.025em;
+  
+  /* 🔥 FORCE LE TITRE SUR UNE SEULE LIGNE */
+  white-space: nowrap !important;
+  width: 100% !important;
+  display: block !important;
+  overflow: visible !important;
 }
 
 .service-modal-desc {
   font-family: 'Outfit', sans-serif;
-  font-size: .97rem;
+  font-size: 1.05rem;
   font-weight: 390;
-  color: var(--steel, #555);
+  color: #aaa;
   line-height: 1.8;
+  max-width: 90%;
   margin: 0;
 }
 
+/* ─── BOUTON CTA ────────────────────────────────────────────── */
+.modal-cta {
+  background: #f0ede9;
+  color: #111;
+  border: none;
+  padding: 1rem 2.5rem;
+  border-radius: 60px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+  margin-top: 2rem;
+  display: inline-block;
+  width: fit-content;
+}
+.modal-cta:hover {
+  background: #fff;
+  transform: scale(1.02);
+}
 
+/* ─── MOBILE ────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .service-modal {
+    max-width: 100% !important;
+    padding: 1.5rem !important;
+    flex-direction: column !important;
+    border-radius: 24px !important;
+    max-height: 95vh !important;
+  }
+  
+  .service-modal-left {
+    flex: none !important;
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 1rem 0 !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  .service-modal-num-display {
+    font-size: 3rem !important;
+  }
+  
+  .service-modal-right {
+    padding-left: 0 !important;
+    padding-top: 1.5rem !important;
+  }
+  
+  .service-modal-title {
+    font-size: 2rem !important;
+    white-space: normal !important; /* Sur mobile, on laisse couper */
+  }
+  
+  .service-modal-desc {
+    max-width: 100% !important;
+    font-size: 0.95rem !important;
+  }
+  
+  .modal-cta {
+    width: 100% !important;
+    text-align: center;
+  }
+}
 
 /* ─── INCLINAISON MAGNÉTIQUE (JS requis) ───────────────────── */
-/*
-  Copiez ce script dans votre HTML :
-
-  document.querySelectorAll('.service-card, .service-card-new').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      const r = card.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width  - .5;
-      const y = (e.clientY - r.top)  / r.height - .5;
-      card.style.setProperty('--tilt-x', `${y * -8}deg`);
-      card.style.setProperty('--tilt-y', `${x *  8}deg`);
-    });
-    card.addEventListener('mouseleave', () => {
-      card.style.setProperty('--tilt-x', '0deg');
-      card.style.setProperty('--tilt-y', '0deg');
-    });
-  });
-
-  Et ajoutez ces règles :
-*/
 .service-card,
 .service-card-new {
   --tilt-x: 0deg;
@@ -542,7 +580,6 @@
 }
 
 /* ─── KEYFRAMES DES ANIMATIONS ─────────────────────────────── */
-/* Animation de révélation des cartes — OPTIMISÉE pour performance */
 @keyframes revealCard {
   0% {
     opacity: 0;
@@ -558,7 +595,6 @@
   }
 }
 
-/* Animation des images — sans filter blur (trop lourd) */
 @keyframes revealImage {
   0% {
     opacity: 0;
@@ -570,7 +606,6 @@
   }
 }
 
-/* Animation du badge — simple et rapide */
 @keyframes revealBadge {
   0% {
     opacity: 0;
@@ -586,7 +621,6 @@
   }
 }
 
-/* Animation du texte — révélation douce après la carte */
 @keyframes fadeInText {
   from {
     opacity: 0;
@@ -598,7 +632,6 @@
   }
 }
 
-/* Animation modale — apparition du fond semi-transparent */
 @keyframes fadeBackdrop {
   from {
     opacity: 0;
@@ -608,7 +641,6 @@
   }
 }
 
-/* Animation modale — levée du contenu modal */
 @keyframes riseModal {
   from {
     opacity: 0;
@@ -621,16 +653,14 @@
 }
 
 /* ─── OPTIMISATIONS GPU POUR ANIMATIONS ────────────────────── */
-/* Activez GPU acceleration pendant les animations critiques */
 .service-card {
-  will-change: auto;  /* Ne pas activer persistemment — causes tremblement */
+  will-change: auto;
 }
 
 .services-grid.is-visible .service-card {
-  will-change: opacity, transform;  /* GPU acceleration pendant animation */
+  will-change: opacity, transform;
 }
 
-/* Les cartes reviennent à la normal après l'animation */
 .service-card[data-animated="true"] {
   will-change: auto;
 }
@@ -643,11 +673,10 @@
   will-change: auto;
 }
 
-/* Optimisation des images dans les cartes */
 .service-card-media img,
 .service-image-wrapper img {
   will-change: auto;
-  content-visibility: auto;  /* Lazy rendering des images non-visibles */
+  content-visibility: auto;
 }
 
 /* ─── MODE SOMBRE ──────────────────────────────────────────── */
@@ -663,11 +692,15 @@
   .service-name-new    { color: #eee; }
   .service-desc-new    { color: #888; }
   .service-tag         { background: rgba(255,255,255,.05); color: #999; border-color: rgba(255,255,255,.07); }
+  
+  /* Modal en mode sombre */
   .service-modal       { background: rgba(16,16,20,.98); }
   .service-modal-title { color: #f0ede9; }
   .service-modal-desc  { color: #aaa; }
-  .service-modal-close { background: rgba(255,255,255,.06); color: #aaa; outline-color: rgba(255,255,255,.08); }
+  .service-modal-close { background: rgba(255,255,255,.06); color: #aaa; }
   .service-modal-close:hover { background: #f0ede9; color: #111; }
+  .modal-cta            { background: #f0ede9; color: #111; }
+  .modal-cta:hover      { background: #fff; }
 }
 
 /* ─── ACCESSIBILITÉ ────────────────────────────────────────── */
@@ -684,4 +717,3 @@
   outline-offset: 4px;
   border-radius: var(--radius-card);
 }
-
