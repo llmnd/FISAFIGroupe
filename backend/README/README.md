@@ -2,7 +2,57 @@
 
 Ce dossier contient **la logique métier** (business logic) complètement séparée de la présentation.
 
-## 📁 Structure
+## 🚀 Quick Start
+
+### 1. Installation
+```bash
+npm install
+```
+
+### 2. Configuration environnement
+Créez un fichier `.env` à la racine avec:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/fisafi"
+JWT_SECRET="your-secret-key"
+NODE_ENV="development"
+BACKEND_PORT=3001
+```
+
+### 3. Base de données
+```bash
+# Lancer les migrations Prisma
+npm run prisma:migrate
+
+# Générer les types Prisma
+npm run prisma:generate
+```
+
+### 4. Créer un utilisateur admin
+```bash
+npm run create:admin
+```
+
+### 5. Lancer le backend
+
+**Option A: Mode développement (avec rebuild automatique)**
+```bash
+npm run dev:backend
+```
+
+**Option B: Production**
+```bash
+npm run build:backend
+npm run start:backend
+```
+
+**Option C: Démarrer frontend + backend ensemble**
+```bash
+npm run dev:all
+```
+
+Le backend sera disponible sur `http://localhost:3001`
+
+##  Structure
 
 ```
 backend/
