@@ -84,13 +84,7 @@ FiSAFi Groupe/
 ├── prisma/                      ← LIEN SYMLINK: backend/prisma
 │   └── schema.prisma            (Double pour compat Next.js)
 │
-└── 🚫 DOSSIERS À SUPPRIMER
-    └── frontend/                (VIDE - redondant)
-        ├── components/          ← Les vrais sont en racine
-        ├── context/
-        ├── pages/
-        ├── public/
-        └── styles/
+└─
 ```
 
 ## 🎯 Règles d'organisation

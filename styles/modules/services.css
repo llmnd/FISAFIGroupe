@@ -1,40 +1,7 @@
 /* ══════════════════════════════════════════════════════════════
    SERVICES GRID — Haute Joaillerie Numérique
-   Chaque interaction est une expérience sensorielle.
-   Chaque courbe de Bézier, un geste de maître.
+   v2.1 — Mobile parity + design refinements
    ══════════════════════════════════════════════════════════════ */
-
-/* ─── OPTIMISATIONS MOBILE D'ABORD ────────────────────────── */
-@media (max-width: 768px) {
-  /* Réduire les animations sur mobile */
-  :root {
-    --ease-silk:          ease-in-out;
-    --ease-spring:        ease-out;
-    --ease-expo:          ease-out;
-  }
-
-  /* Skeleton loading amélioré */
-  @keyframes skeletonShimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
-  }
-
-  .sg-skeleton {
-    background-image: linear-gradient(
-      90deg,
-      #f0f0f0 0%,
-      #f8f8f8 20%,
-      #f0f0f0 40%
-    );
-    background-size: 1000px 100%;
-    animation: skeletonShimmer 2s infinite;
-    border-radius: 26px;
-  }
-
-  .sg-skeleton-shimmer {
-    display: none !important;
-  }
-}
 
 /* ─── FONDATIONS CINÉTIQUES ───────────────────────────────── */
 :root {
@@ -51,13 +18,17 @@
 
   /* Ombres stratifiées — lumière volumétrique */
   --shadow-ambient:     0 1px 2px rgba(0,0,0,.02), 0 2px 4px rgba(0,0,0,.02);
-  --shadow-card:        0 2px 8px rgba(0,0,0,.02);
-  --shadow-card-lift:   0 8px 20px rgba(0,0,0,.05), 0 20px 40px rgba(0,0,0,.08),
+  --shadow-card:        0 2px 8px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-card-lift:   0 8px 20px rgba(0,0,0,.06), 0 20px 40px rgba(0,0,0,.09),
                         0 2px 4px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.04);
-  --shadow-card-float:  0 16px 40px rgba(0,0,0,.10), 0 40px 80px rgba(0,0,0,.14),
+  --shadow-card-float:  0 16px 40px rgba(0,0,0,.12), 0 40px 80px rgba(0,0,0,.16),
                         0 0 0 .5px rgba(0,0,0,.06);
-  --shadow-badge:       0 4px 14px rgba(0,0,0,.08);
-  --shadow-badge-hover: 0 10px 28px rgba(0,0,0,.15);
+  --shadow-badge:       0 4px 14px rgba(0,0,0,.10);
+  --shadow-badge-hover: 0 10px 28px rgba(0,0,0,.18);
+
+  /* Accent warm */
+  --accent:             #c06030;
+  --accent-light:       #e0854a;
 
   /* Filtre grain SVG intégré */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.035'/%3E%3C/svg%3E");
@@ -90,7 +61,17 @@
   .services-grid { grid-template-columns: repeat(3, 1fr); gap: 3.5rem 2.5rem; }
 }
 
-/* ─── CARTE DE SERVICE — DESIGN PREMIUM PERMANENT ──────────── */
+/* Stagger desktop uniquement */
+@media (min-width: 769px) {
+  .services-grid.is-visible .service-card:nth-child(1) { animation-delay: 0.00s; }
+  .services-grid.is-visible .service-card:nth-child(2) { animation-delay: 0.08s; }
+  .services-grid.is-visible .service-card:nth-child(3) { animation-delay: 0.16s; }
+  .services-grid.is-visible .service-card:nth-child(4) { animation-delay: 0.24s; }
+  .services-grid.is-visible .service-card:nth-child(5) { animation-delay: 0.32s; }
+  .services-grid.is-visible .service-card:nth-child(6) { animation-delay: 0.40s; }
+}
+
+/* ─── CARTE DE SERVICE ──────────────────────────────────────── */
 .service-card {
   display: flex;
   flex-direction: column;
@@ -102,14 +83,14 @@
   backface-visibility: hidden;
   background: transparent;
   border-radius: var(--radius-card);
+
+  /* ✅ Lift permanent — identique desktop & mobile */
   transform: translateY(-6px) translateZ(0);
   box-shadow: var(--shadow-card-lift);
-  
-  /* État initial */
   opacity: 0;
 }
 
-/* ─── MEDIA DE CARTE — AVEC OVERLAY PREMIUM PERMANENT ──────── */
+/* ─── MEDIA DE CARTE ────────────────────────────────────────── */
 .service-card-media {
   position: relative;
   width: 100%;
@@ -117,7 +98,8 @@
   overflow: hidden;
   background: linear-gradient(135deg, #f3f0ec 0%, #e8e4df 100%);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  /* ✅ Ombre sur le media — non surchargée en mobile */
+  box-shadow: 0 4px 16px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
   transition:
     box-shadow .6s var(--ease-silk),
     transform .6s var(--ease-watch);
@@ -131,8 +113,8 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0,0,0,0) 40%,
-    rgba(0,0,0,0.6) 100%
+    rgba(0,0,0,0) 35%,
+    rgba(0,0,0,.55) 100%
   );
   opacity: 1;
   transition: opacity .5s var(--ease-silk);
@@ -159,14 +141,14 @@
   aspect-ratio: 4/3 !important;
 }
 
-/* ─── BADGE — DESIGN MINIMALISTE ET ÉLÉGANT — PERMANENT ────── */
+/* ─── BADGE — DESIGN MINIMALISTE ────────────────────────────── */
 .service-card-badge {
   position: absolute;
   bottom: 16px;
   right: 16px;
   width: 44px;
   height: 44px;
-  background: rgba(255,255,255,0.95);
+  background: #fff;
   backdrop-filter: blur(4px);
   border-radius: var(--radius-badge);
   display: flex;
@@ -177,16 +159,15 @@
   font-weight: 400;
   color: #1a1a1a;
   letter-spacing: .02em;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
   transition:
     background .4s var(--ease-spring),
     transform .45s var(--ease-spring),
     box-shadow .4s var(--ease-silk);
   z-index: 5;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,.3);
   transform: scale(1.1) rotate(0deg);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  background: #fff;
+  opacity: 0;
 }
 
 .service-card-badge svg {
@@ -198,10 +179,11 @@
 
 .services-grid.is-visible .service-card-badge {
   animation: revealBadge 0.65s var(--ease-spring) forwards;
+  animation-delay: inherit;
   will-change: transform, opacity;
 }
 
-/* ─── CONTENU TEXTUEL — TYPOGRAPHIE RAFFINÉE ───────────────── */
+/* ─── CONTENU TEXTUEL ───────────────────────────────────────── */
 .service-card-content {
   display: flex;
   flex-direction: column;
@@ -215,7 +197,7 @@
   animation-delay: 0.35s;
 }
 
-/* Titre avec soulignement — PERMANENT */
+/* Titre avec soulignement accent */
 .service-card-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(1.3rem, 3.5vw, 1.8rem);
@@ -228,7 +210,6 @@
   display: inline-block;
 }
 
-/* Soulignement décoratif — PERMANENT */
 .service-card-title::after {
   content: '';
   position: absolute;
@@ -236,11 +217,11 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, #c06030, #e0854a);
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
   transition: width .5s var(--ease-expo);
 }
 
-/* ─── TAGS — DESIGN RAFFINÉ ─────────────────────────────────── */
+/* ─── TAGS ──────────────────────────────────────────────────── */
 .service-card-tags {
   display: flex;
   flex-wrap: wrap;
@@ -248,7 +229,6 @@
   margin-top: .15rem;
 }
 
-/* Centrer les tags quand il y en a exactement 2 */
 .service-card-tags:has(> .service-tag:nth-child(2):last-child) {
   justify-content: center;
 }
@@ -269,31 +249,27 @@
     box-shadow .3s var(--ease-silk),
     background .3s var(--ease-silk),
     color .3s var(--ease-silk);
-  
   background: rgba(0,0,0,.04);
   color: #555;
   border: none;
 }
 
-/* Palettes chromatiques uniques par tag */
-.service-tag[data-tag="INFRASTRUCTURE"] { background: rgba(255, 145, 77, 0.15); color: #d97a4a; }
-.service-tag[data-tag="NETWORKING"] { background: rgba(150, 100, 255, 0.15); color: #9d4ad9; }
-.service-tag[data-tag="IT"] { background: rgba(100, 180, 255, 0.15); color: #4a8fd9; }
-.service-tag[data-tag="SÉCURITÉ"] { background: rgba(255, 100, 100, 0.15); color: #d94a4a; }
-.service-tag[data-tag="PROTECTION"] { background: rgba(255, 150, 150, 0.15); color: #d97474; }
-.service-tag[data-tag="CONSEIL"] { background: rgba(100, 200, 120, 0.15); color: #61cc6f; }
-.service-tag[data-tag="STRATÉGIE"] { background: rgba(130, 220, 140, 0.15); color: #66c570; }
-.service-tag[data-tag="FIBRE"] { background: rgba(255, 180, 100, 0.15); color: #d9944a; }
-.service-tag[data-tag="RÉSEAU"] { background: rgba(100, 200, 255, 0.15); color: #4a9fd9; }
-.service-tag[data-tag="DÉPLOIEMENT"] { background: rgba(255, 220, 100, 0.15); color: #d9b94a; }
-.service-tag[data-tag="SUIVI CHANTIER"] { background: rgba(220, 130, 80, 0.15); color: #d97a4a; }
+/* Palettes chromatiques par tag */
+.service-tag[data-tag="INFRASTRUCTURE"] { background: rgba(255,145,77,.15); color: #d97a4a; }
+.service-tag[data-tag="NETWORKING"]     { background: rgba(150,100,255,.15); color: #9d4ad9; }
+.service-tag[data-tag="IT"]             { background: rgba(100,180,255,.15); color: #4a8fd9; }
+.service-tag[data-tag="SÉCURITÉ"]       { background: rgba(255,100,100,.15); color: #d94a4a; }
+.service-tag[data-tag="PROTECTION"]     { background: rgba(255,150,150,.15); color: #d97474; }
+.service-tag[data-tag="CONSEIL"]        { background: rgba(100,200,120,.15); color: #61cc6f; }
+.service-tag[data-tag="STRATÉGIE"]      { background: rgba(130,220,140,.15); color: #66c570; }
+.service-tag[data-tag="FIBRE"]          { background: rgba(255,180,100,.15); color: #d9944a; }
+.service-tag[data-tag="RÉSEAU"]         { background: rgba(100,200,255,.15); color: #4a9fd9; }
+.service-tag[data-tag="DÉPLOIEMENT"]    { background: rgba(255,220,100,.15); color: #d9b94a; }
+.service-tag[data-tag="SUIVI CHANTIER"] { background: rgba(220,130,80,.15);  color: #d97a4a; }
 
 .service-tag:hover {
   transform: translateY(-1px);
 }
-
-/* ─── SUPPRESSION DES EFFETS HOVER ──────────────────────────── */
-/* On supprime tous les :hover qui ne sont plus nécessaires */
 
 /* ─── GRILLE FORMATIONS ────────────────────────────────────── */
 .services-grid-new {
@@ -310,7 +286,7 @@
 }
 
 @media (min-width: 769px) {
-  .services-grid-new.is-visible .service-card-new:nth-child(1) { animation-delay: 0.0s; }
+  .services-grid-new.is-visible .service-card-new:nth-child(1) { animation-delay: 0.00s; }
   .services-grid-new.is-visible .service-card-new:nth-child(2) { animation-delay: 0.08s; }
   .services-grid-new.is-visible .service-card-new:nth-child(3) { animation-delay: 0.16s; }
   .services-grid-new.is-visible .service-card-new:nth-child(4) { animation-delay: 0.24s; }
@@ -330,7 +306,8 @@
   background: #fff;
   border-radius: 28px;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  /* ✅ Ombre cohérente desktop/mobile */
+  box-shadow: var(--shadow-card-lift);
   border: .5px solid rgba(0,0,0,.04);
   position: relative;
   isolation: isolate;
@@ -383,7 +360,7 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(0deg,   rgba(0,0,0,.18) 0%, transparent 40%),
+    linear-gradient(0deg, rgba(0,0,0,.18) 0%, transparent 40%),
     radial-gradient(ellipse at 80% 20%, rgba(0,0,0,.05) 0%, transparent 60%);
   opacity: 0;
   transition: opacity .5s var(--ease-silk);
@@ -468,21 +445,15 @@
 .service-modal {
   background: rgba(16,16,20,.98);
   border-radius: 32px;
-  
-  /* 🔥 ULTRA LARGE — 1200px */
   max-width: 1200px !important;
   width: 100% !important;
   max-height: 90vh;
-  
   padding: 3rem !important;
   overflow-y: auto;
-  
-  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.06);
+  box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.06);
   position: relative;
   animation: riseModal .65s var(--ease-spring) both;
   transform-origin: 50% 60%;
-  
-  /* Structure en 2 colonnes */
   display: flex;
   flex-direction: row;
   gap: 0;
@@ -492,9 +463,9 @@
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,.08);
   border: none;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,.8);
   cursor: pointer;
   width: 44px;
   height: 44px;
@@ -507,17 +478,17 @@
   z-index: 1001;
 }
 .service-modal-close:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,.2);
   transform: rotate(90deg) scale(1.06);
 }
 
-/* ─── COLONNE GAUCHE — NUMÉRO ────────────────────────────── */
+/* ─── COLONNE GAUCHE MODAL ───────────────────────────────────── */
 .service-modal-left {
   flex: 0 0 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,.06);
   padding-right: 1rem;
 }
 
@@ -525,11 +496,11 @@
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(4rem, 8vw, 6rem);
   font-weight: 300;
-  color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,.12);
   line-height: 1;
 }
 
-/* ─── COLONNE DROITE — CONTENU ────────────────────────────── */
+/* ─── COLONNE DROITE MODAL ───────────────────────────────────── */
 .service-modal-right {
   flex: 1;
   padding-left: 2.5rem;
@@ -538,7 +509,6 @@
   justify-content: center;
 }
 
-/* 🔥 TITRE FORCÉ SUR UNE SEULE LIGNE */
 .service-modal-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2.8rem, 5vw, 4.2rem) !important;
@@ -547,8 +517,6 @@
   margin: 0 0 1rem 0;
   line-height: 1.1 !important;
   letter-spacing: -0.025em;
-  
-  /* 🔥 FORCE LE TITRE SUR UNE SEULE LIGNE */
   white-space: nowrap !important;
   width: 100% !important;
   display: block !important;
@@ -578,7 +546,7 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
+  transition: background .3s ease, transform .3s ease;
   margin-top: 2rem;
   display: inline-block;
   width: fit-content;
@@ -588,263 +556,179 @@
   transform: scale(1.02);
 }
 
-/* ─── MOBILE ────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   ─── MOBILE — PARITÉ VISUELLE COMPLÈTE AVEC DESKTOP ─────────
+   ══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .service-modal {
-    max-width: 100% !important;
-    padding: 1.5rem !important;
-    flex-direction: column !important;
-    border-radius: 24px !important;
-    max-height: 95vh !important;
-  }
-  
-  .service-modal-left {
-    flex: none !important;
-    width: 100% !important;
-    border-right: none !important;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding: 1rem 0 !important;
-    padding-bottom: 1.5rem !important;
-  }
-  
-  .service-modal-num-display {
-    font-size: 3rem !important;
-  }
-  
-  .service-modal-right {
-    padding-left: 0 !important;
-    padding-top: 1.5rem !important;
-  }
-  
-  .service-modal-title {
-    font-size: 2rem !important;
-    white-space: normal !important;
-  }
-  
-  .service-modal-desc {
-    max-width: 100% !important;
-    font-size: 0.95rem !important;
-  }
-  
-  .modal-cta {
-    width: 100% !important;
-    text-align: center;
-  }
-}
 
-/* ─── KEYFRAMES DES ANIMATIONS ─────────────────────────────── */
-@keyframes revealCard {
-  0% {
-    opacity: 0;
-    transform: scale(0.93) translateY(25px) translateZ(0);
-  }
-  60% {
-    opacity: 0.9;
-    transform: scale(0.98) translateY(5px) translateZ(0);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0) translateZ(0);
-  }
-}
-
-@keyframes revealImage {
-  0% {
-    opacity: 0;
-    transform: scale(1.08) translateY(-6px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes revealBadge {
-  0% {
-    opacity: 0;
-    transform: scale(0.7) rotate(-10deg);
-  }
-  60% {
-    opacity: 0.9;
-    transform: scale(1.05) rotate(2deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes fadeInText {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeBackdrop {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes riseModal {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ─── OPTIMISATIONS GPU ────────────────────────────────────── */
-.service-card {
-  will-change: auto;
-}
-
-.services-grid.is-visible .service-card {
-  will-change: opacity, transform;
-}
-
-.service-card-media img,
-.service-image-wrapper img {
-  will-change: auto;
-  content-visibility: auto;
-}
-
-/* ─── OPTIMISATIONS SCROLL MOBILE ──────────────────────────── */
-@media (max-width: 768px) {
-  .services-grid {
-    will-change: auto;
+  /* ✅ Skeleton loading */
+  @keyframes skeletonShimmer {
+    0%   { background-position: -1000px 0; }
+    100% { background-position:  1000px 0; }
   }
 
+  .sg-skeleton {
+    background-image: linear-gradient(90deg, #f0f0f0 0%, #f8f8f8 20%, #f0f0f0 40%);
+    background-size: 1000px 100%;
+    animation: skeletonShimmer 2s infinite;
+    border-radius: 26px;
+  }
+
+  .sg-skeleton-shimmer { display: none !important; }
+
+  /* ✅ Ombres identiques au desktop — CORRECTION PRINCIPALE */
   .service-card {
     will-change: auto;
-    /* Réduire les shadows mobiles */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    box-shadow: var(--shadow-card-lift); /* ← même valeur que desktop */
   }
 
+  /* ✅ Ombre du media non supprimée, transitions allégées seulement */
   .service-card-media {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-    /* Désactiver les transitions complexes */
-    transition: none !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
+    transition: none; /* perf mobile, pas de suppression d'ombre */
+    background: #f5f5f5;
+  }
+
+  /* ✅ Ombre de la carte formation préservée */
+  .service-card-new {
+    box-shadow: var(--shadow-card-lift);
   }
 
   .service-card-badge {
     transition: opacity 0.2s ease !important;
   }
 
-  /* Smooth scrolling performance */
+  /* Pas de stagger sur mobile */
+  .service-card:nth-child(1),
+  .service-card:nth-child(2),
+  .service-card:nth-child(3),
+  .service-card:nth-child(4),
+  .service-card:nth-child(5),
+  .service-card:nth-child(6) { animation-delay: 0s !important; }
+
+  /* Scroll natif fluide */
   main {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Réduire les stagger delays sur mobile */
-  @media (max-width: 768px) {
-    .service-card:nth-child(1) { animation-delay: 0s !important; }
-    .service-card:nth-child(2) { animation-delay: 0s !important; }
-    .service-card:nth-child(3) { animation-delay: 0s !important; }
-    .service-card:nth-child(4) { animation-delay: 0s !important; }
-    .service-card:nth-child(5) { animation-delay: 0s !important; }
-    .service-card:nth-child(6) { animation-delay: 0s !important; }
+  /* Réduire les courbes complexes */
+  :root {
+    --ease-silk:   ease-in-out;
+    --ease-spring: ease-out;
+    --ease-expo:   ease-out;
   }
 
-  /* Skeleton rapide */
-  .service-card-media {
-    background: #f5f5f5;
-  }
-
-  /* Modal optimisé mobile */
+  /* Modal mobile */
   .service-modal {
-    max-width: 95vw !important;
+    max-width: 100% !important;
+    padding: 1.5rem !important;
+    flex-direction: column !important;
+    border-radius: 24px !important;
     max-height: 95vh !important;
-    border-radius: 20px !important;
     will-change: auto !important;
   }
 
+  .service-modal-left {
+    flex: none !important;
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    padding: 1rem 0 1.5rem !important;
+  }
+
+  .service-modal-num-display { font-size: 3rem !important; }
+
+  .service-modal-right {
+    padding-left: 0 !important;
+    padding-top: 1.5rem !important;
+  }
+
   .service-modal-title {
-    font-size: 1.8rem !important;
+    font-size: 2rem !important;
+    white-space: normal !important;
+  }
+
+  .service-modal-desc {
+    max-width: 100% !important;
+    font-size: 0.95rem !important;
+  }
+
+  .modal-cta {
+    width: 100% !important;
+    text-align: center;
   }
 }
 
 /* ─── MODE SOMBRE ──────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --shadow-card:      0 4px 12px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
-    --shadow-card-lift: 0 8px 20px rgba(0,0,0,.4), 0 20px 40px rgba(0,0,0,.4);
-    --shadow-card-float:0 16px 40px rgba(0,0,0,.5), 0 40px 80px rgba(0,0,0,.5);
+    --shadow-card:       0 4px 12px rgba(0,0,0,.32), 0 8px 24px rgba(0,0,0,.28);
+    --shadow-card-lift:  0 8px 20px rgba(0,0,0,.42), 0 20px 40px rgba(0,0,0,.38);
+    --shadow-card-float: 0 16px 40px rgba(0,0,0,.52), 0 40px 80px rgba(0,0,0,.48);
   }
-  
-  .service-card-title {
-    color: #f0ede9;
-  }
-  .service-card-title::after {
-    background: linear-gradient(90deg, #e0854a, #f0a56a);
-  }
-  .service-tag {
-    background: rgba(255,255,255,.05);
-    color: #999;
-  }
-  .service-card-badge {
-    background: rgba(30,30,35,0.9);
-    color: #f0ede9;
-    border-color: rgba(255,255,255,0.1);
-  }
-  .service-card-badge svg {
-    stroke: #f0ede9;
-  }
-  .service-card-media {
-    background: #1a1a1e;
-  }
-  
-  .service-card-new {
-    background: #111116;
-    border-color: rgba(255,255,255,.06);
-  }
-  .service-content {
-    background: #111116;
-  }
-  .service-name-new {
-    color: #eee;
-  }
-  .service-desc-new {
-    color: #888;
-  }
-  
-  /* Modal en mode sombre */
-  .service-modal {
-    background: rgba(16,16,20,.98);
-  }
-  .service-modal-title {
-    color: #f0ede9;
-  }
-  .service-modal-desc {
-    color: #aaa;
-  }
-  .service-modal-close {
-    background: rgba(255,255,255,.06);
-    color: #aaa;
-  }
-  .service-modal-close:hover {
-    background: #f0ede9;
-    color: #111;
-  }
-  .modal-cta {
-    background: #f0ede9;
-    color: #111;
-  }
-  .modal-cta:hover {
-    background: #fff;
-  }
+
+  .service-card-title         { color: #f0ede9; }
+  .service-card-title::after  { background: linear-gradient(90deg, #e0854a, #f0a56a); }
+  .service-tag                { background: rgba(255,255,255,.05); color: #999; }
+  .service-card-badge         { background: rgba(30,30,35,.9); color: #f0ede9; border-color: rgba(255,255,255,.1); }
+  .service-card-badge svg     { stroke: #f0ede9; }
+  .service-card-media         { background: #1a1a1e; }
+
+  .service-card-new           { background: #111116; border-color: rgba(255,255,255,.06); }
+  .service-content            { background: #111116; }
+  .service-name-new           { color: #eee; }
+  .service-desc-new           { color: #888; }
+
+  .service-modal              { background: rgba(16,16,20,.98); }
+  .service-modal-title        { color: #f0ede9; }
+  .service-modal-desc         { color: #aaa; }
+  .service-modal-close        { background: rgba(255,255,255,.06); color: #aaa; }
+  .service-modal-close:hover  { background: #f0ede9; color: #111; }
+  .modal-cta                  { background: #f0ede9; color: #111; }
+  .modal-cta:hover            { background: #fff; }
+}
+
+/* ─── KEYFRAMES ─────────────────────────────────────────────── */
+@keyframes revealCard {
+  0%   { opacity: 0; transform: scale(0.93) translateY(25px) translateZ(0); }
+  60%  { opacity: 0.9; transform: scale(0.98) translateY(5px) translateZ(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0) translateZ(0); }
+}
+
+@keyframes revealImage {
+  0%   { opacity: 0; transform: scale(1.08) translateY(-6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes revealBadge {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+  60%  { opacity: 0.9; transform: scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes fadeInText {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes riseModal {
+  from { opacity: 0; transform: scale(0.92) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ─── OPTIMISATIONS GPU ────────────────────────────────────── */
+.service-card { will-change: auto; }
+.services-grid.is-visible .service-card { will-change: opacity, transform; }
+.service-card-media img,
+.service-image-wrapper img {
+  will-change: auto;
+  content-visibility: auto;
 }
 
 /* ─── ACCESSIBILITÉ ────────────────────────────────────────── */
@@ -857,7 +741,7 @@
 
 .service-card:focus-visible,
 .service-card-new:focus-visible {
-  outline: 2px solid var(--orange, #c06030);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: var(--radius-card);
 }

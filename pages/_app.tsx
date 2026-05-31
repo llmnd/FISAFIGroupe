@@ -2,7 +2,6 @@ import type { AppProps } from 'next/app';
 import React, { useEffect } from 'react';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
-import MarketBanner from '@/components/MarketBanner';
 import '../styles/globals.css';
 import '../styles/header.css';
 import '../styles/floating-logo.css';
@@ -125,7 +124,6 @@ export default function App({ Component, pageProps }: AppProps) {
     <LanguageProvider>
       <ThemeProvider>
         <Component {...pageProps} />
-        <MarketBanner />
       </ThemeProvider>
     </LanguageProvider>
   );
