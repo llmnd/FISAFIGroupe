@@ -372,7 +372,7 @@ export default function FormationPage() {
                   width={400}
                   height={300}
                   priority={i === 0}
-                  style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
                 <div className="service-card-badge">{formation.num}</div>
               </div>

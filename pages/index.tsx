@@ -40,6 +40,21 @@ const PinIcon = () => (
   </svg>
 );
 
+const TapHintIcon = () => (
+  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <circle cx="32" cy="32" r="25" fill="rgba(255,255,255,0.82)" stroke="rgba(192,96,48,0.9)" strokeWidth="2.3" />
+    <path
+      d="M23.5 30.5V18.2c0-2.9 2.3-5.2 5.2-5.2s5.2 2.3 5.2 5.2v8.1h4.3V15.4c0-2.9 2.3-5.2 5.2-5.2s5.2 2.3 5.2 5.2v19.7c0 8.3-6.7 15-15 15h-6.2c-6 0-10.9-4.9-10.9-10.9v-4.2c0-2.9 2.3-5.2 5.2-5.2h3.5v-7.2c0-2.9 2.3-5.2 5.2-5.2s5.2 2.3 5.2 5.2z"
+      fill="none"
+      stroke="rgba(17,17,17,0.8)"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M28.8 31v14.7M34.2 31v11.9M39.6 31v8.8" fill="none" stroke="rgba(17,17,17,0.8)" strokeWidth="2.4" strokeLinecap="round" />
+  </svg>
+);
+
 const contactItems = [
   {
     label: "Téléphone Sénégal",
@@ -220,6 +235,9 @@ export default function Home() {
                 }
               }}
             >
+              <div className="service-card-tap-hint" aria-hidden="true">
+                <TapHintIcon />
+              </div>
               <div className="service-card-media">
                 <Image
                   src={service.img}
@@ -232,8 +250,14 @@ export default function Home() {
                 />
               </div>
               <div className="service-card-badge" aria-hidden>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                <svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true" focusable="false">
+                  <g fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 18.5V12c0-3.6 2.9-6.5 6.5-6.5S35 8.4 35 12v8.5h6.5c4.6 0 8.3 3.7 8.3 8.3v8.5c0 7-5.7 12.7-12.7 12.7h-5.2c-7.2 0-13-5.8-13-13v-5.3c0-3.2 2.6-5.8 5.8-5.8H22v-7.9z" />
+                    <path d="M28 18.5V33" />
+                    <path d="M33 17.5V31" />
+                    <path d="M38 19v14" />
+                    <path d="M23.5 32 18 42.5l-5-2" />
+                  </g>
                 </svg>
               </div>
               <div className="service-card-content">

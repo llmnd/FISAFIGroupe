@@ -120,6 +120,32 @@
 }
 
 @media (max-width: 640px) {
+  .service-card-tap-hint {
+    position: absolute;
+    right: 0.8rem;
+    top: 0.7rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1.5px solid rgba(192, 96, 48, 0.7);
+    box-shadow: 0 8px 18px rgba(192, 96, 48, 0.14);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 5;
+    pointer-events: none;
+    animation: tapHint 2.2s ease-in-out infinite;
+  }
+
+  .service-card-tap-hint svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    display: block;
+  }
+
   .service-card {
     flex-direction: row;
     min-height: 180px;
@@ -135,7 +161,7 @@
   .service-card-content {
     width: 54%;
     min-width: 54%;
-    padding: 0.9rem 2.2rem 0.9rem 0.9rem;
+    padding: 0.9rem 0.9rem 0.9rem 0.9rem;
     gap: 0.45rem;
   }
 
@@ -143,25 +169,14 @@
     transform: none;
   }
 
-  .service-card-badge {
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 26px;
-    height: 26px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    opacity: 1;
-    z-index: 3;
+  .service-card-title {
+    width: 100%;
+    max-width: 100%;
+    padding-right: 0;
   }
 
-  .service-card-badge svg {
-    width: 16px;
-    height: 16px;
-    stroke: #111111;
-    stroke-width: 2;
+  .service-card-badge {
+    display: none !important;
   }
 
   .service-card-title {
@@ -190,11 +205,16 @@
   aspect-ratio: 4 / 3;
 }
 
+#actualites-featured .service-card-media::after,
+#news-list .service-card-media::after {
+  display: none;
+}
+
 .service-card-media::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.10) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,0.015) 0%, rgba(0,0,0,0.03) 45%, rgba(0,0,0,0.06) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -223,37 +243,35 @@
 /* ─── BADGE — DESIGN MINIMALISTE ────────────────────────────── */
 .service-card-badge {
   position: absolute;
-  right: 16px;
-  top: 16px;
-  width: 44px;
-  height: 44px;
-  background: #fff;
-  backdrop-filter: blur(4px);
-  border-radius: var(--radius-badge);
+  right: 14px;
+  top: 14px;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(192, 96, 48, 0.7);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  letter-spacing: .02em;
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  color: rgba(17, 17, 17, 0.8);
+  box-shadow: 0 8px 18px rgba(192, 96, 48, 0.14);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition:
     background .4s var(--ease-spring),
     transform .45s var(--ease-spring),
     box-shadow .4s var(--ease-silk);
   z-index: 5;
-  border: 1px solid rgba(255,255,255,.3);
-  transform: scale(1.1) rotate(0deg);
-  opacity: 0;
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
 }
 
 .service-card-badge svg {
-  width: 18px;
-  height: 18px;
-  stroke: #1a1a1a;
-  stroke-width: 1.8;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: block;
+  stroke: rgba(17, 17, 17, 0.82);
+  stroke-width: 2.6;
 }
 
 .services-grid.is-visible .service-card-badge {
@@ -768,6 +786,17 @@
 }
 
 /* ─── KEYFRAMES ─────────────────────────────────────────────── */
+@keyframes tapHint {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.04);
+  }
+}
+
 @keyframes revealCard {
   0%   { opacity: 0; transform: scale(0.93) translateY(25px) translateZ(0); }
   60%  { opacity: 0.9; transform: scale(0.98) translateY(5px) translateZ(0); }
