@@ -123,6 +123,7 @@
   .service-card {
     flex-direction: row;
     min-height: 180px;
+    overflow: visible;
   }
 
   .service-card-media {
@@ -134,7 +135,8 @@
   .service-card-content {
     width: 54%;
     min-width: 54%;
-    padding: 1rem 0.9rem 0.9rem;
+    padding: 0.9rem 2.2rem 0.9rem 0.9rem;
+    gap: 0.45rem;
   }
 
   .service-card:hover .service-card-media img {
@@ -142,10 +144,37 @@
   }
 
   .service-card-badge {
-    right: 12px;
-    top: 12px;
-    width: 38px;
-    height: 38px;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    opacity: 1;
+    z-index: 3;
+  }
+
+  .service-card-badge svg {
+    width: 16px;
+    height: 16px;
+    stroke: #111111;
+    stroke-width: 2;
+  }
+
+  .service-card-title {
+    font-size: clamp(1.25rem, 5vw, 1.72rem);
+    line-height: 1.08;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .service-tag {
+    font-size: 0.46rem;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.5rem;
   }
 }
 
