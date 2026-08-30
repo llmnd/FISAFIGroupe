@@ -38,8 +38,9 @@
 .services-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4.5rem 2.5rem;
-  margin-bottom: 3rem;
+  gap: 1.9rem 1.6rem;
+  margin: 0 auto 3rem;
+  max-width: 1040px;
   position: relative;
   will-change: auto;
 }
@@ -55,10 +56,18 @@
 }
 
 @media (min-width: 640px) {
-  .services-grid { grid-template-columns: repeat(2, 1fr); gap: 4rem 3rem; }
+  .services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.2rem 1.8rem;
+    max-width: 980px;
+  }
 }
 @media (min-width: 1024px) {
-  .services-grid { grid-template-columns: repeat(3, 1fr); gap: 3.5rem 2.5rem; }
+  .services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.4rem 2rem;
+    max-width: 980px;
+  }
 }
 
 /* Stagger desktop uniquement */
@@ -74,64 +83,88 @@
 /* ─── CARTE DE SERVICE ──────────────────────────────────────── */
 .service-card {
   display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
   cursor: pointer;
   text-decoration: none;
   position: relative;
   transform: translateZ(0);
   backface-visibility: hidden;
-  background: transparent;
-  border-radius: var(--radius-card);
-
-  /* ✅ Lift permanent — identique desktop & mobile */
-  transform: translateY(-6px) translateZ(0);
-  box-shadow: var(--shadow-card-lift);
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
   opacity: 0;
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+  min-height: 250px;
+  max-width: 100%;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.service-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 640px) {
+  .service-card {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .service-card-media,
+  .service-card-content {
+    width: 100%;
+    min-width: 100%;
+  }
 }
 
 /* ─── MEDIA DE CARTE ────────────────────────────────────────── */
 .service-card-media {
   position: relative;
-  width: 100%;
-  aspect-ratio: 4/3;
+  width: 42%;
+  min-width: 42%;
   overflow: hidden;
-  background: linear-gradient(135deg, #f3f0ec 0%, #e8e4df 100%);
-  border-radius: var(--radius-card);
-  /* ✅ Ombre sur le media — non surchargée en mobile */
-  box-shadow: 0 4px 16px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
-  transition:
-    box-shadow .6s var(--ease-silk),
-    transform .6s var(--ease-watch);
+  background: #f3f2ee;
+  border-radius: 0;
   isolation: isolate;
+  aspect-ratio: 4 / 3;
 }
 
-/* Overlay dégradé premium — PERMANENT */
 .service-card-media::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(0,0,0,0) 35%,
-    rgba(0,0,0,.55) 100%
-  );
-  opacity: 1;
-  transition: opacity .5s var(--ease-silk);
+  background: linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.10) 100%);
   z-index: 1;
   pointer-events: none;
 }
 
-/* Image avec zoom subtil — PERMANENT */
 .service-card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
-  transform: scale(1.05);
-  transition: transform .8s var(--ease-expo);
-  will-change: transform;
+  transform: scale(1.03);
+  transition: transform .6s ease;
+}
+
+.service-card:hover .service-card-media img {
+  transform: scale(1.08);
 }
 
 .image-container-4-3,
@@ -187,9 +220,14 @@
 .service-card-content {
   display: flex;
   flex-direction: column;
-  gap: .6rem;
-  padding: 0 0.25rem;
+  justify-content: center;
+  gap: .55rem;
+  padding: 1.2rem 1.15rem 1.1rem;
+  background: #ffffff;
   opacity: 0;
+  position: relative;
+  z-index: 3;
+  width: 58%;
 }
 
 .services-grid.is-visible .service-card-content {
@@ -200,33 +238,32 @@
 /* Titre avec soulignement accent */
 .service-card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.3rem, 3.5vw, 1.8rem);
-  font-weight: 400;
-  color: #1a1a1a;
+  font-size: clamp(1.45rem, 2vw, 2.15rem);
+  font-weight: 700;
+  color: #111111 !important;
   margin: 0;
-  line-height: 1.15;
-  letter-spacing: -.015em;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  text-shadow: none;
+  z-index: 2;
 }
 
 .service-card-title::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-light));
-  transition: width .5s var(--ease-expo);
+  display: none;
 }
 
 /* ─── TAGS ──────────────────────────────────────────────────── */
 .service-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: .45rem;
-  margin-top: .15rem;
+  gap: .42rem;
+  margin-top: .1rem;
 }
 
 .service-card-tags:has(> .service-tag:nth-child(2):last-child) {
@@ -235,23 +272,18 @@
 
 .service-tag {
   font-family: 'Outfit', sans-serif;
-  font-size: .58rem;
-  letter-spacing: .12em;
-  font-weight: 500;
+  font-size: .48rem;
+  letter-spacing: .09em;
+  font-weight: 700;
   text-transform: uppercase;
-  padding: .2rem .7rem;
-  border-radius: 30px;
+  padding: .32rem .56rem;
+  border-radius: 999px;
   display: inline-block;
   white-space: nowrap;
-  transition:
-    transform .3s var(--ease-spring),
-    letter-spacing .3s var(--ease-silk),
-    box-shadow .3s var(--ease-silk),
-    background .3s var(--ease-silk),
-    color .3s var(--ease-silk);
-  background: rgba(0,0,0,.04);
-  color: #555;
-  border: none;
+  background: rgba(17, 17, 17, 0.04);
+  color: #3e3e3e;
+  border: 1px solid rgba(17,17,17,0.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
 }
 
 /* Palettes chromatiques par tag */

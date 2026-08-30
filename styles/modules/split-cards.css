@@ -106,15 +106,19 @@
 }
 /* ─── COMPACT (image réduite à gauche) ─── */
 .split-card.compact {
-  grid-template-columns: 220px 1fr;
+  display: flex;
+  flex-direction: column;
   align-items: stretch;
   border-top: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
 }
 
 @media (max-width: 1024px) {
   .split-card.compact {
-    grid-template-columns: 180px 1fr;
+    width: 100%;
   }
 }
 
@@ -125,11 +129,11 @@
 }
 
 .split-card.compact .split-card-image {
-  order: -1;
-  aspect-ratio: auto;
+  order: 0;
+  aspect-ratio: 16 / 9;
   width: 100%;
   height: auto;
-  min-height: 140px;
+  min-height: 110px;
 }
 
 @media (max-width: 767px) {
@@ -141,17 +145,27 @@
 }
 
 .split-card.compact .split-card-content {
-  padding: 2rem 2.25rem;
-  gap: 1rem;
+  padding: 1rem 1.05rem 1.1rem;
+  gap: 0.45rem;
 }
 
 .split-card.compact .split-card-title {
-  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+  line-height: 1.2;
+  font-weight: 700;
 }
 
 .split-card.compact .split-card-description {
-  font-size: 12px;
-  max-width: 100%;
+  font-size: 12.5px;
+  line-height: 1.55;
+  max-width: 40ch;
+  color: rgba(18, 24, 32, 0.78);
+}
+
+.split-card.compact:last-child {
+  grid-column: 1 / -1;
+  width: min(100%, 560px);
+  justify-self: center;
 }
 
 .split-card.compact .split-card-content::before {

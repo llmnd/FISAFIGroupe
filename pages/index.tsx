@@ -297,7 +297,7 @@ export default function Home() {
         <div className="section-eyebrow">Nos atouts</div>
         <h2 className="section-title">Expertise<br />reconnue</h2>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1.25rem 1rem" }}>
           {[
             { title: "Ingénierie Réseaux", desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.", img: "https://i.pinimg.com/originals/d7/ac/8f/d7ac8fe75a93307683db992d9c8c6f8c.gif" },
             { title: "Solutions Sécurité", desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.", img: "https://i.pinimg.com/originals/14/e3/f8/14e3f8b54c14417611cfb6477c86c09d.gif" },

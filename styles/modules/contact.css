@@ -35,18 +35,29 @@
 }
 
 .contact-items {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1rem;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   text-decoration: none;
   border-bottom: none;
-  padding: 0;
+  padding: 0.75rem 0.85rem;
+  min-height: 90px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+@media (min-width: 900px) {
+  .contact-items {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .contact-icon {
