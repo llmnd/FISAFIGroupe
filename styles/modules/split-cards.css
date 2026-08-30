@@ -9,9 +9,24 @@
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-  .split-card {
-    grid-template-columns: 1fr 1fr;
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1rem;
+}
+
+@media (max-width: 767px) {
+  .capabilities-grid {
+    grid-template-columns: 1fr;
   }
+
+  .split-card.compact {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+}
 
 
 /* ─── CONTENT ─── */

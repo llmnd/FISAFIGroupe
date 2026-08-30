@@ -230,11 +230,11 @@ export default function Home() {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
-                <div className="service-card-badge" aria-hidden>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                  </svg>
-                </div>
+              </div>
+              <div className="service-card-badge" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                </svg>
               </div>
               <div className="service-card-content">
                 <h3 className="service-card-title">{service.name}</h3>
@@ -297,7 +297,7 @@ export default function Home() {
         <div className="section-eyebrow">Nos atouts</div>
         <h2 className="section-title">Expertise<br />reconnue</h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1.25rem 1rem" }}>
+        <div className="capabilities-grid">
           {[
             { title: "Ingénierie Réseaux", desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.", img: "https://i.pinimg.com/originals/d7/ac/8f/d7ac8fe75a93307683db992d9c8c6f8c.gif" },
             { title: "Solutions Sécurité", desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.", img: "https://i.pinimg.com/originals/14/e3/f8/14e3f8b54c14417611cfb6477c86c09d.gif" },

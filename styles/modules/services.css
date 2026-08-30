@@ -121,14 +121,31 @@
 
 @media (max-width: 640px) {
   .service-card {
-    flex-direction: column;
-    min-height: auto;
+    flex-direction: row;
+    min-height: 180px;
   }
 
-  .service-card-media,
+  .service-card-media {
+    width: 46%;
+    min-width: 46%;
+    height: auto;
+  }
+
   .service-card-content {
-    width: 100%;
-    min-width: 100%;
+    width: 54%;
+    min-width: 54%;
+    padding: 1rem 0.9rem 0.9rem;
+  }
+
+  .service-card:hover .service-card-media img {
+    transform: none;
+  }
+
+  .service-card-badge {
+    right: 12px;
+    top: 12px;
+    width: 38px;
+    height: 38px;
   }
 }
 
@@ -177,8 +194,8 @@
 /* ─── BADGE — DESIGN MINIMALISTE ────────────────────────────── */
 .service-card-badge {
   position: absolute;
-  bottom: 16px;
   right: 16px;
+  top: 16px;
   width: 44px;
   height: 44px;
   background: #fff;
