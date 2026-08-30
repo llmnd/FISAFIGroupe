@@ -118,7 +118,7 @@ const DEFAULT_SLIDES: Slide[] = [
 
 const SERVICES_SLIDES: Slide[] = [
   {
-    src: "https://i.pinimg.com/736x/80/41/99/8041992ed3076083dc5ad1e7f5c90181.jpg",
+    src: "https://i.pinimg.com/originals/52/08/ca/5208caa56757e87a8282b1772fe96409.gif",
     alt: "Services – réseaux",
     eyebrow: "Réseaux & Télécommunications",
     desc: "Architecture, déploiement et supervision de vos infrastructures réseau.",

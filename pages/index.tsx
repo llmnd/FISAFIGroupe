@@ -301,7 +301,7 @@ export default function Home() {
           {[
             { title: "Ingénierie Réseaux", desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.", img: "https://i.pinimg.com/originals/d7/ac/8f/d7ac8fe75a93307683db992d9c8c6f8c.gif" },
             { title: "Solutions Sécurité", desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.", img: "https://i.pinimg.com/originals/14/e3/f8/14e3f8b54c14417611cfb6477c86c09d.gif" },
-            { title: "Cloud & Virtualisation", desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.", img: "https://i.pinimg.com/1200x/2e/30/d8/2e30d8bd3a1f97b8301829256c21a91b.jpg" },
+            { title: "Cloud & Virtualisation", desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.", img: "https://i.pinimg.com/originals/0e/db/60/0edb6064ea5e7fc57bd7159e94aad20c.gif" },
           ].map((cap) => (
             <div key={cap.title} className="split-card compact">
               <div className="split-card-image">

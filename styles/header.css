@@ -1113,17 +1113,15 @@ body {
 
 .header-search-box {
   width: 100%;
-  max-width: 560px;
-  background: var(--glass-heavy);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  max-width: 620px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(74, 55, 40, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(26, 19, 12, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 15px 20px;
+  padding: 12px 14px 12px 16px;
   animation: search-pop 0.30s var(--spring) forwards;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -1146,14 +1144,35 @@ body {
   border: none;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--brown);
   outline: none;
-  /* FIX: évite le zoom automatique sur iOS (doit être ≥ 16px ou forcer 16px) */
-  font-size: max(16px, 15px);
+  min-width: 0;
 }
 
-.header-search-input::placeholder { color: var(--brown-3); }
+.header-search-input::placeholder { color: rgba(74, 55, 40, 0.55); }
+
+.header-search-submit {
+  border: 1px solid rgba(232, 88, 10, 0.28);
+  background: linear-gradient(135deg, rgba(232, 88, 10, 0.12), rgba(232, 88, 10, 0.18));
+  color: var(--brown);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-search-submit:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(232, 88, 10, 0.18), rgba(232, 88, 10, 0.24));
+  border-color: rgba(232, 88, 10, 0.45);
+}
 
 .header-search-kbd {
   font-size: 10.5px;
@@ -1165,6 +1184,7 @@ body {
   font-family: 'DM Sans', sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
+  display: none;
 }
 
 /* ════════════════════════════════════════════════════════════

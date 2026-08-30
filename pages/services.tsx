@@ -13,7 +13,7 @@ export default function Services() {
       num: "01",
       name: "Réseaux & Télécommunications",
       desc: "Conception, déploiement et modernisation d'infrastructures réseaux et télécom pour entreprises et institutions.",
-      img: "https://i.pinimg.com/1200x/b6/e5/b4/b6e5b453d85cc0aef72de3c1e3c75177.jpg",
+      img: "https://i.pinimg.com/originals/6d/e9/3f/6de93f43994b4761ec228b692b7aa4c4.gif",
       tags: ["Infrastructure", "Réseau", "Télécom"]
     },
     {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -108,6 +108,7 @@ export default function Header() {
   const [isLoggedIn,    setIsLoggedIn]    = useState(false);
 
   const pathname = usePathname();
+  const router = useRouter();
 
   /* ─── Refs ─────────────────────────────────────────────── */
   const progressFillRef  = useRef<HTMLDivElement>(null);
@@ -212,6 +213,39 @@ export default function Header() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
+  const handleSearchSubmit = useCallback((event?: React.FormEvent) => {
+    event?.preventDefault();
+    const query = (searchRef.current?.value ?? "").trim();
+    if (!query) {
+      setShowSearch(false);
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const elements = Array.from(document.querySelectorAll('main, section, h1, h2, h3, h4, p, li, a, span, strong, button, div'));
+    const match = elements.find((el) => {
+      if (!el || el.closest('.header-search-overlay') || el.closest('.header-search-box')) return false;
+      const text = (el.textContent ?? '').trim();
+      return text && text.toLowerCase().includes(lowerQuery);
+    });
+
+    setShowSearch(false);
+
+    if (match) {
+      match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prevOutline = (match as HTMLElement).style.outline;
+      (match as HTMLElement).style.outline = '2px solid rgba(232, 88, 10, 0.9)';
+      (match as HTMLElement).style.outlineOffset = '4px';
+      setTimeout(() => {
+        (match as HTMLElement).style.outline = prevOutline;
+        (match as HTMLElement).style.outlineOffset = '';
+      }, 1400);
+      return;
+    }
+
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  }, [router]);
+
   /* ─── Toggle popup socials — position viewport-safe ────── */
   const handleToggleSocials = useCallback(() => {
     setShowSocials(prev => {
@@ -286,8 +320,9 @@ export default function Header() {
 
           <button
             className="header-plus-btn"
-            aria-label="Nouveau"
-            title="Nouveau"
+            aria-label="Informations"
+            title="Informations"
+            onClick={() => setShowInfoModal(true)}
           >
             <IconPlus />
           </button>
@@ -417,13 +452,13 @@ export default function Header() {
       {/* ── Search Overlay ───────────────────────────────── */}
       {showSearch && (
         <div
-          className="header-search-overlay"
+          className="header-search-overlay open"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSearch(false); }}
           role="dialog"
           aria-modal="true"
           aria-label="Recherche"
         >
-          <div className="header-search-box">
+          <form className="header-search-box" onSubmit={handleSearchSubmit}>
             <IconSearch />
             <input
               ref={searchRef}
@@ -433,9 +468,16 @@ export default function Header() {
               aria-label="Champ de recherche"
               autoComplete="off"
               spellCheck={false}
+              defaultValue=""
             />
-            <span className="header-search-kbd" aria-hidden="true">Échap</span>
-          </div>
+            <button
+              type="submit"
+              className="header-search-submit"
+              aria-label="Lancer la recherche"
+            >
+              Rechercher
+            </button>
+          </form>
         </div>
       )}
 

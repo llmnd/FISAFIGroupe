@@ -32,7 +32,14 @@ export default function SearchPage({ q, results }: { q: string; results: Item[] 
       {!q ? (
         <p className={styles.empty}>Entrez un terme de recherche depuis la barre en haut.</p>
       ) : results.length === 0 ? (
-        <p className={styles.empty}>Aucun résultat trouvé.</p>
+        <>
+          <p className={styles.empty}>Aucun résultat trouvé.</p>
+          <div style={{ marginTop: "1.25rem" }}>
+            <Link href="/" className={styles.link} style={{ display: "inline-block" }}>
+              Retour à l&apos;accueil
+            </Link>
+          </div>
+        </>
       ) : (
         <ul className={styles.results}>
           {results.map((r) => (
