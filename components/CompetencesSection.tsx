@@ -1,17 +1,31 @@
 import Link from "next/link";
 
 type Competence = {
-  num: string;
   name: string;
-  tag: string;
+  description: string;
 };
 
 const COMPETENCES: Competence[] = [
-  { num: "01", name: "Sécurité des systèmes",    tag: "Audit · Protection · Conformité" },
-  { num: "02", name: "Infrastructure & réseaux", tag: "Conception · Déploiement · Supervision" },
-  { num: "03", name: "Cybersécurité",            tag: "SOC · Détection · Réponse" },
-  { num: "04", name: "Cloud & virtualisation",   tag: "Hybride · Migration · Optimisation" },
-  { num: "05", name: "Conseil & accompagnement", tag: "Cadrage · Stratégie · Suivi" },
+  {
+    name: "Sécurité des systèmes",
+    description: "Audit, protection et conformité des systèmes d’information.",
+  },
+  {
+    name: "Infrastructure & réseaux",
+    description: "Conception, déploiement et supervision des infrastructures.",
+  },
+  {
+    name: "Cybersécurité",
+    description: "Détection des menaces et réponse aux incidents.",
+  },
+  {
+    name: "Cloud & virtualisation",
+    description: "Migration, environnements hybrides et optimisation du cloud.",
+  },
+  {
+    name: "Conseil & accompagnement",
+    description: "Cadrage stratégique et accompagnement de vos projets.",
+  },
 ];
 
 export default function CompetencesSection({
@@ -26,16 +40,17 @@ export default function CompetencesSection({
         <h2 id="competences-title" className="comp-title">
           Ce que nous <em>maîtrisons</em>
         </h2>
-        <span className="comp-count" aria-hidden="true">05 disciplines</span>
+        <p className="comp-intro">
+          Des compétences complémentaires pour concevoir, sécuriser et faire évoluer vos infrastructures numériques.
+        </p>
       </header>
 
       <ul className="comp-list">
-        {COMPETENCES.map((c) => (
-          <li key={c.num} className="comp-row">
-            <Link href={`${href}#${c.num}`} className="comp-link">
-              <span className="comp-num">{c.num}</span>
-              <span className="comp-name">{c.name}</span>
-              <span className="comp-tag">{c.tag}</span>
+        {COMPETENCES.map(({ name, description }) => (
+          <li key={name} className="comp-card">
+            <Link href={href} className="comp-link">
+              <span className="comp-name">{name}</span>
+              <span className="comp-description">{description}</span>
               <span className="comp-arrow" aria-hidden="true" />
             </Link>
           </li>

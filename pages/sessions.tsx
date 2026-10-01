@@ -30,15 +30,11 @@ export default function SessionsPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-
-  const buildApiUrl = (endpoint: string) => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    return backendUrl ? `${backendUrl}${endpoint}` : endpoint;
-  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -52,13 +48,17 @@ export default function SessionsPage() {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const res = await fetch(buildApiUrl("/api/sessions"));
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(Array.isArray(data) ? data : data.data || []);
+      setLoadError(false);
+      const res = await fetch("/api/sessions");
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
       }
+
+      const data = await res.json();
+      setSessions(Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.error("Error fetching sessions:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -205,6 +205,11 @@ export default function SessionsPage() {
           <div className="loading-state">
             <div className="spinner" />
             <p>Chargement des sessions…</p>
+          </div>
+        ) : loadError ? (
+          <div className="loading-state" role="alert">
+            <p>Impossible de charger les sessions pour le moment.</p>
+            <button className="vt-btn" onClick={fetchSessions}>Réessayer</button>
           </div>
         ) : (
           <>
