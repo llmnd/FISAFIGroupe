@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-
-const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 // Icon components extracted for better code organization
 const CalendarIcon = () => (
@@ -333,7 +330,28 @@ export default function FormationPage() {
 
       <Header />
 
-      <HeroSlideshow variant="training" ctaText="Nos actualités" ctaHref="/news" />
+      <section className="hero shared-page-hero training-page-hero" data-observe>
+        <div className="hero-bg" />
+        <div className="hero-lines" aria-hidden="true">
+          <div className="hero-line" />
+          <div className="hero-line" />
+          <div className="hero-line" />
+        </div>
+        <div className="hero-orbs" aria-hidden="true">
+          <div className="hero-orb" />
+          <div className="hero-orb" />
+        </div>
+        <div className="hero-overlay" />
+        <div className="hero-content">
+          <div className="hero-eyebrow">Apprendre, progresser, certifier</div>
+          <h1 className="hero-title">
+            Formations <em>professionnelles</em>
+          </h1>
+          <p className="hero-sub">
+            Développez vos compétences en IT, réseaux et cybersécurité grâce à des parcours pratiques et certifiants.
+          </p>
+        </div>
+      </section>
 
       {/* ESPACE FORMATION */}
       <div className="about-strip">

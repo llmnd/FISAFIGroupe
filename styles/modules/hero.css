@@ -383,10 +383,10 @@
    ══════════════════════════════════════════════ */
 .hs-card-desc {
   font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(0.98rem, 2.5vw, 1.05rem);
-  font-weight: 400;
-  color: #403a35;
-  line-height: 1.72;
+  font-size: clamp(1.2rem, 1.55vw, 1.38rem);
+  font-weight: 500;
+  color: #2e241e;
+  line-height: 1.65;
   letter-spacing: 0.003em;
   margin: 0 0 1.35rem;
   max-width: 46ch;
@@ -651,8 +651,8 @@
     font-size: 2rem;
   }
   .hs-card-desc {
-    font-size: 1.08rem;
-    line-height: 1.75;
+    font-size: 1.42rem;
+    line-height: 1.65;
   }
   .hs-card-slide {
     padding: 3.5rem 4rem 3rem 4.5rem;

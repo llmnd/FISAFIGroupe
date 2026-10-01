@@ -76,7 +76,7 @@ export default function Contact() {
       <Header />
 
       {/* HERO */}
-      <section className="hero" data-observe>
+      <section className="hero contact-hero" data-observe>
         <div className="hero-bg" />
         <div className="hero-lines">
           <div className="hero-line" />
@@ -104,11 +104,16 @@ export default function Contact() {
       <div className="divider" />
 
       {/* CONTACT SECTION */}
-      <section className="section" id="contact-form">
+      <section className="section contact-page-section" id="contact-form">
 
         <div className="contact-grid">
           {/* Infos */}
           <div className="contact-info reveal">
+            <div className="contact-column-heading">
+              <span>Nous sommes à votre écoute</span>
+              <h2>Nos coordonnées</h2>
+              <p>Échangez avec nos équipes pour concrétiser vos projets technologiques.</p>
+            </div>
             <div className="contact-item">
               <div className="contact-label">Téléphone Sénégal</div>
               <a href="tel:+221787812297" className="contact-value">+221 78 781 22 97</a>
@@ -136,9 +141,16 @@ export default function Contact() {
 
           {/* Formulaire */}
           <form onSubmit={handleSubmit} className="contact-form reveal reveal-delay-1">
+            <div className="contact-column-heading">
+              <span>Un besoin, une question ?</span>
+              <h2>Écrivez-nous</h2>
+              <p>Décrivez votre demande. Notre équipe vous recontactera.</p>
+            </div>
             <div className="form-field">
+              <label className="contact-form-label" htmlFor="contact-name">Nom complet</label>
               <input
                 type="text"
+                id="contact-name"
                 name="name"
                 placeholder="Nom complet"
                 value={formData.name}
@@ -150,8 +162,10 @@ export default function Contact() {
             </div>
 
             <div className="form-field">
+              <label className="contact-form-label" htmlFor="contact-email">Adresse e-mail</label>
               <input
                 type="email"
+                id="contact-email"
                 name="email"
                 placeholder="Email"
                 value={formData.email}
@@ -163,8 +177,10 @@ export default function Contact() {
             </div>
 
             <div className="form-field">
+              <label className="contact-form-label" htmlFor="contact-phone">Téléphone (facultatif)</label>
               <input
                 type="tel"
+                id="contact-phone"
                 name="phone"
                 placeholder="Téléphone"
                 value={formData.phone}
@@ -175,7 +191,9 @@ export default function Contact() {
             </div>
 
             <div className="form-field">
+              <label className="contact-form-label" htmlFor="contact-subject">Sujet de votre demande</label>
               <select
+                id="contact-subject"
                 name="subject"
                 value={formData.subject}
                 onChange={handleChange}
@@ -193,7 +211,9 @@ export default function Contact() {
             </div>
 
             <div className="form-field form-message">
+              <label className="contact-form-label" htmlFor="contact-message">Votre message</label>
               <textarea
+                id="contact-message"
                 name="message"
                 placeholder="Message"
                 value={formData.message}

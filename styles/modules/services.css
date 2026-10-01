@@ -70,6 +70,59 @@
   }
 }
 
+/* Services page: let cards scale with the available desktop width. */
+#services-list .services-grid {
+  width: 100%;
+  max-width: 1440px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
+}
+
+#services-list .service-desc-new {
+  color: #454545;
+  font-size: 1.08rem;
+  font-weight: 450;
+  line-height: 1.75;
+}
+
+@media (min-width: 900px) {
+  #services-list .services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #services-list .service-card {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #services-list .service-card-media {
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 16 / 9 !important;
+  }
+
+  #services-list .service-card-content {
+    width: 100%;
+    flex: 1;
+    gap: 0.9rem;
+    padding: clamp(1.4rem, 2vw, 2rem);
+  }
+
+  #services-list .service-card-title {
+    font-size: clamp(1.6rem, 2.2vw, 2.25rem);
+  }
+
+  #services-list .service-desc-new {
+    font-size: clamp(1.1rem, 1.25vw, 1.22rem);
+  }
+
+  #services-list .service-tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    padding: 0.4rem 0.7rem;
+  }
+}
+
 /* Stagger desktop uniquement */
 @media (min-width: 769px) {
   .services-grid.is-visible .service-card:nth-child(1) { animation-delay: 0.00s; }

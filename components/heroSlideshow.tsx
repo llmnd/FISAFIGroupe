@@ -73,43 +73,43 @@ interface Slide {
 
 const DEFAULT_SLIDES: Slide[] = [
   {
-    src: "https://i.pinimg.com/originals/a1/43/d1/a143d10f9442151675d4e74e1d225b4d.gif",
+    src: "/hero/Cybersécurité.gif",
     alt: "FiSAFi – cybersécurité",
     eyebrow: "Sécurité des systèmes",
     desc: "Audit et mesures de protection pour les systèmes et les données.",
   },
   {
-    src: "https://i.pinimg.com/originals/a5/67/75/a567754bc4d6f47aa9dce10fddbf9aaf.gif",
+    src: "/hero/FiSAFi – infrastructure.gif",
     alt: "FiSAFi – infrastructure",
     eyebrow: "Infrastructures réseau",
     desc: "Conception et déploiement d’architectures réseau selon les contraintes du site.",
   },
   {
-    src: "https://i.pinimg.com/originals/23/2b/c8/232bc816e6901e5ec4b88cf3128e1916.gif",
+    src: "/Conseil & accompagnement.jpg",
     alt: "FiSAFi – conseil",
     eyebrow: "Études & conseil",
     desc: "Cadrage technique et accompagnement de projets numériques.",
   },
   {
-    src: "https://i.pinimg.com/originals/79/a6/cc/79a6cc3163bcd2d964488d8ae62d03df.gif",
+    src: "/hero/FiSAFi – transformation.gif",
     alt: "FiSAFi – transformation",
     eyebrow: "Évolution des systèmes",
     desc: "Faire évoluer les outils et les infrastructures déjà en place.",
   },
   {
-    src: "https://i.pinimg.com/1200x/3a/a3/72/3aa3724d5cf622f938f3d55bb110eacc.jpg",
+    src: "/hero/FiSAFi – services managés.jpg",
     alt: "FiSAFi – services managés",
     eyebrow: "Maintenance & support",
     desc: "Maintenance des équipements et accompagnement des équipes.",
   },
   {
-    src: "https://i.pinimg.com/1200x/cb/88/29/cb8829d4397e9bdb05426506f15dea56.jpg",
+    src: "/hero/FiSAFi – installation réseau.jpg",
     alt: "FiSAFi – installation réseau",
     eyebrow: "Installation réseau",
     desc: "Des choix techniques liés au site, au matériel et aux usages.",
   },
   {
-    src: "https://i.pinimg.com/1200x/23/e1/36/23e136d0c010468805abcc11b6adf877.jpg",
+    src: "/hero/FiSAFi – infrastructure.gif",
     alt: "FiSAFi – fibre",
     eyebrow: "Fibre optique",
     desc: "Études, déploiement aérien ou souterrain et suivi des travaux.",
@@ -118,25 +118,25 @@ const DEFAULT_SLIDES: Slide[] = [
 
 const SERVICES_SLIDES: Slide[] = [
   {
-    src: "https://i.pinimg.com/originals/52/08/ca/5208caa56757e87a8282b1772fe96409.gif",
+    src: "/Infrastructure & réseaux.gif",
     alt: "Services – réseaux",
     eyebrow: "Réseaux & Télécommunications",
     desc: "Architecture, déploiement et supervision de vos infrastructures réseau.",
   },
   {
-    src: "https://i.pinimg.com/1200x/e8/ce/0f/e8ce0fd1ffe096dee7d7b85b261b626f.jpg",
+    src: "/Cloud & virtualisation.jpg",
     alt: "Services – infrastructure",
     eyebrow: "Infrastructure IT & Virtualisation",
     desc: "Optimisez vos ressources grâce à la virtualisation et aux solutions cloud hybrides.",
   },
   {
-    src: "https://i.pinimg.com/1200x/67/3c/54/673c54c87878338793b7bd30801ec1fc.jpg",
+    src: "/Cybersécurité.gif",
     alt: "Services – cybersécurité",
     eyebrow: "Cybersécurité & Protection",
     desc: "Audits, SOC managé et solutions de protection pour sécuriser vos actifs numériques.",
   },
   {
-    src: "https://i.pinimg.com/1200x/41/e4/8f/41e48f226597daf5235a91aabd887093.jpg",
+    src: "/Conseil & accompagnement.jpg",
     alt: "Services – conseil",
     eyebrow: "Conseil & Accompagnement",
     desc: "Nos experts vous guident à chaque étape de votre stratégie IT.",
@@ -145,25 +145,25 @@ const SERVICES_SLIDES: Slide[] = [
 
 const TRAINING_SLIDES: Slide[] = [
   {
-    src: "/17.jpeg",
+    src: "/1.jpeg",
     alt: "Formation – présentielle",
     eyebrow: "Sessions Présentielles",
     desc: "Des formations animées par des experts certifiés pour une montée en compétences rapide.",
   },
   {
-    src: "https://i.pinimg.com/1200x/7e/33/65/7e3365afd1719903d79624475cc3bc61.jpg",
+    src: "/Cloud & virtualisation.jpg",
     alt: "Formation – e-learning",
     eyebrow: "Parcours en ligne",
     desc: "Accédez à nos modules e-learning à votre rythme, depuis n'importe où dans le monde.",
   },
   {
-    src: "https://i.pinimg.com/1200x/31/fd/55/31fd55cd1a1616648836ef96254ce103.jpg",
+    src: "/17.jpeg",
     alt: "Formation – hybride",
     eyebrow: "Mode Hybride",
     desc: "Combinez présentiel et distanciel pour une flexibilité maximale sans compromis sur la qualité.",
   },
   {
-    src: "https://i.pinimg.com/1200x/22/0c/55/220c553e5e8bdb36377e41329925fa4b.jpg",
+    src: "/Sécurité des systèmes.jpg",
     alt: "Formation – certifications",
     eyebrow: "Préparation aux certifications",
     desc: "Programmes intensifs alignés sur les certifications officielles des grands éditeurs.",

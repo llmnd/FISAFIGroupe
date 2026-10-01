@@ -32,6 +32,15 @@
 /* 8. Services Section */
 @import './modules/services.css';
 
+/* 8.5 Actualités */
+@import './modules/news.css';
+
+/* 8.6 Sessions */
+@import './modules/sessions.css';
+
+/* 8.7 Heroes des pages */
+@import './modules/page-hero.css';
+
 /* 9. Split Cards (Capabilities) */
 @import './modules/split-cards.css';
 

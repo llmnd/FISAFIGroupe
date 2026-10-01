@@ -1,0 +1,110 @@
+.sessions-hero {
+  position: relative;
+  display: flex;
+  min-height: clamp(420px, 52vw, 600px);
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(7rem, 10vw, 9rem) clamp(1.25rem, 8vw, 8rem);
+  background: #101c35;
+}
+
+.sessions-hero .hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(ellipse at 82% 18%, rgba(42, 112, 197, 0.55), transparent 36%),
+    radial-gradient(ellipse at 92% 95%, rgba(222, 105, 48, 0.28), transparent 40%),
+    linear-gradient(112deg, #101c35 8%, #142c4a 58%, #10233d 100%);
+}
+
+.sessions-hero .hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(8, 18, 35, 0.46), rgba(8, 18, 35, 0.08));
+}
+
+.sessions-hero .hero-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 900px);
+  margin: 0;
+}
+
+.sessions-hero .hero-eyebrow {
+  margin-bottom: 1.5rem;
+  color: #ffc18f;
+  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.sessions-hero .hero-title {
+  max-width: 900px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(3rem, 7vw, 6.4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.sessions-hero .hero-sub {
+  max-width: 650px;
+  margin: 1.6rem 0 0;
+  color: #f0f4fa;
+  font-size: clamp(1.12rem, 1.8vw, 1.4rem);
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.sess-wrap {
+  color: #25344a;
+}
+
+.sess-wrap .cal-layout {
+  gap: clamp(1rem, 2vw, 1.75rem);
+}
+
+.sess-wrap .cal-cell.has-sessions {
+  border-color: #cbd5e1;
+}
+
+.sess-wrap .cal-cell.has-sessions:hover,
+.sess-wrap .cal-cell.selected {
+  border-color: #173d73;
+}
+
+.sess-wrap .s-card.complete,
+.sess-wrap .s-card.terminee,
+.sess-wrap .list-card.terminated {
+  opacity: 0.88;
+}
+
+.sess-wrap .loading-state,
+.sess-wrap .empty-state {
+  border: 1px solid #dce3ec;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(20, 39, 65, 0.06);
+}
+
+.sessions-hero .hero-title,
+.sessions-hero .hero-sub {
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 760px) {
+  .sessions-hero {
+    min-height: 440px;
+    padding: 7rem 1.35rem 5rem;
+  }
+
+  .sessions-hero .hero-title {
+    font-size: clamp(2.8rem, 12vw, 4.2rem);
+  }
+}

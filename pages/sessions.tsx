@@ -162,10 +162,11 @@ export default function SessionsPage() {
       <Header />
 
       {/* HERO */}
-      <section className="hero" style={{ height: "260px" }}>
+      <section className="hero sessions-hero" data-observe>
         <div className="hero-bg" />
         <div className="hero-overlay" />
         <div className="hero-content">
+          <div className="hero-eyebrow">Apprendre, progresser, certifier</div>
           <h1 className="hero-title">Calendrier des Sessions</h1>
           <p className="hero-sub">
             Consultez nos prochaines formations et inscrivez-vous en quelques clics
@@ -249,7 +250,10 @@ export default function SessionsPage() {
                         const isSelected = selectedDay === day;
 
                         return (
-                          <div
+                          <button
+                            type="button"
+                            aria-label={`${day} ${MONTH_NAMES[selectedMonth.getMonth()]}${daySessions.length ? `, ${daySessions.length} session${daySessions.length > 1 ? "s" : ""}` : ""}`}
+                            disabled={daySessions.length === 0}
                             key={day}
                             className={`cal-cell ${daySessions.length > 0 ? "has-sessions" : ""} ${isSelected ? "selected" : ""} ${isToday(day) ? "today" : ""}`}
                             onClick={() => handleDayClick(day, daySessions.length > 0)}
@@ -262,7 +266,7 @@ export default function SessionsPage() {
                                 {hasDone && <span className="dot terminee" />}
                               </div>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -452,9 +456,9 @@ export default function SessionsPage() {
       <style jsx>{`
         /* ── LAYOUT ── */
         .sess-wrap {
-          max-width: 1200px;
-          margin: 48px auto;
-          padding: 0 20px;
+          max-width: 1380px;
+          margin: clamp(42px, 6vw, 80px) auto;
+          padding: 0 clamp(18px, 4vw, 48px);
         }
 
         /* ── CTRL BAR ── */
@@ -467,9 +471,9 @@ export default function SessionsPage() {
           flex-wrap: wrap;
         }
         .ctrl-title {
-          font-size: 20px;
-          font-weight: 600;
-          color: var(--ink);
+          font-size: clamp(1.5rem, 2.5vw, 2rem);
+          font-weight: 700;
+          color: #12213a;
           margin: 0;
         }
         .view-toggle {
@@ -484,14 +488,14 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 7px 13px;
+          padding: 10px 16px;
           border: none;
           background: transparent;
           color: var(--steel);
           border-radius: 6px;
           cursor: pointer;
-          font-size: 13px;
-          font-weight: 500;
+          font-size: 14px;
+          font-weight: 650;
           transition: background 0.15s, color 0.15s;
           white-space: nowrap;
         }
@@ -510,9 +514,10 @@ export default function SessionsPage() {
         }
         .cal-main {
           background: var(--white);
-          border: 0.5px solid var(--line);
-          border-radius: 12px;
-          padding: 22px 18px;
+          border: 1px solid #dce3ec;
+          border-radius: 18px;
+          padding: clamp(20px, 3vw, 34px);
+          box-shadow: 0 10px 30px rgba(20, 39, 65, 0.07);
         }
 
         /* NAV */
@@ -523,15 +528,15 @@ export default function SessionsPage() {
           margin-bottom: 18px;
         }
         .cal-month-label {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--ink);
+          font-size: clamp(1.2rem, 2vw, 1.55rem);
+          font-weight: 700;
+          color: #12213a;
         }
         .nav-btn {
-          width: 32px;
-          height: 32px;
-          border: 0.5px solid var(--line);
-          border-radius: 7px;
+          width: 42px;
+          height: 42px;
+          border: 1px solid #dce3ec;
+          border-radius: 10px;
           background: var(--white);
           color: var(--steel);
           cursor: pointer;
@@ -550,29 +555,31 @@ export default function SessionsPage() {
         .cal-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 4px;
+          gap: clamp(5px, 0.8vw, 10px);
           margin-bottom: 18px;
         }
         .cal-dh {
           text-align: center;
-          font-size: 10px;
-          font-weight: 700;
-          color: var(--steel);
+          font-size: 12px;
+          font-weight: 750;
+          color: #526174;
           text-transform: uppercase;
           letter-spacing: 0.04em;
-          padding: 5px 0 8px;
+          padding: 8px 0 12px;
         }
         .cal-cell {
           aspect-ratio: 1;
-          border: 0.5px solid transparent;
-          border-radius: 8px;
-          padding: 4px;
+          border: 1px solid transparent;
+          border-radius: 12px;
+          padding: 6px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 3px;
           cursor: default;
+          appearance: none;
+          font: inherit;
           transition: background 0.14s, border-color 0.14s;
         }
         .cal-cell.empty { background: transparent; }
@@ -600,11 +607,11 @@ export default function SessionsPage() {
           justify-content: center;
         }
         .cal-day-num {
-          font-size: 12px;
-          font-weight: 500;
-          color: var(--ink);
-          width: 22px;
-          height: 22px;
+          font-size: clamp(0.95rem, 1.3vw, 1.15rem);
+          font-weight: 600;
+          color: #25344a;
+          width: 30px;
+          height: 30px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -640,15 +647,16 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 6px;
-          font-size: 11px;
-          color: var(--steel);
+          font-size: 13px;
+          font-weight: 550;
+          color: #526174;
         }
 
         /* PANNEAU DESKTOP */
         .desktop-panel {
           background: var(--white);
-          border: 0.5px solid var(--line);
-          border-radius: 12px;
+          border: 1px solid #dce3ec;
+          border-radius: 18px;
           min-height: 280px;
           display: flex;
           flex-direction: column;
@@ -707,7 +715,8 @@ export default function SessionsPage() {
           text-align: center;
         }
         .panel-empty p {
-          font-size: 12px;
+          font-size: 1rem;
+          font-weight: 550;
           line-height: 1.5;
           margin: 0;
           max-width: 180px;
@@ -719,9 +728,9 @@ export default function SessionsPage() {
 
         /* ── SESSION CARD (calendrier) ── */
         .s-card {
-          border: 0.5px solid var(--line);
-          border-radius: 12px;
-          padding: 14px;
+          border: 1px solid #dce3ec;
+          border-radius: 14px;
+          padding: 18px;
           background: var(--white);
           display: flex;
           flex-direction: column;
@@ -744,24 +753,24 @@ export default function SessionsPage() {
           flex-wrap: wrap;
         }
         .s-card-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--ink);
+          font-size: 1.08rem;
+          font-weight: 700;
+          color: #12213a;
           margin: 0;
           line-height: 1.35;
         }
         .s-card-loc {
-          font-size: 11px;
-          color: var(--steel);
+          font-size: 0.94rem;
+          color: #526174;
           display: flex;
           align-items: center;
           gap: 4px;
           margin: 0;
         }
         .s-badge {
-          font-size: 10px;
-          font-weight: 600;
-          padding: 3px 9px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          padding: 5px 11px;
           border-radius: 20px;
           white-space: nowrap;
           flex-shrink: 0;
@@ -770,8 +779,8 @@ export default function SessionsPage() {
         .s-badge.complète { background: rgba(220,38,38,0.1); color: #b91c1c; }
         .s-badge.terminée { background: rgba(148,163,184,0.12); color: var(--steel); }
         .s-time {
-          font-size: 11px;
-          color: var(--steel);
+          font-size: 0.88rem;
+          color: #40516a;
           white-space: nowrap;
           background: var(--mist);
           padding: 2px 8px;
@@ -791,16 +800,16 @@ export default function SessionsPage() {
         .fill-bar-fill.ouverte { background: #16a34a; }
         .fill-bar-fill.complète { background: #dc2626; }
         .fill-bar-fill.terminée { background: #94a3b8; }
-        .fill-label { font-size: 11px; color: var(--steel); }
+        .fill-label { font-size: 0.88rem; color: #526174; }
         .s-card-cta {
           display: block;
           text-align: center;
-          padding: 10px 16px;
+          padding: 12px 16px;
           background: var(--blue);
           color: var(--white);
           border-radius: 8px;
-          font-size: 12px;
-          font-weight: 500;
+          font-size: 0.94rem;
+          font-weight: 700;
           text-decoration: none;
           transition: opacity 0.2s ease;
           margin-top: 4px;
@@ -825,8 +834,8 @@ export default function SessionsPage() {
           display: flex;
           align-items: stretch;
           background: var(--white);
-          border: 0.5px solid var(--line);
-          border-radius: 12px;
+          border: 1px solid #dce3ec;
+          border-radius: 14px;
           overflow: hidden;
           transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
@@ -844,22 +853,22 @@ export default function SessionsPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-width: 68px;
-          padding: 18px 10px;
+          min-width: 84px;
+          padding: 22px 12px;
           background: var(--mist);
           border-right: 0.5px solid var(--line);
           gap: 3px;
           flex-shrink: 0;
         }
         .list-date-num {
-          font-size: 24px;
-          font-weight: 600;
-          color: var(--ink);
+          font-size: 1.9rem;
+          font-weight: 750;
+          color: #12213a;
           line-height: 1;
         }
         .list-date-mon {
-          font-size: 10px;
-          color: var(--steel);
+          font-size: 0.82rem;
+          color: #526174;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -868,7 +877,7 @@ export default function SessionsPage() {
         /* Corps */
         .list-body {
           flex: 1;
-          padding: 14px 18px;
+          padding: 18px 22px;
           display: flex;
           flex-direction: column;
           gap: 7px;
@@ -882,9 +891,9 @@ export default function SessionsPage() {
           gap: 12px;
         }
         .list-title {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--ink);
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #12213a;
           margin: 0;
           line-height: 1.3;
           flex: 1;
@@ -899,8 +908,8 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 5px;
-          font-size: 12px;
-          color: var(--steel);
+          font-size: 0.94rem;
+          color: #526174;
         }
 
         /* CTA liste */
@@ -908,12 +917,12 @@ export default function SessionsPage() {
           display: inline-flex;
           align-self: flex-start;
           align-items: center;
-          padding: 7px 16px;
+          padding: 10px 16px;
           background: var(--white);
           border: 0.5px solid var(--line);
           border-radius: 8px;
-          font-size: 12px;
-          font-weight: 500;
+          font-size: 0.92rem;
+          font-weight: 650;
           color: var(--ink);
           text-decoration: none;
           margin-top: 4px;
@@ -932,8 +941,8 @@ export default function SessionsPage() {
           align-items: center;
           gap: 14px;
           padding: 70px 20px;
-          color: var(--steel);
-          font-size: 13px;
+          color: #526174;
+          font-size: 1rem;
         }
         .spinner {
           width: 26px;
@@ -950,8 +959,8 @@ export default function SessionsPage() {
           align-items: center;
           gap: 12px;
           padding: 70px 20px;
-          color: var(--steel);
-          font-size: 13px;
+          color: #526174;
+          font-size: 1rem;
           text-align: center;
         }
 
@@ -1012,21 +1021,37 @@ export default function SessionsPage() {
 
         @media (max-width: 500px) {
           .sess-wrap { padding: 0 14px; margin: 36px auto; }
-          .ctrl-title { font-size: 17px; }
-          .vt-btn span { display: none; }
-          .vt-btn { padding: 7px 11px; }
+          .ctrl-title { font-size: 1.25rem; }
+          .vt-btn span { display: inline; }
+          .vt-btn { padding: 9px 10px; font-size: 0.82rem; }
           .cal-main { padding: 16px 12px; }
           .cal-grid { gap: 3px; }
-          .cal-dh { font-size: 9px; padding: 4px 0 6px; }
+          .cal-dh { font-size: 0.7rem; padding: 4px 0 6px; }
           .cal-cell { border-radius: 6px; gap: 2px; }
-          .cal-day-num { font-size: 11px; width: 20px; height: 20px; }
-          .cal-cell.today .cal-day-num { width: 20px; height: 20px; }
+          .cal-day-num { font-size: 0.85rem; width: 24px; height: 24px; }
+          .cal-cell.today .cal-day-num { width: 24px; height: 24px; }
           .dot { width: 4px; height: 4px; }
-          .list-date-block { min-width: 60px; padding: 14px 8px; }
-          .list-date-num { font-size: 20px; }
-          .list-title { font-size: 14px; }
+          .list-date-block { min-width: 66px; padding: 14px 8px; }
+          .list-date-num { font-size: 1.45rem; }
+          .list-title { font-size: 1rem; }
           .list-top { flex-wrap: wrap; }
           .list-body { padding: 12px 14px; }
+        }
+
+        .vt-btn:focus-visible,
+        .nav-btn:focus-visible,
+        .panel-close:focus-visible,
+        .cal-cell.has-sessions:focus-visible {
+          outline: 3px solid #f0a36b;
+          outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .spinner { animation: none; }
+          .s-card,
+          .list-card,
+          .nav-btn,
+          .vt-btn { transition: none; }
         }
       `}</style>
     </>

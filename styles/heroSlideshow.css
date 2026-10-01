@@ -405,10 +405,10 @@
 /* Description — plus lisible, meilleur contraste */
 .hs-card-desc {
   font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(0.88rem, 2.5vw, 0.96rem);
-  font-weight: 300;
-  color: #514a45;
-  line-height: 1.78;
+  font-size: clamp(1.2rem, 1.55vw, 1.38rem);
+  font-weight: 500;
+  color: #2e241e;
+  line-height: 1.65;
   margin: 0 0 1.35rem;
   max-width: 46ch;
 }
@@ -674,8 +674,8 @@
     font-size: 1.5rem;
   }
   .hs-card-desc {
-    font-size: 1rem;
-    line-height: 1.8;
+    font-size: 1.42rem;
+    line-height: 1.65;
   }
   .hs-card-slide {
     padding: 3.5rem 4.5rem 3rem 5rem;

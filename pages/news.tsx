@@ -22,7 +22,8 @@ export default function News() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('tous');
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [articleLoadError, setArticleLoadError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isClient, setIsClient] = useState(false);
 
   // Metadata for Head
@@ -31,10 +32,10 @@ export default function News() {
 
   // Couleurs et icônes par catégorie
   const categoryStyles: Record<string, { bg: string; icon: string; color: string; image?: string }> = {
-    'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff', image: 'https://i.pinimg.com/736x/0f/97/73/0f9773ccab2dba7dcd624037adaf1150.jpg' },
-    'Innovations': { bg: 'linear-gradient(135deg, #9333ea 0%, #d946ef 100%)', icon: '💡', color: '#fff', image: 'https://i.pinimg.com/1200x/e6/af/85/e6af85fda4983083c99b2defcffa522d.jpg' },
-    'Événements': { bg: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)', icon: '📅', color: '#fff', image: 'https://i.pinimg.com/1200x/37/a7/f0/37a7f0f2f1afe68709caeca3864a54ca.jpg' },
-    'Veille sectorielle': { bg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', icon: '📊', color: '#fff', image: 'https://i.pinimg.com/1200x/94/3d/2f/943d2ff5420ae964310707f12d04bb2d.jpg' },
+    'Articles techniques': { bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', icon: '⚙️', color: '#fff', image: '/hero/FiSAFi – infrastructure.gif' },
+    'Innovations': { bg: 'linear-gradient(135deg, #9333ea 0%, #d946ef 100%)', icon: '💡', color: '#fff', image: '/hero/FiSAFi – transformation.gif' },
+    'Événements': { bg: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)', icon: '📅', color: '#fff', image: '/hero/FiSAFi – services managés.jpg' },
+    'Veille sectorielle': { bg: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', icon: '📊', color: '#fff', image: '/hero/Cybersécurité.gif' },
   };
 
   const getCategoryStyle = (category: string) => {
@@ -54,6 +55,7 @@ export default function News() {
   useEffect(() => {
     const fetchArticles = async () => {
       setLoadingArticles(true);
+      setArticleLoadError(false);
       try {
         const category = selectedCategory === 'tous' ? '' : selectedCategory;
         const query = category ? `?category=${category}` : '';
@@ -61,15 +63,18 @@ export default function News() {
         if (res.ok) {
           const data = await res.json();
           setArticles(data.data?.articles || []);
+        } else {
+          setArticleLoadError(true);
         }
       } catch (error) {
         console.error('Error fetching articles:', error);
+        setArticleLoadError(true);
       } finally {
         setLoadingArticles(false);
       }
     };
     fetchArticles();
-  }, [selectedCategory]);
+  }, [selectedCategory, refreshKey]);
 
   useEffect(() => {
     if (!isClient) return;
@@ -113,10 +118,9 @@ export default function News() {
 
   // Featured news item
   const featuredNews = {
-    num: "01",
     name: "Suivez nos actualités",
     desc: "Restez informé de toutes nos innovations, publications et événements",
-    img: "https://i.pinimg.com/736x/66/1f/3f/661f3fc1bb00293ee3cbe882c33c0007.jpg"
+    img: "/hero/FiSAFi – transformation.gif"
   };
 
   return (
@@ -148,7 +152,7 @@ export default function News() {
       <Header />
 
       {/* HERO */}
-      <section className="hero" data-observe>
+      <section className="hero news-hero" data-observe>
         <div className="hero-bg" />
         <div className="hero-lines">
           <div className="hero-line" />
@@ -176,28 +180,29 @@ export default function News() {
       <div className="divider" />
 
       {/* ACTUALITES FEATURED IMAGE */}
-      <section className="section" id="actualites-featured">
-        <div className="services-grid">
-          <div className="service-card reveal">
-            <div className="service-card-media">
+      <section className="section news-featured" id="actualites-featured">
+        <div className="news-featured-card reveal">
+          <div className="news-featured-media">
               <Image
                 src={featuredNews.img}
                 alt={featuredNews.name}
-                width={400}
-                height={300}
+                width={960}
+                height={640}
                 data-observe
-                style={{ objectFit: "cover", width: "100%", height: "auto" }}
+                priority
               />
-              <div className="service-card-badge">{featuredNews.num}</div>
-            </div>
-            <div className="service-card-content">
-              <h3 className="service-card-title">{featuredNews.name}</h3>
-              <div className="service-card-tags">
-                <span className="service-tag">Actualités</span>
-                <span className="service-tag">Innovations</span>
-                <span className="service-tag">Événements</span>
-              </div>
-              <p className="service-desc-new">{featuredNews.desc}</p>
+          </div>
+          <div className="news-featured-content">
+            <span className="news-featured-eyebrow">Le journal FiSAFi</span>
+            <h2>{featuredNews.name}</h2>
+            <p>{featuredNews.desc}</p>
+            <Link href="#news-list" className="news-featured-link">
+              Explorer les publications <span aria-hidden="true">→</span>
+            </Link>
+            <div className="news-featured-tags" aria-label="Rubriques">
+              <span>Actualités</span>
+              <span>Innovations</span>
+              <span>Événements</span>
             </div>
           </div>
         </div>
@@ -206,40 +211,20 @@ export default function News() {
       <div className="divider" />
 
       {/* NEWS SECTION */}
-      <section className="section" id="news-list">
+      <section className="section news-list" id="news-list">
         <div className="section-eyebrow reveal">Nos publications</div>
         <h2 className="section-title reveal reveal-delay-1">
           Actualités<br />& innovations
         </h2>
 
         {/* Category Filter */}
-        <div
-          className="news-filters reveal reveal-delay-2"
-          style={{
-            display: 'flex',
-            gap: '0.75rem',
-            flexWrap: 'wrap',
-            marginBottom: '2.5rem',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="news-filters reveal reveal-delay-2" aria-label="Filtrer les publications">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '0.5rem 1.25rem',
-                fontSize: '11px',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                border: '0.5px solid ' + (selectedCategory === cat ? 'var(--blue)' : 'var(--line)'),
-                background: selectedCategory === cat ? 'var(--blue)' : 'transparent',
-                color: selectedCategory === cat ? '#fff' : 'var(--steel)',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 400,
-              }}
+              className={`news-filter${selectedCategory === cat ? ' is-active' : ''}`}
+              aria-pressed={selectedCategory === cat}
             >
               {cat === 'tous' ? 'Tous' : cat}
             </button>
@@ -248,95 +233,75 @@ export default function News() {
 
         {/* Articles Grid */}
         {loadingArticles ? (
-          <div className="services-grid">
+          <div className="news-card-grid" aria-label="Chargement des publications" aria-busy="true">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="service-card" style={{ opacity: 0.6 }}>
-                <div className="service-card-media">
-                  <div style={{ background: '#e8e8e8', width: '100%', aspectRatio: '4/3' }} />
-                </div>
-                <div className="service-card-content">
-                  <div style={{ height: '24px', background: '#e8e8e8', width: '80%', marginBottom: '0.8rem' }} />
-                  <div style={{ height: '60px', background: '#e8e8e8', width: '100%' }} />
+              <div key={i} className="news-card news-card-skeleton">
+                <div className="news-card-image news-skeleton-block" />
+                <div className="news-card-body">
+                  <div className="news-skeleton-block news-skeleton-meta" />
+                  <div className="news-skeleton-block news-skeleton-title" />
+                  <div className="news-skeleton-block news-skeleton-text" />
                 </div>
               </div>
             ))}
           </div>
+        ) : articleLoadError ? (
+          <div className="news-empty-state" role="alert">
+            <h3>Les actualités ne sont pas disponibles pour le moment.</h3>
+            <p>Une erreur est survenue lors du chargement. Veuillez réessayer.</p>
+            <button className="news-retry-button" onClick={() => setRefreshKey((key) => key + 1)}>
+              Réessayer
+            </button>
+          </div>
         ) : articles.length > 0 ? (
-          <div className="services-grid">
-            {articles.map((article, i) => {
-              const delayClass = i > 0 ? ` reveal-delay-${Math.min(i, 3)}` : "";
-              return (
-                <div 
-                  key={article.id} 
-                  className={`service-card reveal${delayClass}`}
-                  onMouseEnter={() => setHoveredId(article.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                >
-                  <div className="service-card-media">
+          <div className="news-card-grid">
+            {articles.map((article) => (
+              <article key={article.id} className="news-card reveal">
+                  <div className="news-card-image">
                     {article.image ? (
                       <Image
                         src={article.image}
                         alt={article.title}
-                        width={400}
-                        height={250}
+                        width={720}
+                        height={480}
                         data-observe
-                        style={{ objectFit: "cover", width: "100%", height: "auto" }}
                       />
                     ) : getCategoryStyle(article.category || '').image ? (
                       <Image
                         src={getCategoryStyle(article.category || '').image!}
                         alt={article.category || 'Article'}
-                        width={400}
-                        height={250}
+                        width={720}
+                        height={480}
                         data-observe
-                        style={{ objectFit: "cover", width: "100%", height: "auto" }}
                       />
                     ) : (
-                      <div style={{ 
-                        background: getCategoryStyle(article.category || '').bg,
-                        width: '100%', 
-                        aspectRatio: '4/3',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: getCategoryStyle(article.category || '').color,
-                        fontSize: '3rem',
-                        fontWeight: 'bold'
-                      }}>
+                      <div
+                        className="news-card-placeholder"
+                        style={{
+                          background: getCategoryStyle(article.category || '').bg,
+                          color: getCategoryStyle(article.category || '').color,
+                        }}
+                      >
                         {getCategoryStyle(article.category || '').icon}
                       </div>
                     )}
                   </div>
-                  <div className="service-card-content">
-                    <div className="service-card-tags">
-                      <span className="service-tag">{article.category || "Actualité"}</span>
-                      <span className="service-tag">{formatDate(article.createdAt)}</span>
+                  <div className="news-card-body">
+                    <div className="news-card-meta">
+                      <span className="news-card-category">{article.category || "Actualité"}</span>
+                      <time dateTime={article.createdAt}>{formatDate(article.createdAt)}</time>
                     </div>
-                    <h3 className="service-card-title">{article.title}</h3>
-                    <p className="service-desc-new">{article.excerpt}</p>
-                    {hoveredId === article.id && (
-                      <Link 
-                        href={`/news/${article.id}`}
-                        style={{
-                          display: 'inline-block',
-                          marginTop: '0.5rem',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          color: 'var(--blue)',
-                          textDecoration: 'none',
-                          letterSpacing: '0.05em'
-                        }}
-                      >
-                        Lire la suite →
-                      </Link>
-                    )}
+                    <h3><Link href={`/news/${article.id}`}>{article.title}</Link></h3>
+                    <p>{article.excerpt}</p>
+                    <Link href={`/news/${article.id}`} className="news-read-more">
+                      Lire l’article <span aria-hidden="true">→</span>
+                    </Link>
                   </div>
-                </div>
-              );
-            })}
+              </article>
+            ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>
+          <div className="news-empty-state">
             Aucun article trouvé dans cette catégorie.
           </div>
         )}

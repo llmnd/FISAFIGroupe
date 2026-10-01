@@ -3,9 +3,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"), { ssr: false });
 
 export default function Services() {
   const services = [
@@ -67,15 +65,34 @@ export default function Services() {
 
       <Header />
 
-      {/* ─── HERO SLIDESHOW ─── */}
-      <HeroSlideshow variant="services" ctaText="Nos formations" ctaHref="/training" />
+      <section className="hero shared-page-hero services-page-hero" data-observe>
+        <div className="hero-bg" />
+        <div className="hero-lines" aria-hidden="true">
+          <div className="hero-line" />
+          <div className="hero-line" />
+          <div className="hero-line" />
+        </div>
+        <div className="hero-orbs" aria-hidden="true">
+          <div className="hero-orb" />
+          <div className="hero-orb" />
+        </div>
+        <div className="hero-overlay" />
+        <div className="hero-content">
+          <div className="hero-eyebrow">Des solutions pour vos enjeux numériques</div>
+          <h1 className="hero-title">
+            Nos <em>services</em>
+          </h1>
+          <p className="hero-sub">
+            Réseaux, infrastructures IT, cybersécurité et conseil : des expertises adaptées aux besoins de votre organisation.
+          </p>
+        </div>
+      </section>
 
       <div className="divider" />
 
       {/* SERVICES SECTION */}
       <section className="section" id="services-list">
         <div className="section-eyebrow">Nos offres complètes</div>
-        <h2 className="section-title">Nos<br />services</h2>
 
         <div className="services-grid">
           {services.map((service, i) => (
