@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import CompetencesSection from "@/components/CompetencesSection";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
 const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"));
 const CardCarousel = dynamic(() => import("@/components/CardCarousel"));
@@ -171,19 +172,7 @@ export default function Home() {
       </div>
 
       {/* ─── COMPÉTENCES ─── */}
-      <section className="competences-section" id="competences">
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(30,30,40,0.5)", zIndex: 0, pointerEvents: "none" }} />
-        <div className="section-eyebrow">Domaines d&apos;expertise</div>
-        <h2 className="section-title">Nos compétences<br />clés</h2>
-        <div className="comp-grid">
-          {["Réseaux & Télécoms", "Fibre Optique", "Infrastructures IT", "Cybersécurité", "Conseil Stratégique"].map((name) => (
-            <div key={name} className="comp-item">
-              <div className="comp-icon" />
-              <div className="comp-name">{name}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <CompetencesSection />
 
       {/* ─── VISION ─── */}
       <section className="vision-section" id="vision">

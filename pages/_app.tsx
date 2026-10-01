@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import '../styles/globals.css';
+import '../styles/competences.css';
 import '../styles/header.css';
 import '../styles/floating-logo.css';
 import '../styles/carousel.css';

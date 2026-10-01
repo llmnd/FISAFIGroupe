@@ -1,117 +1,133 @@
-/* ──────────────────────────────────────────────────────────────
-   SECTION PARTENAIRES — Carousel Bleu Nuit
-   ────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════
+   PARTNERS SECTION — éditorial
+   ══════════════════════════════════════════════ */
 
-/* ─── CONTENEUR ─── */
 .partners-section {
   position: relative;
-  padding: 8rem 2rem;
-  background: linear-gradient(135deg, #041025 0%, #0c2541 50%, #081429 100%);
+  padding: clamp(5rem, 10vw, 9rem) clamp(1.5rem, 5vw, 3.5rem);
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 0%,
+      rgba(83, 168, 214, 0.06),
+      transparent 60%),
+    linear-gradient(180deg, #0a1a28 0%, #0d1f4e 50%, #0a1a28 100%);
   overflow: hidden;
+  isolation: isolate;
 }
 
+/* Grain subtil, cohérent avec les autres sections */
 .partners-section::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(30, 90, 160, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(20, 50, 120, 0.1) 0%, transparent 50%);
-  pointer-events: none;
   z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
 }
 
 .partners-inner {
   position: relative;
   z-index: 1;
-  max-width: 1400px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0 2rem;
 }
 
-/* ─── EN-TÊTE ─── */
+/* ══════════════════════════════════════════════
+   EN-TÊTE
+   ══════════════════════════════════════════════ */
 .partners-header {
   text-align: center;
-  margin-bottom: 5rem;
+  margin: 0 auto clamp(3.5rem, 7vw, 5.5rem);
+  max-width: 720px;
 }
 
 .partners-eyebrow {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 0 1.5rem;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #d0ecff;
-  margin-bottom: 1.5rem;
-  display: block;
-  opacity: 1;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(246, 242, 235, 0.72);
+  line-height: 1.4;
+}
+
+.partners-eyebrow::before,
+.partners-eyebrow::after {
+  content: '';
+  width: 34px;
+  height: 1px;
+  flex-shrink: 0;
+}
+.partners-eyebrow::before {
+  background: linear-gradient(to right, transparent, rgba(246, 242, 235, 0.55));
+}
+.partners-eyebrow::after {
+  background: linear-gradient(to left, transparent, rgba(246, 242, 235, 0.55));
 }
 
 .partners-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2.2rem, 5vw, 3.2rem);
-  font-weight: 300;
-  color: #ffffff;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.6rem, 5.5vw, 4.8rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  color: #f6f2eb;
   margin: 0;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-wrap: balance;
 }
 
 .partners-subtitle {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 300;
-  color: #e8f4ff;
-  margin-top: 1.5rem;
-  line-height: 1.7;
-  max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
-  opacity: 1;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.98rem, 1.15vw, 1.08rem);
+  font-weight: 400;
+  line-height: 1.72;
+  color: rgba(246, 242, 235, 0.76);
+  margin: 1.5rem auto 0;
+  max-width: 52ch;
+  text-wrap: balance;
 }
 
-/* ─── GRILLE PARTENAIRES (Hidden pour Carousel) ─── */
-.partners-grid {
-  display: none;
-}
-
-/* ─── CARTE PARTENAIRE ─── */
+/* ══════════════════════════════════════════════
+   CARTE PARTENAIRE
+   ══════════════════════════════════════════════ */
 .partner-card {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.8rem;
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 0;
   cursor: pointer;
   position: relative;
-  overflow: visible;
-  opacity: 0;
 }
 
-.partner-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: transparent;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ─── LOGO ZONE — TRANSARENT POUR NS2I ─── */
+/* ── Zone logo ── */
 .partner-logo-zone {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  background: transparent;
-  border-radius: 8px;
-  border: none;
-  position: relative;
-  overflow: hidden;
   aspect-ratio: 1;
+  min-height: 200px;
+  padding: 2.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  transition:
+    border-color 0.45s ease,
+    background   0.45s ease;
+}
+
+.partner-card:hover .partner-logo-zone {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(239, 157, 111, 0.32);
 }
 
 .partner-logo {
@@ -120,16 +136,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
 }
 
 .partner-logo img {
-  max-width: 85%;
-  max-height: 85%;
+  max-width: 88%;
+  max-height: 88%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+.partner-card:hover .partner-logo img {
+  transform: scale(1.04);
+}
+
+/* Placeholder "Bientôt" */
 .partner-logo-placeholder {
   width: 100%;
   height: 100%;
@@ -137,214 +158,94 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  gap: 1rem;
+  color: rgba(246, 242, 235, 0.45);
 }
 
 .partner-logo-placeholder svg {
-  width: 32px;
-  height: 32px;
-  opacity: 0.4;
+  width: 34px;
+  height: 34px;
+  opacity: 0.55;
 }
 
 .partner-logo-placeholder span {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(246, 242, 235, 0.42);
 }
 
-/* ─── CONTENU PARTENAIRE ─── */
+/* ── Contenu ── */
 .partner-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   flex: 1;
-  position: relative;
-  z-index: 2;
 }
 
 .partner-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.3rem;
-  font-weight: 350;
-  color: #ffffff;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.35rem, 1.8vw, 1.6rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: #f6f2eb;
   margin: 0;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
 }
 
 .partner-desc {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 300;
-  color: #e8f4ff;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.92rem, 1.05vw, 1rem);
+  font-weight: 400;
+  line-height: 1.72;
+  color: rgba(246, 242, 235, 0.74);
   margin: 0;
-  line-height: 1.65;
   flex: 1;
+  text-wrap: pretty;
 }
 
-/* ─── TAGS PARTENAIRE — COULEURS VARIÉES ─── */
+/* ── Tags — un seul accent, plus de rainbow ── */
 .partner-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
-  margin-top: auto;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .partner-tag {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: 0.7rem;
   font-weight: 500;
-  padding: 0.45rem 1rem;
-  border-radius: 20px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.32rem 0.75rem;
+  border-radius: 2px;
   display: inline-block;
   white-space: nowrap;
+  color: rgba(246, 242, 235, 0.72);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    color       0.35s ease,
+    border-color 0.35s ease,
+    background  0.35s ease;
 }
 
-/* Couleurs variées pour les tags */
-.partner-tag:nth-child(1) {
-  background: rgba(168, 212, 255, 0.15);
-  color: #a8d4ff;
-  border: 1px solid rgba(168, 212, 255, 0.4);
+.partner-card:hover .partner-tag {
+  color: #ef9d6f;
+  border-color: rgba(239, 157, 111, 0.32);
+  background: rgba(239, 157, 111, 0.06);
 }
 
-.partner-tag:nth-child(2) {
-  background: rgba(100, 255, 200, 0.12);
-  color: #64ffc8;
-  border: 1px solid rgba(100, 255, 200, 0.35);
-}
-
-.partner-tag:nth-child(3) {
-  background: rgba(255, 180, 100, 0.12);
-  color: #ffb464;
-  border: 1px solid rgba(255, 180, 100, 0.35);
-}
-
-.partner-tag:nth-child(4) {
-  background: rgba(200, 120, 255, 0.12);
-  color: #c878ff;
-  border: 1px solid rgba(200, 120, 255, 0.35);
-}
-
-.partner-tag:nth-child(5) {
-  background: rgba(255, 100, 150, 0.12);
-  color: #ff6496;
-  border: 1px solid rgba(255, 100, 150, 0.35);
-}
-
-
-
-
-/* ─── SECTION CLIENTS ─── */
-.clients-section {
-  margin-top: 8rem;
-  padding-top: 0;
-  border-top: none;
-}
-
-.clients-header {
-  text-align: center;
-  margin-bottom: 4rem;
-}
-
-.clients-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
-  font-weight: 300;
-  color: #ffffff;
-  margin: 0;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.clients-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 3rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .clients-list {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 3rem;
-  }
-}
-
-.client-item {
-  text-align: center;
-  padding: 0;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-}
-
-.client-name {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 300;
-  color: #e8f4ff;
-  letter-spacing: 0.02em;
-  margin: 0;
-}
-
-/* ─── ACCESSIBILITÉ ─── */
-@media (prefers-reduced-motion: reduce) {
-  .partner-card,
-  .partner-logo img,
-  .partner-name,
-  .partner-tag,
-  .client-item {
-    transition: none;
-    animation: none;
-  }
-}
-
-/* ─── RESPONSIVE ─── */
-@media (max-width: 768px) {
-  .partners-section {
-    padding: 5rem 0;
-  }
-
-  .partners-inner {
-    padding: 0 1.5rem;
-  }
-
-  .partners-header {
-    margin-bottom: 3.5rem;
-  }
-
-  .partners-grid {
-    gap: 3rem 2rem;
-  }
-
-  .partner-logo-zone {
-    min-height: 160px;
-  }
-
-  .partner-content {
-    gap: 0.8rem;
-  }
-
-  .clients-section {
-    margin-top: 5rem;
-  }
-
-  .clients-list {
-    gap: 2rem;
-  }
-}
-
-/* ─── CAROUSEL PARTENAIRES ─── */
+/* ══════════════════════════════════════════════
+   CAROUSEL
+   ══════════════════════════════════════════════ */
 .carousel-partners .carousel-container {
-  gap: 2rem;
+  gap: 1.75rem;
   padding: 1rem 0;
 }
 
@@ -365,7 +266,6 @@
   }
 }
 
-/* Style des items carousel */
 .carousel-item.partner-card {
   opacity: 1;
   animation: none;
@@ -375,58 +275,178 @@
   padding: 0;
   background: transparent;
   border: none;
-  cursor: pointer;
 }
-
 
 .carousel-item.partner-card .partner-logo-zone {
   aspect-ratio: 1;
   min-height: auto;
-  background: transparent;
-  border-radius: 8px;
-  border: none;
+  padding: 2.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .carousel-item.partner-card .partner-logo img {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 
 .carousel-item.partner-card .partner-content {
-  gap: 0.8rem;
+  gap: 0.85rem;
 }
 
 .carousel-item.partner-card .partner-name {
-  font-size: 1.1rem;
-  font-weight: 400;
-  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #f6f2eb;
 }
 
 .carousel-item.partner-card .partner-desc {
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: #e8f4ff;
+  font-size: 0.95rem;
+  line-height: 1.72;
+  color: rgba(246, 242, 235, 0.74);
 }
-/* Tags dans le carousel */
+
 .carousel-item.partner-card .partner-tag {
-  font-size: 0.58rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 20px;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  padding: 0.32rem 0.75rem;
+  border-radius: 2px;
 }
 
-.carousel-item.partner-card .partner-tag:nth-child(1) {
-  background: rgba(168, 212, 255, 0.15);
-  border: 1px solid rgba(168, 212, 255, 0.4);
-  color: #a8d4ff;
+/* ══════════════════════════════════════════════
+   SECTION CLIENTS
+   ══════════════════════════════════════════════ */
+.clients-section {
+  margin-top: clamp(4rem, 8vw, 7rem);
+  padding-top: clamp(3rem, 5vw, 4rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.carousel-item.partner-card .partner-tag:nth-child(2) {
-  background: rgba(100, 255, 200, 0.12);
-  border: 1px solid rgba(100, 255, 200, 0.35);
-  color: #64ffc8;
+.clients-header {
+  text-align: center;
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
 }
 
-.carousel-item.partner-card .partner-tag:nth-child(3) {
-  background: rgba(255, 180, 100, 0.12);
-  border: 1px solid rgba(255, 180, 100, 0.35);
-  color: #ffb464;
+.clients-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #f6f2eb;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.clients-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .clients-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.client-item {
+  position: relative;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Trait vertical fin entre items (sauf premier) */
+@media (min-width: 768px) {
+  .client-item + .client-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255, 255, 255, 0.14),
+      transparent
+    );
+  }
+}
+
+.client-name {
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.86rem, 1vw, 0.95rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 242, 235, 0.82);
+  margin: 0;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+/* ══════════════════════════════════════════════
+   ACCESSIBILITÉ
+   ══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .partner-card,
+  .partner-logo img,
+  .partner-name,
+  .partner-tag,
+  .client-item,
+  .partner-logo-zone {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .partners-section {
+    padding: 5rem 1.25rem;
+  }
+
+  .partners-header {
+    margin-bottom: 3rem;
+  }
+
+  .partners-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+  }
+
+  .partner-logo-zone {
+    min-height: 160px;
+    padding: 1.75rem;
+  }
+
+  .partners-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.68;
+  }
+
+  .clients-section {
+    margin-top: 4.5rem;
+  }
+
+  .clients-list {
+    gap: 1.5rem;
+  }
+
+  .client-item {
+    padding: 1rem 0.75rem;
+  }
+
+  .client-name {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+  }
 }

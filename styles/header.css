@@ -1,37 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   FISAFI GROUPE — HEADER v3.0
-   Safari-safe · Performance-first · Glass Morphism
-   ═══════════════════════════════════════════════════════════
-
-   SAFARI MOBILE FIXES vs v2.2:
-   ────────────────────────────
-   1. `overflow: hidden` retiré du .header  → était la cause #1
-      des traits blancs au rendu des blurs.
-   2. `backdrop-filter` gardé UNIQUEMENT sur le header shell ;
-      tous les overlays mobiles repassent en fond solide opaque.
-   3. `.header-drawer` : `overflow: hidden` supprimé, ajout de
-      `-webkit-mask-image` pour forcer un clipping propre sur
-      l'arc border-radius — la technique la plus fiable sur Safari.
-   4. `::after` grain : le `feTurbulence` SVG inline est remplacé
-      par un dégradé CSS → pas de parsing SVG, pas d'artefacts
-      de filtre sur certains GPU mobiles.
-   5. `will-change` limité aux éléments qui animent EN CE MOMENT
-      (drawer ouvert, popup ouvert). Sur les éléments au repos,
-      `will-change` crée des couches GPU inutiles → mémoire + glitches.
-   6. `transform: translateZ(0)` retiré du drawer — interférait
-      avec `backdrop-filter` dans certains contextes Safari.
-   7. `isolation: isolate` sur `.header` → crée un stacking context
-      propre sans promouvoir de couche GPU.
-   8. `@supports (backdrop-filter: blur(1px))` — les navigateurs
-      qui ne supportent pas le blur reçoivent un fond opaque propre.
-
-   PERF vs v2.2:
-   ─────────────
-   • scrollPct n'est PLUS un état React → 0 re-render au scroll.
-     La largeur de la barre et l'opacité de la barre sociale sont
-     écrites directement via refs (requestAnimationFrame).
-   • `will-change` réduit de ~12 éléments à 3 max simultanés.
-   • Backdrop-filter concurrent : de 5 à 1 sur mobile.
+   FISAFI GROUPE — HEADER v3.1
+   Lisibilité & visibilité renforcées
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Tokens ─────────────────────────────────────────────── */
@@ -39,24 +8,24 @@
   --beige:        #F5F0E8;
   --beige-2:      #EDE6D6;
   --beige-3:      #E0D8C8;
-  --glass:        rgba(245, 240, 232, 0.82);
-  --glass-heavy:  rgba(250, 246, 240, 0.97);
-  --border-glass: rgba(255, 255, 255, 0.72);
+  --glass:        rgba(245, 240, 232, 0.88);   /* ↑ plus opaque */
+  --glass-heavy:  rgba(250, 246, 240, 0.98);   /* ↑ */
+  --border-glass: rgba(255, 255, 255, 0.85);   /* ↑ contraste bord */
   --orange:       #E8580A;
   --orange-2:     #FF7235;
-  --brown:        #3E2E22;
-  --brown-2:      #6E5547;
-  --brown-3:      #A8988C;
-  --shadow-sm:    0 2px 8px rgba(74, 55, 40, 0.07);
-  --shadow-md:    0 6px 28px rgba(74, 55, 40, 0.10), 0 1px 3px rgba(74, 55, 40, 0.06);
-  --shadow-lg:    0 20px 60px rgba(74, 55, 40, 0.16), 0 4px 12px rgba(74, 55, 40, 0.08);
-  --shadow-arc:   0 28px 70px rgba(74, 55, 40, 0.22), 0 8px 24px rgba(74, 55, 40, 0.10);
+  --brown:        #2B1E14;                      /* ↓ plus sombre (était #3E2E22) */
+  --brown-2:      #523A28;                      /* ↓ plus sombre (était #6E5547) */
+  --brown-3:      #8A7566;                      /* ↓ (était #A8988C) */
+  --shadow-sm:    0 2px 8px rgba(74, 55, 40, 0.08);
+  --shadow-md:    0 6px 28px rgba(74, 55, 40, 0.12), 0 1px 3px rgba(74, 55, 40, 0.07);
+  --shadow-lg:    0 20px 60px rgba(74, 55, 40, 0.18), 0 4px 12px rgba(74, 55, 40, 0.10);
+  --shadow-arc:   0 28px 70px rgba(74, 55, 40, 0.24), 0 8px 24px rgba(74, 55, 40, 0.12);
   --radius-sm:    8px;
   --radius-md:    12px;
   --radius-lg:    18px;
   --radius-pill:  999px;
-  --header-h:     62px;
-  --drawer-top:   62px;
+  --header-h:     68px;                          /* ↑ 62 → 68 */
+  --drawer-top:   68px;
   --ease-out:     cubic-bezier(0.0, 0.0, 0.2, 1);
   --spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
   --spring-soft:  cubic-bezier(0.22, 1, 0.36, 1);
@@ -79,37 +48,22 @@ body {
 
 /* ════════════════════════════════════════════════════════════
    HEADER SHELL
-
-   FIX: `overflow: hidden` SUPPRIMÉ — c'était la principale
-   cause des "traits" sur Safari mobile. Avec overflow:hidden
-   + backdrop-filter + border-radius, Safari crée une couche
-   de compositing séparée mais ne clip pas proprement le blur,
-   ce qui laisse un artefact de 1px sur les bords.
-
-   FIX: `isolation: isolate` remplace `will-change: transform`
-   pour créer le stacking context — même résultat, sans
-   promotion de couche GPU.
    ════════════════════════════════════════════════════════════ */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  /* Fond de repli (browsers sans backdrop-filter support) */
   background: rgba(245, 240, 232, 0.97);
   border-bottom: 1px solid var(--border-glass);
   box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 28px;                                /* ↑ 24 → 28 */
   gap: 0;
-  /* FIX: isolation au lieu de will-change + overflow */
   isolation: isolate;
 }
 
-/* Backdrop-filter uniquement si le navigateur le supporte
-   correctement — évite le fallback cassé de certaines versions
-   de WebKit qui activent la feature mais la rendent mal */
 @supports (backdrop-filter: blur(1px)) {
   .header {
     background: var(--glass);
@@ -124,10 +78,10 @@ body {
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
   flex-shrink: 0;
-  margin-right: 32px;
+  margin-right: 40px;                             /* ↑ 32 → 40 */
   cursor: pointer;
 }
 
@@ -135,11 +89,9 @@ body {
   border-radius: 50%;
   object-fit: cover;
   box-shadow:
-    0 2px 10px rgba(74, 55, 40, 0.18),
-    0 0 0 2px rgba(255, 255, 255, 0.6);
-  /* FIX: transform seul — pas de filter animé */
+    0 2px 12px rgba(74, 55, 40, 0.22),
+    0 0 0 2px rgba(255, 255, 255, 0.85);
   transition: transform 0.35s var(--spring);
-  /* FIX: backface-visibility évite le flip "fantôme" sur Safari */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -147,13 +99,12 @@ body {
 .header-logo:hover .header-logo-image {
   transform: scale(1.08) rotate(-3deg);
   box-shadow:
-    0 6px 20px rgba(74, 55, 40, 0.24),
-    0 0 0 3px rgba(232, 88, 10, 0.2);
+    0 6px 22px rgba(74, 55, 40, 0.28),
+    0 0 0 3px rgba(232, 88, 10, 0.28);
 }
 
 /* ════════════════════════════════════════════════════════════
    PROGRESS BAR
-   Placée en dehors du header pour éviter le clipping
    ════════════════════════════════════════════════════════════ */
 .header-progress {
   position: absolute;
@@ -165,12 +116,10 @@ body {
 
 .header-progress-fill {
   height: 100%;
-  width: 0%; /* valeur initiale — écrite via ref */
+  width: 0%;
   background: linear-gradient(90deg, var(--orange), var(--orange-2));
   border-radius: 0 2px 2px 0;
-  /* FIX: will-change ici SEULEMENT car cet élément change à chaque scroll */
   will-change: width;
-  /* FIX: transition désactivée — la valeur est déjà lissée par le RAF */
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -179,7 +128,7 @@ body {
 .header-nav {
   display: none;
   align-items: center;
-  gap: 1px;
+  gap: 4px;                                       /* ↑ 1 → 4 */
   flex: 1;
   list-style: none;
   margin: 0; padding: 0;
@@ -190,11 +139,11 @@ body {
 }
 
 .header-nav-link {
-  font-size: 13px;
+  font-size: 14px;                                /* ↑ 13 → 14 */
   font-weight: 500;
   color: var(--brown-2);
   text-decoration: none;
-  padding: 6px 12px;
+  padding: 8px 14px;                              /* ↑ 6/12 → 8/14 */
   border-radius: var(--radius-sm);
   transition: color var(--transition);
   position: relative;
@@ -208,31 +157,29 @@ body {
   position: absolute;
   inset: 0;
   border-radius: var(--radius-sm);
-  background: rgba(74, 55, 40, 0.07);
+  background: rgba(74, 55, 40, 0.08);
   opacity: 0;
   transition: opacity var(--transition);
   pointer-events: none;
 }
 
-.header-nav-link:hover { color: var(--brown); }
+.header-nav-link:hover {
+  color: var(--brown);
+}
 .header-nav-link:hover::before { opacity: 1; }
 
+/* État actif : pill orange plein — bien plus visible */
 .header-nav-link.active {
-  color: var(--orange);
+  color: #ffffff;
   font-weight: 600;
+  background: var(--orange);
+  box-shadow: 0 4px 12px rgba(232, 88, 10, 0.28);
 }
 
-.header-nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 3px; left: 50%;
-  transform: translateX(-50%);
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--orange);
-  box-shadow: 0 0 8px 2px rgba(232, 88, 10, 0.35);
-  pointer-events: none;
-}
+.header-nav-link.active::before { opacity: 0; }
+
+/* Plus de dot : la pill suffit */
+.header-nav-link.active::after { display: none; }
 
 /* ════════════════════════════════════════════════════════════
    ACTION ZONE
@@ -240,17 +187,17 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   margin-left: auto;
-  background: rgba(74, 55, 40, 0.05);
-  border: 1px solid rgba(74, 55, 40, 0.08);
+  background: rgba(74, 55, 40, 0.06);
+  border: 1px solid rgba(74, 55, 40, 0.10);      /* ↑ contraste */
   border-radius: var(--radius-pill);
   padding: 4px 6px;
-  box-shadow: inset 0 1px 2px rgba(74, 55, 40, 0.04);
+  box-shadow: inset 0 1px 2px rgba(74, 55, 40, 0.05);
 }
 
 .header-icon-btn {
-  width: 34px; height: 34px;
+  width: 38px; height: 38px;                       /* ↑ 34 → 38 */
   border-radius: 50%;
   border: none;
   background: transparent;
@@ -263,23 +210,23 @@ body {
   position: relative;
   flex-shrink: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent; /* FIX: supprime le flash bleu sur iOS */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .header-icon-btn:hover {
-  background: rgba(74, 55, 40, 0.09);
+  background: rgba(74, 55, 40, 0.10);
   color: var(--brown);
   transform: scale(1.08);
 }
 
 .header-icon-btn:active { transform: scale(0.92); }
-.header-icon-btn svg { width: 17px; height: 17px; }
+.header-icon-btn svg { width: 18px; height: 18px; } /* ↑ 17 → 18 */
 
 .header-plus-btn {
-  width: 30px; height: 30px;
+  width: 34px; height: 34px;                       /* ↑ 30 → 34 */
   border-radius: 50%;
-  border: 1.5px dashed rgba(232, 88, 10, 0.45);
-  background: rgba(232, 88, 10, 0.07);
+  border: 1.5px solid rgba(232, 88, 10, 0.55);    /* ↑ dashed → solid, plus net */
+  background: rgba(232, 88, 10, 0.10);            /* ↑ plus visible */
   color: var(--orange);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
@@ -288,31 +235,31 @@ body {
   backface-visibility: hidden;
   flex-shrink: 0;
   padding: 0;
-  margin: 0 2px;
+  margin: 0 3px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .header-plus-btn:hover {
-  background: rgba(232, 88, 10, 0.14);
+  background: rgba(232, 88, 10, 0.18);
   border-color: var(--orange);
-  border-style: solid;
   transform: scale(1.1) rotate(90deg);
-  box-shadow: 0 3px 14px rgba(232, 88, 10, 0.25);
+  box-shadow: 0 4px 16px rgba(232, 88, 10, 0.32);
 }
 
 .header-plus-btn:active { transform: scale(0.9) rotate(45deg); }
-.header-plus-btn svg { width: 15px; height: 15px; }
+.header-plus-btn svg { width: 16px; height: 16px; } /* ↑ 15 → 16 */
 
 .header-divider {
-  width: 1px; height: 18px;
-  background: rgba(74, 55, 40, 0.12);
-  margin: 0 1px;
+  width: 1px; height: 20px;
+  background: rgba(74, 55, 40, 0.16);              /* ↑ contraste */
+  margin: 0 3px;
   flex-shrink: 0;
   border-radius: 1px;
 }
 
+/* ── Avatar (connecté) ── */
 .header-avatar-btn {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;                       /* ↑ 32 → 36 */
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -329,38 +276,39 @@ body {
 .header-avatar-btn:hover { transform: scale(1.12); }
 
 .header-avatar-inner {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;                       /* ↑ 32 → 36 */
   border-radius: 50%;
   background: linear-gradient(135deg, #C9B49A 0%, #9A7055 100%);
   display: flex; align-items: center; justify-content: center;
   font-family: 'Syne', sans-serif;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;                                 /* ↑ 12 → 13 */
   color: white;
   letter-spacing: 0.3px;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
 }
 
 .header-avatar-badge {
   position: absolute;
   top: -1px; right: -1px;
-  width: 9px; height: 9px;
+  width: 10px; height: 10px;                       /* ↑ 9 → 10 */
   border-radius: 50%;
   background: #E53935;
   border: 2px solid var(--beige);
   pointer-events: none;
 }
 
+/* ── Login (non connecté) ── */
 .header-login-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
+  gap: 7px;
+  padding: 9px 18px;                               /* ↑ 7/14 → 9/18 */
   background: transparent;
-  color: var(--brown-2);
+  color: var(--brown);                             /* ↑ plus sombre */
   text-decoration: none;
   border-radius: var(--radius-pill);
-  font-size: 12.5px;
+  font-size: 13.5px;                               /* ↑ 12.5 → 13.5 */
   font-weight: 600;
   letter-spacing: 0.2px;
   white-space: nowrap;
@@ -373,13 +321,13 @@ body {
 }
 
 .header-login-btn:hover {
-  background: rgba(74, 55, 40, 0.09);
+  background: rgba(74, 55, 40, 0.10);
   color: var(--brown);
   transform: translateY(-1px);
 }
 
 .header-login-btn:active { transform: scale(0.96); }
-.header-login-btn svg { width: 14px; height: 14px; }
+.header-login-btn svg { width: 16px; height: 16px; } /* ↑ 14 → 16 */
 
 /* ════════════════════════════════════════════════════════════
    MOBILE BURGER
@@ -390,13 +338,13 @@ body {
   justify-content: center;
   flex-direction: column;
   gap: 5px;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px;                       /* ↑ 40 → 44 */
   border-radius: 50%;
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 10px;
-  margin-left: 6px;
+  padding: 11px;
+  margin-left: 8px;
   transition: background var(--transition);
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
@@ -408,66 +356,60 @@ body {
   .header-plus-btn, .header-divider { display: none; }
 }
 
-.header-burger:hover { background: rgba(74, 55, 40, 0.09); }
+.header-burger:hover { background: rgba(74, 55, 40, 0.10); }
 
 .burger-line {
   border-radius: 2px;
   background: var(--brown);
-  height: 1.5px;
-  width: 18px;
-  /* FIX: transform + opacity — NO width animation (triggers layout) */
+  height: 2px;                                     /* ↑ 1.5 → 2 */
+  width: 22px;                                     /* ↑ 18 → 22 */
   transition: transform 0.32s var(--spring), opacity 0.32s ease;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-.burger-line:nth-child(1) { width: 14px; align-self: flex-start; }
-.burger-line:nth-child(3) { width: 10px; align-self: flex-start; }
+.burger-line:nth-child(1) { width: 18px; align-self: flex-start; }  /* ↑ 14 → 18 */
+.burger-line:nth-child(3) { width: 13px; align-self: flex-start; }  /* ↑ 10 → 13 */
 
-.header-burger:hover .burger-line { width: 18px; }
+.header-burger:hover .burger-line { width: 22px; }
 
 .header-burger.open .burger-line:nth-child(1) {
-  transform: translateY(6.5px) rotate(45deg);
-  width: 18px;
+  transform: translateY(7px) rotate(45deg);
+  width: 22px;
 }
 .header-burger.open .burger-line:nth-child(2) {
   opacity: 0;
   transform: scaleX(0);
 }
 .header-burger.open .burger-line:nth-child(3) {
-  transform: translateY(-6.5px) rotate(-45deg);
-  width: 18px;
+  transform: translateY(-7px) rotate(-45deg);
+  width: 22px;
 }
 
 /* ════════════════════════════════════════════════════════════
    SOCIAL / FLAGS BAR
-   Pas de position:fixed — suit le flux du document.
-   L'opacité est écrite via ref (RAF), pas de useState.
    ════════════════════════════════════════════════════════════ */
 .header-social-flags-bar {
-  position: relative; /* FIX: était "static" avec top: déclaré = no-op CSS */
+  position: relative;
   z-index: 998;
-  height: 46px;
+  height: 52px;                                     /* ↑ 46 → 52 */
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fond solide de base — le blur est en enhancement progressif */
-  background: rgba(241, 235, 222, 0.97);
-  border-bottom: 1px solid rgba(74, 55, 40, 0.08);
-  box-shadow: 0 4px 16px rgba(74, 55, 40, 0.05);
-  /* will-change: opacity — car la valeur change au scroll via ref */
+  background: rgba(241, 235, 222, 0.98);
+  border-bottom: 1px solid rgba(74, 55, 40, 0.10);
+  box-shadow: 0 4px 16px rgba(74, 55, 40, 0.06);
   will-change: opacity;
 }
 
 @supports (backdrop-filter: blur(1px)) {
   @media (min-width: 769px) {
-    /* Blur uniquement desktop — trop coûteux sur mobile */
     .header-social-flags-bar {
       background: linear-gradient(
         180deg,
-        rgba(241, 235, 222, 0.94) 0%,
-        rgba(237, 230, 214, 0.86) 100%
+        rgba(241, 235, 222, 0.96) 0%,
+        rgba(237, 230, 214, 0.90) 100%
       );
       backdrop-filter: blur(16px) saturate(150%);
       -webkit-backdrop-filter: blur(16px) saturate(150%);
@@ -475,7 +417,6 @@ body {
   }
 }
 
-/* Ligne décorative orange en bas */
 .header-social-flags-bar::after {
   content: '';
   position: absolute;
@@ -483,9 +424,9 @@ body {
   height: 1px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(232, 88, 10, 0.18) 30%,
-    rgba(232, 88, 10, 0.30) 50%,
-    rgba(232, 88, 10, 0.18) 70%,
+    rgba(232, 88, 10, 0.22) 30%,
+    rgba(232, 88, 10, 0.38) 50%,
+    rgba(232, 88, 10, 0.22) 70%,
     transparent 100%
   );
   pointer-events: none;
@@ -497,7 +438,7 @@ body {
   justify-content: space-between;
   width: 100%;
   max-width: 1200px;
-  padding: 0 24px;
+  padding: 0 28px;
 }
 
 .bar-socials {
@@ -507,52 +448,48 @@ body {
 }
 
 .bar-socials .header-icon-btn {
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;                        /* ↑ 38 → 40 */
   background: none;
   color: var(--orange);
 }
 
-.bar-socials .header-icon-btn svg { width: 20px; height: 20px; }
-.bar-socials .header-icon-btn:hover { color: var(--orange-2); background: rgba(232, 88, 10, 0.07); }
+.bar-socials .header-icon-btn svg { width: 22px; height: 22px; }  /* ↑ 20 → 22 */
+.bar-socials .header-icon-btn:hover { color: var(--orange-2); background: rgba(232, 88, 10, 0.09); }
 
 .bar-flags {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .flag {
-  font-size: 18px;
+  font-size: 20px;                                  /* ↑ 18 → 20 */
   line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.14));
   transition: transform 0.2s var(--spring);
   cursor: default;
-  display: inline-block; /* FIX: évite le reflow de ligne sur certains Safari */
+  display: inline-block;
 }
 
 .flag:hover { transform: scale(1.12); }
 
 .flags-divider {
-  width: 1px; height: 18px;
+  width: 1px; height: 20px;
   background: linear-gradient(180deg,
     transparent 0%,
-    rgba(232, 88, 10, 0.7) 50%,
+    rgba(232, 88, 10, 0.75) 50%,
     transparent 100%
   );
 }
 
 /* ════════════════════════════════════════════════════════════
    SOCIALS POPUP
-
-   FIX: backdrop-filter désactivé sur mobile — trop coûteux
-   et source d'artefacts sur iOS Safari < 16.
    ════════════════════════════════════════════════════════════ */
 .header-social-popup {
   position: fixed;
-  top: calc(var(--header-h) + 46px + 12px);
+  top: calc(var(--header-h) + 52px + 12px);         /* ajusté à la nouvelle barre */
   left: 16px;
   right: auto;
-  /* Fond solide de repli */
   background: var(--glass-heavy);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
@@ -563,9 +500,7 @@ body {
   pointer-events: none;
   transform: translateY(-8px) scale(0.96);
   transition: opacity 0.22s ease, transform 0.28s var(--spring);
-  /* FIX: will-change uniquement quand ouvert (via .open class) */
   max-width: calc(100vw - 32px);
-  /* FIX: backface-visibility empêche le "fantôme" au scale */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -588,7 +523,7 @@ body {
 
 .social-grid {
   display: grid;
-  grid-template-columns: repeat(3, 72px);
+  grid-template-columns: repeat(3, 76px);          /* ↑ 72 → 76 */
   gap: 8px;
 }
 
@@ -597,15 +532,15 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 14px 8px;
-  background: rgba(74, 55, 40, 0.04);
-  border: 1.5px solid rgba(74, 55, 40, 0.07);
+  gap: 8px;
+  padding: 16px 8px;                                /* ↑ 14 → 16 */
+  background: rgba(74, 55, 40, 0.05);
+  border: 1.5px solid rgba(74, 55, 40, 0.09);
   border-radius: var(--radius-md);
   color: var(--brown);
   text-decoration: none;
-  font-size: 9.5px;
-  font-weight: 600;
+  font-size: 10px;                                  /* ↑ 9.5 → 10 */
+  font-weight: 700;                                 /* ↑ 600 → 700 */
   letter-spacing: 0.6px;
   text-transform: uppercase;
   transition: transform 0.22s var(--spring), background 0.22s ease, color 0.22s ease;
@@ -622,48 +557,30 @@ body {
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.social-item svg { width: 22px; height: 22px; }
+.social-item svg { width: 24px; height: 24px; }   /* ↑ 22 → 24 */
 
 .social-item:hover {
   background: var(--orange);
   color: white;
   border-color: var(--orange);
   transform: translateY(-4px) scale(1.04);
-  box-shadow: 0 8px 22px rgba(232, 88, 10, 0.30);
+  box-shadow: 0 8px 22px rgba(232, 88, 10, 0.32);
 }
 
 .social-item.instagram:hover {
   background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
   border-color: transparent;
-  box-shadow: 0 8px 22px rgba(225, 48, 108, 0.32);
+  box-shadow: 0 8px 22px rgba(225, 48, 108, 0.34);
 }
 
 /* ════════════════════════════════════════════════════════════
    MOBILE DRAWER — ARC
-
-   FIX #1: `overflow: hidden` supprimé — c'est lui qui causait
-   les traits blancs en combinaison avec border-radius + 
-   backdrop-filter sur Safari iOS.
-
-   FIX #2: `-webkit-mask-image` avec radial-gradient.
-   C'est la technique officielle Apple pour forcer un clip
-   propre sur un élément avec backdrop-filter + border-radius.
-   Voir: https://bugs.webkit.org/show_bug.cgi?id=198959
-
-   FIX #3: `::after` grain — le SVG feTurbulence inline est
-   remplacé par un dégradé CSS pur. Le SVG filter inline dans
-   background-image peut déclencher des artefacts GPU sur
-   certains chipsets mobiles Qualcomm/Apple A-series.
-
-   FIX #4: backdrop-filter désactivé sur mobile — performance
-   et artefacts. Un fond opaque quasi-identique visuellement.
    ════════════════════════════════════════════════════════════ */
 .header-drawer {
   position: fixed;
   top: var(--drawer-top);
   left: -6%;
   right: -6%;
-  /* FIX: fond solide sur mobile, blur seulement desktop */
   background: var(--glass-heavy);
   border: 1px solid var(--border-glass);
   border-top: none;
@@ -674,11 +591,8 @@ body {
   pointer-events: none;
   transform: translateY(-108%);
   transition: transform 0.52s var(--spring-soft), opacity 0.30s ease;
-  /* FIX: NO translateZ(0) ici — interférait avec backdrop-filter Safari */
-  /* FIX: -webkit-mask force le clip arc propre sur Safari */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
   mask-image: radial-gradient(white, black);
-  /* FIX: NO overflow:hidden */
 }
 
 @supports (backdrop-filter: blur(1px)) {
@@ -690,7 +604,6 @@ body {
   }
 }
 
-/* Accent arc bas */
 .header-drawer::before {
   content: '';
   position: absolute;
@@ -707,13 +620,6 @@ body {
   pointer-events: none;
 }
 
-/*
- * FIX: Grain CSS pur au lieu de SVG feTurbulence inline.
- * feTurbulence dans background-image() était rendu via le CPU
- * sur certains appareils mobiles et causait des artefacts de
- * "film gris" visibles sur Safari lors de l'animation.
- * Le dégradé croisé CSS donne un effet proche, 100% GPU-safe.
- */
 .header-drawer::after {
   content: '';
   position: absolute;
@@ -741,17 +647,15 @@ body {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
-  /* FIX: will-change appliqué SEULEMENT quand l'élément est en transition */
   will-change: transform, opacity;
 }
 
-/* Reset will-change une fois animé (libère la couche GPU) */
 .header-drawer.open:not(.animating) {
   will-change: auto;
 }
 
 .header-drawer-inner {
-  padding: 20px 14% 52px;
+  padding: 22px 14% 56px;
   position: relative;
   z-index: 1;
 }
@@ -759,24 +663,23 @@ body {
 /* Nav links */
 .header-drawer-nav {
   list-style: none;
-  margin: 0 0 22px;
+  margin: 0 0 24px;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .header-drawer-link {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 14px;
+  padding: 14px 16px;                              /* ↑ 11/14 → 14/16 */
   color: var(--brown);
-  font-size: 15px;
+  font-size: 16px;                                 /* ↑ 15 → 16 */
   font-weight: 500;
   border-radius: var(--radius-md);
   text-decoration: none;
-  /* FIX: transform remplace padding-left — évite le reflow */
   transition: background 0.20s ease, color 0.20s ease, transform 0.20s var(--spring);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -799,22 +702,23 @@ body {
 }
 
 .header-drawer-link:hover {
-  background: rgba(74, 55, 40, 0.06);
+  background: rgba(74, 55, 40, 0.07);
   color: var(--orange);
   transform: translateX(6px);
 }
 
 .header-drawer-link:hover::before { transform: translateY(-50%) scaleY(1); }
 
+/* Actif en drawer : pill orange comme en desktop */
 .header-drawer-link.active {
-  color: var(--orange);
+  color: #ffffff;
   font-weight: 600;
-  background: rgba(232, 88, 10, 0.05);
+  background: var(--orange);
+  box-shadow: 0 4px 14px rgba(232, 88, 10, 0.26);
 }
 
-.header-drawer-link.active::before { transform: translateY(-50%) scaleY(1); }
+.header-drawer-link.active::before { transform: translateY(-50%) scaleY(0); }
 
-/* Stagger animation */
 .header-drawer.open .header-drawer-nav li {
   animation: link-in 0.40s var(--spring-soft) both;
 }
@@ -825,6 +729,7 @@ body {
 .header-drawer.open .header-drawer-nav li:nth-child(4) { animation-delay: 0.18s; }
 .header-drawer.open .header-drawer-nav li:nth-child(5) { animation-delay: 0.22s; }
 .header-drawer.open .header-drawer-nav li:nth-child(6) { animation-delay: 0.26s; }
+.header-drawer.open .header-drawer-nav li:nth-child(7) { animation-delay: 0.30s; }
 
 @keyframes link-in {
   from { opacity: 0; transform: translateY(-10px); }
@@ -832,7 +737,7 @@ body {
 }
 
 .drawer-chevron {
-  font-size: 14px;
+  font-size: 18px;                                 /* ↑ 14 → 18 */
   color: var(--brown-3);
   transition: transform var(--transition), color var(--transition);
   line-height: 1;
@@ -844,27 +749,29 @@ body {
   color: var(--orange);
 }
 
-/* Footer */
+.header-drawer-link.active .drawer-chevron { color: #ffffff; }
+
+/* Footer drawer */
 .header-drawer-footer {
-  padding-top: 16px;
-  border-top: 1px solid rgba(74, 55, 40, 0.09);
+  padding-top: 18px;
+  border-top: 1px solid rgba(74, 55, 40, 0.10);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  animation: link-in 0.44s var(--spring-soft) 0.28s both;
+  animation: link-in 0.44s var(--spring-soft) 0.32s both;
 }
 
 .header-drawer-cta {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 22px;
+  gap: 8px;
+  padding: 12px 24px;                              /* ↑ 10/22 → 12/24 */
   background: rgba(74, 55, 40, 0.08);
   color: var(--brown);
-  border: 1px solid rgba(74, 55, 40, 0.15);
+  border: 1px solid rgba(74, 55, 40, 0.16);
   border-radius: var(--radius-pill);
-  font-size: 13px;
+  font-size: 14px;                                 /* ↑ 13 → 14 */
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -874,11 +781,11 @@ body {
 }
 
 .header-drawer-cta:hover {
-  background: rgba(74, 55, 40, 0.13);
-  border-color: rgba(74, 55, 40, 0.25);
+  background: rgba(74, 55, 40, 0.14);
+  border-color: rgba(74, 55, 40, 0.26);
 }
 
-.header-drawer-cta svg { width: 14px; height: 14px; }
+.header-drawer-cta svg { width: 16px; height: 16px; }  /* ↑ 14 → 16 */
 
 .header-drawer-socials {
   display: flex;
@@ -886,10 +793,10 @@ body {
 }
 
 .header-drawer-social {
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;                        /* ↑ 36 → 40 */
   border-radius: 10px;
-  background: rgba(74, 55, 40, 0.05);
-  border: 1px solid rgba(74, 55, 40, 0.08);
+  background: rgba(74, 55, 40, 0.06);
+  border: 1px solid rgba(74, 55, 40, 0.10);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: var(--brown-2);
@@ -901,19 +808,16 @@ body {
 }
 
 .header-drawer-social:hover {
-  background: rgba(232, 88, 10, 0.09);
-  border-color: rgba(232, 88, 10, 0.22);
+  background: rgba(232, 88, 10, 0.10);
+  border-color: rgba(232, 88, 10, 0.26);
   color: var(--orange);
   transform: translateY(-2px);
 }
 
-.header-drawer-social svg { width: 15px; height: 15px; }
+.header-drawer-social svg { width: 17px; height: 17px; }  /* ↑ 15 → 17 */
 
 /* ════════════════════════════════════════════════════════════
    INFO MODAL
-
-   FIX: backdrop-filter désactivé sur mobile.
-   Le fond semi-transparent foncé suffit visuellement.
    ════════════════════════════════════════════════════════════ */
 .header-info-overlay {
   position: fixed;
@@ -942,10 +846,10 @@ body {
   background: #FDFAF6;
   border-radius: 24px;
   padding: 52px 36px 40px;
-  max-width: 420px;
+  max-width: 440px;                                 /* ↑ 420 → 440 */
   width: 100%;
   box-shadow:
-    0 32px 80px rgba(74, 55, 40, 0.22),
+    0 32px 80px rgba(74, 55, 40, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.75) inset;
   animation: slideUp 0.40s var(--spring);
   -webkit-backface-visibility: hidden;
@@ -959,7 +863,7 @@ body {
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--orange) 40%, var(--orange-2) 60%, transparent);
   border-radius: 999px;
-  opacity: 0.75;
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -976,11 +880,11 @@ body {
 .header-info-close {
   position: absolute;
   top: 16px; right: 16px;
-  width: 30px; height: 30px;
+  width: 34px; height: 34px;                        /* ↑ 30 → 34 */
   border: none;
-  background: rgba(74, 55, 40, 0.07);
+  background: rgba(74, 55, 40, 0.08);
   border-radius: 50%;
-  font-size: 15px;
+  font-size: 16px;                                  /* ↑ 15 → 16 */
   color: var(--brown-2);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -989,7 +893,7 @@ body {
 }
 
 .header-info-close:hover {
-  background: rgba(74, 55, 40, 0.13);
+  background: rgba(74, 55, 40, 0.15);
   color: var(--brown);
   transform: rotate(90deg);
 }
@@ -1005,14 +909,14 @@ body {
 .header-info-logo img {
   border-radius: 50%;
   box-shadow:
-    0 10px 32px rgba(74, 55, 40, 0.20),
+    0 10px 32px rgba(74, 55, 40, 0.22),
     0 0 0 4px rgba(255, 255, 255, 0.95),
-    0 0 0 7px rgba(232, 88, 10, 0.12);
+    0 0 0 7px rgba(232, 88, 10, 0.14);
 }
 
 .header-info-title {
   font-family: 'Syne', sans-serif;
-  font-size: 26px;
+  font-size: 28px;                                  /* ↑ 26 → 28 */
   font-weight: 800;
   color: var(--brown);
   margin: 0 0 6px;
@@ -1020,7 +924,7 @@ body {
 }
 
 .header-info-tagline {
-  font-size: 13px;
+  font-size: 14px;                                  /* ↑ 13 → 14 */
   color: var(--brown-3);
   margin: 0;
   font-weight: 400;
@@ -1038,18 +942,18 @@ body {
 .header-info-items {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   text-align: left;
 }
 
 .header-info-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .header-info-label {
-  font-size: 10px;
+  font-size: 11px;                                  /* ↑ 10 → 11 */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.2px;
@@ -1057,7 +961,7 @@ body {
 }
 
 .header-info-value {
-  font-size: 13.5px;
+  font-size: 14.5px;                                /* ↑ 13.5 → 14.5 */
   color: var(--brown);
   line-height: 1.55;
   font-weight: 400;
@@ -1067,7 +971,7 @@ body {
   color: var(--brown);
   text-decoration: none;
   transition: color var(--transition);
-  border-bottom: 1px solid rgba(74, 55, 40, 0.12);
+  border-bottom: 1px solid rgba(74, 55, 40, 0.15);
   padding-bottom: 1px;
 }
 
@@ -1077,15 +981,13 @@ body {
 }
 
 @media (max-width: 480px) {
-  .header-info-modal   { padding: 36px 22px 30px; border-radius: 20px; }
-  .header-info-title   { font-size: 22px; }
+  .header-info-modal   { padding: 40px 24px 32px; border-radius: 20px; }
+  .header-info-title   { font-size: 24px; }
   .header-info-overlay { padding: 12px; }
 }
 
 /* ════════════════════════════════════════════════════════════
    SEARCH OVERLAY
-
-   FIX: backdrop-filter mobile désactivé (même raison que modal).
    ════════════════════════════════════════════════════════════ */
 .header-search-overlay {
   position: fixed;
@@ -1113,15 +1015,15 @@ body {
 
 .header-search-box {
   width: 100%;
-  max-width: 620px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(74, 55, 40, 0.12);
+  max-width: 660px;                                 /* ↑ 620 → 660 */
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(74, 55, 40, 0.14);
   border-radius: 18px;
-  box-shadow: 0 18px 48px rgba(26, 19, 12, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
+  box-shadow: 0 18px 48px rgba(26, 19, 12, 0.14), inset 0 1px 0 rgba(255,255,255,0.85);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px 12px 16px;
+  padding: 14px 16px 14px 18px;                     /* ↑ 12 → 14 */
   animation: search-pop 0.30s var(--spring) forwards;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -1134,7 +1036,7 @@ body {
 }
 
 .header-search-box svg {
-  width: 18px; height: 18px;
+  width: 20px; height: 20px;                        /* ↑ 18 → 20 */
   color: var(--brown-3);
   flex-shrink: 0;
 }
@@ -1144,7 +1046,7 @@ body {
   border: none;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
+  font-size: 17px;                                  /* ↑ 16 → 17 */
   color: var(--brown);
   outline: none;
   min-width: 0;
@@ -1153,16 +1055,16 @@ body {
 .header-search-input::placeholder { color: rgba(74, 55, 40, 0.55); }
 
 .header-search-submit {
-  border: 1px solid rgba(232, 88, 10, 0.28);
-  background: linear-gradient(135deg, rgba(232, 88, 10, 0.12), rgba(232, 88, 10, 0.18));
+  border: 1px solid rgba(232, 88, 10, 0.32);
+  background: linear-gradient(135deg, rgba(232, 88, 10, 0.14), rgba(232, 88, 10, 0.20));
   color: var(--brown);
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;                                /* ↑ 12 → 12.5 */
+  font-weight: 700;                                 /* ↑ 600 → 700 */
   letter-spacing: 0.12em;
   text-transform: uppercase;
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 11px 14px;                               /* ↑ 10/12 → 11/14 */
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
@@ -1170,21 +1072,21 @@ body {
 
 .header-search-submit:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, rgba(232, 88, 10, 0.18), rgba(232, 88, 10, 0.24));
-  border-color: rgba(232, 88, 10, 0.45);
+  background: linear-gradient(135deg, rgba(232, 88, 10, 0.20), rgba(232, 88, 10, 0.26));
+  border-color: rgba(232, 88, 10, 0.50);
 }
 
-.header-search-kbd {
-  font-size: 10.5px;
-  color: var(--brown-3);
-  background: rgba(74, 55, 40, 0.07);
-  border: 1px solid rgba(74, 55, 40, 0.10);
-  border-radius: 5px;
-  padding: 3px 8px;
-  font-family: 'DM Sans', sans-serif;
-  white-space: nowrap;
-  flex-shrink: 0;
-  display: none;
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — mobile tweaks
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .header { padding: 0 16px; }
+  .header-logo { margin-right: 16px; }
+  .header-actions { padding: 3px 5px; }
+  .header-icon-btn { width: 36px; height: 36px; }
+  .header-login-btn { padding: 8px 14px; font-size: 13px; }
+  .header-social-flags-bar { height: 46px; }
+  .header-social-popup { top: calc(var(--header-h) + 46px + 10px); }
 }
 
 /* ════════════════════════════════════════════════════════════

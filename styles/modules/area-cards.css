@@ -1,71 +1,87 @@
-/* ─── AREA SECTION ─── */
+/* ══════════════════════════════════════════════
+   AREA SECTION — éditorial, lisible
+   ══════════════════════════════════════════════ */
+
 .area-section {
-  background: var(--mist);
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-}
-
-/* ─── GRID ─── */
-.area-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: rgba(11, 24, 41, 0.1);
-  border: 1px solid rgba(11, 24, 41, 0.1);
-  border-radius: 24px;
-  overflow: hidden;
-  margin-top: 3rem;
-}
-
-.area-card-item {
-  background: var(--mist);
-}
-
-/* ─── CARD ─── */
-.area-card {
   position: relative;
+  background:
+    radial-gradient(ellipse 70% 45% at 15% 0%,
+      rgba(83, 168, 214, 0.06),
+      transparent 60%),
+    linear-gradient(180deg, #0b1c2b 0%, #0a1a28 100%);
+  color: #f6f2eb;
+  padding: clamp(5rem, 10vw, 9rem) clamp(1.5rem, 5vw, 3.5rem);
+}
+
+/* ── Eyebrow ── */
+.area-section .section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 0 1.5rem;
+  color: rgba(240, 235, 227, 0.72);
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.area-section .section-eyebrow::before {
+  content: '';
+  width: 36px;
+  height: 1px;
+  background: rgba(240, 235, 227, 0.55);
+}
+
+/* ── Titre de section ── */
+.area-section .section-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: #f6f2eb;
+  margin: 0 0 clamp(3rem, 6vw, 5rem);
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+/* ══════════════════════════════════════════════
+   GRILLE 2×2 EN QUINCONCE
+   ══════════════════════════════════════════════ */
+.area-cards-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+  row-gap: clamp(3rem, 6vw, 5rem);
+  align-items: start;
+}
+
+/* Colonne droite descendue — rythme magazine */
+@media (min-width: 900px) {
+  .area-card-item:nth-child(even) {
+    margin-top: clamp(3rem, 7vw, 6rem);
+  }
+}
+
+/* ── Carte ── */
+.area-card {
   display: flex;
   flex-direction: column;
-  background: #182534;
-  overflow: hidden;
-  height: 100%;
-  min-height: 400px;
-  cursor: pointer;
+  gap: 1.6rem;
+  position: relative;
 }
 
-/* Grille technique */
-.area-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 28px 28px;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Barre orange — statique */
-.area-card::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2px;
-  height: 0%;
-  background: var(--orange);
-  z-index: 10;
-}
-
-/* ─── MEDIA ─── */
+/* ── Media ── */
 .area-card-media {
   position: relative;
-  width: 100%;
-  height: 200px;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
-  flex-shrink: 0;
-  z-index: 1;
+  background: #0a1a28;
 }
 
 .area-card-media img {
@@ -73,134 +89,163 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(0.6) saturate(0.65);
+  transition: transform 1.1s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+.area-card:hover .area-card-media img {
+  transform: scale(1.04);
+}
+
+/* Dégradé léger pour la lisibilité de l'index */
 .area-card-media::after {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(160deg, transparent 55%, rgba(13,24,37,0.92) 100%),
-    linear-gradient(to bottom, rgba(13,24,37,0.2) 0%, transparent 40%);
-  z-index: 2;
+  background: linear-gradient(
+    to bottom,
+    rgba(8, 15, 24, 0.32) 0%,
+    transparent 32%,
+    transparent 72%,
+    rgba(8, 15, 24, 0.18) 100%
+  );
   pointer-events: none;
 }
 
+/* ── Index sur l'image ── */
 .area-card-index {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 5;
-  font-family: 'DM Mono', 'Fira Mono', monospace;
+  top: 1.25rem;
+  left: 1.35rem;
+  z-index: 2;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
   font-size: 1.1rem;
-  letter-spacing: 0.1em;
-  color: rgba(232,228,220,0.45);
-  line-height: 1;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
 }
 
+/* Le "signal" clignotant d'avant : masqué */
+.area-card-signal {
+  display: none;
+}
 
-/* ─── CONTENT ─── */
+/* ── Contenu ── */
 .area-card-content {
-  position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  padding: 1.4rem 1.4rem 1.6rem;
-  gap: 0.8rem;
+  gap: 0.95rem;
 }
 
+/* ── Titre de carte ── */
 .area-card-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
-  font-weight: 400;
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.75rem, 2.8vw, 2.35rem);
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: #ff7745;
-  margin: 0;
+  letter-spacing: -0.012em;
+  color: #f6f2eb;
+  text-wrap: balance;
 }
 
+/* ── Description ── */
 .area-card-desc {
-  font-size: 0.92rem;
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.868);
-  line-height: 1.7;
   margin: 0;
-  flex: 1;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.98rem, 1.15vw, 1.08rem);
+  font-weight: 400;
+  line-height: 1.78;
+  letter-spacing: 0.005em;
+  color: rgba(240, 235, 227, 0.78);
+  max-width: 48ch;
 }
 
-/* ─── FOOTER CARTE ─── */
+/* ── Footer de carte ── */
 .area-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  gap: 1rem;
+  margin-top: 0.6rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* ── Tag ── */
 .area-card-tag {
-  font-family: 'DM Mono', 'Fira Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #f07030;
-  background: rgba(229,90,0,0.1);
-  padding: 0.22rem 0.6rem;
-  border-radius: 3px;
-  border: 1px solid rgba(229,90,0,0.18);
-  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  color: rgba(240, 235, 227, 0.68);
+  transition: color 0.4s ease;
 }
 
-/* Couleurs légères différentes par indice */
-.area-card-item:nth-child(1) .area-card-tag { 
-  background: rgba(255, 107, 107, 0.15); 
-  color: #d94a4a; 
-  border-color: rgba(255, 107, 107, 0.25);
+.area-card:hover .area-card-tag {
+  color: #ef9d6f;
 }
 
-.area-card-item:nth-child(2) .area-card-tag { 
-  background: rgba(100, 180, 255, 0.15); 
-  color: #4a8fd9; 
-  border-color: rgba(100, 180, 255, 0.25);
-}
-
-.area-card-item:nth-child(3) .area-card-tag { 
-  background: rgba(130, 200, 100, 0.15); 
-  color: #4ad95c; 
-  border-color: rgba(130, 200, 100, 0.25);
-}
-
-.area-card-item:nth-child(4) .area-card-tag { 
-  background: rgba(180, 120, 255, 0.15); 
-  color: #9d4ad9; 
-  border-color: rgba(180, 120, 255, 0.25);
-}
-
+/* ── Flèche ── */
 .area-card-arrow {
-  width: 26px;
-  height: 26px;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  color: rgba(232,228,220,0.45);
+  width: 30px;
+  height: 30px;
+  color: rgba(240, 235, 227, 0.60);
+  transition:
+    color     0.4s ease,
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* ─── RESPONSIVE ─── */
-@media (max-width: 1100px) {
-  .area-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.area-card:hover .area-card-arrow {
+  color: #ef9d6f;
+  transform: translate(3px, -3px);
 }
-@media (max-width: 640px) {
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+@media (max-width: 900px) {
   .area-cards-grid {
     grid-template-columns: 1fr;
-    border-radius: 16px;
+    row-gap: clamp(2.5rem, 8vw, 4rem);
   }
-  .area-card { min-height: 320px; }
-  .area-card-media { height: 160px; }
+
+  .area-card-media {
+    aspect-ratio: 3 / 2;
+  }
+
+  .area-section .section-title {
+    font-size: clamp(2.4rem, 10vw, 3.8rem);
+  }
+
+  .area-card-title {
+    font-size: clamp(1.6rem, 6vw, 2rem);
+  }
+
+  .area-card-desc {
+    font-size: 1rem;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .area-section .section-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+  }
+
+  .area-card-desc {
+    font-size: 0.98rem;
+    line-height: 1.72;
+  }
+
+  .area-card-tag {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+  }
 }

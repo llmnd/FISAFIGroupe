@@ -206,11 +206,11 @@ export default function HeroSlideshow({
   const [imgKey, setImgKey]           = useState(0);
   const [autoEnabled, setAutoEnabled] = useState(true);
 
-  const cardsTrackRef          = useRef<HTMLDivElement>(null);
-  const currentRef             = useRef(0);
-  const isProgrammaticScroll   = useRef(false);
-  const autoTimer              = useRef<ReturnType<typeof setInterval>>();
-  const inactivityTimer        = useRef<ReturnType<typeof setTimeout>>();
+  const cardsTrackRef        = useRef<HTMLDivElement>(null);
+  const currentRef           = useRef(0);
+  const isProgrammaticScroll = useRef(false);
+  const autoTimer            = useRef<ReturnType<typeof setInterval>>();
+  const inactivityTimer      = useRef<ReturnType<typeof setTimeout>>();
 
   const palette = PALETTES[current % PALETTES.length];
   const total   = String(slides.length).padStart(2, "0");
@@ -335,11 +335,13 @@ export default function HeroSlideshow({
 
   return (
     <section
-      className="hs-root"
+      className={`hs-root hs-root--${variant}`}
+      aria-roledescription="carrousel"
+      aria-label="Présentation FiSAFi"
       style={
         {
-          "--hs-accent":     palette.accent,
-          "--hs-accent-rgb": palette.accentRgb,
+          "--hs-accent":      palette.accent,
+          "--hs-accent-rgb":  palette.accentRgb,
           "--hs-accent-glow": `rgba(${palette.accentRgb}, 0.08)`,
         } as React.CSSProperties
       }
@@ -347,12 +349,16 @@ export default function HeroSlideshow({
       {/* ── Image zone ──────────────────────── */}
       <div className="hs-image-container">
         {prevIdx !== null && (
-          <div key={`prev-${imgKey}`} className="hs-img-layer hs-img-layer--prev">
+          <div
+            key={`prev-${imgKey}`}
+            className="hs-img-layer hs-img-layer--prev"
+            aria-hidden="true"
+          >
             <Image
               src={slides[prevIdx].src}
-              alt={slides[prevIdx].alt}
+              alt=""
               fill
-              sizes="100vw"
+              sizes="(min-width: 980px) 55vw, 100vw"
               style={{ objectFit: "cover", objectPosition: "center top" }}
               draggable={false}
             />
@@ -364,30 +370,31 @@ export default function HeroSlideshow({
             alt={slides[current].alt}
             fill
             priority={current === 0}
-            sizes="100vw"
+            sizes="(min-width: 980px) 55vw, 100vw"
             style={{ objectFit: "cover", objectPosition: "center top" }}
             draggable={false}
           />
         </div>
 
-        {/* Animated accent bar */}
+        {/* Barre accent animée */}
         <div
           className="hs-image-bar"
+          aria-hidden="true"
           style={{
             width: `${((current + 1) / slides.length) * 100}%`,
             background: `linear-gradient(to right, transparent, ${palette.accent}, transparent)`,
           }}
         />
 
-        <div className="hs-slide-num">
+        <div className="hs-slide-num" aria-hidden="true">
           {String(current + 1).padStart(2, "0")} / {total}
         </div>
       </div>
 
       {/* ── Text & cards panel ──────────────── */}
       <div className="hs-text-panel">
-        {/* Vertical progress bar */}
-        <div className="hs-vbar">
+        {/* Barre de progression verticale */}
+        <div className="hs-vbar" aria-hidden="true">
           <div
             className="hs-vbar-fill"
             style={{
@@ -397,7 +404,7 @@ export default function HeroSlideshow({
           />
         </div>
 
-        {/* Scrollable card track */}
+        {/* Track scrollable des cartes */}
         <div className="hs-cards-track" ref={cardsTrackRef}>
           {slides.map((slide, idx) => {
             const p   = PALETTES[idx % PALETTES.length];
@@ -411,12 +418,22 @@ export default function HeroSlideshow({
               ${p.lineColor} 28px
             )`;
 
+            const isActive = idx === current;
+
             return (
-              <div key={idx} className="hs-card-slide">
+              <div
+                key={idx}
+                className="hs-card-slide"
+                role="group"
+                aria-roledescription="diapositive"
+                aria-label={`${idx + 1} sur ${slides.length} — ${slide.eyebrow}`}
+                aria-hidden={!isActive}
+              >
                 <div className="hs-card-scene">
                   {/* Washi-tape pin */}
                   <div
                     className="hs-pin"
+                    aria-hidden="true"
                     style={{
                       background: `linear-gradient(135deg,
                         ${hexRgba(p.accent, 0.55)},
@@ -430,11 +447,13 @@ export default function HeroSlideshow({
                     {/* Feuille du fond — la plus éloignée */}
                     <div
                       className="hs-ghost hs-ghost--far"
+                      aria-hidden="true"
                       style={{ background: p.ghostBg2 }}
                     />
                     {/* Feuille intermédiaire */}
                     <div
                       className="hs-ghost hs-ghost--near"
+                      aria-hidden="true"
                       style={{ background: p.ghostBg1 }}
                     />
 
@@ -454,6 +473,7 @@ export default function HeroSlideshow({
                         {/* Ligne de marge verticale */}
                         <div
                           className="hs-card-margin"
+                          aria-hidden="true"
                           style={{ background: hexRgba(p.accent, 0.18) }}
                         />
 
@@ -469,6 +489,7 @@ export default function HeroSlideshow({
                           {/* Séparateur */}
                           <div
                             className="hs-card-rule"
+                            aria-hidden="true"
                             style={{ background: hexRgba(p.accent, 0.32) }}
                           />
 
@@ -519,12 +540,14 @@ export default function HeroSlideshow({
             </div>
           )}
 
-          <nav className="hs-dots" aria-label="Navigation">
-            {slides.map((_, i) => (
+          <nav className="hs-dots" aria-label="Navigation du carrousel">
+            {slides.map((slide, i) => (
               <button
                 key={i}
+                type="button"
                 onClick={() => { goTo(i); pauseAuto(); }}
-                aria-label={`Diapositive ${i + 1}`}
+                aria-label={`${slide.eyebrow} — diapositive ${i + 1} sur ${slides.length}`}
+                aria-current={i === current}
                 className={`hs-dot${i === current ? " hs-dot--active" : ""}`}
                 style={
                   i === current

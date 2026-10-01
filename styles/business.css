@@ -1,3 +1,7 @@
+/* ══════════════════════════════════════════════
+   BUSINESS PAGE — éditorial, sobre
+   ══════════════════════════════════════════════ */
+
 .business-page {
   background: #f6f6f3;
   color: #111;
@@ -17,14 +21,18 @@
   text-transform: uppercase;
 }
 
+/* ══════════════════════════════════════════════
+   GRILLE DES MARQUES
+   ══════════════════════════════════════════════ */
 .business-brands {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   min-height: calc(100svh - 132px);
-  padding: 0.65rem;
-  gap: 0.65rem;
+  padding: clamp(0.65rem, 1vw, 1rem);
+  gap: clamp(0.65rem, 1vw, 1rem);
 }
 
+/* ── Tuile ── */
 .business-brand-tile {
   position: relative;
   display: flex;
@@ -55,9 +63,15 @@
   transform: scale(1.045);
 }
 
+/* Tint bleu au survol — dégradé au lieu d'aplat */
 .business-brand-tile:hover .business-brand-tint,
 .business-brand-tile:focus-visible .business-brand-tint {
-  background: rgba(28, 43, 113, 0.68);
+  background:
+    linear-gradient(0deg,
+      rgba(28, 43, 113, 0.92) 0%,
+      rgba(28, 43, 113, 0.78) 45%,
+      rgba(28, 43, 113, 0.35) 100%
+    );
 }
 
 .business-brand-tile:focus-visible {
@@ -65,6 +79,7 @@
   outline-offset: -8px;
 }
 
+/* ── Contenu de la tuile ── */
 .business-brand-content {
   display: flex;
   flex-direction: column;
@@ -92,18 +107,25 @@
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.28);
 }
 
+/* Description — lisibilité renforcée */
 .business-brand-description {
-  max-width: 31rem;
+  max-width: 34rem;
   max-height: 0;
   margin-top: 0;
   overflow: hidden;
   opacity: 0;
   transform: translateY(12px);
-  font-size: clamp(1.08rem, 1.45vw, 1.4rem);
-  font-weight: 500;
-  line-height: 1.6;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.48);
-  transition: max-height 450ms ease, margin 450ms ease, opacity 350ms ease, transform 350ms ease;
+  font-size: clamp(1.1rem, 1.4vw, 1.35rem);
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+  transition:
+    max-height 450ms ease,
+    margin     450ms ease,
+    opacity    350ms ease,
+    transform  350ms ease;
 }
 
 .business-brand-tile:hover .business-brand-description,
@@ -114,16 +136,27 @@
   transform: translateY(0);
 }
 
+/* ── Action "Entrer dans le groupe ↗" ── */
 .business-brand-action {
   display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1.35rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
+  gap: 1.1rem;
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
+  transition:
+    letter-spacing 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color   0.4s ease;
+}
+
+.business-brand-tile:hover .business-brand-action,
+.business-brand-tile:focus-visible .business-brand-action {
+  letter-spacing: 0.28em;
+  border-color: rgba(255, 255, 255, 1);
 }
 
 .business-brand-arrow,
@@ -137,34 +170,45 @@
   transform: translate(3px, -3px);
 }
 
+/* ── Bouton + ── */
 .business-brand-plus {
   position: absolute;
   right: clamp(1.5rem, 3vw, 3rem);
   bottom: clamp(1.5rem, 3vw, 3rem);
   display: grid;
-  width: 3.6rem;
+  width: 3.8rem;
   aspect-ratio: 1;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   background: #fff;
   color: #17224f;
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 300;
   line-height: 1;
-  box-shadow: 0 0 0 0.45rem rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 0 0 0.45rem rgba(255, 255, 255, 0.15),
+    0 12px 32px -8px rgba(0, 0, 0, 0.4);
   transform: scale(0.86);
   opacity: 0;
-  transition: transform 350ms ease, opacity 350ms ease, box-shadow 350ms ease;
+  transition:
+    transform  350ms ease,
+    opacity    350ms ease,
+    box-shadow 350ms ease;
 }
 
 .business-brand-tile:hover .business-brand-plus,
 .business-brand-tile:focus-visible .business-brand-plus {
   transform: scale(1);
   opacity: 1;
-  box-shadow: 0 0 0 0.65rem rgba(255, 255, 255, 0.17);
+  box-shadow:
+    0 0 0 0.65rem rgba(255, 255, 255, 0.20),
+    0 16px 40px -8px rgba(0, 0, 0, 0.5);
 }
 
+/* ══════════════════════════════════════════════
+   BLOC CONTACT (bas de la page)
+   ══════════════════════════════════════════════ */
 .business-contact {
   display: flex;
   align-items: end;
@@ -175,6 +219,25 @@
   border-top: 1px solid rgba(17, 17, 17, 0.25);
 }
 
+.business-contact p {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+
+.business-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  color: #111;
+  font-size: clamp(2rem, 5vw, 5rem);
+  text-decoration: none;
+  letter-spacing: -0.06em;
+}
+
+/* ══════════════════════════════════════════════
+   MARKET PAGE
+   ══════════════════════════════════════════════ */
 .market-page {
   min-height: 100vh;
   padding: 7.5rem clamp(1.5rem, 7vw, 8rem) 2rem;
@@ -265,22 +328,9 @@
   text-decoration: none;
 }
 
-.business-contact p {
-  margin: 0;
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-}
-
-.business-contact a {
-  display: inline-flex;
-  align-items: center;
-  gap: 1rem;
-  color: #111;
-  font-size: clamp(2rem, 5vw, 5rem);
-  text-decoration: none;
-  letter-spacing: -0.06em;
-}
-
+/* ══════════════════════════════════════════════
+   BUSINESS DETAIL
+   ══════════════════════════════════════════════ */
 .business-detail {
   min-height: 100vh;
   padding: 9rem clamp(1.5rem, 8vw, 9rem) 4rem;
@@ -440,6 +490,9 @@
   color: #1857d2;
 }
 
+/* ══════════════════════════════════════════════
+   FIELD REFERENCE
+   ══════════════════════════════════════════════ */
 .field-reference {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
@@ -493,6 +546,9 @@
   font-size: 0.78rem;
 }
 
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
 @media (max-width: 760px) {
   .business-brands {
     grid-template-columns: 1fr;
@@ -511,7 +567,7 @@
   }
 
   .business-brand-plus {
-    width: 3rem;
+    width: 3.2rem;
     opacity: 1;
     transform: none;
   }
@@ -576,6 +632,9 @@
   }
 }
 
+/* ══════════════════════════════════════════════
+   ACCESSIBILITÉ
+   ══════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .business-tile-image,
   .business-brand-image,
@@ -585,7 +644,9 @@
   .business-tile-shade,
   .business-tile-description,
   .business-tile-link span,
-  .business-contact span {
+  .business-contact span,
+  .business-brand-action,
+  .business-brand-arrow {
     transition: none;
   }
 }

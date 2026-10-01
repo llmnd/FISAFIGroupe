@@ -35,10 +35,7 @@
 /* 9. Split Cards (Capabilities) */
 @import './modules/split-cards.css';
 
-/* 10. Competences Section */
-@import './modules/competences.css';
-
-/* 11. Vision Section */
+/* 10. Vision Section */
 @import './modules/vision.css';
 
 /* 12. Contact Section */
