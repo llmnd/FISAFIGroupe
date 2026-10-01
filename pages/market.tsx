@@ -1,6 +1,10 @@
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Header from "@/components/Header";
+import MarketStore from "@/components/MarketStore";
+
+/* ═══════════ TYPES ═══════════ */
 
 type Department = {
   id: string;
@@ -10,50 +14,143 @@ type Department = {
   art: "produce" | "pantry" | "bakery" | "drinks" | "fresh" | "home";
 };
 
+type Featured = {
+  id: string;
+  name: string;
+  price: string;
+  unit: string;
+  tag: string;
+  color: string;
+  image: string;
+};
+
+type ProductArtwork = "produce" | "pantry" | "bakery" | "drink" | "fresh" | "home";
+
+type MarketProduct = {
+  name: string;
+  price: string;
+  badge: "BIO" | "PROMO";
+  artwork: ProductArtwork;
+  image?: string;
+};
+
+type MarketSearchResult = MarketProduct & { departmentName: string };
+
+type ThemeChoice = "system" | "light" | "dark";
+
+/* ═══════════ DATA ═══════════ */
+
 const DEPARTMENTS: Department[] = [
-  {
-    id: "fruits-legumes",
-    name: "Fruits & légumes",
-    description: "Les couleurs et les saveurs du marché.",
-    color: "green",
-    art: "produce",
-  },
-  {
-    id: "epicerie",
-    name: "Épicerie",
-    description: "Les indispensables pour chaque recette.",
-    color: "orange",
-    art: "pantry",
-  },
-  {
-    id: "boulangerie",
-    name: "Boulangerie",
-    description: "Le plaisir des bonnes choses à partager.",
-    color: "gold",
-    art: "bakery",
-  },
-  {
-    id: "boissons",
-    name: "Boissons",
-    description: "De quoi accompagner chaque moment.",
-    color: "blue",
-    art: "drinks",
-  },
-  {
-    id: "frais",
-    name: "Produits frais",
-    description: "Une sélection pour vos repas du quotidien.",
-    color: "pink",
-    art: "fresh",
-  },
-  {
-    id: "maison",
-    name: "Maison & entretien",
-    description: "Les essentiels pratiques de la maison.",
-    color: "purple",
-    art: "home",
-  },
+  { id: "fruits-legumes", name: "Fruits & légumes", description: "Les couleurs et les saveurs du marché.", color: "green", art: "produce" },
+  { id: "epicerie", name: "Épicerie", description: "Les indispensables pour chaque recette.", color: "orange", art: "pantry" },
+  { id: "boulangerie", name: "Boulangerie", description: "Le plaisir des bonnes choses à partager.", color: "gold", art: "bakery" },
+  { id: "boissons", name: "Boissons", description: "De quoi accompagner chaque moment.", color: "blue", art: "drinks" },
+  { id: "frais", name: "Produits frais", description: "Une sélection pour vos repas du quotidien.", color: "pink", art: "fresh" },
+  { id: "maison", name: "Maison & entretien", description: "Les essentiels pratiques de la maison.", color: "purple", art: "home" },
 ];
+
+const FEATURED: Featured[] = [
+  { id: "bissap", name: "Bissap frais", price: "500", unit: "FCFA", tag: "Frais du jour", color: "#c9264a", image: "bissap.jpg" },
+  { id: "pringles", name: "Pringles Original", price: "Sur demande", unit: "", tag: "Épicerie", color: "#d71920", image: "pringles.jpg" },
+  { id: "pain", name: "Pain chaud", price: "150", unit: "FCFA", tag: "Sortie du four", color: "#d7954c", image: "pain.jpg" },
+  { id: "cafe", name: "Café Touba", price: "800", unit: "le sachet", tag: "Nouveauté", color: "#4a2f00", image: "cafe.jpg" },
+  { id: "eau", name: "Pack d'eau 6×1,5L", price: "1 800", unit: "FCFA", tag: "Pratique", color: "#2f6fd1", image: "eau.jpg" },
+  { id: "savon", name: "Savon de Marseille", price: "600", unit: "FCFA", tag: "Maison", color: "#8ecae6", image: "savon.jpg" },
+];
+
+const RAYON_PRODUCTS: Record<Department["id"], MarketProduct[]> = {
+  "fruits-legumes": [
+    { name: "Mangues Kent", price: "1 200 / kg", badge: "BIO", artwork: "produce" },
+    { name: "Bananes", price: "800 / kg", badge: "PROMO", artwork: "produce" },
+    { name: "Oranges", price: "900 / kg", badge: "BIO", artwork: "produce" },
+    { name: "Tomates fraîches", price: "750 / kg", badge: "PROMO", artwork: "produce" },
+    { name: "Oignons", price: "600 / kg", badge: "BIO", artwork: "produce" },
+    { name: "Pommes de terre", price: "700 / kg", badge: "PROMO", artwork: "produce" },
+  ],
+  epicerie: [
+    { name: "Pringles Original", price: "1 500", badge: "PROMO", artwork: "pantry", image: "pringles.jpg" },
+    { name: "Café Touba", price: "800", badge: "BIO", artwork: "pantry", image: "cafe.jpg" },
+    { name: "Riz brisé", price: "750 / kg", badge: "PROMO", artwork: "pantry" },
+    { name: "Huile végétale", price: "1 200", badge: "BIO", artwork: "pantry" },
+    { name: "Sucre en poudre", price: "650", badge: "PROMO", artwork: "pantry" },
+    { name: "Pâtes alimentaires", price: "500", badge: "BIO", artwork: "pantry" },
+  ],
+  boulangerie: [
+    { name: "Baguette tradition", price: "150", badge: "PROMO", artwork: "bakery", image: "pain.jpg" },
+    { name: "Pain complet", price: "400", badge: "BIO", artwork: "bakery" },
+    { name: "Croissant pur beurre", price: "300", badge: "PROMO", artwork: "bakery" },
+    { name: "Pain au chocolat", price: "350", badge: "BIO", artwork: "bakery" },
+    { name: "Brioche nature", price: "500", badge: "PROMO", artwork: "bakery" },
+    { name: "Pain de mie", price: "900", badge: "BIO", artwork: "bakery" },
+  ],
+  boissons: [
+    { name: "Bissap frais", price: "500", badge: "BIO", artwork: "drink", image: "bissap.jpg" },
+    { name: "Eau minérale 1,5 L", price: "500", badge: "PROMO", artwork: "drink", image: "eau.jpg" },
+    { name: "Jus de gingembre", price: "600", badge: "BIO", artwork: "drink" },
+    { name: "Jus de bouye", price: "600", badge: "PROMO", artwork: "drink" },
+    { name: "Soda 33 cl", price: "500", badge: "BIO", artwork: "drink" },
+    { name: "Lait frais", price: "1 000", badge: "PROMO", artwork: "drink" },
+  ],
+  frais: [
+    { name: "Lait caillé", price: "700", badge: "BIO", artwork: "fresh" },
+    { name: "Yaourt nature", price: "400", badge: "PROMO", artwork: "fresh" },
+    { name: "Beurre doux", price: "1 200", badge: "BIO", artwork: "fresh" },
+    { name: "Œufs frais (6)", price: "1 000", badge: "PROMO", artwork: "fresh" },
+    { name: "Fromage portion", price: "900", badge: "BIO", artwork: "fresh" },
+    { name: "Crème fraîche", price: "1 100", badge: "PROMO", artwork: "fresh" },
+  ],
+  maison: [
+    { name: "Savon de Marseille", price: "600", badge: "BIO", artwork: "home", image: "savon.jpg" },
+    { name: "Liquide vaisselle", price: "1 200", badge: "PROMO", artwork: "home" },
+    { name: "Eau de Javel", price: "900", badge: "BIO", artwork: "home" },
+    { name: "Lessive en poudre", price: "1 500", badge: "PROMO", artwork: "home" },
+    { name: "Éponge multi-usage", price: "350", badge: "BIO", artwork: "home" },
+    { name: "Papier hygiénique", price: "1 000", badge: "PROMO", artwork: "home" },
+  ],
+};
+
+const SERVICES = [
+  { id: "livraison", title: "Livraison à domicile", desc: "Dans tout Dakar, sous 2 heures.", icon: "🛵" },
+  { id: "whatsapp", title: "Commande WhatsApp", desc: "Envoyez votre liste, on prépare.", icon: "💬" },
+  { id: "collect", title: "Click & Collect", desc: "Commandez, passez, récupérez.", icon: "🛍️" },
+  { id: "paiement", title: "Wave · Orange Money", desc: "Paiement mobile accepté en caisse.", icon: "📱" },
+];
+
+const HOURS = [{ day: "Tous les jours", time: "7h – 00h" }];
+
+const TESTIMONIALS = [
+  { id: "aissatou", name: "Aïssatou D.", role: "Plateau", text: "Je trouve tout ce qu'il me faut à deux pas de chez moi. Abdel me garde toujours mon bissap préféré !" },
+  { id: "moussa", name: "Moussa F.", role: "Client fidèle", text: "Rayon frais impeccable, prix justes. La commande WhatsApp me fait gagner un temps fou." },
+  { id: "coumba", name: "Coumba S.", role: "Médina", text: "Un vrai commerce de quartier, avec le sourire et de bons produits. Ça fait plaisir." },
+];
+
+/* ═══════════ HOOK : statut ouvert/fermé ═══════════ */
+
+function useOpenStatus() {
+  const [status, setStatus] = useState({ open: true, label: "Ouvert", detail: "ferme à minuit" });
+
+  useEffect(() => {
+    const compute = () => {
+      const now = new Date();
+      const total = now.getHours() * 60 + now.getMinutes();
+      const openFrom = 7 * 60;
+      const openTo = 24 * 60;
+
+      if (total >= openFrom && total < openTo) {
+        setStatus({ open: true, label: "Ouvert", detail: "ferme à minuit" });
+      } else {
+        setStatus({ open: false, label: "Fermé", detail: "ouvre à 7h" });
+      }
+    };
+    compute();
+    const t = setInterval(compute, 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  return status;
+}
+
+/* ═══════════ ILLUSTRATIONS ═══════════ */
 
 function DepartmentIllustration({ art }: { art: Department["art"] }) {
   return (
@@ -126,7 +223,148 @@ function DepartmentIllustration({ art }: { art: Department["art"] }) {
   );
 }
 
+function ProductIllustration({ artwork }: { artwork: ProductArtwork }) {
+  return (
+    <svg className="market-product-art" viewBox="0 0 240 180" fill="none" aria-hidden="true">
+      <ellipse cx="120" cy="153" rx="65" ry="9" fill="currentColor" opacity=".12" />
+      {artwork === "produce" && (
+        <>
+          <path d="M63 101c-2-26 19-43 41-32 14 7 13 27 5 45-11 24-44 20-46-13Z" fill="#f5a43b" />
+          <path d="M102 72c-2-13 5-24 18-26-1 11-6 19-18 26Z" fill="#3c985f" />
+          <path d="M126 106c-5-25 13-44 36-36 18 7 18 26 8 44-14 24-40 19-44-8Z" fill="#e95d58" />
+          <path d="M144 72c4-12 15-18 27-15-5 11-13 16-27 15Z" fill="#4d9a5b" />
+        </>
+      )}
+      {artwork === "pantry" && (
+        <>
+          <path d="M69 55h39v15l8 12v61H61V82l8-12V55Z" fill="#f2e4c6" />
+          <path d="M69 55h39v15H69z" fill="#d88b43" />
+          <path d="M62 97h54v29H62z" fill="#78a66a" />
+          <path d="M135 63h38v14l7 11v55h-52V88l7-11V63Z" fill="#f7f0e2" />
+          <path d="M135 63h38v14h-38z" fill="#d9b96e" />
+          <path d="M128 100h52v27h-52z" fill="#e7a559" />
+        </>
+      )}
+      {artwork === "bakery" && (
+        <>
+          <path d="M54 114c0-23 17-41 39-48 7-19 25-27 45-20 11 4 18 12 19 22 17 9 28 26 28 46v16H54Z" fill="#d7954c" />
+          <path d="M96 72c-2 12 3 22 11 30m19-55c-4 12-2 23 5 33m20-9c-4 12-1 23 6 33" stroke="#f7d49b" strokeWidth="6" strokeLinecap="round" />
+        </>
+      )}
+      {artwork === "drink" && (
+        <>
+          <path d="M79 48h28v13l8 10v70H71V71l8-10V48Z" fill="#79a9d3" />
+          <path d="M79 48h28v13H79z" fill="#f6f0dd" />
+          <path d="M72 96h43v27H72z" fill="#e7f5f8" />
+          <path d="M143 59h26v13l7 9v60h-40V81l7-9V59Z" fill="#d7954c" />
+          <path d="M136 100h40v26h-40z" fill="#f9e5af" />
+        </>
+      )}
+      {artwork === "fresh" && (
+        <>
+          <path d="M63 72h114l-10 77H73L63 72Z" fill="#f5f1e7" />
+          <path d="M74 86h92l-7 52H81l-7-52Z" fill="#e9c8a4" />
+          <path d="M87 76c-5-18 7-31 23-28 11 2 15 15 9 28m12 0c-2-18 10-28 25-23 10 4 11 16 3 24" stroke="#5b9a64" strokeWidth="8" strokeLinecap="round" />
+        </>
+      )}
+      {artwork === "home" && (
+        <>
+          <path d="M66 74h108l-9 76H75l-9-76Z" fill="#a8c9de" />
+          <path d="M82 58h76v20H82z" fill="#f6f2e9" />
+          <path d="M91 57c0-17 11-27 29-27s29 10 29 27" stroke="#f6f2e9" strokeWidth="8" />
+          <path d="M91 101h58m-53 14h47" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity=".85" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function ProductArtworkView({ product }: { product: MarketProduct }) {
+  if (product.image) {
+    return (
+      <img
+        className="market-product-image"
+        src={`/produits/${product.image}`}
+        alt={product.name}
+        loading="lazy"
+      />
+    );
+  }
+  return <ProductIllustration artwork={product.artwork} />;
+}
+
+function MarketProductCard({
+  product,
+  departmentName,
+}: {
+  product: MarketProduct;
+  departmentName?: string;
+}) {
+  return (
+    <article className="market-product-card">
+      <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
+        {product.badge}
+      </span>
+      <div className="market-product-visual">
+        <ProductArtworkView product={product} />
+      </div>
+      {departmentName && <span className="market-product-department">{departmentName}</span>}
+      <h4>{product.name}</h4>
+      <p>{product.price} <span>FCFA</span></p>
+    </article>
+  );
+}
+
+function Stars() {
+  return (
+    <span className="market-testimonial-stars" aria-label="5 étoiles sur 5">
+      ★★★★★
+    </span>
+  );
+}
+
+/* ═══════════ PAGE ═══════════ */
+
 export default function MarketPage() {
+  const status = useOpenStatus();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
+  const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+  const isDark = themeChoice === "dark" || (themeChoice === "system" && systemPrefersDark);
+  const normalizedQuery = searchQuery
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("fr");
+  const searchResults: MarketSearchResult[] = DEPARTMENTS.flatMap((department) =>
+    RAYON_PRODUCTS[department.id]
+      .filter((product) => {
+        const searchableText = `${product.name} ${department.name} ${department.description}`
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase("fr");
+        return searchableText.includes(normalizedQuery);
+      })
+      .map((product) => ({ ...product, departmentName: department.name })),
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const savedTheme = window.localStorage.getItem("fisafi-market-theme");
+    if (savedTheme === "dark" || savedTheme === "light") setThemeChoice(savedTheme);
+    setSystemPrefersDark(media.matches);
+
+    const updateSystemTheme = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches);
+    media.addEventListener("change", updateSystemTheme);
+    return () => media.removeEventListener("change", updateSystemTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = isDark ? "light" : "dark";
+    window.localStorage.setItem("fisafi-market-theme", nextTheme);
+    setThemeChoice(nextTheme);
+  };
+
   return (
     <>
       <Head>
@@ -136,79 +374,103 @@ export default function MarketPage() {
           content="Explorez les rayons FiSAFi Market : produits frais, épicerie, boulangerie, boissons et essentiels de la maison."
         />
       </Head>
-      <Header />
-      <main className="market-page">
 
+      <Header />
+
+      <main className="market-page" data-theme={isDark ? "dark" : "light"}>
         <nav className="market-store-nav" aria-label="Navigation Market">
           <Link href="/business" className="market-back">
-            <span aria-hidden="true">←</span> Our Business
+            <span aria-hidden="true">←</span> Retour
           </Link>
+
           <Link href="/" className="market-wordmark" aria-label="FiSAFi Market, accueil">
-            <span className="market-wordmark-icon" aria-hidden="true">F</span>
-            <span>FiSAFi <strong>Market</strong></span>
+            <svg className="market-wordmark-icon" viewBox="0 0 40 40" aria-hidden="true">
+              <defs>
+                <linearGradient id="mk-bg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#4a1ee8" />
+                  <stop offset="1" stopColor="#250bb8" />
+                </linearGradient>
+              </defs>
+              <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#mk-bg)" />
+              <rect x="1" y="1" width="38" height="38" rx="11" fill="none" stroke="rgba(255,255,255,.16)" />
+              <text x="20" y="28" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontStyle="italic" fontWeight="700" fontSize="22" fill="#fffdf6">F</text>
+              <circle cx="30" cy="30" r="2.2" fill="#ff7417" />
+            </svg>
+            <span>
+              FiSAFi <strong>Market</strong>
+            </span>
           </Link>
-          <a className="market-nav-contact" href="mailto:contact@fisafigroupe.com">
-            Nous contacter <span aria-hidden="true">↗</span>
-          </a>
+
+          <div className="market-nav-right">
+            <span
+              className={`market-status${status.open ? " is-open" : " is-closed"}`}
+              aria-live="polite"
+            >
+              <i aria-hidden="true" />
+              <b>{status.label}</b>
+              <em>· {status.detail}</em>
+            </span>
+
+            <button
+              className="market-theme-toggle"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isDark ? "Activer le thème clair" : "Activer le thème sombre"}
+              aria-pressed={isDark}
+              title={isDark ? "Passer au thème clair" : "Passer au thème sombre"}
+            >
+              <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+              <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
+            </button>
+
+            <a className="market-nav-contact" href="mailto:contact@fisafigroupe.com">
+              Nous contacter <span aria-hidden="true">↗</span>
+            </a>
+          </div>
         </nav>
 
-        <section className="market-hero" aria-labelledby="market-title">
-          <div className="market-hero-copy">
-            <p className="market-kicker"><span>LE BON MARCHÉ</span> · LE BON CHOIX</p>
-            <h1 id="market-title">
-              Le plaisir
-              <br />
-              des courses
-              <br />
-              <span>bien faites.</span>
-            </h1>
-            <p className="market-intro">
-              Des essentiels du quotidien aux petits plaisirs, retrouvez l’esprit du marché dans une expérience simple et accueillante.
-            </p>
-            <a className="market-contact-link" href="#rayons">
-              Explorer les rayons <span aria-hidden="true">↓</span>
-            </a>
-            <div className="market-hero-note">
-              <span>De bons produits, pour tous les jours.</span>
+        <MarketStore />
+
+        {/* ═══ PRODUITS EN VEDETTE ═══ */}
+        <section className="market-featured" aria-labelledby="market-featured-title">
+          <div className="market-section-heading">
+            <div>
+              <p className="market-kicker">CETTE SEMAINE</p>
+              <h2 id="market-featured-title">En vedette.</h2>
             </div>
           </div>
 
-          <div className="market-hero-scene" aria-label="Illustration d’un panier de marché rempli de produits frais">
-            <div className="market-scene-sun" aria-hidden="true" />
-            <svg className="market-basket-art" viewBox="0 0 640 560" fill="none" aria-hidden="true">
-              <ellipse cx="326" cy="487" rx="203" ry="25" fill="#26371C" opacity=".12" />
-              <path d="m172 264 24 186c3 24 20 41 44 41h182c24 0 41-17 44-41l24-186H172Z" fill="#E9B65E" />
-              <path d="m191 285 19 156c2 15 13 25 28 25h176c15 0 26-10 28-25l19-156H191Z" fill="#F6D58C" />
-              <path d="m172 264 24 186c3 24 20 41 44 41h182c24 0 41-17 44-41l24-186" stroke="#AB733E" strokeWidth="8" strokeLinecap="round" />
-              <path d="M216 282 239 480m44-198 8 198m49-198v198m49-198-8 198m49-198-23 198" stroke="#C8914D" strokeWidth="5" opacity=".75" />
-              <path d="M179 272h355" stroke="#9E6938" strokeWidth="15" strokeLinecap="round" />
-              <path d="M209 260c5-48 35-69 68-56 11-48 52-71 88-47 30-35 78-19 83 26 35-4 56 26 53 77" fill="#5B9A54" />
-              <path d="M228 269c-20-28-11-65 16-74 22-8 42 11 41 36 29 5 37 39 16 57" fill="#E7654C" />
-              <path d="M276 228c-6-31 12-53 37-48 22 4 29 29 17 51 24 17 17 48-8 59" fill="#F0B43D" />
-              <path d="M335 217c1-34 28-52 51-39 19 10 19 34 4 52 18 23 4 51-23 54" fill="#D95045" />
-              <path d="M388 224c13-27 43-31 58-10 13 19 3 40-18 48 8 27-14 48-40 38" fill="#F2C846" />
-              <path d="M232 211c-9-27 6-51 30-51 20 0 32 21 23 42m67-27c-2-27 17-45 38-37 18 7 22 29 9 45" stroke="#3E7546" strokeWidth="7" strokeLinecap="round" />
-              <path d="m220 266 14 12m53-53 13 12m42-35 12 13m48-2 11 14m49 19 12 13" stroke="#FFF0C7" strokeWidth="5" strokeLinecap="round" opacity=".7" />
-              <path d="M255 366c35-27 72-27 107 0s72 27 107 0" stroke="#D39A4E" strokeWidth="4" opacity=".7" />
-              <path d="m174 264-29-17m391 17 28-17" stroke="#AB733E" strokeWidth="9" strokeLinecap="round" />
-              <circle cx="153" cy="247" r="12" fill="#6D9E57" />
-              <circle cx="563" cy="247" r="12" fill="#6D9E57" />
-            </svg>
-            <span className="market-scene-label market-scene-label--bottom">FRAIS · LOCAL · GÉNÉREUX</span>
-            <div className="market-scene-sticker">
-              <span>LE</span>
-              <strong>marché</strong>
-              <span>DU QUOTIDIEN</span>
-            </div>
+          <div className="market-featured-grid">
+            {FEATURED.map((product) => (
+              <a
+                className="market-featured-card"
+                key={product.id}
+                href={`mailto:contact@fisafigroupe.com?subject=Demande%20-%20${encodeURIComponent(product.name)}`}
+              >
+                <span className="market-featured-tag" style={{ background: product.color }}>
+                  {product.tag}
+                </span>
+                <span className="market-featured-visual" style={{ ["--accent" as string]: product.color }}>
+                  <img
+                    className="market-featured-image"
+                    src={`/produits/${product.image}`}
+                    alt=""
+                    loading="lazy"
+                  />
+                </span>
+                <span className="market-featured-copy">
+                  <strong>{product.name}</strong>
+                  <span className="market-featured-price">
+                    {product.price} <small>{product.unit}</small>
+                  </span>
+                </span>
+                <span className="market-featured-arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
           </div>
         </section>
 
-        <section className="market-values" aria-label="Nos engagements">
-          <div><span>Des produits pour tous les jours</span></div>
-          <div><span className="market-value-icon" aria-hidden="true">♡</span><span>Un accueil chaleureux</span></div>
-          <div><span className="market-value-icon" aria-hidden="true">⌖</span><span>Au cœur de Dakar</span></div>
-        </section>
-
+        {/* ═══ RAYONS ═══ */}
         <section className="market-departments" id="rayons" aria-labelledby="market-departments-title">
           <div className="market-section-heading">
             <div>
@@ -217,14 +479,38 @@ export default function MarketPage() {
             </div>
             <p>De quoi remplir le panier et régaler toute la maison.</p>
           </div>
-          <div className="market-department-grid">
+
+          <div className="market-search">
+            <label className="market-search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10.8" cy="10.8" r="6.8" />
+                <path d="m16 16 5 5" />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Rechercher un produit ou un rayon…"
+                aria-label="Rechercher un produit ou un rayon"
+              />
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery("")}>
+                  Effacer
+                </button>
+              )}
+            </label>
+          </div>
+
+          {!normalizedQuery && <div className="market-department-grid">
             {DEPARTMENTS.map((department, index) => (
               <a
                 className={`market-department-card market-department-card--${department.color}`}
-                href="mailto:contact@fisafigroupe.com?subject=Renseignements%20FiSAFi%20Market"
+                href={`#${department.id}-produits`}
                 key={department.id}
               >
-                <span className="market-department-number">{String(index + 1).padStart(2, "0")}</span>
+                <span className="market-department-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
                 <DepartmentIllustration art={department.art} />
                 <span className="market-department-copy">
                   <strong>{department.name}</strong>
@@ -233,9 +519,99 @@ export default function MarketPage() {
                 </span>
               </a>
             ))}
+          </div>}
+
+          {normalizedQuery ? (
+            <div className="market-search-results" aria-live="polite">
+              <p className="market-search-count">
+                {searchResults.length
+                  ? `${searchResults.length} produit${searchResults.length > 1 ? "s" : ""} trouvé${searchResults.length > 1 ? "s" : ""}`
+                  : "Aucun produit trouvé. Essayez un autre nom ou rayon."}
+              </p>
+              {searchResults.length > 0 && (
+                <div className="market-product-grid">
+                  {searchResults.map((result) => (
+                    <MarketProductCard
+                      key={`${result.departmentName}-${result.name}`}
+                      product={result}
+                      departmentName={result.departmentName}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="market-rayon-products">
+              {DEPARTMENTS.map((department) => (
+                <section
+                  className={`market-rayon-section market-rayon-section--${department.color}`}
+                  id={`${department.id}-produits`}
+                  key={department.id}
+                  aria-labelledby={`${department.id}-title`}
+                >
+                  <div className="market-rayon-heading">
+                    <div>
+                      <p className="market-kicker">RAYON {department.name.toUpperCase()}</p>
+                      <h3 id={`${department.id}-title`}>{department.name}</h3>
+                    </div>
+                    <span>{RAYON_PRODUCTS[department.id].length} produits sélectionnés</span>
+                  </div>
+                  <div className="market-product-grid">
+                    {RAYON_PRODUCTS[department.id].map((product) => (
+                      <MarketProductCard product={product} key={product.name} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ═══ HORAIRES + ADRESSE ═══ */}
+        <section className="market-infos" aria-label="Horaires et adresse">
+          <div className="market-info-card">
+            <p className="market-kicker">HORAIRES</p>
+            <h2>Quand nous trouver.</h2>
+            <ul className="market-hours">
+              {HOURS.map((h) => (
+                <li key={h.day}>
+                  <span>{h.day}</span>
+                  <b>{h.time}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="market-info-card market-info-card--address">
+            <p className="market-kicker">ADRESSE</p>
+            <h2>Nous rendre visite.</h2>
+            <address>
+              <strong>FiSAFi Market</strong><br />
+              Liberté 6 Extension<br />
+              Dakar · Sénégal
+            </address>
+            <div className="market-info-actions">
+              <a
+                className="market-info-btn"
+                href="https://www.openstreetmap.org/search?query=Libert%C3%A9%206%20Extension%2C%20Dakar%2C%20S%C3%A9n%C3%A9gal"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ouvrir la carte <span aria-hidden="true">↗</span>
+              </a>
+              <a
+                className="market-info-btn market-info-btn--ghost"
+                href="https://wa.me/221787812297?text=Salam%20FiSAFi%20Market%20!"
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp
+              </a>
+            </div>
           </div>
         </section>
 
+        {/* ═══ APPEL ═══ */}
         <section className="market-pantry-callout">
           <div className="market-pantry-art" aria-hidden="true">
             <svg viewBox="0 0 220 180" fill="none">
@@ -248,10 +624,14 @@ export default function MarketPage() {
               <path d="M42 80h136" stroke="#A9743F" strokeWidth="7" strokeLinecap="round" />
             </svg>
           </div>
+
           <div className="market-pantry-copy">
             <p className="market-kicker">LE PANIER VOUS ATTEND</p>
             <h2>Un produit en tête ?</h2>
-            <p>Notre équipe vous renseigne sur les rayons et les disponibilités. Écrivez-nous, nous serons heureux de vous répondre.</p>
+            <p>
+              Notre équipe vous renseigne sur les rayons et les disponibilités. Écrivez-nous, nous
+              serons heureux de vous répondre.
+            </p>
             <a className="market-contact-link" href="mailto:contact@fisafigroupe.com?subject=Demande%20FiSAFi%20Market">
               Parler à l’équipe <span aria-hidden="true">↗</span>
             </a>
@@ -261,7 +641,9 @@ export default function MarketPage() {
         <footer className="market-footer">
           <span>FI-SA-FI · DAKAR</span>
           <span>Le marché du quotidien.</span>
-          <Link href="/">Retour au site FiSAFi Groupe <span aria-hidden="true">↗</span></Link>
+          <Link href="/">
+            Retour au site FiSAFi Groupe <span aria-hidden="true">↗</span>
+          </Link>
         </footer>
       </main>
     </>
