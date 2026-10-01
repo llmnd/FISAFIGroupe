@@ -180,10 +180,14 @@ export default function MarketStore() {
               {SNACKS.map((_, i) => (
                 <span
                   key={i}
-                  className="bag"
+                  className={`bag${r === 0 && i === 0 ? " bag--pringles" : ""}`}
                   style={cv(SNACKS[(i + r * 2) % SNACKS.length])}
                 >
-                  <i className="bag-brand" />
+                  {r === 0 && i === 0 ? (
+                    <img src="/produits/pringles.jpg" alt="Pringles Original" />
+                  ) : (
+                    <i className="bag-brand" />
+                  )}
                 </span>
               ))}
             </div>
