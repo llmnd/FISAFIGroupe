@@ -71,10 +71,13 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Our Business",
     href: "/business",
-    children: businessActivities.map(({ title, slug }) => ({
-      label: title,
-      href: `/business/${slug}`,
-    })),
+    children: [
+      { label: "FiSAFi Market", href: "/market" },
+      ...businessActivities.map(({ title, slug }) => ({
+        label: title,
+        href: `/business/${slug}`,
+      })),
+    ],
   },
   { label: "Services",   href: "/services" },
   { label: "Formation",  href: "/training" },

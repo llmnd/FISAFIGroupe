@@ -206,7 +206,14 @@ function isTechnicalVisual(
   return visual !== undefined && visual !== "cyber" && visual !== "fiber";
 }
 
-function HighTechArtwork({ palette }: { palette: SlidePalette }) {
+function HighTechArtwork({
+  palette,
+  paletteIndex,
+}: {
+  palette: SlidePalette;
+  paletteIndex: number;
+}) {
+  const suffix = `cyber-${paletteIndex}`;
   return (
     <div className="hs-code-art" style={artworkStyle(palette)} aria-hidden="true">
       <svg
@@ -216,16 +223,16 @@ function HighTechArtwork({ palette }: { palette: SlidePalette }) {
         focusable="false"
       >
         <defs>
-          <linearGradient id="cyber-shield-fill" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#132e49" />
+          <linearGradient id={`${suffix}-shield-fill`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="var(--art-accent)" stopOpacity=".2" />
             <stop offset="1" stopColor="#091522" />
           </linearGradient>
-          <linearGradient id="cyber-line" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${suffix}-line`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="var(--art-accent)" stopOpacity="0.08" />
             <stop offset="0.5" stopColor="var(--art-accent)" stopOpacity="0.85" />
             <stop offset="1" stopColor="var(--art-light)" stopOpacity="0.12" />
           </linearGradient>
-          <linearGradient id="cyber-scan" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${suffix}-scan`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="var(--art-accent)" stopOpacity="0" />
             <stop offset="0.5" stopColor="var(--art-accent)" stopOpacity="0.22" />
             <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
@@ -240,7 +247,7 @@ function HighTechArtwork({ palette }: { palette: SlidePalette }) {
           <path d="m433 173 24 24m286 286 24 24m0-334-24 24m-286 286-24 24" strokeOpacity=".28" />
         </g>
 
-        <g className="hs-code-art__circuits" fill="none" stroke="url(#cyber-line)" strokeWidth="2">
+        <g className="hs-code-art__circuits" fill="none" stroke={`url(#${suffix}-line)`} strokeWidth="2">
           <path d="M0 180h190l58 58h132l60 60h105" />
           <path d="M0 520h208l74-74h90l68-68h92" />
           <path d="M1200 150h-176l-58 58H850l-57 57h-72" />
@@ -276,7 +283,7 @@ function HighTechArtwork({ palette }: { palette: SlidePalette }) {
         <g className="hs-code-art__shield">
           <path
             d="M600 130 760 190v127c0 111-68 192-160 250-92-58-160-139-160-250V190l160-60Z"
-            fill="url(#cyber-shield-fill)"
+            fill={`url(#${suffix}-shield-fill)`}
             stroke="var(--art-accent)"
             strokeOpacity=".72"
             strokeWidth="2"
@@ -299,7 +306,7 @@ function HighTechArtwork({ palette }: { palette: SlidePalette }) {
           <path d="M600 386v18" stroke="var(--art-light)" strokeLinecap="round" strokeWidth="6" />
         </g>
 
-        <rect className="hs-code-art__scan" x="0" y="0" width="1200" height="150" fill="url(#cyber-scan)" />
+        <rect className="hs-code-art__scan" x="0" y="0" width="1200" height="150" fill={`url(#${suffix}-scan)`} />
 
         <circle className="hs-code-art__status" cx="1093" cy="251" r="4" fill="var(--art-light)" />
       </svg>
@@ -307,7 +314,14 @@ function HighTechArtwork({ palette }: { palette: SlidePalette }) {
   );
 }
 
-function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
+function FiberOpticArtwork({
+  palette,
+  paletteIndex,
+}: {
+  palette: SlidePalette;
+  paletteIndex: number;
+}) {
+  const suffix = `fiber-${paletteIndex}`;
   return (
     <div className="hs-fiber-art" style={artworkStyle(palette)} aria-hidden="true">
       <svg
@@ -317,21 +331,21 @@ function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
         focusable="false"
       >
         <defs>
-          <linearGradient id="fiber-strand-cyan" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${suffix}-strand-cyan`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="var(--art-accent)" stopOpacity=".12" />
             <stop offset=".52" stopColor="var(--art-accent)" />
             <stop offset="1" stopColor="var(--art-light)" stopOpacity=".9" />
           </linearGradient>
-          <linearGradient id="fiber-strand-violet" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${suffix}-strand-secondary`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="var(--art-accent)" stopOpacity=".08" />
             <stop offset=".62" stopColor="var(--art-accent)" stopOpacity=".9" />
             <stop offset="1" stopColor="var(--art-light)" />
           </linearGradient>
-          <radialGradient id="fiber-core-glow">
+          <radialGradient id={`${suffix}-core-glow`}>
             <stop stopColor="var(--art-light)" stopOpacity=".85" />
             <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="fiber-scan-band" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${suffix}-scan-band`} x1="0" y1="0" x2="0" y2="1">
             <stop stopColor="var(--art-accent)" stopOpacity="0" />
             <stop offset=".5" stopColor="var(--art-accent)" stopOpacity=".16" />
             <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
@@ -349,11 +363,11 @@ function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
         </g>
 
         <g className="hs-fiber-art__strands" fill="none" strokeLinecap="round">
-          <path d="M126 285C330 285 360 350 520 350s212-136 420-136" stroke="url(#fiber-strand-cyan)" strokeWidth="5" />
-          <path d="M126 314C328 314 376 365 530 365s222-110 410-110" stroke="url(#fiber-strand-violet)" strokeWidth="3" />
-          <path d="M126 342C322 342 382 380 540 380s224-80 400-80" stroke="url(#fiber-strand-cyan)" strokeWidth="2" />
-          <path d="M126 370C324 370 380 395 540 395s210-48 400-48" stroke="url(#fiber-strand-violet)" strokeWidth="3" />
-          <path d="M126 398C326 398 370 410 530 410s224-18 410-18" stroke="url(#fiber-strand-cyan)" strokeWidth="2" />
+          <path d="M126 285C330 285 360 350 520 350s212-136 420-136" stroke={`url(#${suffix}-strand-cyan)`} strokeWidth="5" />
+          <path d="M126 314C328 314 376 365 530 365s222-110 410-110" stroke={`url(#${suffix}-strand-secondary)`} strokeWidth="3" />
+          <path d="M126 342C322 342 382 380 540 380s224-80 400-80" stroke={`url(#${suffix}-strand-cyan)`} strokeWidth="2" />
+          <path d="M126 370C324 370 380 395 540 395s210-48 400-48" stroke={`url(#${suffix}-strand-secondary)`} strokeWidth="3" />
+          <path d="M126 398C326 398 370 410 530 410s224-18 410-18" stroke={`url(#${suffix}-strand-cyan)`} strokeWidth="2" />
         </g>
 
         <g className="hs-fiber-art__light-pulses" fill="var(--art-light)">
@@ -371,7 +385,7 @@ function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
         <g className="hs-fiber-art__connector">
           <circle cx="124" cy="342" r="90" fill="#0b1b2b" stroke="var(--art-accent)" strokeOpacity=".55" strokeWidth="2" />
           <circle cx="124" cy="342" r="70" fill="#0a1420" stroke="var(--art-accent)" strokeOpacity=".6" strokeWidth="2" />
-          <circle cx="124" cy="342" r="51" fill="url(#fiber-core-glow)" />
+          <circle cx="124" cy="342" r="51" fill={`url(#${suffix}-core-glow)`} />
           <circle cx="124" cy="342" r="26" fill="#0b2434" stroke="var(--art-light)" strokeOpacity=".85" strokeWidth="3" />
           <circle cx="124" cy="342" r="10" fill="var(--art-light)" />
         </g>
@@ -384,7 +398,7 @@ function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
           <circle cx="956" cy="342" r="130" fill="none" stroke="var(--art-accent)" strokeOpacity=".16" />
         </g>
 
-        <rect className="hs-fiber-art__scan" x="0" y="0" width="1200" height="150" fill="url(#fiber-scan-band)" />
+        <rect className="hs-fiber-art__scan" x="0" y="0" width="1200" height="150" fill={`url(#${suffix}-scan-band)`} />
       </svg>
     </div>
   );
@@ -393,11 +407,14 @@ function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
 function TechnicalArtwork({
   visual,
   palette,
+  paletteIndex,
 }: {
   visual: Exclude<CodeVisual, "cyber" | "fiber">;
   palette: SlidePalette;
+  paletteIndex: number;
 }) {
-  const gradientId = `tech-art-glow-${visual}`;
+  const gradientId = `tech-art-glow-${visual}-${paletteIndex}`;
+  const haloId = `tech-art-halo-${visual}-${paletteIndex}`;
 
   return (
     <div
@@ -416,7 +433,7 @@ function TechnicalArtwork({
             <stop offset="0" stopColor="var(--tech-accent-light)" />
             <stop offset="1" stopColor="var(--tech-accent)" />
           </linearGradient>
-          <radialGradient id={`tech-art-halo-${visual}`}>
+          <radialGradient id={haloId}>
             <stop stopColor="var(--tech-accent)" stopOpacity=".28" />
             <stop offset="1" stopColor="var(--tech-accent)" stopOpacity="0" />
           </radialGradient>
@@ -429,7 +446,7 @@ function TechnicalArtwork({
           <path d="M401 151 424 174m352 352 23 23m0-398-23 23m-352 352-23 23" strokeOpacity=".2" />
         </g>
 
-        <ellipse cx="600" cy="350" rx="230" ry="190" fill={`url(#${`tech-art-halo-${visual}`})`} />
+        <ellipse cx="600" cy="350" rx="230" ry="190" fill={`url(#${haloId})`} />
 
         {visual === "network" && (
           <g className="hs-tech-art__diagram">
@@ -529,7 +546,7 @@ function TechnicalArtwork({
             <path d="M350 200h500v276H350z" />
             <path d="M540 520v24m120-24v24m-156 0h192" />
             <rect className="hs-tech-art__panel" x="384" y="236" width="162" height="190" rx="5" />
-            <circle cx="465" cy="292" r="34" fill="url(#tech-art-glow-elearning)" />
+            <circle cx="465" cy="292" r="34" fill={`url(#${gradientId})`} />
             <path d="m450 274 32 18-32 18z" className="hs-tech-art__play" />
             <path d="M405 350h120m-120 18h92m-92 18h106" />
             <rect className="hs-tech-art__panel" x="578" y="236" width="234" height="42" rx="4" />
@@ -751,13 +768,20 @@ export default function HeroSlideshow({
             aria-hidden="true"
           >
             {slides[prevIdx].visual === "cyber" ? (
-              <HighTechArtwork palette={PALETTES[prevIdx % PALETTES.length]} />
+              <HighTechArtwork
+                palette={PALETTES[prevIdx % PALETTES.length]}
+                paletteIndex={prevIdx % PALETTES.length}
+              />
             ) : slides[prevIdx].visual === "fiber" ? (
-              <FiberOpticArtwork palette={PALETTES[prevIdx % PALETTES.length]} />
+              <FiberOpticArtwork
+                palette={PALETTES[prevIdx % PALETTES.length]}
+                paletteIndex={prevIdx % PALETTES.length}
+              />
             ) : isTechnicalVisual(slides[prevIdx].visual) ? (
               <TechnicalArtwork
                 visual={slides[prevIdx].visual}
                 palette={PALETTES[prevIdx % PALETTES.length]}
+                paletteIndex={prevIdx % PALETTES.length}
               />
             ) : slides[prevIdx].src ? (
               <Image
@@ -773,11 +797,15 @@ export default function HeroSlideshow({
         )}
         <div key={`curr-${imgKey}`} className="hs-img-layer hs-img-layer--curr">
           {slides[current].visual === "cyber" ? (
-            <HighTechArtwork palette={palette} />
+            <HighTechArtwork palette={palette} paletteIndex={current % PALETTES.length} />
           ) : slides[current].visual === "fiber" ? (
-            <FiberOpticArtwork palette={palette} />
+            <FiberOpticArtwork palette={palette} paletteIndex={current % PALETTES.length} />
           ) : isTechnicalVisual(slides[current].visual) ? (
-            <TechnicalArtwork visual={slides[current].visual} palette={palette} />
+            <TechnicalArtwork
+              visual={slides[current].visual}
+              palette={palette}
+              paletteIndex={current % PALETTES.length}
+            />
           ) : slides[current].src ? (
             <Image
               src={slides[current].src}
