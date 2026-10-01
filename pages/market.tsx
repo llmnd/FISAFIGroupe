@@ -138,11 +138,6 @@ export default function MarketPage() {
       </Head>
       <Header />
       <main className="market-page">
-        <div className="market-announcement">
-          <span className="market-announcement-dot" aria-hidden="true" />
-          <span>LE MARCHÉ DU QUOTIDIEN, TOUT PRÈS DE VOUS</span>
-          <span className="market-announcement-note">DAKAR · SÉNÉGAL</span>
-        </div>
 
         <nav className="market-store-nav" aria-label="Navigation Market">
           <Link href="/business" className="market-back">
@@ -180,7 +175,6 @@ export default function MarketPage() {
 
           <div className="market-hero-scene" aria-label="Illustration d’un panier de marché rempli de produits frais">
             <div className="market-scene-sun" aria-hidden="true" />
-            <span className="market-scene-label market-scene-label--top">LE MARCHÉ EST OUVERT</span>
             <svg className="market-basket-art" viewBox="0 0 640 560" fill="none" aria-hidden="true">
               <ellipse cx="326" cy="487" rx="203" ry="25" fill="#26371C" opacity=".12" />
               <path d="m172 264 24 186c3 24 20 41 44 41h182c24 0 41-17 44-41l24-186H172Z" fill="#E9B65E" />
