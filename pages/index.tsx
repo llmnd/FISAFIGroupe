@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import CompetencesSection from "@/components/CompetencesSection";
+import BusinessBrands from "@/components/BusinessBrands";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
 const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"));
 const CardCarousel = dynamic(() => import("@/components/CardCarousel"));
@@ -110,6 +111,26 @@ const areaCards = [
 ];
 
 export default function Home() {
+  const [isGroupSelected, setIsGroupSelected] = useState(false);
+  const homeContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const revealGroupContent = () => setIsGroupSelected(true);
+
+    if (window.location.hash === "#home-content") {
+      revealGroupContent();
+    }
+
+    window.addEventListener("fisafi:select-group", revealGroupContent);
+    return () => window.removeEventListener("fisafi:select-group", revealGroupContent);
+  }, []);
+
+  useEffect(() => {
+    if (isGroupSelected) {
+      homeContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isGroupSelected]);
+
   return (
     <>
       <Head>
@@ -171,6 +192,20 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ─── OUR BUSINESS ─── */}
+      <section className="home-business-section" aria-labelledby="home-business-title">
+        <div className="home-business-heading">
+          <h2 id="home-business-title">Our Business</h2>
+          <p>Découvrez FiSAFi Groupe et son pôle Market.</p>
+        </div>
+        <BusinessBrands
+          className="home-business-brands"
+          onGroupSelect={() => setIsGroupSelected(true)}
+        />
+      </section>
+
+      {isGroupSelected && (
+      <div id="home-content" ref={homeContentRef}>
       {/* ─── COMPÉTENCES ─── */}
       <CompetencesSection />
 
@@ -377,6 +412,9 @@ export default function Home() {
           Envoyer un message
         </button>
       </section>
+
+      </div>
+      )}
 
       {/* ─── FOOTER ─── */}
       <footer className="footer-enhanced">

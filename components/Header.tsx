@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { businessActivities } from "@/data/business";
 
 /* ─── SVG Icons ─────────────────────────────────────────── */
 const IconSearch = () => (
@@ -66,17 +65,16 @@ type NavItem = {
   children?: { label: string; href: string }[];
 };
 
+const marketHref = process.env.NEXT_PUBLIC_FISAFI_MARKET_URL || "/market";
+
 const NAV_ITEMS: NavItem[] = [
   { label: "Accueil",    href: "/" },
   {
     label: "Our Business",
     href: "/business",
     children: [
-      { label: "FiSAFi Market", href: "/market" },
-      ...businessActivities.map(({ title, slug }) => ({
-        label: title,
-        href: `/business/${slug}`,
-      })),
+      { label: "FiSAFi Groupe", href: "/#home-content" },
+      { label: "FiSAFi Market", href: marketHref },
     ],
   },
   { label: "Services",   href: "/services" },
@@ -429,6 +427,11 @@ export default function Header() {
                 href={child.href}
                 className={`header-nav-dropdown-link${pathname === child.href ? " active" : ""}`}
                 aria-current={pathname === child.href ? "page" : undefined}
+                onClick={() => {
+                  if (child.label === "FiSAFi Groupe") {
+                    window.dispatchEvent(new Event("fisafi:select-group"));
+                  }
+                }}
               >
                 {child.label}
                 <span className="dropdown-arrow" aria-hidden="true">↗</span>

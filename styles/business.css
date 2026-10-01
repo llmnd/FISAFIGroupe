@@ -32,6 +32,50 @@
   gap: clamp(0.65rem, 1vw, 1rem);
 }
 
+.home-business-section {
+  padding: clamp(3.5rem, 7vw, 7rem) clamp(0.65rem, 1vw, 1rem) clamp(0.65rem, 1vw, 1rem);
+  background: #f6f6f3;
+  color: #111;
+}
+
+.home-business-heading {
+  max-width: 70rem;
+  margin: 0 auto;
+  padding: 0 clamp(1.35rem, 4vw, 4rem) clamp(2rem, 4vw, 4rem);
+}
+
+.home-business-eyebrow {
+  margin: 0 0 0.8rem;
+  color: #1857d2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-business-heading h2 {
+  margin: 0;
+  font-size: clamp(2.6rem, 7vw, 6rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.065em;
+}
+
+.home-business-heading > p:last-child {
+  margin: 1rem 0 0;
+  color: rgba(17, 17, 17, 0.65);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+}
+
+.home-business-section .business-brands {
+  min-height: auto;
+  padding: 0;
+}
+
+.home-business-section .business-brand-tile {
+  min-height: 650px;
+}
+
 /* ── Tuile ── */
 .business-brand-tile {
   position: relative;
@@ -1065,6 +1109,14 @@
    RESPONSIVE
    ══════════════════════════════════════════════ */
 @media (max-width: 760px) {
+  .home-business-section .business-brands {
+    grid-template-columns: 1fr;
+  }
+
+  .home-business-section .business-brand-tile {
+    min-height: 560px;
+  }
+
   .business-brands {
     grid-template-columns: 1fr;
     min-height: auto;
