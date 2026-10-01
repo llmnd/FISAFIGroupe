@@ -83,8 +83,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Contact",    href: "/contact" },
 ];
 
-const isNavItemActive = (pathname: string, href: string) =>
-  pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+const isNavItemActive = (pathname: string | null, href: string) =>
+  pathname !== null && (pathname === href || (href !== "/" && pathname.startsWith(`${href}/`)));
 
 const SOCIALS = [
   { href: "https://www.facebook.com/share/179K7oUPAA/",            Icon: IconFacebook,  label: "Facebook",  className: "" },
