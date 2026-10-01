@@ -73,7 +73,7 @@ interface Slide {
 
 const DEFAULT_SLIDES: Slide[] = [
   {
-    src: "/hero/4f.jpg",
+    src: "/hero/6.jpg",
     alt: "FiSAFi – cybersécurité",
     eyebrow: "Sécurité des systèmes",
     desc: "Audit et mesures de protection pour les systèmes et les données.",
