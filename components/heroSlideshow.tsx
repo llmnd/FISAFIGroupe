@@ -192,15 +192,23 @@ function hexRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function artworkStyle(palette: SlidePalette): React.CSSProperties {
+  return {
+    "--art-accent": palette.accent,
+    "--art-accent-rgb": palette.accentRgb,
+    "--art-light": palette.inkLight,
+  } as React.CSSProperties;
+}
+
 function isTechnicalVisual(
   visual?: CodeVisual
 ): visual is Exclude<CodeVisual, "cyber" | "fiber"> {
   return visual !== undefined && visual !== "cyber" && visual !== "fiber";
 }
 
-function HighTechArtwork() {
+function HighTechArtwork({ palette }: { palette: SlidePalette }) {
   return (
-    <div className="hs-code-art" aria-hidden="true">
+    <div className="hs-code-art" style={artworkStyle(palette)} aria-hidden="true">
       <svg
         className="hs-code-art__graphic"
         viewBox="0 0 1200 700"
@@ -213,18 +221,18 @@ function HighTechArtwork() {
             <stop offset="1" stopColor="#091522" />
           </linearGradient>
           <linearGradient id="cyber-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#37d7ff" stopOpacity="0.08" />
-            <stop offset="0.5" stopColor="#37d7ff" stopOpacity="0.85" />
-            <stop offset="1" stopColor="#8878ff" stopOpacity="0.12" />
+            <stop offset="0" stopColor="var(--art-accent)" stopOpacity="0.08" />
+            <stop offset="0.5" stopColor="var(--art-accent)" stopOpacity="0.85" />
+            <stop offset="1" stopColor="var(--art-light)" stopOpacity="0.12" />
           </linearGradient>
           <linearGradient id="cyber-scan" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#37d7ff" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#37d7ff" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#37d7ff" stopOpacity="0" />
+            <stop offset="0" stopColor="var(--art-accent)" stopOpacity="0" />
+            <stop offset="0.5" stopColor="var(--art-accent)" stopOpacity="0.22" />
+            <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        <g className="hs-code-art__radar" fill="none" stroke="#51dfff">
+        <g className="hs-code-art__radar" fill="none" stroke="var(--art-accent)">
           <circle cx="600" cy="340" r="225" strokeOpacity=".08" />
           <circle cx="600" cy="340" r="190" strokeOpacity=".12" strokeDasharray="2 9" />
           <circle cx="600" cy="340" r="154" strokeOpacity=".12" strokeDasharray="64 18 3 18" />
@@ -243,7 +251,7 @@ function HighTechArtwork() {
           <path d="M1050 700v-88l-72-72v-62" />
         </g>
 
-        <g className="hs-code-art__nodes" fill="#62e6ff">
+        <g className="hs-code-art__nodes" fill="var(--art-light)">
           <circle cx="190" cy="180" r="5" />
           <circle cx="380" cy="296" r="5" />
           <circle cx="208" cy="520" r="5" />
@@ -256,7 +264,7 @@ function HighTechArtwork() {
           <circle cx="966" cy="162" r="3" />
         </g>
 
-        <g className="hs-code-art__telemetry" fill="none" stroke="#64dff9" strokeOpacity=".55">
+        <g className="hs-code-art__telemetry" fill="none" stroke="var(--art-accent)" strokeOpacity=".55">
           <rect x="80" y="268" width="150" height="84" rx="3" />
           <path d="M96 329h14v-17h14v17h14v-32h14v32h14v-23h14v23h14" strokeWidth="2" />
           <path d="M96 285h72m-72 9h42" strokeOpacity=".28" />
@@ -269,50 +277,39 @@ function HighTechArtwork() {
           <path
             d="M600 130 760 190v127c0 111-68 192-160 250-92-58-160-139-160-250V190l160-60Z"
             fill="url(#cyber-shield-fill)"
-            stroke="#54dcff"
+            stroke="var(--art-accent)"
             strokeOpacity=".72"
             strokeWidth="2"
           />
           <path
             d="M600 158 735 209v108c0 91-55 159-135 211-80-52-135-120-135-211V209l135-51Z"
             fill="none"
-            stroke="#54dcff"
+            stroke="var(--art-accent)"
             strokeOpacity=".25"
           />
           <path
             d="M548 339v-34a52 52 0 0 1 104 0v34m-118 0h132v98H534z"
             fill="none"
-            stroke="#78eaff"
+            stroke="var(--art-light)"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="8"
           />
-          <circle cx="600" cy="378" r="8" fill="#78eaff" />
-          <path d="M600 386v18" stroke="#78eaff" strokeLinecap="round" strokeWidth="6" />
+          <circle cx="600" cy="378" r="8" fill="var(--art-light)" />
+          <path d="M600 386v18" stroke="var(--art-light)" strokeLinecap="round" strokeWidth="6" />
         </g>
 
         <rect className="hs-code-art__scan" x="0" y="0" width="1200" height="150" fill="url(#cyber-scan)" />
 
-        <g fill="#8ba9c4" fontFamily="monospace" fontSize="13" letterSpacing="3">
-          <text x="82" y="130">NETWORK // SECURE</text>
-          <text x="875" y="605">FISAFI · CYBER DEFENSE</text>
-          <text x="88" y="590">ENCRYPTION: ACTIVE</text>
-          <text x="972" y="267">LIVE MONITORING</text>
-        </g>
-        <g fill="none" stroke="#526e89" strokeOpacity=".55">
-          <rect x="78" y="145" width="130" height="54" rx="3" />
-          <rect x="990" y="570" width="142" height="54" rx="3" />
-          <path d="M78 215h86m-86 12h52m806 329h86m-86 12h52" />
-        </g>
-        <circle className="hs-code-art__status" cx="1093" cy="251" r="4" fill="#54f0c2" />
+        <circle className="hs-code-art__status" cx="1093" cy="251" r="4" fill="var(--art-light)" />
       </svg>
     </div>
   );
 }
 
-function FiberOpticArtwork() {
+function FiberOpticArtwork({ palette }: { palette: SlidePalette }) {
   return (
-    <div className="hs-fiber-art" aria-hidden="true">
+    <div className="hs-fiber-art" style={artworkStyle(palette)} aria-hidden="true">
       <svg
         className="hs-fiber-art__graphic"
         viewBox="0 0 1200 700"
@@ -321,34 +318,34 @@ function FiberOpticArtwork() {
       >
         <defs>
           <linearGradient id="fiber-strand-cyan" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#167aa4" stopOpacity=".12" />
-            <stop offset=".52" stopColor="#58e6ff" />
-            <stop offset="1" stopColor="#b7fbff" stopOpacity=".9" />
+            <stop offset="0" stopColor="var(--art-accent)" stopOpacity=".12" />
+            <stop offset=".52" stopColor="var(--art-accent)" />
+            <stop offset="1" stopColor="var(--art-light)" stopOpacity=".9" />
           </linearGradient>
           <linearGradient id="fiber-strand-violet" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#654ab4" stopOpacity=".08" />
-            <stop offset=".62" stopColor="#a78bfa" stopOpacity=".9" />
-            <stop offset="1" stopColor="#d9c8ff" />
+            <stop offset="0" stopColor="var(--art-accent)" stopOpacity=".08" />
+            <stop offset=".62" stopColor="var(--art-accent)" stopOpacity=".9" />
+            <stop offset="1" stopColor="var(--art-light)" />
           </linearGradient>
           <radialGradient id="fiber-core-glow">
-            <stop stopColor="#b8f8ff" stopOpacity=".85" />
-            <stop offset="1" stopColor="#36cfff" stopOpacity="0" />
+            <stop stopColor="var(--art-light)" stopOpacity=".85" />
+            <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="fiber-scan-band" x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#5ce8ff" stopOpacity="0" />
-            <stop offset=".5" stopColor="#5ce8ff" stopOpacity=".16" />
-            <stop offset="1" stopColor="#5ce8ff" stopOpacity="0" />
+            <stop stopColor="var(--art-accent)" stopOpacity="0" />
+            <stop offset=".5" stopColor="var(--art-accent)" stopOpacity=".16" />
+            <stop offset="1" stopColor="var(--art-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        <g className="hs-fiber-art__guide" fill="none" stroke="#4fa6c6">
+        <g className="hs-fiber-art__guide" fill="none" stroke="var(--art-accent)">
           <path d="M0 140h210l92 92h72m826 240h-214l-88-88h-84" strokeOpacity=".36" />
           <path d="M0 564h180l74-74h108m838-344h-196l-72 72h-82" strokeOpacity=".24" />
           <path d="M200 0v86l58 58m688 412 58 58v86" strokeOpacity=".2" />
-          <circle cx="300" cy="232" r="4" fill="#54dcff" />
-          <circle cx="254" cy="490" r="4" fill="#a78bfa" />
-          <circle cx="928" cy="216" r="4" fill="#54dcff" />
-          <circle cx="910" cy="472" r="4" fill="#a78bfa" />
+          <circle cx="300" cy="232" r="4" fill="var(--art-light)" />
+          <circle cx="254" cy="490" r="4" fill="var(--art-accent)" />
+          <circle cx="928" cy="216" r="4" fill="var(--art-light)" />
+          <circle cx="910" cy="472" r="4" fill="var(--art-accent)" />
         </g>
 
         <g className="hs-fiber-art__strands" fill="none" strokeLinecap="round">
@@ -359,7 +356,7 @@ function FiberOpticArtwork() {
           <path d="M126 398C326 398 370 410 530 410s224-18 410-18" stroke="url(#fiber-strand-cyan)" strokeWidth="2" />
         </g>
 
-        <g className="hs-fiber-art__light-pulses" fill="#d3fbff">
+        <g className="hs-fiber-art__light-pulses" fill="var(--art-light)">
           <circle r="7">
             <animateMotion dur="4.4s" repeatCount="indefinite" path="M126 285C330 285 360 350 520 350s212-136 420-136" />
           </circle>
@@ -372,55 +369,42 @@ function FiberOpticArtwork() {
         </g>
 
         <g className="hs-fiber-art__connector">
-          <circle cx="124" cy="342" r="90" fill="#0b1b2b" stroke="#3e8cac" strokeOpacity=".55" strokeWidth="2" />
-          <circle cx="124" cy="342" r="70" fill="#0a1420" stroke="#58dff7" strokeOpacity=".6" strokeWidth="2" />
+          <circle cx="124" cy="342" r="90" fill="#0b1b2b" stroke="var(--art-accent)" strokeOpacity=".55" strokeWidth="2" />
+          <circle cx="124" cy="342" r="70" fill="#0a1420" stroke="var(--art-accent)" strokeOpacity=".6" strokeWidth="2" />
           <circle cx="124" cy="342" r="51" fill="url(#fiber-core-glow)" />
-          <circle cx="124" cy="342" r="26" fill="#0b2434" stroke="#b5f5ff" strokeOpacity=".85" strokeWidth="3" />
-          <circle cx="124" cy="342" r="10" fill="#aaf6ff" />
+          <circle cx="124" cy="342" r="26" fill="#0b2434" stroke="var(--art-light)" strokeOpacity=".85" strokeWidth="3" />
+          <circle cx="124" cy="342" r="10" fill="var(--art-light)" />
         </g>
 
         <g className="hs-fiber-art__hub">
-          <circle cx="956" cy="342" r="104" fill="#0a1725" fillOpacity=".9" stroke="#5adcf4" strokeOpacity=".5" strokeWidth="2" />
-          <circle cx="956" cy="342" r="76" fill="none" stroke="#67ddf4" strokeOpacity=".25" strokeDasharray="2 8" />
-          <circle cx="956" cy="342" r="38" fill="#102a3d" stroke="#77e9ff" strokeOpacity=".78" strokeWidth="2" />
-          <path d="M938 342h36m-18-18v36" stroke="#a9f5ff" strokeLinecap="round" strokeWidth="5" />
-          <circle cx="956" cy="342" r="130" fill="none" stroke="#3c86a5" strokeOpacity=".16" />
+          <circle cx="956" cy="342" r="104" fill="#0a1725" fillOpacity=".9" stroke="var(--art-accent)" strokeOpacity=".5" strokeWidth="2" />
+          <circle cx="956" cy="342" r="76" fill="none" stroke="var(--art-accent)" strokeOpacity=".25" strokeDasharray="2 8" />
+          <circle cx="956" cy="342" r="38" fill="#102a3d" stroke="var(--art-light)" strokeOpacity=".78" strokeWidth="2" />
+          <path d="M938 342h36m-18-18v36" stroke="var(--art-light)" strokeLinecap="round" strokeWidth="5" />
+          <circle cx="956" cy="342" r="130" fill="none" stroke="var(--art-accent)" strokeOpacity=".16" />
         </g>
 
-        <g fill="#91b5ca" fontFamily="monospace" fontSize="13" letterSpacing="3">
-          <text x="74" y="180">FIBER OPTIC // 01</text>
-          <text x="842" y="510">SIGNAL: OPTIMAL</text>
-          <text x="778" y="178">HIGH-SPEED DATA LINK</text>
-        </g>
-        <g fill="none" stroke="#496e86" strokeOpacity=".55">
-          <path d="M74 195h166m602-1h260M842 526h210" />
-          <rect x="842" y="530" width="230" height="46" rx="3" />
-          <path d="M860 554h85m12 0h12m12 0h62" stroke="#61e7ff" strokeOpacity=".7" strokeWidth="3" />
-        </g>
         <rect className="hs-fiber-art__scan" x="0" y="0" width="1200" height="150" fill="url(#fiber-scan-band)" />
       </svg>
     </div>
   );
 }
 
-function TechnicalArtwork({ visual }: { visual: Exclude<CodeVisual, "cyber" | "fiber"> }) {
-  const details: Record<typeof visual, { label: string; status: string }> = {
-    network: { label: "NETWORK ARCHITECTURE", status: "NODES: CONNECTED" },
-    consulting: { label: "TECHNICAL STRATEGY", status: "ANALYSIS: COMPLETE" },
-    transformation: { label: "SYSTEMS EVOLUTION", status: "MIGRATION: READY" },
-    support: { label: "MANAGED SERVICES", status: "SUPPORT: ONLINE" },
-    installation: { label: "SITE DEPLOYMENT", status: "LINK: ESTABLISHED" },
-    cloud: { label: "HYBRID CLOUD", status: "PLATFORM: ACTIVE" },
-    classroom: { label: "EXPERT-LED TRAINING", status: "SESSION: LIVE" },
-    elearning: { label: "DIGITAL LEARNING", status: "COURSE: AVAILABLE" },
-    hybrid: { label: "HYBRID LEARNING", status: "LEARN: EVERYWHERE" },
-    certification: { label: "CERTIFICATION PATH", status: "SKILLS: VERIFIED" },
-  };
-  const title = details[visual];
+function TechnicalArtwork({
+  visual,
+  palette,
+}: {
+  visual: Exclude<CodeVisual, "cyber" | "fiber">;
+  palette: SlidePalette;
+}) {
   const gradientId = `tech-art-glow-${visual}`;
 
   return (
-    <div className="hs-tech-art" data-visual={visual} aria-hidden="true">
+    <div
+      className="hs-tech-art"
+      style={artworkStyle(palette)}
+      aria-hidden="true"
+    >
       <svg
         className="hs-tech-art__graphic"
         viewBox="0 0 1200 700"
@@ -583,13 +567,6 @@ function TechnicalArtwork({ visual }: { visual: Exclude<CodeVisual, "cyber" | "f
           </g>
         )}
 
-        <g className="hs-tech-art__caption" fill="var(--tech-copy)" fontFamily="monospace" fontSize="13" letterSpacing="3">
-          <text x="78" y="118">{title.label}</text>
-          <text x="842" y="595">{title.status}</text>
-        </g>
-        <g className="hs-tech-art__status" fill="var(--tech-accent-light)">
-          <circle cx="820" cy="590" r="4" />
-        </g>
         <path className="hs-tech-art__scan" d="M80 142h1040" />
       </svg>
     </div>
@@ -774,11 +751,14 @@ export default function HeroSlideshow({
             aria-hidden="true"
           >
             {slides[prevIdx].visual === "cyber" ? (
-              <HighTechArtwork />
+              <HighTechArtwork palette={PALETTES[prevIdx % PALETTES.length]} />
             ) : slides[prevIdx].visual === "fiber" ? (
-              <FiberOpticArtwork />
+              <FiberOpticArtwork palette={PALETTES[prevIdx % PALETTES.length]} />
             ) : isTechnicalVisual(slides[prevIdx].visual) ? (
-              <TechnicalArtwork visual={slides[prevIdx].visual} />
+              <TechnicalArtwork
+                visual={slides[prevIdx].visual}
+                palette={PALETTES[prevIdx % PALETTES.length]}
+              />
             ) : slides[prevIdx].src ? (
               <Image
                 src={slides[prevIdx].src}
@@ -793,11 +773,11 @@ export default function HeroSlideshow({
         )}
         <div key={`curr-${imgKey}`} className="hs-img-layer hs-img-layer--curr">
           {slides[current].visual === "cyber" ? (
-            <HighTechArtwork />
+            <HighTechArtwork palette={palette} />
           ) : slides[current].visual === "fiber" ? (
-            <FiberOpticArtwork />
+            <FiberOpticArtwork palette={palette} />
           ) : isTechnicalVisual(slides[current].visual) ? (
-            <TechnicalArtwork visual={slides[current].visual} />
+            <TechnicalArtwork visual={slides[current].visual} palette={palette} />
           ) : slides[current].src ? (
             <Image
               src={slides[current].src}

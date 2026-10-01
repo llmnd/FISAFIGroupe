@@ -54,8 +54,8 @@
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 48%, rgba(22, 88, 130, 0.34), transparent 43%),
-    radial-gradient(ellipse at 18% 20%, rgba(31, 102, 151, 0.2), transparent 38%),
+    radial-gradient(ellipse at 50% 48%, rgba(var(--art-accent-rgb), 0.25), transparent 43%),
+    radial-gradient(ellipse at 18% 20%, rgba(var(--art-accent-rgb), 0.14), transparent 38%),
     linear-gradient(135deg, #07111d 0%, #0a1d2d 52%, #080f1a 100%);
 }
 .hs-code-art::before {
@@ -73,7 +73,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 22px rgba(52, 207, 255, 0.12));
+  filter: drop-shadow(0 0 22px rgba(var(--art-accent-rgb), 0.2));
 }
 .hs-code-art__radar {
   transform-box: view-box;
@@ -88,7 +88,7 @@
   animation: hs-telemetry-breathe 4s ease-in-out infinite;
 }
 .hs-code-art__nodes {
-  filter: drop-shadow(0 0 7px rgba(98, 230, 255, 0.8));
+  filter: drop-shadow(0 0 7px var(--art-accent));
 }
 .hs-code-art__shield {
   transform-box: fill-box;
@@ -100,7 +100,7 @@
   animation: hs-scan-sweep 7s ease-in-out infinite;
 }
 .hs-code-art__status {
-  filter: drop-shadow(0 0 6px rgba(84, 240, 194, 0.9));
+  filter: drop-shadow(0 0 6px var(--art-light));
   animation: hs-status-pulse 2s ease-in-out infinite;
 }
 .hs-fiber-art {
@@ -108,8 +108,8 @@
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 76% 48%, rgba(30, 117, 151, 0.26), transparent 30%),
-    radial-gradient(ellipse at 18% 48%, rgba(33, 94, 136, 0.2), transparent 32%),
+    radial-gradient(ellipse at 76% 48%, rgba(var(--art-accent-rgb), 0.26), transparent 30%),
+    radial-gradient(ellipse at 18% 48%, rgba(var(--art-accent-rgb), 0.2), transparent 32%),
     linear-gradient(130deg, #07111d, #0b1d2c 52%, #090f1c);
 }
 .hs-fiber-art::before {
@@ -127,7 +127,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 20px rgba(71, 209, 244, 0.12));
+  filter: drop-shadow(0 0 20px rgba(var(--art-accent-rgb), 0.2));
 }
 .hs-fiber-art__guide {
   animation: hs-fiber-guide-glow 5s ease-in-out infinite;
@@ -138,7 +138,7 @@
 }
 .hs-fiber-art__connector,
 .hs-fiber-art__hub {
-  filter: drop-shadow(0 0 14px rgba(69, 212, 248, 0.18));
+  filter: drop-shadow(0 0 14px rgba(var(--art-accent-rgb), 0.22));
 }
 .hs-fiber-art__hub {
   transform-box: fill-box;
@@ -150,44 +150,15 @@
   animation: hs-scan-sweep 8s ease-in-out infinite;
 }
 .hs-tech-art {
-  --tech-accent: #52dfff;
-  --tech-accent-light: #baf8ff;
-  --tech-copy: #91b5ca;
+  --tech-accent: var(--art-accent);
+  --tech-accent-light: var(--art-light);
   position: absolute;
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(26, 91, 127, 0.3), transparent 42%),
+    radial-gradient(ellipse at 50% 50%, rgba(var(--art-accent-rgb), 0.3), transparent 42%),
+    radial-gradient(ellipse at 18% 22%, rgba(var(--art-accent-rgb), 0.12), transparent 35%),
     linear-gradient(130deg, #07111d, #0b1d2c 52%, #090f1c);
-}
-.hs-tech-art[data-visual="consulting"],
-.hs-tech-art[data-visual="certification"] {
-  --tech-accent: #b994ff;
-  --tech-accent-light: #e1d1ff;
-  --tech-copy: #b4a4d1;
-}
-.hs-tech-art[data-visual="transformation"],
-.hs-tech-art[data-visual="elearning"] {
-  --tech-accent: #5be2c2;
-  --tech-accent-light: #c0ffeb;
-  --tech-copy: #91cbbb;
-}
-.hs-tech-art[data-visual="support"],
-.hs-tech-art[data-visual="hybrid"] {
-  --tech-accent: #51d7e9;
-  --tech-accent-light: #b9f8ff;
-  --tech-copy: #93c4d1;
-}
-.hs-tech-art[data-visual="installation"],
-.hs-tech-art[data-visual="classroom"] {
-  --tech-accent: #ffb86b;
-  --tech-accent-light: #ffe0ae;
-  --tech-copy: #d1b08a;
-}
-.hs-tech-art[data-visual="cloud"] {
-  --tech-accent: #76aaff;
-  --tech-accent-light: #c4dcff;
-  --tech-copy: #9fb8d8;
 }
 .hs-tech-art::before {
   content: '';
@@ -204,7 +175,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 22px rgba(52, 207, 255, 0.1));
+  filter: drop-shadow(0 0 22px rgba(var(--art-accent-rgb), 0.2));
 }
 .hs-tech-art__orbit {
   transform-box: view-box;
@@ -267,9 +238,6 @@
   stroke-width: 2;
   stroke-dasharray: 1 15;
   animation: hs-tech-scan 8s linear infinite;
-}
-.hs-tech-art__caption {
-  opacity: 0.9;
 }
 @keyframes hs-fiber-data-flow {
   to { stroke-dashoffset: -170; }
