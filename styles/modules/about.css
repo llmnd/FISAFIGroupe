@@ -1,21 +1,42 @@
 /* ─── ABOUT STRIP ─── */
 
 .about-strip {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 0;
   background: #0d1f4e;
   padding: 0;
+  margin-bottom: clamp(2rem, 4vw, 4rem);
+  align-items: stretch;
+}
+
+.about-strip::before {
+  content: "";
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(-50%);
 }
 
 @media (max-width: 600px) {
   .about-strip {
     grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .about-strip::before {
+    display: none;
   }
 }
 
 .about-strip-left {
-  padding: 0;
-  border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+  padding: clamp(2rem, 4vw, 4rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,11 +45,13 @@
 }
 
 .about-strip-right {
-  padding: 4rem 4.5rem;
+  position: relative;
+  z-index: 1;
+  padding: clamp(2.5rem, 5vw, 4.5rem) clamp(2rem, 4vw, 4rem);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 1.5rem;
+  justify-content: center;
+  gap: 1.8rem;
 }
 
 .about-quote {

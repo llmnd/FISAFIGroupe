@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import ServicesGrid from "@/components/servicesgrid";
 const HeroSlideshow = dynamic(() => import("@/components/heroSlideshow"));
 const AboutStripSlideshow = dynamic(() => import("@/components/AboutStripSlideshow"));
 const CardCarousel = dynamic(() => import("@/components/CardCarousel"));
@@ -170,38 +169,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* ─── SERVICES ─── */}
-      <ServicesGrid />
-      <div className="divider" />
-
-      {/* ─── SPLIT CARDS (CAPABILITIES) ─── */}
-      <section className="section" id="capabilities">
-        <div className="section-eyebrow">Nos atouts</div>
-        <h2 className="section-title">Expertise<br />reconnue</h2>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
-          {[
-            { title: "Ingénierie Réseaux", desc: "Conception et déploiement d'infrastructures réseaux robustes, scalables et sécurisées pour tous types d'organisations.", img: "https://i.pinimg.com/originals/d7/ac/8f/d7ac8fe75a93307683db992d9c8c6f8c.gif" },
-            { title: "Solutions Sécurité", desc: "Audit, compliance et mise en œuvre de solutions de cyberdéfense adaptées à votre contexte et vos enjeux.", img: "https://i.pinimg.com/originals/14/e3/f8/14e3f8b54c14417611cfb6477c86c09d.gif" },
-            { title: "Cloud & Virtualisation", desc: "Migration, optimisation et management de vos infrastructures cloud pour une performance optimale.", img: "https://i.pinimg.com/1200x/2e/30/d8/2e30d8bd3a1f97b8301829256c21a91b.jpg" },
-          ].map((cap) => (
-            <div key={cap.title} className="split-card compact">
-              <div className="split-card-image">
-                <Image src={cap.img} alt={cap.title} width={350} height={250} data-observe style={{ objectFit: "cover", width: "100%", height: "100%" }} />
-                <div className="split-card-overlay" />
-              </div>
-              <div className="split-card-content" style={{ direction: "ltr" }}>
-                <h3 className="split-card-title">{cap.title}</h3>
-                <p className="split-card-description">{cap.desc}</p>
-                <a href="/services" className="split-card-arrow">En savoir plus</a>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="divider" />
 
       {/* ─── COMPÉTENCES ─── */}
       <section className="competences-section" id="competences">
