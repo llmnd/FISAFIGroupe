@@ -63,6 +63,7 @@ type NavItem = { label: string; href: string };
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Accueil",    href: "/" },
+  { label: "Our Business", href: "/business" },
   { label: "Services",   href: "/services" },
   { label: "Formation",  href: "/training" },
   { label: "Actualités", href: "/news" },
@@ -512,7 +513,7 @@ export default function Header() {
               </div>
 
               <h2 className="header-info-title">FiSAFi Groupe</h2>
-              <p className="header-info-tagline">L'expertise qui fait la différence</p>
+              <p className="header-info-tagline">Réseaux · Télécoms · Formation</p>
 
               <div className="header-info-divider" />
 

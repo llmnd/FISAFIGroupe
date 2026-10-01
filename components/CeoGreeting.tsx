@@ -209,7 +209,7 @@ export default function CeoGreeting() {
             </div>
           </div>
           <p className="ceo-modal-body">
-            Bienvenue sur la plateforme FISAFI Groupe. Notre engagement est simple : vous offrir une expertise technique de haut niveau, ancrée dans les réalités africaines. Chaque projet que nous accompagnons est une opportunité de construire ensemble un avenir numérique plus solide, plus sécurisé et plus ambitieux pour notre continent.
+            FiSAFi Groupe travaille dans les réseaux, les télécommunications et la formation professionnelle. Notre équipe intervient depuis Dakar et accompagne des projets jusque sur le terrain, au plus près des contraintes techniques.
           </p>
           <div className="ceo-modal-sig">— Le Gérant Associé, FISAFI Groupe</div>
         </div>
