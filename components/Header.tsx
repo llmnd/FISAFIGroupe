@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { businessActivities } from "@/data/business";
 
 /* ─── SVG Icons ─────────────────────────────────────────── */
 const IconSearch = () => (
@@ -59,17 +60,31 @@ const IconInstagram = () => (
 );
 
 /* ─── Constants ──────────────────────────────────────────── */
-type NavItem = { label: string; href: string };
+type NavItem = {
+  label: string;
+  href: string;
+  children?: { label: string; href: string }[];
+};
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Accueil",    href: "/" },
-  { label: "Our Business", href: "/business" },
+  {
+    label: "Our Business",
+    href: "/business",
+    children: businessActivities.map(({ title, slug }) => ({
+      label: title,
+      href: `/business/${slug}`,
+    })),
+  },
   { label: "Services",   href: "/services" },
   { label: "Formation",  href: "/training" },
   { label: "Actualités", href: "/news" },
   { label: "Sessions",   href: "/sessions" },
   { label: "Contact",    href: "/contact" },
 ];
+
+const isNavItemActive = (pathname: string, href: string) =>
+  pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
 const SOCIALS = [
   { href: "https://www.facebook.com/share/179K7oUPAA/",            Icon: IconFacebook,  label: "Facebook",  className: "" },
@@ -107,6 +122,7 @@ export default function Header() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [scrolled,      setScrolled]      = useState(false);
   const [isLoggedIn,    setIsLoggedIn]    = useState(false);
+  const [openNavMenu,   setOpenNavMenu]   = useState<{ href: string; left: number; top: number } | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -119,6 +135,28 @@ export default function Header() {
   const socialPopupRef   = useRef<HTMLDivElement>(null);
   const rafIdRef         = useRef<number | null>(null);
   const lastScrolledRef  = useRef(false);
+  const navMenuCloseRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearNavMenuClose = () => {
+    if (navMenuCloseRef.current !== null) {
+      clearTimeout(navMenuCloseRef.current);
+      navMenuCloseRef.current = null;
+    }
+  };
+
+  const openNavDropdown = (element: HTMLLIElement, href: string) => {
+    clearNavMenuClose();
+    const bounds = element.getBoundingClientRect();
+    setOpenNavMenu({ href, left: bounds.left + bounds.width / 2, top: bounds.bottom });
+  };
+
+  const scheduleNavMenuClose = () => {
+    clearNavMenuClose();
+    navMenuCloseRef.current = setTimeout(() => {
+      setOpenNavMenu(null);
+      navMenuCloseRef.current = null;
+    }, 140);
+  };
 
   /* ─── Auth (localStorage côté client uniquement) ───────── */
   useEffect(() => {
@@ -271,6 +309,8 @@ export default function Header() {
     });
   }, []);
 
+  const openedNavItem = NAV_ITEMS.find(({ href }) => href === openNavMenu?.href);
+
   return (
     <>
       {/* ── Header ──────────────────────────────────────── */}
@@ -295,13 +335,25 @@ export default function Header() {
         {/* Desktop Nav */}
         <nav aria-label="Navigation principale">
           <ul className="header-nav">
-            {NAV_ITEMS.map(({ label, href }) => (
-              <li key={href}>
+            {NAV_ITEMS.map(({ label, href, children }) => (
+              <li
+                key={href}
+                className={`header-nav-item${children ? " has-submenu" : ""}${openNavMenu?.href === href ? " open" : ""}`}
+                onMouseEnter={(event) => children && openNavDropdown(event.currentTarget, href)}
+                onMouseLeave={() => children && scheduleNavMenuClose()}
+                onFocus={(event) => children && openNavDropdown(event.currentTarget, href)}
+              >
                 <Link
                   href={href}
-                  className={`header-nav-link${pathname === href ? " active" : ""}`}
+                  className={`header-nav-link${isNavItemActive(pathname, href) ? " active" : ""}`}
+                  aria-current={isNavItemActive(pathname, href) ? "page" : undefined}
                 >
                   {label}
+                  {children && (
+                    <svg className="nav-chevron" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="m2 4.5 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </Link>
               </li>
             ))}
@@ -360,6 +412,29 @@ export default function Header() {
         </div>
       </header>
 
+      {openNavMenu && openedNavItem?.children && (
+        <ul
+          className="header-nav-dropdown"
+          aria-label={`Sous-pages ${openedNavItem.label}`}
+          style={{ left: openNavMenu.left, top: openNavMenu.top }}
+          onMouseEnter={clearNavMenuClose}
+          onMouseLeave={scheduleNavMenuClose}
+        >
+          {openedNavItem.children.map((child) => (
+            <li key={child.href}>
+              <Link
+                href={child.href}
+                className={`header-nav-dropdown-link${pathname === child.href ? " active" : ""}`}
+                aria-current={pathname === child.href ? "page" : undefined}
+              >
+                {child.label}
+                <span className="dropdown-arrow" aria-hidden="true">↗</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {/* ── Social / Flags Bar ──────────────────────────────
        *  Opacité écrite via ref (RAF) → 0 re-render
        * ─────────────────────────────────────────────────── */}
@@ -408,16 +483,33 @@ export default function Header() {
       >
         <div className="header-drawer-inner">
           <ul className="header-drawer-nav">
-            {NAV_ITEMS.map(({ label, href }) => (
+            {NAV_ITEMS.map(({ label, href, children }) => (
               <li key={href}>
                 <Link
                   href={href}
-                  className={`header-drawer-link${pathname === href ? " active" : ""}`}
+                  className={`header-drawer-link${isNavItemActive(pathname, href) ? " active" : ""}`}
                   onClick={closeMobile}
+                  aria-current={isNavItemActive(pathname, href) ? "page" : undefined}
                 >
                   {label}
                   <span className="drawer-chevron" aria-hidden="true">›</span>
                 </Link>
+                {children && (
+                  <ul className="header-drawer-submenu" aria-label={`Sous-pages ${label}`}>
+                    {children.map((child) => (
+                      <li key={child.href}>
+                        <Link
+                          href={child.href}
+                          className={`header-drawer-submenu-link${pathname === child.href ? " active" : ""}`}
+                          onClick={closeMobile}
+                          aria-current={pathname === child.href ? "page" : undefined}
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
