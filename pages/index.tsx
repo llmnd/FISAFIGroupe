@@ -198,7 +198,7 @@ export default function Home() {
       <section className="home-business-section" aria-labelledby="home-business-title">
         <div className="home-business-heading">
           <h2 id="home-business-title">Our Business</h2>
-          <p>Découvrez les pôles FiSAFi Technologies et FiSAFi Négoce.</p>
+          <p>Découvrez les pôles FiSAFi Technologies et FiSAFi Trading.</p>
         </div>
         <BusinessBrands
           className="home-business-brands"

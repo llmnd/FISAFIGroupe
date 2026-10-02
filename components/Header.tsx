@@ -74,7 +74,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/business",
     children: [
       { label: "FiSAFi Technologies", href: "/#home-content" },
-      { label: "FiSAFi Négoce", href: marketHref },
+      { label: "FiSAFi Trading", href: marketHref },
     ],
   },
   { label: "Services",   href: "/services" },
@@ -620,7 +620,7 @@ export default function Header() {
               </div>
 
               <h2 className="header-info-title">FiSAFi Groupe</h2>
-              <p className="header-info-tagline">L&apos;entité mère de FiSAFi Technologies et FiSAFi Négoce</p>
+              <p className="header-info-tagline">L&apos;entité mère de FiSAFi Technologies et FiSAFi Trading</p>
 
               <div className="header-info-divider" />
 
@@ -643,7 +643,7 @@ export default function Header() {
                 </div>
                 <div className="header-info-item">
                   <span className="header-info-label">Nos pôles</span>
-                  <span className="header-info-value">Technologies numériques • Négoce, import-export et distribution</span>
+                  <span className="header-info-value">Technologies numériques • Trading, import-export et distribution</span>
                 </div>
               </div>
             </div>

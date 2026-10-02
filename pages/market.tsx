@@ -676,39 +676,20 @@ export default function MarketPage() {
             </label>
           </div>
 
-          <div className="market-department-grid" aria-label="Filtrer par rayon">
-              <button
-                className={`market-department-card market-department-card--all${selectedDepartment ? "" : " is-selected"}`}
-                type="button"
-                aria-pressed={!selectedDepartment}
-                onClick={() => selectDepartment("")}
-              >
-                <span className="market-department-number">TOUS</span>
-                <span className="market-department-copy">
-                  <strong>Tous les rayons</strong>
-                  <span>{marketProducts.length} produits à découvrir</span>
-                  <span className="market-department-arrow" aria-hidden="true">↗</span>
-                </span>
-              </button>
-              {departments.map((department, index) => (
-                <button
-                  className={`market-department-card market-department-card--${department.color}${selectedDepartment === department.id ? " is-selected" : ""}`}
-                  type="button"
-                  id={`${department.id}-produits`}
-                  aria-pressed={selectedDepartment === department.id}
-                  onClick={() => selectDepartment(department.id)}
-                  key={department.id}
-                >
-                  <span className="market-department-number">{String(index + 1).padStart(2, "0")}</span>
-                  <DepartmentIllustration art={department.art} />
-                  <span className="market-department-copy">
-                    <strong>{department.name}</strong>
-                    <span>{department.description}</span>
-                    <span>{productsByDepartment.get(department.id)?.length || 0} produits</span>
-                    <span className="market-department-arrow" aria-hidden="true">↗</span>
-                  </span>
-                </button>
+          <div className="market-department-filter">
+            <label htmlFor="market-department-select">Rayon <span>(facultatif)</span></label>
+            <select
+              id="market-department-select"
+              value={selectedDepartment}
+              onChange={(event) => selectDepartment(event.target.value)}
+            >
+              <option value="">Tous les rayons ({marketProducts.length} produits)</option>
+              {departments.map((department) => (
+                <option value={department.id} key={department.id}>
+                  {department.name} ({productsByDepartment.get(department.id)?.length || 0})
+                </option>
               ))}
+            </select>
           </div>
 
           {catalogError && (
