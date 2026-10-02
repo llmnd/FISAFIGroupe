@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -114,23 +114,24 @@ const areaCards = [
 export default function Home() {
   const [isGroupSelected, setIsGroupSelected] = useState(false);
   const homeContentRef = useRef<HTMLDivElement>(null);
+  const revealGroupContent = useCallback(() => {
+    setIsGroupSelected(true);
+    window.requestAnimationFrame(() => {
+      homeContentRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  }, []);
 
   useEffect(() => {
-    const revealGroupContent = () => setIsGroupSelected(true);
-
     if (window.location.hash === "#home-content") {
       revealGroupContent();
     }
 
     window.addEventListener("fisafi:select-group", revealGroupContent);
     return () => window.removeEventListener("fisafi:select-group", revealGroupContent);
-  }, []);
-
-  useEffect(() => {
-    if (isGroupSelected) {
-      homeContentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [isGroupSelected]);
+  }, [revealGroupContent]);
 
   return (
     <>
@@ -201,7 +202,7 @@ export default function Home() {
         </div>
         <BusinessBrands
           className="home-business-brands"
-          onGroupSelect={() => setIsGroupSelected(true)}
+          onGroupSelect={revealGroupContent}
         />
       </section>
 

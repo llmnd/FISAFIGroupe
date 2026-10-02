@@ -427,9 +427,12 @@ export default function Header() {
                 href={child.href}
                 className={`header-nav-dropdown-link${pathname === child.href ? " active" : ""}`}
                 aria-current={pathname === child.href ? "page" : undefined}
-                onClick={() => {
+                onClick={(event) => {
                   if (child.label === "FiSAFi Technologies") {
-                    window.dispatchEvent(new Event("fisafi:select-group"));
+                    if (pathname === "/") {
+                      event.preventDefault();
+                      window.dispatchEvent(new Event("fisafi:select-group"));
+                    }
                   }
                 }}
               >
@@ -507,7 +510,13 @@ export default function Header() {
                         <Link
                           href={child.href}
                           className={`header-drawer-submenu-link${pathname === child.href ? " active" : ""}`}
-                          onClick={closeMobile}
+                          onClick={(event) => {
+                            closeMobile();
+                            if (child.label === "FiSAFi Technologies" && pathname === "/") {
+                              event.preventDefault();
+                              window.dispatchEvent(new Event("fisafi:select-group"));
+                            }
+                          }}
                           aria-current={pathname === child.href ? "page" : undefined}
                         >
                           {child.label}
