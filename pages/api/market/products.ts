@@ -105,7 +105,7 @@ export default async function handler(
         price: product.list_price,
         categoryName,
         unitName: product.uom_name,
-        imageUrl: `${odooUrl}/web/image/product.template/${product.id}/image_128`,
+        imageUrl: `${odooUrl}/web/image/product.template/${product.id}/image_512`,
         isPromotion: product.compare_list_price > product.list_price,
       };
     });

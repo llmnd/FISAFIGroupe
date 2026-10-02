@@ -292,6 +292,7 @@ function ProductArtworkView({ product }: { product: MarketProduct }) {
       src={product.imageUrl}
       alt={product.name}
       loading="lazy"
+      decoding="async"
       onError={() => setImageFailed(true)}
     />
   );
@@ -600,42 +601,7 @@ export default function MarketPage() {
         {storageError && <p className="market-cart-storage-error" role="alert">{storageError}</p>}
 
         <MarketStore isMarketOpen={status.open} />
-
-        {/* ═══ PRODUITS EN VEDETTE ═══ */}
-        <section className="market-featured" aria-labelledby="market-featured-title">
-          <div className="market-section-heading">
-            <div>
-              <p className="market-kicker">CATALOGUE ODOO</p>
-              <h2 id="market-featured-title">À découvrir.</h2>
-            </div>
-          </div>
-          <div className="market-featured-grid">
-            {marketProducts.slice(0, 6).map((product) => (
-              <a
-                className="market-featured-card"
-                key={product.id}
-                href={`mailto:contact@fisafigroupe.com?subject=Demande%20-%20${encodeURIComponent(product.name)}`}
-              >
-                <span className="market-featured-tag" style={{ background: "#4a1ee8" }}>
-                  {product.departmentName}
-                </span>
-                <span className="market-featured-visual" style={{ ["--accent" as string]: "#4a1ee8" }}>
-                  <img className="market-featured-image" src={product.imageUrl} alt="" loading="lazy" />
-                </span>
-                <span className="market-featured-copy">
-                  <strong>{product.name}</strong>
-                  <span className="market-featured-price">
-                    {product.price.replace(/\s*\/\s*kg\b/i, "")}
-                    <small> FCFA{/\/\s*kg\b/i.test(product.price) ? " / kg" : ""}</small>
-                  </span>
-                </span>
-                <span className="market-featured-arrow" aria-hidden="true">↗</span>
-              </a>
-            ))}
-            {catalogLoading && <p role="status">Chargement des produits…</p>}
-          </div>
-        </section>
-
+        
         {/* ═══ RAYONS ═══ */}
         <section className="market-departments" id="rayons" aria-labelledby="market-departments-title">
           <div className="market-section-heading">
