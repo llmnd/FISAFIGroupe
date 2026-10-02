@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import Header from "@/components/Header";
 import MarketStore from "@/components/MarketStore";
 import Footer from "@/components/Footer";
+import useMarketCart from "@/hooks/useMarketCart";
+import { getMarketPriceAmount, getMarketProductId } from "@/lib/marketCart";
+import type { MarketCartItemInput } from "@/lib/marketCart";
 
 /* ═══════════ TYPES ═══════════ */
 
@@ -35,7 +37,10 @@ type MarketProduct = {
   image?: string;
 };
 
-type MarketSearchResult = MarketProduct & { departmentName: string };
+type MarketSearchResult = MarketProduct & {
+  departmentId: Department["id"];
+  departmentName: string;
+};
 
 type ThemeChoice = "system" | "light" | "dark";
 
@@ -297,10 +302,19 @@ function ProductArtworkView({ product }: { product: MarketProduct }) {
 function MarketProductCard({
   product,
   departmentName,
+  cartQuantity,
+  onAddToCart,
+  onSetQuantity,
 }: {
   product: MarketProduct;
-  departmentName?: string;
+  departmentName: string;
+  cartQuantity: number;
+  onAddToCart: () => void;
+  onSetQuantity: (quantity: number) => void;
 }) {
+  const unitPrice = getMarketPriceAmount(product.price);
+  const priceUnit = /\/\s*kg\b/i.test(product.price) ? "kg" : "unité";
+
   return (
     <article className="market-product-card">
       <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
@@ -309,9 +323,44 @@ function MarketProductCard({
       <div className="market-product-visual">
         <ProductArtworkView product={product} />
       </div>
-      {departmentName && <span className="market-product-department">{departmentName}</span>}
+      <span className="market-product-department">{departmentName}</span>
       <h4>{product.name}</h4>
-      <p>{product.price} <span>FCFA</span></p>
+      <p>
+        {priceUnit === "kg" ? product.price.replace(/\s*\/\s*kg\b/i, "") : product.price}
+        <span>{priceUnit === "kg" ? "FCFA / kg" : "FCFA"}</span>
+      </p>
+      {cartQuantity > 0 ? (
+        <div className="market-product-cart-controls" role="group" aria-label={`Quantité de ${product.name} dans le panier`}>
+          <button
+            type="button"
+            onClick={() => onSetQuantity(cartQuantity - (priceUnit === "kg" ? 0.5 : 1))}
+            aria-label={`Retirer ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+          >
+            −
+          </button>
+          <span aria-live="polite">
+            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartQuantity)}
+            {priceUnit === "kg" ? " kg" : ""}
+          </span>
+          <button
+            type="button"
+            onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
+            aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <button
+          className="market-product-add"
+          type="button"
+          onClick={onAddToCart}
+          disabled={unitPrice === null}
+          aria-label={`Ajouter ${product.name} au panier`}
+        >
+          Ajouter <span aria-hidden="true">+</span>
+        </button>
+      )}
     </article>
   );
 }
@@ -328,6 +377,7 @@ function Stars() {
 
 export default function MarketPage() {
   const status = useOpenStatus();
+  const { items: cartItems, ready: cartReady, storageError, addItem, setQuantity } = useMarketCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -346,8 +396,31 @@ export default function MarketPage() {
           .toLocaleLowerCase("fr");
         return searchableText.includes(normalizedQuery);
       })
-      .map((product) => ({ ...product, departmentName: department.name })),
+      .map((product) => ({
+        ...product,
+        departmentId: department.id,
+        departmentName: department.name,
+      })),
   );
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  const getCartQuantity = (departmentId: string, productName: string) =>
+    cartItems.find((item) => item.id === getMarketProductId(departmentId, productName))?.quantity ?? 0;
+
+  const addProduct = (departmentId: string, departmentName: string, product: MarketProduct) => {
+    const unitPrice = getMarketPriceAmount(product.price);
+    if (unitPrice === null) return;
+    const item: MarketCartItemInput = {
+      departmentId,
+      departmentName,
+      name: product.name,
+      image: product.image,
+      priceLabel: product.price.replace(/\s*\/\s*kg\b/i, ""),
+      unitPrice,
+      priceUnit: /\/\s*kg\b/i.test(product.price) ? "kg" : "unité",
+    };
+    addItem(item);
+  };
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -375,8 +448,6 @@ export default function MarketPage() {
           content="Explorez les rayons FiSAFi Market : produits frais, épicerie, boulangerie, boissons et essentiels de la maison."
         />
       </Head>
-
-      <Header />
 
       <main className="market-page" data-theme={isDark ? "dark" : "light"}>
         <nav className="market-store-nav" aria-label="Navigation Market">
@@ -427,10 +498,20 @@ export default function MarketPage() {
             <a className="market-nav-contact" href="mailto:contact@fisafigroupe.com">
               Nous contacter <span aria-hidden="true">↗</span>
             </a>
+            <Link
+              className="market-cart-link"
+              href="/market/commande"
+              aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
+            >
+              <span aria-hidden="true">▱</span>
+              Panier
+              <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
+            </Link>
           </div>
         </nav>
+        {storageError && <p className="market-cart-storage-error" role="alert">{storageError}</p>}
 
-        <MarketStore />
+        <MarketStore isMarketOpen={status.open} />
 
         {/* ═══ PRODUITS EN VEDETTE ═══ */}
         <section className="market-featured" aria-labelledby="market-featured-title">
@@ -536,6 +617,12 @@ export default function MarketPage() {
                       key={`${result.departmentName}-${result.name}`}
                       product={result}
                       departmentName={result.departmentName}
+                      cartQuantity={getCartQuantity(result.departmentId, result.name)}
+                      onAddToCart={() => addProduct(result.departmentId, result.departmentName, result)}
+                      onSetQuantity={(quantity) => setQuantity(
+                        getMarketProductId(result.departmentId, result.name),
+                        quantity,
+                      )}
                     />
                   ))}
                 </div>
@@ -559,7 +646,17 @@ export default function MarketPage() {
                   </div>
                   <div className="market-product-grid">
                     {RAYON_PRODUCTS[department.id].map((product) => (
-                      <MarketProductCard product={product} key={product.name} />
+                      <MarketProductCard
+                        product={product}
+                        departmentName={department.name}
+                        key={product.name}
+                        cartQuantity={getCartQuantity(department.id, product.name)}
+                        onAddToCart={() => addProduct(department.id, department.name, product)}
+                        onSetQuantity={(quantity) => setQuantity(
+                          getMarketProductId(department.id, product.name),
+                          quantity,
+                        )}
+                      />
                     ))}
                   </div>
                 </section>
@@ -569,7 +666,7 @@ export default function MarketPage() {
         </section>
 
         {/* ═══ HORAIRES + ADRESSE ═══ */}
-        <section className="market-infos" aria-label="Horaires et adresse">
+        <section className="market-infos" id="infos-market" aria-label="Horaires et adresse">
           <div className="market-info-card">
             <p className="market-kicker">HORAIRES</p>
             <h2>Quand nous trouver.</h2>

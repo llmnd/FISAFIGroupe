@@ -5,7 +5,7 @@ const LINES = [
   "Salam ! Bienvenue chez FiSAFi.",
   "Les boissons bien fraîches, c’est en face.",
   "Chips et bonbons à votre droite, servez-vous.",
-  "Prenez votre temps, je suis à la caisse.",
+  "Touchez un rayon pour découvrir ses produits, puis écrivez-nous pour commander.",
 ];
 
 type FridgeProduct = {
@@ -31,7 +31,7 @@ const CANDY = ["#ff5d8f", "#ffb703", "#8ecae6", "#7bd389"];
 
 const cv = (v: string) => ({ "--c": v }) as CSSProperties;
 
-export default function MarketStore() {
+export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
   const [customerPass, setCustomerPass] = useState(0);
@@ -43,22 +43,35 @@ export default function MarketStore() {
   }, []);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const interval = setInterval(() => setLine((current) => (current + 1) % LINES.length), 8_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const interval = setInterval(() => setCustomerPass((pass) => pass + 1), 20_000);
     return () => clearInterval(interval);
   }, []);
 
   const move = (e: PointerEvent) => {
     const el = room.current;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = el.getBoundingClientRect();
     el.style.setProperty("--px", String((e.clientX - r.left) / r.width - 0.5));
     el.style.setProperty("--py", String((e.clientY - r.top) / r.height - 0.5));
   };
 
+  const resetPerspective = () => {
+    room.current?.style.setProperty("--px", "0");
+    room.current?.style.setProperty("--py", "0");
+  };
+
   return (
     <section
-      className={`store${open ? " is-open" : ""}`}
+      className={`store${open ? " has-opened" : ""}`}
       onPointerMove={move}
+      onPointerLeave={resetPerspective}
       aria-label="L’entrée de FiSAFi Market"
     >
       <div className="store-room" ref={room}>
@@ -85,7 +98,7 @@ export default function MarketStore() {
         </div>
 
         {/* ── Frigo boissons ── */}
-        <a className="fridge" href="#rayons" aria-label="Voir les boissons fraîches">
+        <a className="fridge" href="#boissons-produits" aria-label="Découvrir les boissons fraîches">
           <span className="fridge-sign">
             <small>RAYON 01</small>
             BOISSONS <strong>FRAÎCHES</strong>
@@ -126,10 +139,12 @@ export default function MarketStore() {
           <button
             className="bubble"
             key={line}
-            onClick={() => setLine((l) => (l + 1) % LINES.length)}
-            aria-live="polite"
+            onClick={() => setLine((current) => (current + 1) % LINES.length)}
+            aria-live="off"
+            aria-label={`${LINES[line]} Appuyez pour entendre le conseil suivant.`}
           >
             {LINES[line]}
+            <span className="bubble-hint" aria-hidden="true">Le mot d’Abdel · toucher pour la suite</span>
           </button>
 
           <svg
@@ -169,7 +184,7 @@ export default function MarketStore() {
         </div>
 
         {/* ── Rayon épicerie ── */}
-        <a className="aisle" href="#rayons" aria-label="Voir l’épicerie et les gourmandises">
+        <a className="aisle" href="#epicerie-produits" aria-label="Découvrir l’épicerie et les gourmandises">
           <span className="aisle-sign">
             <small>RAYON 03</small>
             Épicerie &amp; gourmandises
@@ -204,27 +219,31 @@ export default function MarketStore() {
           </span>
         </a>
 
-        <span className="store-tag" style={{ left: "17%" }}>
-          Abdel vous accueille
-        </span>
-        <span className="store-tag" style={{ left: "50%" }}>
-          Boissons fraîches
-        </span>
-        <span className="store-tag" style={{ left: "83%" }}>
-          Chips &amp; bonbons
-        </span>
+        <a className="store-tag store-tag--welcome" href="#infos-market" style={{ left: "17%" }}>
+          Infos pratiques <span aria-hidden="true">↗</span>
+        </a>
+        <a className="store-tag" href="#boissons-produits" style={{ left: "50%" }}>
+          Boissons fraîches <span aria-hidden="true">↗</span>
+        </a>
+        <a className="store-tag" href="#epicerie-produits" style={{ left: "83%" }}>
+          Chips &amp; bonbons <span aria-hidden="true">↗</span>
+        </a>
       </div>
 
       <div className="store-doors" aria-hidden="true">
         <span className="store-door store-door--l">
-          <em>Ouvert</em>
+          <em>{isMarketOpen ? "Ouvert" : "Fermé"}</em>
           <i />
         </span>
         <span className="store-door store-door--r">
-          <em>Bienvenue</em>
+          <em>{isMarketOpen ? "Bienvenue" : "À bientôt"}</em>
           <i />
         </span>
       </div>
+
+      <a className="store-order-link" href="#rayons">
+        Découvrir les rayons <span aria-hidden="true">↓</span>
+      </a>
     </section>
   );
 }
