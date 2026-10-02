@@ -73,8 +73,8 @@ const NAV_ITEMS: NavItem[] = [
     label: "Our Business",
     href: "/business",
     children: [
-      { label: "FiSAFi Groupe", href: "/#home-content" },
-      { label: "FiSAFi Market", href: marketHref },
+      { label: "FiSAFi Technologies", href: "/#home-content" },
+      { label: "FiSAFi Négoce", href: marketHref },
     ],
   },
   { label: "Services",   href: "/services" },
@@ -428,7 +428,7 @@ export default function Header() {
                 className={`header-nav-dropdown-link${pathname === child.href ? " active" : ""}`}
                 aria-current={pathname === child.href ? "page" : undefined}
                 onClick={() => {
-                  if (child.label === "FiSAFi Groupe") {
+                  if (child.label === "FiSAFi Technologies") {
                     window.dispatchEvent(new Event("fisafi:select-group"));
                   }
                 }}
@@ -611,7 +611,7 @@ export default function Header() {
               </div>
 
               <h2 className="header-info-title">FiSAFi Groupe</h2>
-              <p className="header-info-tagline">Réseaux · Télécoms · Formation</p>
+              <p className="header-info-tagline">L&apos;entité mère de FiSAFi Technologies et FiSAFi Négoce</p>
 
               <div className="header-info-divider" />
 
@@ -633,8 +633,8 @@ export default function Header() {
                   </a>
                 </div>
                 <div className="header-info-item">
-                  <span className="header-info-label">Spécialités</span>
-                  <span className="header-info-value">Réseaux • IT • Cybersécurité • Conseil</span>
+                  <span className="header-info-label">Nos pôles</span>
+                  <span className="header-info-value">Technologies numériques • Négoce, import-export et distribution</span>
                 </div>
               </div>
             </div>
