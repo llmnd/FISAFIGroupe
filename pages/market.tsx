@@ -41,6 +41,7 @@ type MarketProduct = {
 type ProductArtwork = "produce" | "pantry" | "bakery" | "drink" | "fresh" | "home";
 
 type ThemeChoice = "system" | "light" | "dark";
+type ProductSort = "name-asc" | "price-asc" | "price-desc";
 
 const DEPARTMENT_COLORS = ["green", "orange", "gold", "blue", "pink", "purple"] as const;
 const MARKET_PAGE_SIZE = 24;
@@ -327,48 +328,50 @@ function MarketProductCard({
       <div className="market-product-info">
         <span className="market-product-department">{departmentName}</span>
         <h4>{product.name}</h4>
-        <p className="market-product-price">
-          <strong>
-            {priceUnit === "kg" ? product.price.replace(/\s*\/\s*kg\b/i, "") : product.price}
-          </strong>
-          <span>
-            FCFA{priceUnit === "kg" && <small> / kg</small>}
-          </span>
-        </p>
-      </div>
-      <div className="market-product-purchase">
-        {cartQuantity > 0 ? (
-          <div className="market-product-cart-controls" role="group" aria-label={`Quantité de ${product.name} dans le panier`}>
-            <button
-              type="button"
-              onClick={() => onSetQuantity(cartQuantity - (priceUnit === "kg" ? 0.5 : 1))}
-              aria-label={`Retirer ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
-            >
-              −
-            </button>
-            <span aria-live="polite">
-              {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartQuantity)}
-              {priceUnit === "kg" ? " kg" : ""}
+        <div className="market-product-meta">
+          <p className="market-product-price">
+            <strong>
+              {priceUnit === "kg" ? product.price.replace(/\s*\/\s*kg\b/i, "") : product.price}
+            </strong>
+            <span>
+              FCFA{priceUnit === "kg" && <small> / kg</small>}
             </span>
-            <button
-              type="button"
-              onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
-              aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
-            >
-              +
-            </button>
+          </p>
+          <div className="market-product-purchase">
+            {cartQuantity > 0 ? (
+              <div className="market-product-cart-controls" role="group" aria-label={`Quantité de ${product.name} dans le panier`}>
+                <button
+                  type="button"
+                  onClick={() => onSetQuantity(cartQuantity - (priceUnit === "kg" ? 0.5 : 1))}
+                  aria-label={`Retirer ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+                >
+                  −
+                </button>
+                <span aria-live="polite">
+                  {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartQuantity)}
+                  {priceUnit === "kg" ? " kg" : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
+                  aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <button
+                className="market-product-add"
+                type="button"
+                onClick={onAddToCart}
+                disabled={unitPrice === null}
+                aria-label={`Ajouter ${product.name} au panier`}
+              >
+                Ajouter <span aria-hidden="true">+</span>
+              </button>
+            )}
           </div>
-        ) : (
-          <button
-            className="market-product-add"
-            type="button"
-            onClick={onAddToCart}
-            disabled={unitPrice === null}
-            aria-label={`Ajouter ${product.name} au panier`}
-          >
-            Ajouter <span aria-hidden="true">+</span>
-          </button>
-        )}
+        </div>
       </div>
     </article>
   );
@@ -389,6 +392,7 @@ export default function MarketPage() {
   const { items: cartItems, ready: cartReady, storageError, addItem, setQuantity } = useMarketCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [productSort, setProductSort] = useState<ProductSort>("name-asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [catalog, setCatalog] = useState<OdooCatalogProduct[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -445,20 +449,49 @@ export default function MarketPage() {
       .toLocaleLowerCase("fr");
     return searchableText.includes(normalizedQuery);
   });
-  const totalPages = Math.ceil(filteredProducts.length / MARKET_PAGE_SIZE);
+  const sortedProducts = [...filteredProducts].sort((left, right) => {
+    if (productSort === "price-asc" || productSort === "price-desc") {
+      const priceDifference =
+        (getMarketPriceAmount(left.price) ?? 0) - (getMarketPriceAmount(right.price) ?? 0);
+      if (priceDifference !== 0) return productSort === "price-asc" ? priceDifference : -priceDifference;
+    }
+    return left.name.localeCompare(right.name, "fr", { sensitivity: "base" });
+  });
+  const totalPages = Math.ceil(sortedProducts.length / MARKET_PAGE_SIZE);
   const page = Math.min(currentPage, Math.max(totalPages, 1));
-  const pageProducts = filteredProducts.slice((page - 1) * MARKET_PAGE_SIZE, page * MARKET_PAGE_SIZE);
+  const pageProducts = sortedProducts.slice((page - 1) * MARKET_PAGE_SIZE, page * MARKET_PAGE_SIZE);
   const pageNumbers = Array.from(
     { length: Math.min(5, totalPages) },
     (_, index) => Math.max(1, Math.min(totalPages - 4, page - 2)) + index,
   );
-  const firstProductNumber = filteredProducts.length ? (page - 1) * MARKET_PAGE_SIZE + 1 : 0;
-  const lastProductNumber = Math.min(page * MARKET_PAGE_SIZE, filteredProducts.length);
+  const firstProductNumber = sortedProducts.length ? (page - 1) * MARKET_PAGE_SIZE + 1 : 0;
+  const lastProductNumber = Math.min(page * MARKET_PAGE_SIZE, sortedProducts.length);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const hasActiveCatalogFilters = Boolean(searchQuery.trim() || selectedDepartment);
 
   const selectDepartment = (departmentId: string) => {
     setSelectedDepartment(departmentId);
     setCurrentPage(1);
+    window.requestAnimationFrame(() => {
+      document.getElementById("market-products")?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  const clearCatalogFilters = () => {
+    setSearchQuery("");
+    setSelectedDepartment("");
+    setCurrentPage(1);
+  };
+
+  const goToPage = (nextPage: number) => {
+    setCurrentPage(nextPage);
+    document.getElementById("market-products")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
   };
 
   const getCartQuantity = (departmentId: string, productName: string) =>
@@ -606,13 +639,59 @@ export default function MarketPage() {
         <section className="market-departments" id="rayons" aria-labelledby="market-departments-title">
           <div className="market-section-heading">
             <div>
-              <p className="market-kicker">À CHACUN SON RAYON</p>
-              <h2 id="market-departments-title">Faites votre marché.</h2>
+              <p className="market-kicker">LE MARCHÉ DU QUOTIDIEN</p>
+              <h2 id="market-departments-title">Choisissez vos envies.</h2>
             </div>
-            <p>De quoi remplir le panier et régaler toute la maison.</p>
           </div>
 
-          <div className="market-search">
+          <nav className="market-category-rail" aria-label="Parcourir les rayons">
+            <button
+              className={`market-category-tile${selectedDepartment ? "" : " is-selected"}`}
+              type="button"
+              aria-pressed={!selectedDepartment}
+              onClick={() => selectDepartment("")}
+            >
+              <span className="market-category-tile-visual market-category-tile-visual--all" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <path d="M8 20h32l-3 20H11L8 20Z" />
+                  <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
+                </svg>
+              </span>
+              <strong>Tous</strong>
+              <small>{marketProducts.length} produits</small>
+            </button>
+            {departments.map((department) => {
+              const departmentProducts = productsByDepartment.get(department.id) || [];
+              const representativeProduct = departmentProducts.find((product) => product.imageUrl) ?? departmentProducts[0];
+              return (
+                <button
+                  className={`market-category-tile market-category-tile--${department.color}${selectedDepartment === department.id ? " is-selected" : ""}`}
+                  type="button"
+                  key={department.id}
+                  aria-pressed={selectedDepartment === department.id}
+                  onClick={() => selectDepartment(department.id)}
+                >
+                  <span className="market-category-tile-visual" aria-hidden="true">
+                    <DepartmentIllustration art={department.art} />
+                    {representativeProduct && (
+                      <img
+                        src={representativeProduct.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.hidden = true;
+                        }}
+                      />
+                    )}
+                  </span>
+                  <strong>{department.name}</strong>
+                  <small>{departmentProducts.length} produits</small>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="market-catalog-tools">
             <label className="market-search-field">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="10.8" cy="10.8" r="6.8" />
@@ -640,22 +719,23 @@ export default function MarketPage() {
                 </button>
               )}
             </label>
-          </div>
-
-          <div className="market-department-filter">
-            <label htmlFor="market-department-select">Rayon <span>(facultatif)</span></label>
-            <select
-              id="market-department-select"
-              value={selectedDepartment}
-              onChange={(event) => selectDepartment(event.target.value)}
-            >
-              <option value="">Tous les rayons ({marketProducts.length} produits)</option>
-              {departments.map((department) => (
-                <option value={department.id} key={department.id}>
-                  {department.name} ({productsByDepartment.get(department.id)?.length || 0})
-                </option>
-              ))}
-            </select>
+            <div className="market-catalog-options">
+              <label className="market-catalog-control">
+                <span>Trier par</span>
+                <select
+                  value={productSort}
+                  onChange={(event) => {
+                    setProductSort(event.target.value as ProductSort);
+                    setCurrentPage(1);
+                  }}
+                  aria-label="Trier les produits"
+                >
+                  <option value="name-asc">Nom (A à Z)</option>
+                  <option value="price-asc">Prix croissant</option>
+                  <option value="price-desc">Prix décroissant</option>
+                </select>
+              </label>
+            </div>
           </div>
 
           {catalogError && (
@@ -671,13 +751,23 @@ export default function MarketPage() {
             <p className="market-search-count" role="status">Chargement du catalogue du magasin…</p>
           ) : !catalogError && (
             <div className="market-search-results" aria-live="polite">
-              <p className="market-search-count">
-                {filteredProducts.length
-                  ? `Affichage de ${firstProductNumber} à ${lastProductNumber} sur ${filteredProducts.length} produit${filteredProducts.length > 1 ? "s" : ""}${normalizedQuery ? " trouvé" : ""}${filteredProducts.length > 1 && normalizedQuery ? "s" : ""}`
-                  : normalizedQuery ? "Aucun produit trouvé. Essayez un autre nom ou rayon." : "Aucun produit dans ce rayon."}
-              </p>
+              <div className="market-results-toolbar">
+                <div className="market-results-title">
+                  <h3>{departments.find((department) => department.id === selectedDepartment)?.name ?? "Tous les produits"}</h3>
+                  <p className="market-search-count">
+                    {sortedProducts.length
+                      ? `${firstProductNumber}–${lastProductNumber} sur ${sortedProducts.length} produits`
+                      : normalizedQuery ? "Aucun produit trouvé." : "Aucun produit dans ce rayon."}
+                  </p>
+                </div>
+                {hasActiveCatalogFilters && (
+                  <button className="market-clear-filters" type="button" onClick={clearCatalogFilters}>
+                    Effacer les filtres
+                  </button>
+                )}
+              </div>
               {pageProducts.length > 0 && (
-                <div className="market-product-grid">
+                <div className="market-product-grid" id="market-products">
                   {pageProducts.map((product) => (
                     <MarketProductCard
                       key={product.id}
@@ -693,12 +783,20 @@ export default function MarketPage() {
                   ))}
                 </div>
               )}
+              {!pageProducts.length && hasActiveCatalogFilters && (
+                <div className="market-empty-state">
+                  <span aria-hidden="true">⌕</span>
+                  <h3>Aucun produit ne correspond</h3>
+                  <p>Essayez un autre terme ou réinitialisez vos filtres.</p>
+                  <button type="button" onClick={clearCatalogFilters}>Voir tout le catalogue</button>
+                </div>
+              )}
               {totalPages > 1 && (
                 <nav className="market-pagination" aria-label="Pages du catalogue">
                   <button
                     type="button"
                     className="market-pagination-step"
-                    onClick={() => setCurrentPage(page - 1)}
+                    onClick={() => goToPage(page - 1)}
                     disabled={page === 1}
                     aria-label="Page précédente"
                   >
@@ -711,7 +809,7 @@ export default function MarketPage() {
                         key={pageNumber}
                         className={pageNumber === page ? "is-current" : ""}
                         aria-current={pageNumber === page ? "page" : undefined}
-                        onClick={() => setCurrentPage(pageNumber)}
+                        onClick={() => goToPage(pageNumber)}
                       >
                         {pageNumber}
                       </button>
@@ -720,7 +818,7 @@ export default function MarketPage() {
                   <button
                     type="button"
                     className="market-pagination-step"
-                    onClick={() => setCurrentPage(page + 1)}
+                    onClick={() => goToPage(page + 1)}
                     disabled={page === totalPages}
                     aria-label="Page suivante"
                   >
