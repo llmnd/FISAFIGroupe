@@ -17,103 +17,100 @@ type Department = {
   art: "produce" | "pantry" | "bakery" | "drinks" | "fresh" | "home";
 };
 
-type Featured = {
-  id: string;
+type OdooCatalogProduct = {
+  id: number;
+  name: string;
+  price: number;
+  categoryName: string | null;
+  unitName: string;
+  imageUrl: string;
+  isPromotion: boolean;
+};
+
+type MarketProduct = {
+  id: number;
   name: string;
   price: string;
-  unit: string;
-  tag: string;
-  color: string;
-  image: string;
+  badge?: "PROMO";
+  artwork: ProductArtwork;
+  imageUrl: string;
+  departmentId: string;
+  departmentName: string;
 };
 
 type ProductArtwork = "produce" | "pantry" | "bakery" | "drink" | "fresh" | "home";
 
-type MarketProduct = {
-  name: string;
-  price: string;
-  badge: "BIO" | "PROMO";
-  artwork: ProductArtwork;
-  image?: string;
-};
-
-type MarketSearchResult = MarketProduct & {
-  departmentId: Department["id"];
-  departmentName: string;
-};
-
 type ThemeChoice = "system" | "light" | "dark";
 
-/* ═══════════ DATA ═══════════ */
+const DEPARTMENT_COLORS = ["green", "orange", "gold", "blue", "pink", "purple"] as const;
+const MARKET_PAGE_SIZE = 24;
 
-const DEPARTMENTS: Department[] = [
-  { id: "fruits-legumes", name: "Fruits & légumes", description: "Les couleurs et les saveurs du marché.", color: "green", art: "produce" },
-  { id: "epicerie", name: "Épicerie", description: "Les indispensables pour chaque recette.", color: "orange", art: "pantry" },
-  { id: "boulangerie", name: "Boulangerie", description: "Le plaisir des bonnes choses à partager.", color: "gold", art: "bakery" },
-  { id: "boissons", name: "Boissons", description: "De quoi accompagner chaque moment.", color: "blue", art: "drinks" },
-  { id: "frais", name: "Produits frais", description: "Une sélection pour vos repas du quotidien.", color: "pink", art: "fresh" },
-  { id: "maison", name: "Maison & entretien", description: "Les essentiels pratiques de la maison.", color: "purple", art: "home" },
-];
+function getDepartmentArtwork(name: string): Department["art"] {
+  if (/fruit|l[eé]gume/i.test(name)) return "produce";
+  if (/boulangerie|p[aâ]tisserie/i.test(name)) return "bakery";
+  if (/boisson|eau|jus/i.test(name)) return "drinks";
+  if (/frais|lait|fromage/i.test(name)) return "fresh";
+  if (/bonbon|biscuit|chips|cuisine|food|[eé]picerie/i.test(name)) return "pantry";
+  return "home";
+}
 
-const FEATURED: Featured[] = [
-  { id: "bissap", name: "Bissap frais", price: "500", unit: "FCFA", tag: "Frais du jour", color: "#c9264a", image: "bissap.jpg" },
-  { id: "pringles", name: "Pringles Original", price: "Sur demande", unit: "", tag: "Épicerie", color: "#d71920", image: "pringles.jpg" },
-  { id: "pain", name: "Pain chaud", price: "150", unit: "FCFA", tag: "Sortie du four", color: "#d7954c", image: "pain.jpg" },
-  { id: "cafe", name: "Café Touba", price: "800", unit: "le sachet", tag: "Nouveauté", color: "#4a2f00", image: "cafe.jpg" },
-  { id: "eau", name: "Pack d'eau 6×1,5L", price: "1 800", unit: "FCFA", tag: "Pratique", color: "#2f6fd1", image: "eau.jpg" },
-  { id: "savon", name: "Savon de Marseille", price: "600", unit: "FCFA", tag: "Maison", color: "#8ecae6", image: "savon.jpg" },
-];
+function getDepartmentName(categoryName: string | null) {
+  const name = categoryName?.split("/")[0].trim();
+  if (!name || /^\d+$/.test(name)) return "Autres produits";
+  if (/fruit|l[eé]gume|frittes/i.test(name)) return "Fruits & légumes";
+  if (/boisson|^eau$/i.test(name)) return "Boissons";
+  if (/boulangerie|p[aâ]tisserie/i.test(name)) return "Boulangerie";
+  if (/frais|lait|fromage/i.test(name)) return "Produits frais";
+  if (/bonbon|biscuit|chips|cuisine|food|[eé]picerie|b[eé]b[eé]|enfants/i.test(name)) return "Épicerie";
+  if (/hygien|cosm[eé]tique|electricit[eé]|insecticide|ustensile|librairie|sant[eé]/i.test(name)) {
+    return "Maison & entretien";
+  }
+  return name;
+}
 
-const RAYON_PRODUCTS: Record<Department["id"], MarketProduct[]> = {
-  "fruits-legumes": [
-    { name: "Mangues Kent", price: "1 200 / kg", badge: "BIO", artwork: "produce" },
-    { name: "Bananes", price: "800 / kg", badge: "PROMO", artwork: "produce" },
-    { name: "Oranges", price: "900 / kg", badge: "BIO", artwork: "produce" },
-    { name: "Tomates fraîches", price: "750 / kg", badge: "PROMO", artwork: "produce" },
-    { name: "Oignons", price: "600 / kg", badge: "BIO", artwork: "produce" },
-    { name: "Pommes de terre", price: "700 / kg", badge: "PROMO", artwork: "produce" },
-  ],
-  epicerie: [
-    { name: "Pringles Original", price: "1 500", badge: "PROMO", artwork: "pantry", image: "pringles.jpg" },
-    { name: "Café Touba", price: "800", badge: "BIO", artwork: "pantry", image: "cafe.jpg" },
-    { name: "Riz brisé", price: "750 / kg", badge: "PROMO", artwork: "pantry" },
-    { name: "Huile végétale", price: "1 200", badge: "BIO", artwork: "pantry" },
-    { name: "Sucre en poudre", price: "650", badge: "PROMO", artwork: "pantry" },
-    { name: "Pâtes alimentaires", price: "500", badge: "BIO", artwork: "pantry" },
-  ],
-  boulangerie: [
-    { name: "Baguette tradition", price: "150", badge: "PROMO", artwork: "bakery", image: "pain.jpg" },
-    { name: "Pain complet", price: "400", badge: "BIO", artwork: "bakery" },
-    { name: "Croissant pur beurre", price: "300", badge: "PROMO", artwork: "bakery" },
-    { name: "Pain au chocolat", price: "350", badge: "BIO", artwork: "bakery" },
-    { name: "Brioche nature", price: "500", badge: "PROMO", artwork: "bakery" },
-    { name: "Pain de mie", price: "900", badge: "BIO", artwork: "bakery" },
-  ],
-  boissons: [
-    { name: "Bissap frais", price: "500", badge: "BIO", artwork: "drink", image: "bissap.jpg" },
-    { name: "Eau minérale 1,5 L", price: "500", badge: "PROMO", artwork: "drink", image: "eau.jpg" },
-    { name: "Jus de gingembre", price: "600", badge: "BIO", artwork: "drink" },
-    { name: "Jus de bouye", price: "600", badge: "PROMO", artwork: "drink" },
-    { name: "Soda 33 cl", price: "500", badge: "BIO", artwork: "drink" },
-    { name: "Lait frais", price: "1 000", badge: "PROMO", artwork: "drink" },
-  ],
-  frais: [
-    { name: "Lait caillé", price: "700", badge: "BIO", artwork: "fresh" },
-    { name: "Yaourt nature", price: "400", badge: "PROMO", artwork: "fresh" },
-    { name: "Beurre doux", price: "1 200", badge: "BIO", artwork: "fresh" },
-    { name: "Œufs frais (6)", price: "1 000", badge: "PROMO", artwork: "fresh" },
-    { name: "Fromage portion", price: "900", badge: "BIO", artwork: "fresh" },
-    { name: "Crème fraîche", price: "1 100", badge: "PROMO", artwork: "fresh" },
-  ],
-  maison: [
-    { name: "Savon de Marseille", price: "600", badge: "BIO", artwork: "home", image: "savon.jpg" },
-    { name: "Liquide vaisselle", price: "1 200", badge: "PROMO", artwork: "home" },
-    { name: "Eau de Javel", price: "900", badge: "BIO", artwork: "home" },
-    { name: "Lessive en poudre", price: "1 500", badge: "PROMO", artwork: "home" },
-    { name: "Éponge multi-usage", price: "350", badge: "BIO", artwork: "home" },
-    { name: "Papier hygiénique", price: "1 000", badge: "PROMO", artwork: "home" },
-  ],
-};
+function getDepartmentId(name: string) {
+  const departmentIds: Record<string, string> = {
+    "Fruits & légumes": "fruits-legumes",
+    Épicerie: "epicerie",
+    Boulangerie: "boulangerie",
+    Boissons: "boissons",
+    "Produits frais": "frais",
+    "Maison & entretien": "maison",
+  };
+  if (departmentIds[name]) return departmentIds[name];
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("fr")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "autres-produits";
+}
+
+function getProductArtwork(name: string): ProductArtwork {
+  const artwork = getDepartmentArtwork(name);
+  return artwork === "drinks" ? "drink" : artwork;
+}
+
+function isMarketApiResponse(value: unknown): value is { products: OdooCatalogProduct[] } {
+  if (!value || typeof value !== "object" || !("products" in value)) return false;
+  const products = value.products;
+  return (
+    Array.isArray(products) &&
+    products.every((product: unknown) => {
+      if (!product || typeof product !== "object") return false;
+      const candidate = product as Partial<OdooCatalogProduct>;
+      return (
+        typeof candidate.id === "number" &&
+        typeof candidate.name === "string" &&
+        typeof candidate.price === "number" &&
+        (candidate.categoryName === null || typeof candidate.categoryName === "string") &&
+        typeof candidate.unitName === "string" &&
+        typeof candidate.imageUrl === "string" &&
+        typeof candidate.isPromotion === "boolean"
+      );
+    })
+  );
+}
 
 const SERVICES = [
   { id: "livraison", title: "Livraison à domicile", desc: "Dans tout Dakar, sous 2 heures.", icon: "🛵" },
@@ -158,7 +155,7 @@ function useOpenStatus() {
 
 /* ═══════════ ILLUSTRATIONS ═══════════ */
 
-function DepartmentIllustration({ art }: { art: Department["art"] }) {
+function DepartmentIllustration({ art }: { art: "produce" | "pantry" | "bakery" | "drinks" | "fresh" | "home" }) {
   return (
     <svg
       className={`market-department-art market-department-art--${art}`}
@@ -286,17 +283,18 @@ function ProductIllustration({ artwork }: { artwork: ProductArtwork }) {
 }
 
 function ProductArtworkView({ product }: { product: MarketProduct }) {
-  if (product.image) {
-    return (
-      <img
-        className="market-product-image"
-        src={`/produits/${product.image}`}
-        alt={product.name}
-        loading="lazy"
-      />
-    );
-  }
-  return <ProductIllustration artwork={product.artwork} />;
+  const [imageFailed, setImageFailed] = useState(false);
+  if (imageFailed) return <ProductIllustration artwork={product.artwork} />;
+
+  return (
+    <img
+      className="market-product-image"
+      src={product.imageUrl}
+      alt={product.name}
+      loading="lazy"
+      onError={() => setImageFailed(true)}
+    />
+  );
 }
 
 function MarketProductCard({
@@ -317,50 +315,60 @@ function MarketProductCard({
 
   return (
     <article className="market-product-card">
-      <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
-        {product.badge}
-      </span>
+      {product.badge && (
+        <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
+          {product.badge}
+        </span>
+      )}
       <div className="market-product-visual">
         <ProductArtworkView product={product} />
       </div>
-      <span className="market-product-department">{departmentName}</span>
-      <h4>{product.name}</h4>
-      <p>
-        {priceUnit === "kg" ? product.price.replace(/\s*\/\s*kg\b/i, "") : product.price}
-        <span>{priceUnit === "kg" ? "FCFA / kg" : "FCFA"}</span>
-      </p>
-      {cartQuantity > 0 ? (
-        <div className="market-product-cart-controls" role="group" aria-label={`Quantité de ${product.name} dans le panier`}>
-          <button
-            type="button"
-            onClick={() => onSetQuantity(cartQuantity - (priceUnit === "kg" ? 0.5 : 1))}
-            aria-label={`Retirer ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
-          >
-            −
-          </button>
-          <span aria-live="polite">
-            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartQuantity)}
-            {priceUnit === "kg" ? " kg" : ""}
+      <div className="market-product-info">
+        <span className="market-product-department">{departmentName}</span>
+        <h4>{product.name}</h4>
+        <p className="market-product-price">
+          <strong>
+            {priceUnit === "kg" ? product.price.replace(/\s*\/\s*kg\b/i, "") : product.price}
+          </strong>
+          <span>
+            FCFA{priceUnit === "kg" && <small> / kg</small>}
           </span>
+        </p>
+      </div>
+      <div className="market-product-purchase">
+        {cartQuantity > 0 ? (
+          <div className="market-product-cart-controls" role="group" aria-label={`Quantité de ${product.name} dans le panier`}>
+            <button
+              type="button"
+              onClick={() => onSetQuantity(cartQuantity - (priceUnit === "kg" ? 0.5 : 1))}
+              aria-label={`Retirer ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+            >
+              −
+            </button>
+            <span aria-live="polite">
+              {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartQuantity)}
+              {priceUnit === "kg" ? " kg" : ""}
+            </span>
+            <button
+              type="button"
+              onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
+              aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+            >
+              +
+            </button>
+          </div>
+        ) : (
           <button
+            className="market-product-add"
             type="button"
-            onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
-            aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
+            onClick={onAddToCart}
+            disabled={unitPrice === null}
+            aria-label={`Ajouter ${product.name} au panier`}
           >
-            +
+            Ajouter <span aria-hidden="true">+</span>
           </button>
-        </div>
-      ) : (
-        <button
-          className="market-product-add"
-          type="button"
-          onClick={onAddToCart}
-          disabled={unitPrice === null}
-          aria-label={`Ajouter ${product.name} au panier`}
-        >
-          Ajouter <span aria-hidden="true">+</span>
-        </button>
-      )}
+        )}
+      </div>
     </article>
   );
 }
@@ -379,6 +387,12 @@ export default function MarketPage() {
   const status = useOpenStatus();
   const { items: cartItems, ready: cartReady, storageError, addItem, setQuantity } = useMarketCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [catalog, setCatalog] = useState<OdooCatalogProduct[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogRetry, setCatalogRetry] = useState(0);
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const isDark = themeChoice === "dark" || (themeChoice === "system" && systemPrefersDark);
@@ -387,22 +401,64 @@ export default function MarketPage() {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("fr");
-  const searchResults: MarketSearchResult[] = DEPARTMENTS.flatMap((department) =>
-    RAYON_PRODUCTS[department.id]
-      .filter((product) => {
-        const searchableText = `${product.name} ${department.name} ${department.description}`
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLocaleLowerCase("fr");
-        return searchableText.includes(normalizedQuery);
-      })
-      .map((product) => ({
-        ...product,
-        departmentId: department.id,
-        departmentName: department.name,
-      })),
+  const marketProducts: MarketProduct[] = catalog.map((product) => {
+    const departmentName = getDepartmentName(product.categoryName);
+    const price = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(product.price);
+    const pricePerKilogram = /kg|kilogram/i.test(product.unitName);
+    return {
+      id: product.id,
+      name: product.name,
+      price: pricePerKilogram ? `${price} / kg` : price,
+      badge: product.isPromotion ? "PROMO" : undefined,
+      artwork: getProductArtwork(departmentName),
+      imageUrl: product.imageUrl,
+      departmentId: getDepartmentId(departmentName),
+      departmentName,
+    };
+  });
+  const productsByDepartment = new Map<string, MarketProduct[]>();
+  for (const product of marketProducts) {
+    const products = productsByDepartment.get(product.departmentId) || [];
+    products.push(product);
+    productsByDepartment.set(product.departmentId, products);
+  }
+  const departments = [...productsByDepartment.entries()]
+    .map(([id, products]) => ({
+      id,
+      name: products[0].departmentName,
+      description: `${products.length} produit${products.length > 1 ? "s" : ""} disponible${products.length > 1 ? "s" : ""}.`,
+      color: "green",
+      art: getDepartmentArtwork(products[0].departmentName),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name, "fr"))
+    .map((department, index) => ({
+      ...department,
+      color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length],
+    }));
+  const filteredProducts = marketProducts.filter((product) => {
+    if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
+    if (!normalizedQuery) return true;
+    const searchableText = `${product.name} ${product.departmentName}`
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("fr");
+    return searchableText.includes(normalizedQuery);
+  });
+  const totalPages = Math.ceil(filteredProducts.length / MARKET_PAGE_SIZE);
+  const page = Math.min(currentPage, Math.max(totalPages, 1));
+  const pageProducts = filteredProducts.slice((page - 1) * MARKET_PAGE_SIZE, page * MARKET_PAGE_SIZE);
+  const pageNumbers = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => Math.max(1, Math.min(totalPages - 4, page - 2)) + index,
   );
+  const firstProductNumber = filteredProducts.length ? (page - 1) * MARKET_PAGE_SIZE + 1 : 0;
+  const lastProductNumber = Math.min(page * MARKET_PAGE_SIZE, filteredProducts.length);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  const selectDepartment = (departmentId: string) => {
+    setSelectedDepartment(departmentId);
+    setCurrentPage(1);
+  };
 
   const getCartQuantity = (departmentId: string, productName: string) =>
     cartItems.find((item) => item.id === getMarketProductId(departmentId, productName))?.quantity ?? 0;
@@ -414,13 +470,45 @@ export default function MarketPage() {
       departmentId,
       departmentName,
       name: product.name,
-      image: product.image,
+      image: product.imageUrl,
       priceLabel: product.price.replace(/\s*\/\s*kg\b/i, ""),
       unitPrice,
       priceUnit: /\/\s*kg\b/i.test(product.price) ? "kg" : "unité",
     };
     addItem(item);
   };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCatalogLoading(true);
+    setCatalogError(null);
+
+    fetch("/api/market/products", { signal: controller.signal })
+      .then(async (response) => {
+        const payload: unknown = await response.json();
+        if (!response.ok) {
+          const message =
+            payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+              ? payload.error
+              : "Impossible de charger les produits.";
+          throw new Error(message);
+        }
+        if (!isMarketApiResponse(payload)) {
+          throw new Error("La réponse du catalogue est invalide.");
+        }
+        setCatalog(payload.products);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("[Market] Product catalog could not be loaded:", error);
+        setCatalogError(error instanceof Error ? error.message : "Impossible de charger les produits.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCatalogLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [catalogRetry]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -517,38 +605,34 @@ export default function MarketPage() {
         <section className="market-featured" aria-labelledby="market-featured-title">
           <div className="market-section-heading">
             <div>
-              <p className="market-kicker">CETTE SEMAINE</p>
-              <h2 id="market-featured-title">En vedette.</h2>
+              <p className="market-kicker">CATALOGUE ODOO</p>
+              <h2 id="market-featured-title">À découvrir.</h2>
             </div>
           </div>
-
           <div className="market-featured-grid">
-            {FEATURED.map((product) => (
+            {marketProducts.slice(0, 6).map((product) => (
               <a
                 className="market-featured-card"
                 key={product.id}
                 href={`mailto:contact@fisafigroupe.com?subject=Demande%20-%20${encodeURIComponent(product.name)}`}
               >
-                <span className="market-featured-tag" style={{ background: product.color }}>
-                  {product.tag}
+                <span className="market-featured-tag" style={{ background: "#4a1ee8" }}>
+                  {product.departmentName}
                 </span>
-                <span className="market-featured-visual" style={{ ["--accent" as string]: product.color }}>
-                  <img
-                    className="market-featured-image"
-                    src={`/produits/${product.image}`}
-                    alt=""
-                    loading="lazy"
-                  />
+                <span className="market-featured-visual" style={{ ["--accent" as string]: "#4a1ee8" }}>
+                  <img className="market-featured-image" src={product.imageUrl} alt="" loading="lazy" />
                 </span>
                 <span className="market-featured-copy">
                   <strong>{product.name}</strong>
                   <span className="market-featured-price">
-                    {product.price} <small>{product.unit}</small>
+                    {product.price.replace(/\s*\/\s*kg\b/i, "")}
+                    <small> FCFA{/\/\s*kg\b/i.test(product.price) ? " / kg" : ""}</small>
                   </span>
                 </span>
                 <span className="market-featured-arrow" aria-hidden="true">↗</span>
               </a>
             ))}
+            {catalogLoading && <p role="status">Chargement des produits…</p>}
           </div>
         </section>
 
@@ -571,96 +655,132 @@ export default function MarketPage() {
               <input
                 type="search"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Rechercher un produit ou un rayon…"
                 aria-label="Rechercher un produit ou un rayon"
               />
               {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery("")}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                >
                   Effacer
                 </button>
               )}
             </label>
           </div>
 
-          {!normalizedQuery && <div className="market-department-grid">
-            {DEPARTMENTS.map((department, index) => (
-              <a
-                className={`market-department-card market-department-card--${department.color}`}
-                href={`#${department.id}-produits`}
-                key={department.id}
+          <div className="market-department-grid" aria-label="Filtrer par rayon">
+              <button
+                className={`market-department-card market-department-card--all${selectedDepartment ? "" : " is-selected"}`}
+                type="button"
+                aria-pressed={!selectedDepartment}
+                onClick={() => selectDepartment("")}
               >
-                <span className="market-department-number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <DepartmentIllustration art={department.art} />
+                <span className="market-department-number">TOUS</span>
                 <span className="market-department-copy">
-                  <strong>{department.name}</strong>
-                  <span>{department.description}</span>
+                  <strong>Tous les rayons</strong>
+                  <span>{marketProducts.length} produits à découvrir</span>
                   <span className="market-department-arrow" aria-hidden="true">↗</span>
                 </span>
-              </a>
-            ))}
-          </div>}
+              </button>
+              {departments.map((department, index) => (
+                <button
+                  className={`market-department-card market-department-card--${department.color}${selectedDepartment === department.id ? " is-selected" : ""}`}
+                  type="button"
+                  id={`${department.id}-produits`}
+                  aria-pressed={selectedDepartment === department.id}
+                  onClick={() => selectDepartment(department.id)}
+                  key={department.id}
+                >
+                  <span className="market-department-number">{String(index + 1).padStart(2, "0")}</span>
+                  <DepartmentIllustration art={department.art} />
+                  <span className="market-department-copy">
+                    <strong>{department.name}</strong>
+                    <span>{department.description}</span>
+                    <span>{productsByDepartment.get(department.id)?.length || 0} produits</span>
+                    <span className="market-department-arrow" aria-hidden="true">↗</span>
+                  </span>
+                </button>
+              ))}
+          </div>
 
-          {normalizedQuery ? (
+          {catalogError && (
+            <div className="market-search-results" role="alert">
+              <p>{catalogError}</p>
+              <button type="button" onClick={() => setCatalogRetry((retry) => retry + 1)}>
+                Réessayer
+              </button>
+            </div>
+          )}
+
+          {catalogLoading ? (
+            <p className="market-search-count" role="status">Chargement du catalogue du magasin…</p>
+          ) : !catalogError && (
             <div className="market-search-results" aria-live="polite">
               <p className="market-search-count">
-                {searchResults.length
-                  ? `${searchResults.length} produit${searchResults.length > 1 ? "s" : ""} trouvé${searchResults.length > 1 ? "s" : ""}`
-                  : "Aucun produit trouvé. Essayez un autre nom ou rayon."}
+                {filteredProducts.length
+                  ? `Affichage de ${firstProductNumber} à ${lastProductNumber} sur ${filteredProducts.length} produit${filteredProducts.length > 1 ? "s" : ""}${normalizedQuery ? " trouvé" : ""}${filteredProducts.length > 1 && normalizedQuery ? "s" : ""}`
+                  : normalizedQuery ? "Aucun produit trouvé. Essayez un autre nom ou rayon." : "Aucun produit dans ce rayon."}
               </p>
-              {searchResults.length > 0 && (
+              {pageProducts.length > 0 && (
                 <div className="market-product-grid">
-                  {searchResults.map((result) => (
+                  {pageProducts.map((product) => (
                     <MarketProductCard
-                      key={`${result.departmentName}-${result.name}`}
-                      product={result}
-                      departmentName={result.departmentName}
-                      cartQuantity={getCartQuantity(result.departmentId, result.name)}
-                      onAddToCart={() => addProduct(result.departmentId, result.departmentName, result)}
+                      key={product.id}
+                      product={product}
+                      departmentName={product.departmentName}
+                      cartQuantity={getCartQuantity(product.departmentId, product.name)}
+                      onAddToCart={() => addProduct(product.departmentId, product.departmentName, product)}
                       onSetQuantity={(quantity) => setQuantity(
-                        getMarketProductId(result.departmentId, result.name),
+                        getMarketProductId(product.departmentId, product.name),
                         quantity,
                       )}
                     />
                   ))}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="market-rayon-products">
-              {DEPARTMENTS.map((department) => (
-                <section
-                  className={`market-rayon-section market-rayon-section--${department.color}`}
-                  id={`${department.id}-produits`}
-                  key={department.id}
-                  aria-labelledby={`${department.id}-title`}
-                >
-                  <div className="market-rayon-heading">
-                    <div>
-                      <p className="market-kicker">RAYON {department.name.toUpperCase()}</p>
-                      <h3 id={`${department.id}-title`}>{department.name}</h3>
-                    </div>
-                    <span>{RAYON_PRODUCTS[department.id].length} produits sélectionnés</span>
-                  </div>
-                  <div className="market-product-grid">
-                    {RAYON_PRODUCTS[department.id].map((product) => (
-                      <MarketProductCard
-                        product={product}
-                        departmentName={department.name}
-                        key={product.name}
-                        cartQuantity={getCartQuantity(department.id, product.name)}
-                        onAddToCart={() => addProduct(department.id, department.name, product)}
-                        onSetQuantity={(quantity) => setQuantity(
-                          getMarketProductId(department.id, product.name),
-                          quantity,
-                        )}
-                      />
+              {totalPages > 1 && (
+                <nav className="market-pagination" aria-label="Pages du catalogue">
+                  <button
+                    type="button"
+                    className="market-pagination-step"
+                    onClick={() => setCurrentPage(page - 1)}
+                    disabled={page === 1}
+                    aria-label="Page précédente"
+                  >
+                    ← Précédent
+                  </button>
+                  <div className="market-pagination-numbers">
+                    {pageNumbers.map((pageNumber) => (
+                      <button
+                        type="button"
+                        key={pageNumber}
+                        className={pageNumber === page ? "is-current" : ""}
+                        aria-current={pageNumber === page ? "page" : undefined}
+                        onClick={() => setCurrentPage(pageNumber)}
+                      >
+                        {pageNumber}
+                      </button>
                     ))}
                   </div>
-                </section>
-              ))}
+                  <button
+                    type="button"
+                    className="market-pagination-step"
+                    onClick={() => setCurrentPage(page + 1)}
+                    disabled={page === totalPages}
+                    aria-label="Page suivante"
+                  >
+                    Suivant →
+                  </button>
+                </nav>
+              )}
             </div>
           )}
         </section>

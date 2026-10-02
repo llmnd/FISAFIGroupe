@@ -24,6 +24,11 @@ export function getMarketPriceAmount(price: string) {
   return amount ? Number(amount) : null;
 }
 
+export function getMarketImageSource(image?: string) {
+  if (!image) return null;
+  return image.startsWith("https://") ? image : `/produits/${image}`;
+}
+
 function isMarketCartItem(value: unknown): value is MarketCartItem {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<MarketCartItem>;

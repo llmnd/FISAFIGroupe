@@ -289,4 +289,3 @@ export default async function handler(req, res) {
 
 - See `API_DOCUMENTATION.md` for complete API reference
 - See `BACKEND_SETUP.md` for installation and deployment
-

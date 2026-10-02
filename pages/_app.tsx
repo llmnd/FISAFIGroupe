@@ -12,6 +12,8 @@ import '../styles/modules/mobile-performance.css';
 import '../styles/modules/partners.css';
 import '../styles/business.css';
 import '../styles/market-store.css';
+import '../styles/market-store-scene.css';
+import '../styles/market-checkout.css';
 
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;

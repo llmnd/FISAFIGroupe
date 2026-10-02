@@ -4,6 +4,7 @@ import Head from "next/head";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import useMarketCart from "@/hooks/useMarketCart";
+import { getMarketImageSource } from "@/lib/marketCart";
 
 type Fulfillment = "delivery" | "pickup";
 
@@ -108,10 +109,11 @@ export default function MarketOrderPage() {
                 <ul className="market-cart-items">
                   {items.map((item) => {
                     const step = item.priceUnit === "kg" ? 0.5 : 1;
+                    const imageSource = getMarketImageSource(item.image);
                     return (
                       <li className="market-cart-item" key={item.id}>
-                        {item.image ? (
-                          <img src={`/produits/${item.image}`} alt="" />
+                        {imageSource ? (
+                          <img src={imageSource} alt="" />
                         ) : (
                           <span className="market-cart-art" aria-hidden="true">F</span>
                         )}
