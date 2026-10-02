@@ -20,7 +20,7 @@
   gap: 0.9rem;
   margin: 0 0 1.5rem;
   color: rgba(240, 235, 227, 0.72);
-  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-family: var(--card-copy-font);
   font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.28em;
@@ -37,9 +37,9 @@
 
 /* ── Titre de section ── */
 .area-section .section-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--card-title-font);
   font-size: clamp(2.8rem, 6vw, 5.4rem);
-  font-weight: 400;
+  font-weight: var(--card-title-weight);
   line-height: 1.05;
   letter-spacing: -0.025em;
   color: #f6f2eb;
@@ -141,9 +141,9 @@
 /* ── Titre de carte ── */
 .area-card-title {
   margin: 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: clamp(1.75rem, 2.8vw, 2.35rem);
-  font-weight: 500;
+  font-family: var(--card-title-font);
+  font-size: var(--card-title-size);
+  font-weight: var(--card-title-weight);
   line-height: 1.2;
   letter-spacing: -0.012em;
   color: #f6f2eb;
@@ -153,9 +153,9 @@
 /* ── Description ── */
 .area-card-desc {
   margin: 0;
-  font-family: 'Jost', system-ui, -apple-system, sans-serif;
-  font-size: clamp(1.3rem, 1.5vw, 1.8rem);
-  font-weight: 400;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-copy-size);
+  font-weight: var(--card-copy-weight);
   line-height: 1.78;
   letter-spacing: 0.005em;
   color: rgba(240, 235, 227, 0.78);
@@ -175,9 +175,9 @@
 
 /* ── Tag ── */
 .area-card-tag {
-  font-family: 'Jost', system-ui, -apple-system, sans-serif;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-tag-size);
+  font-weight: var(--card-tag-weight);
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgba(240, 235, 227, 0.68);
@@ -223,12 +223,7 @@
     font-size: clamp(2.4rem, 10vw, 3.8rem);
   }
 
-  .area-card-title {
-    font-size: clamp(1.6rem, 6vw, 2rem);
-  }
-
   .area-card-desc {
-    font-size: 1rem;
     max-width: 100%;
   }
 }
@@ -239,13 +234,27 @@
     letter-spacing: 0.22em;
   }
 
+  .area-card-tag {
+    letter-spacing: 0.2em;
+  }
+}
+
+@media (min-width: 900px) {
+  .area-card-title {
+    font-size: var(--card-title-size-wide);
+  }
+
   .area-card-desc {
-    font-size: 0.98rem;
-    line-height: 1.72;
+    font-size: var(--card-copy-size-wide);
+  }
+}
+
+@media (max-width: 640px) {
+  .area-card-title {
+    font-size: var(--card-title-size-mobile);
   }
 
   .area-card-tag {
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
+    font-size: var(--card-tag-size-mobile);
   }
 }

@@ -5,6 +5,7 @@ import Head from "next/head";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -234,25 +235,7 @@ export default function Contact() {
 
       <div className="divider" />
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-logo">Fi<span>SAFI</span></div>
-          <div className="footer-links">
-            <a href="/#services">Services</a>
-            <a href="/#competences">Expertises</a>
-            <a href="/#vision">Vision</a>
-            <a href="/training">Formation</a>
-            <a href="/contact">Contact</a>
-          </div>
-          <div className="footer-cta">
-            <Link href="/contact" className="btn-small">Nous contacter</Link>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2025 FISAFI Groupe. Tous droits réservés.</p>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 // Icon components extracted for better code organization
 const CalendarIcon = () => (
@@ -534,17 +535,7 @@ export default function FormationPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer>
-        <div>
-          <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
-          <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
-        </div>
-        <div className="foot-bottom">
-          <div className="foot-copy">© 2025 FISAFI Groupe. Tous droits réservés.</div>
-          <a href="https://www.fisafigroupe.com" className="foot-web">fisafigroupe.com</a>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

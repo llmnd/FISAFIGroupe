@@ -3,6 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import Header from "@/components/Header";
 import MarketStore from "@/components/MarketStore";
+import Footer from "@/components/Footer";
 
 /* ═══════════ TYPES ═══════════ */
 
@@ -638,14 +639,8 @@ export default function MarketPage() {
           </div>
         </section>
 
-        <footer className="market-footer">
-          <span>FI-SA-FI · DAKAR</span>
-          <span>Le marché du quotidien.</span>
-          <Link href="/">
-            Retour au site FiSAFi Groupe <span aria-hidden="true">↗</span>
-          </Link>
-        </footer>
       </main>
+      <Footer />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 interface Session {
   id: string;
@@ -441,17 +442,7 @@ export default function SessionsPage() {
         )}
       </section>
 
-      {/* FOOTER */}
-      <footer>
-        <div>
-          <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
-          <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
-        </div>
-        <div className="foot-bottom">
-          <div className="foot-copy">© 2025 FISAFI Groupe. Tous droits réservés.</div>
-          <a href="https://www.fisafigroupe.com" className="foot-web">fisafigroupe.com</a>
-        </div>
-      </footer>
+      <Footer />
 
       <style jsx>{`
         /* ── LAYOUT ── */
@@ -753,14 +744,17 @@ export default function SessionsPage() {
           flex-wrap: wrap;
         }
         .s-card-title {
-          font-size: 1.08rem;
-          font-weight: 700;
+          font-family: var(--card-title-font);
+          font-size: var(--card-title-size);
+          font-weight: var(--card-title-weight);
           color: #12213a;
           margin: 0;
           line-height: 1.35;
         }
         .s-card-loc {
-          font-size: 0.94rem;
+          font-family: var(--card-copy-font);
+          font-size: var(--card-copy-size);
+          font-weight: var(--card-copy-weight);
           color: #526174;
           display: flex;
           align-items: center;
@@ -891,8 +885,9 @@ export default function SessionsPage() {
           gap: 12px;
         }
         .list-title {
-          font-size: 1.15rem;
-          font-weight: 700;
+          font-family: var(--card-title-font);
+          font-size: var(--card-title-size);
+          font-weight: var(--card-title-weight);
           color: #12213a;
           margin: 0;
           line-height: 1.3;
@@ -908,7 +903,9 @@ export default function SessionsPage() {
           display: flex;
           align-items: center;
           gap: 5px;
-          font-size: 0.94rem;
+          font-family: var(--card-copy-font);
+          font-size: var(--card-copy-size);
+          font-weight: var(--card-copy-weight);
           color: #526174;
         }
 
@@ -1033,9 +1030,23 @@ export default function SessionsPage() {
           .dot { width: 4px; height: 4px; }
           .list-date-block { min-width: 66px; padding: 14px 8px; }
           .list-date-num { font-size: 1.45rem; }
-          .list-title { font-size: 1rem; }
+          .s-card-title,
+          .list-title { font-size: var(--card-title-size-mobile); }
           .list-top { flex-wrap: wrap; }
           .list-body { padding: 12px 14px; }
+        }
+
+        @media (min-width: 900px) {
+          .s-card-title,
+          .list-title { font-size: var(--card-title-size-wide); }
+
+          .s-card-loc,
+          .list-meta-item { font-size: var(--card-copy-size-wide); }
+        }
+
+        @media (max-width: 640px) {
+          .s-card-title,
+          .list-title { font-size: var(--card-title-size-mobile); }
         }
 
         .vt-btn:focus-visible,

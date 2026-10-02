@@ -55,8 +55,9 @@
 
 .home-business-heading h2 {
   margin: 0;
+  font-family: var(--card-title-font);
   font-size: clamp(2.6rem, 7vw, 6rem);
-  font-weight: 700;
+  font-weight: var(--card-title-weight);
   line-height: 0.95;
   letter-spacing: -0.065em;
 }
@@ -64,7 +65,16 @@
 .home-business-heading > p:last-child {
   margin: 1rem 0 0;
   color: rgba(17, 17, 17, 0.65);
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-family: var(--card-copy-font);
+  font-size: var(--card-copy-size);
+  font-weight: var(--card-copy-weight);
+  line-height: 1.7;
+}
+
+@media (min-width: 900px) {
+  .home-business-heading > p:last-child {
+    font-size: var(--card-copy-size-wide);
+  }
 }
 
 .home-business-section .business-brands {
@@ -149,6 +159,10 @@
   letter-spacing: -0.065em;
   font-weight: 700;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.28);
+}
+
+.business-brand-name-line {
+  display: block;
 }
 
 /* Description — lisibilité renforcée */

@@ -4,6 +4,7 @@ import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Services() {
   const services = [
@@ -133,17 +134,7 @@ export default function Services() {
 
       <div className="divider" />
 
-      {/* FOOTER */}
-      <footer>
-        <div>
-          <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
-          <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
-        </div>
-        <div className="foot-bottom">
-          <div className="foot-copy">© 2025 FISAFI Groupe. Tous droits réservés.</div>
-          <a href="https://www.fisafigroupe.com" className="foot-web">fisafigroupe.com</a>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

@@ -6,6 +6,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 interface Article {
   id: number;
@@ -224,27 +225,7 @@ export default function ArticleDetail() {
 
       <div className="divider" />
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-logo">
-            Fi<span>SAFI</span>
-          </div>
-          <div className="footer-links">
-            <Link href="/#services" style={{ textDecoration: 'none' }}>Services</Link>
-            <Link href="/#competences" style={{ textDecoration: 'none' }}>Expertises</Link>
-            <a href="/#vision" style={{ textDecoration: 'none' }}>Vision</a>
-            <Link href="/training" style={{ textDecoration: 'none' }}>Formation</Link>
-            <Link href="/contact" style={{ textDecoration: 'none' }}>Contact</Link>
-          </div>
-          <div className="footer-cta">
-            <Link href="/contact" className="btn-small">Nous contacter</Link>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2026 FISAFI Groupe. Tous droits réservés.</p>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

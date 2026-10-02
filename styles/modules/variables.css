@@ -13,6 +13,18 @@
   --steel: #7a8ea8;
   --line: rgba(30,64,175,0.10);
   --line-o: rgba(229,90,0,0.15);
+  --card-title-font: 'Cormorant Garamond', serif;
+  --card-title-size: clamp(1.45rem, 2vw, 2.15rem);
+  --card-title-size-mobile: clamp(1.25rem, 5vw, 1.72rem);
+  --card-title-size-wide: clamp(1.6rem, 2.2vw, 2.25rem);
+  --card-title-weight: 700;
+  --card-copy-font: 'Outfit', sans-serif;
+  --card-copy-size: 1.08rem;
+  --card-copy-size-wide: clamp(1.1rem, 1.25vw, 1.22rem);
+  --card-copy-weight: 450;
+  --card-tag-size: 0.68rem;
+  --card-tag-size-mobile: 0.46rem;
+  --card-tag-weight: 700;
 }
 
 /* Dark mode */

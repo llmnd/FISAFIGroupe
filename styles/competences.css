@@ -26,7 +26,7 @@
   align-items: center;
   gap: 0.9rem;
   margin: 0 0 1.5rem;
-  font-family: 'Jost', system-ui, -apple-system, sans-serif;
+  font-family: var(--card-copy-font);
   font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.28em;
@@ -45,9 +45,9 @@
 .comp-intro {
   max-width: 58ch;
   margin: 0 0 clamp(3rem, 6vw, 5rem);
-  font-family: 'Jost', system-ui, sans-serif;
-  font-size: clamp(1.6rem, 1.5vw, 1.8rem);
-  font-weight: 400;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-copy-size);
+  font-weight: var(--card-copy-weight);
   line-height: 1.78;
   letter-spacing: 0.005em;
   color: #374151;
@@ -55,9 +55,9 @@
 
 .comp-title {
   margin: 0 0 1rem;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--card-title-font);
   font-size: clamp(2.8rem, 6vw, 5.4rem);
-  font-weight: 400;
+  font-weight: var(--card-title-weight);
   line-height: 1.05;
   letter-spacing: -0.025em;
   color: #111827;
@@ -113,15 +113,15 @@
 .comp-heading {
   display: flex;
   width: 100%;
-  min-height: calc(clamp(1.75rem, 2.8vw, 2.35rem) * 2.4);
+  min-height: calc(var(--card-title-size) * 2.4);
   align-items: center;
 }
 
 .comp-name {
   min-width: 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: clamp(1.75rem, 2.8vw, 2.35rem);
-  font-weight: 500;
+  font-family: var(--card-title-font);
+  font-size: var(--card-title-size);
+  font-weight: var(--card-title-weight);
   letter-spacing: -0.012em;
   line-height: 1.2;
   color: #111827;
@@ -174,9 +174,9 @@
 
 .comp-description {
   min-height: calc(1.78em * 2);
-  font-family: 'Jost', system-ui, sans-serif;
-  font-size: clamp(1.3rem, 1.6vw, 1.5rem);
-  font-weight: 400;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-copy-size);
+  font-weight: var(--card-copy-weight);
   line-height: 1.78;
   letter-spacing: 0.005em;
   color: #374151;
@@ -202,9 +202,9 @@
   border: 1px solid var(--tag-border, #dbeafe);
   border-radius: 999px;
   background: var(--tag-background, #eff6ff);
-  font-family: 'Jost', system-ui, -apple-system, sans-serif;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-tag-size);
+  font-weight: var(--card-tag-weight);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--tag-color, #0d2a77);
@@ -292,16 +292,11 @@
     font-size: clamp(2.4rem, 10vw, 3.8rem);
   }
 
-  .comp-name {
-    font-size: clamp(1.6rem, 6vw, 2rem);
-  }
-
   .comp-heading {
-    min-height: calc(clamp(1.6rem, 6vw, 2rem) * 2.4);
+    min-height: calc(var(--card-title-size) * 2.4);
   }
 
   .comp-description {
-    font-size: 1rem;
     max-width: 100%;
   }
 }
@@ -312,14 +307,54 @@
     letter-spacing: 0.22em;
   }
 
+  .comp-tag {
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (min-width: 900px) {
+  .comp-heading {
+    min-height: calc(var(--card-title-size-wide) * 2.4);
+  }
+
+  .comp-name {
+    font-size: var(--card-title-size-wide);
+  }
+
   .comp-description {
-    font-size: 0.98rem;
-    line-height: 1.72;
+    font-size: var(--card-copy-size-wide);
+  }
+
+  .comp-intro {
+    font-size: var(--card-copy-size-wide);
+  }
+}
+
+@media (min-width: 1200px) {
+  .comp-list {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .comp-card:last-child:nth-child(odd) {
+    grid-column: auto;
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .comp-heading {
+    min-height: calc(var(--card-title-size-mobile) * 2.4);
+  }
+
+  .comp-name {
+    font-size: var(--card-title-size-mobile);
   }
 
   .comp-tag {
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
+    font-size: var(--card-tag-size-mobile);
   }
 }
 

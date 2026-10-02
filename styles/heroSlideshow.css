@@ -660,9 +660,9 @@
 
 /* Titre */
 .hs-card-title {
-  font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(1.15rem, 3.8vw, 1.42rem);
-  font-weight: 600;
+  font-family: var(--card-title-font);
+  font-size: var(--card-title-size);
+  font-weight: var(--card-title-weight);
   line-height: 1.22;
   letter-spacing: -0.022em;
   margin: 0 0 0.9rem;
@@ -671,9 +671,9 @@
 
 /* Description — plus lisible, meilleur contraste */
 .hs-card-desc {
-  font-family: 'Jost', Arial, sans-serif;
-  font-size: clamp(1.2rem, 1.55vw, 1.38rem);
-  font-weight: 500;
+  font-family: var(--card-copy-font);
+  font-size: var(--card-copy-size);
+  font-weight: var(--card-copy-weight);
   color: #2e241e;
   line-height: 1.65;
   margin: 0 0 1.35rem;
@@ -938,10 +938,10 @@
     width: min(100%, 520px);
   }
   .hs-card-title {
-    font-size: 1.5rem;
+    font-size: var(--card-title-size-wide);
   }
   .hs-card-desc {
-    font-size: 1.42rem;
+    font-size: var(--card-copy-size-wide);
     line-height: 1.65;
   }
   .hs-card-slide {
@@ -949,5 +949,21 @@
   }
   .hs-bottom {
     padding: 0 4rem 3.5rem 4rem;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1399px) {
+  .hs-card-title {
+    font-size: var(--card-title-size-wide);
+  }
+
+  .hs-card-desc {
+    font-size: var(--card-copy-size-wide);
+  }
+}
+
+@media (max-width: 640px) {
+  .hs-card-title {
+    font-size: var(--card-title-size-mobile);
   }
 }

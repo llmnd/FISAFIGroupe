@@ -5,22 +5,24 @@ const marketHref = process.env.NEXT_PUBLIC_FISAFI_MARKET_URL || "/market";
 
 const businesses = [
   {
-    name: "FiSAFi Groupe",
-    eyebrow: "Ingénierie · Réseaux · Formation",
-    description: "Réseaux télécoms, ingénierie terrain et formation professionnelle.",
+    id: "technologies",
+    name: ["FiSAFi", "Technologies"],
+    eyebrow: "Technologies & infrastructures numériques",
+    description: "Réseaux, télécommunications, fibre optique, ingénierie IT et cybersécurité.",
     image: "https://i.pinimg.com/1200x/26/2f/10/262f108ec39907befbd45c4049cd3472.jpg",
-    imageAlt: "FiSAFi Groupe — réseaux et télécommunications",
+    imageAlt: "FiSAFi Technologies — réseaux, télécommunications et infrastructures numériques",
     href: "/",
-    linkLabel: "Entrer dans le groupe",
+    linkLabel: "Découvrir nos expertises",
   },
   {
-    name: "FiSAFi Market",
-    eyebrow: "Le pôle Market",
-    description: "Découvrez l’univers FiSAFi Market et contactez notre équipe.",
+    id: "negoce",
+    name: ["FiSAFi", "Négoce"],
+    eyebrow: "Négoce · Import-export · Distribution",
+    description: "Approvisionnement, import-export et distribution de produits, avec une ambition ouverte aux échanges internationaux.",
     image: "https://i.pinimg.com/1200x/26/a2/8a/26a28a9a3fbe9e0fe2bec9a8b689d2d8.jpg",
-    imageAlt: "Visuel FiSAFi Market",
+    imageAlt: "FiSAFi Négoce — import-export et distribution",
     href: marketHref,
-    linkLabel: "Découvrir Market",
+    linkLabel: "Découvrir nos activités",
   },
 ];
 
@@ -42,10 +44,10 @@ export default function BusinessBrands({
         <Link
           className="business-brand-tile"
           href={business.href}
-          key={business.name}
-          aria-label={`${business.name} — ${business.linkLabel}`}
+          key={business.id}
+          aria-label={`${business.name.join(" ")} — ${business.linkLabel}`}
           onClick={(event) => {
-            if (business.name === "FiSAFi Groupe" && onGroupSelect) {
+            if (business.id === "technologies" && onGroupSelect) {
               event.preventDefault();
               onGroupSelect();
             }
@@ -62,7 +64,11 @@ export default function BusinessBrands({
           <span className="business-brand-tint" aria-hidden="true" />
           <span className="business-brand-content">
             <span className="business-brand-eyebrow">{business.eyebrow}</span>
-            <span className="business-brand-name">{business.name}</span>
+            <span className="business-brand-name">
+              {business.name.map((line) => (
+                <span className="business-brand-name-line" key={line}>{line}</span>
+              ))}
+            </span>
             <span className="business-brand-description">{business.description}</span>
             <span className="business-brand-action">
               {business.linkLabel}
