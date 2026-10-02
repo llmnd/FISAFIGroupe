@@ -331,8 +331,8 @@ export default function FormationPage() {
 
       <Header />
 
-      <section className="hero shared-page-hero training-page-hero" data-observe>
-        <div className="hero-bg" />
+      <section className="hero shared-page-hero training-page-hero" data-observe aria-labelledby="training-hero-title">
+        <div className="hero-bg" aria-hidden="true" />
         <div className="hero-lines" aria-hidden="true">
           <div className="hero-line" />
           <div className="hero-line" />
@@ -342,10 +342,10 @@ export default function FormationPage() {
           <div className="hero-orb" />
           <div className="hero-orb" />
         </div>
-        <div className="hero-overlay" />
+        <div className="hero-overlay" aria-hidden="true" />
         <div className="hero-content">
           <div className="hero-eyebrow">Apprendre, progresser, certifier</div>
-          <h1 className="hero-title">
+          <h1 className="hero-title" id="training-hero-title">
             Formations <em>professionnelles</em>
           </h1>
           <p className="hero-sub">

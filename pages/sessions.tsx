@@ -163,12 +163,12 @@ export default function SessionsPage() {
       <Header />
 
       {/* HERO */}
-      <section className="hero sessions-hero" data-observe>
-        <div className="hero-bg" />
-        <div className="hero-overlay" />
+      <section className="hero sessions-hero" data-observe aria-labelledby="sessions-hero-title">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="hero-overlay" aria-hidden="true" />
         <div className="hero-content">
           <div className="hero-eyebrow">Apprendre, progresser, certifier</div>
-          <h1 className="hero-title">Calendrier des Sessions</h1>
+          <h1 className="hero-title" id="sessions-hero-title">Calendrier des Sessions</h1>
           <p className="hero-sub">
             Consultez nos prochaines formations et inscrivez-vous en quelques clics
           </p>

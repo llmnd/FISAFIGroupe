@@ -1,11 +1,11 @@
 .shared-page-hero {
   position: relative;
   display: flex;
-  min-height: clamp(460px, 58vw, 680px);
+  min-height: clamp(320px, 30vw, 380px);
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  padding: clamp(7rem, 11vw, 10rem) clamp(1.25rem, 8vw, 8rem);
+  padding: 4rem clamp(1.25rem, 8vw, 8rem);
   color: #fff;
   background: #101c35;
 }
@@ -76,7 +76,7 @@
 }
 
 .shared-page-hero .hero-eyebrow {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #ffc18f;
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   font-weight: 700;
@@ -88,7 +88,7 @@
   max-width: 900px;
   margin: 0;
   color: #fff;
-  font-size: clamp(3.2rem, 8.7vw, 7.5rem);
+  font-size: clamp(2.8rem, 6vw, 4.7rem);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.045em;
@@ -101,11 +101,17 @@
   font-style: normal;
 }
 
+.training-page-hero .hero-title {
+  max-width: none;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  white-space: nowrap;
+}
+
 .shared-page-hero .hero-sub {
   max-width: 650px;
-  margin: 1.8rem 0 0;
+  margin: 1.25rem 0 0;
   color: #fff;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
   font-weight: 550;
   line-height: 1.65;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
@@ -113,11 +119,40 @@
 
 @media (max-width: 760px) {
   .shared-page-hero {
-    min-height: 480px;
-    padding: 7rem 1.35rem 5rem;
+    min-height: 340px;
+    padding: 5rem 1.35rem 2rem;
   }
 
   .shared-page-hero .hero-title {
-    font-size: clamp(3rem, 13vw, 4.3rem);
+    font-size: clamp(2.6rem, 11vw, 3.5rem);
   }
+
+  .training-page-hero .hero-title {
+    max-width: 100%;
+    font-size: clamp(2.1rem, 9vw, 3rem);
+    white-space: normal;
+  }
+}
+
+:is(.shared-page-hero, .news-hero, .sessions-hero, .contact-hero)::after {
+  position: absolute;
+  z-index: 0;
+  bottom: 0;
+  left: clamp(1.35rem, 8vw, 8rem);
+  width: clamp(3rem, 6vw, 5rem);
+  height: 3px;
+  background: linear-gradient(90deg, #ffc18f, rgba(255, 193, 143, 0.08));
+  content: "";
+  pointer-events: none;
+}
+
+:is(.shared-page-hero, .news-hero, .sessions-hero, .contact-hero) .hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  line-height: 1.3;
 }

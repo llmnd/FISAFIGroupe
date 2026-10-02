@@ -335,11 +335,11 @@
 .contact-hero {
   position: relative;
   display: flex;
-  min-height: clamp(460px, 58vw, 680px);
+  min-height: clamp(280px, 26vw, 330px);
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  padding: clamp(7rem, 11vw, 10rem) clamp(1.25rem, 8vw, 8rem);
+  padding: 3rem clamp(1.25rem, 8vw, 8rem);
   color: #fff;
   background: #101c35;
 }
@@ -410,7 +410,7 @@
 }
 
 .contact-hero .hero-eyebrow {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #ffc18f;
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   font-weight: 700;
@@ -418,13 +418,13 @@
 }
 
 .contact-hero .hero-title {
-  max-width: 850px;
+  max-width: none;
   color: #fff;
-  font-size: clamp(3.2rem, 8.7vw, 7.5rem);
+  font-size: clamp(2rem, 4vw, 3.4rem);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.045em;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 
 .contact-hero .hero-title em {
@@ -434,9 +434,9 @@
 
 .contact-hero .hero-sub {
   max-width: 630px;
-  margin-top: 1.8rem;
+  margin-top: 1rem;
   color: #fff;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
   font-weight: 500;
   line-height: 1.65;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
@@ -593,12 +593,13 @@
 
 @media (max-width: 760px) {
   .contact-hero {
-    min-height: 480px;
-    padding: 7rem 1.35rem 5rem;
+    min-height: 300px;
+    padding: 4.5rem 1.35rem 1.5rem;
   }
 
   .contact-hero .hero-title {
-    font-size: clamp(3rem, 13vw, 4.3rem);
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    white-space: normal;
   }
 
   #contact-form .contact-grid {

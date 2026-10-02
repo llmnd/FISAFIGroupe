@@ -11,6 +11,7 @@ import '../styles/footer-enhanced.css';
 import '../styles/modules/mobile-performance.css';
 import '../styles/modules/partners.css';
 import '../styles/business.css';
+import '../styles/market-store.css';
 
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;

@@ -66,8 +66,8 @@ export default function Services() {
 
       <Header />
 
-      <section className="hero shared-page-hero services-page-hero" data-observe>
-        <div className="hero-bg" />
+      <section className="hero shared-page-hero services-page-hero" data-observe aria-labelledby="services-hero-title">
+        <div className="hero-bg" aria-hidden="true" />
         <div className="hero-lines" aria-hidden="true">
           <div className="hero-line" />
           <div className="hero-line" />
@@ -77,10 +77,10 @@ export default function Services() {
           <div className="hero-orb" />
           <div className="hero-orb" />
         </div>
-        <div className="hero-overlay" />
+        <div className="hero-overlay" aria-hidden="true" />
         <div className="hero-content">
           <div className="hero-eyebrow">Des solutions pour vos enjeux numériques</div>
-          <h1 className="hero-title">
+          <h1 className="hero-title" id="services-hero-title">
             Nos <em>services</em>
           </h1>
           <p className="hero-sub">

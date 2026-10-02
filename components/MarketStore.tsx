@@ -28,6 +28,73 @@ const FRIDGE_PRODUCTS: FridgeProduct[] = [
 
 const SNACKS = ["#e8453c", "#f5a623", "#250bb8", "#3c985f", "#ff7417", "#d6458f"];
 const CANDY = ["#ff5d8f", "#ffb703", "#8ecae6", "#7bd389"];
+const BACKGROUND_PRODUCTS = [
+  ["cafe.jpg", "savon.jpg", "pain.jpg", "bissap.jpg"],
+  ["eau.jpg", "pringles.jpg", "fromage.jpg", "fanta.jpg"],
+  ["lait.jpg", "vimto.jpg", "cafe.jpg", "savon.jpg"],
+];
+type StoreAisle = {
+  number: string;
+  label: string;
+  name: string;
+  href: string;
+  kind: string;
+  colors: readonly string[];
+  candy: readonly string[];
+  images?: readonly string[];
+};
+
+const STORE_AISLES: StoreAisle[] = [
+  {
+    number: "01",
+    label: "Fruits & légumes",
+    name: "Fruits & légumes",
+    href: "#fruits-legumes-produits",
+    kind: "produce",
+    colors: ["#e8453c", "#f5a623", "#3c985f", "#f47b20", "#d6458f", "#f2ca65"],
+    candy: ["#e8453c", "#f5a623", "#3c985f", "#d6458f"],
+  },
+  {
+    number: "02",
+    label: "Épicerie",
+    name: "Épicerie & gourmandises",
+    href: "#epicerie-produits",
+    kind: "pantry",
+    images: ["pringles.jpg", "cafe.jpg"],
+    colors: SNACKS,
+    candy: CANDY,
+  },
+  {
+    number: "03",
+    label: "Boulangerie",
+    name: "Boulangerie",
+    href: "#boulangerie-produits",
+    kind: "bakery",
+    images: ["pain.jpg"],
+    colors: ["#c78342", "#a9622d", "#e2ad67", "#8a4f2d", "#d7954c", "#b8793e"],
+    candy: ["#d7954c", "#e2ad67", "#c78342", "#a9622d"],
+  },
+  {
+    number: "04",
+    label: "Produits frais",
+    name: "Produits frais",
+    href: "#frais-produits",
+    kind: "fresh",
+    images: ["lait.jpg", "fromage.jpg"],
+    colors: ["#f2ca65", "#8ecae6", "#fffdf6", "#7bd389", "#d6458f", "#8ecae6"],
+    candy: ["#fffdf6", "#8ecae6", "#7bd389", "#f2ca65"],
+  },
+  {
+    number: "05",
+    label: "Maison",
+    name: "Maison & entretien",
+    href: "#maison-produits",
+    kind: "home",
+    images: ["savon.jpg"],
+    colors: ["#2f6fd1", "#8ecae6", "#7bd389", "#742d65", "#317c54", "#2f6fd1"],
+    candy: ["#8ecae6", "#2f6fd1", "#7bd389", "#742d65"],
+  },
+];
 
 const cv = (v: string) => ({ "--c": v }) as CSSProperties;
 
@@ -35,17 +102,18 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
   const [customerPass, setCustomerPass] = useState(0);
+  const [aisleIndex, setAisleIndex] = useState(0);
+  const activeAisle = STORE_AISLES[aisleIndex];
   const room = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setOpen(true);
+      return;
+    }
+
     const t = setTimeout(() => setOpen(true), 700);
     return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const interval = setInterval(() => setLine((current) => (current + 1) % LINES.length), 8_000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -68,15 +136,42 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
   };
 
   return (
+    <>
     <section
       className={`store${open ? " has-opened" : ""}`}
       onPointerMove={move}
       onPointerLeave={resetPerspective}
-      aria-label="L’entrée de FiSAFi Market"
+      aria-label="Boutique interactive FiSAFi Market"
     >
       <div className="store-room" ref={room}>
         <div className="store-wall" />
         <div className="store-floor" />
+        <div className="store-backdrop" aria-hidden="true">
+          <div className="back-rack back-rack--left">
+            <span className="back-rack-sign">ÉPICERIE</span>
+            {BACKGROUND_PRODUCTS.map((row, rowIndex) => (
+              <div className="back-rack-row" key={rowIndex}>
+                {row.map((image, productIndex) => (
+                  <span className="back-rack-product" key={`${image}-${productIndex}`}>
+                    <img src={`/produits/${image}`} alt="" />
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="back-rack back-rack--right">
+            <span className="back-rack-sign">MAISON &amp; FRAIS</span>
+            {BACKGROUND_PRODUCTS.map((row, rowIndex) => (
+              <div className="back-rack-row" key={rowIndex}>
+                {[...row].reverse().map((image, productIndex) => (
+                  <span className="back-rack-product" key={`${image}-${productIndex}`}>
+                    <img src={`/produits/${image}`} alt="" />
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
         {customerPass > 0 && (
           <div className="store-customer-pass is-crossing" key={customerPass} aria-hidden="true">
             <svg viewBox="0 0 100 180">
@@ -100,7 +195,6 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
         {/* ── Frigo boissons ── */}
         <a className="fridge" href="#boissons-produits" aria-label="Découvrir les boissons fraîches">
           <span className="fridge-sign">
-            <small>RAYON 01</small>
             BOISSONS <strong>FRAÎCHES</strong>
           </span>
 
@@ -116,7 +210,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
                       className={`bottle bottle--${product.kind} bottle--image${product.name === "Fromage" ? " bottle--cheese" : ""}`}
                       style={cv(product.c)}
                     >
-                      <img src={`/produits/${product.image}`} alt={product.name} />
+                      <img src={`/produits/${product.image}`} alt="" />
                     </span>
                   );
                 })}
@@ -138,86 +232,106 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
         <div className="desk">
           <button
             className="bubble"
-            key={line}
             onClick={() => setLine((current) => (current + 1) % LINES.length)}
-            aria-live="off"
-            aria-label={`${LINES[line]} Appuyez pour entendre le conseil suivant.`}
+            type="button"
+            aria-label="Afficher le conseil suivant d’Abdel"
           >
-            {LINES[line]}
-            <span className="bubble-hint" aria-hidden="true">Le mot d’Abdel · toucher pour la suite</span>
+            <span aria-live="polite" aria-atomic="true">{LINES[line]}</span>
+            <span className="bubble-hint" aria-hidden="true">Le mot d’Abdel · découvrir le conseil suivant</span>
           </button>
 
-          <svg
+          <img
             className="abdel"
-            viewBox="85 50 190 300"
-            role="img"
-            aria-label="Abdel, vendeur chez FiSAFi"
-          >
-            <defs>
-              <clipPath id="abdel-person">
-                <path d="M177 60c25-5 49 6 53 35l-1 45c-2 18 10 27 19 42 10 16 13 36 19 60l2 28c-3 21-16 32-33 33l3 47H129l3-43c-16-4-24-18-28-37l-5-39c-3-23 6-43 20-52 12-8 22-11 29-19 3-15-2-41-3-58-2-24 11-38 32-42Z" />
-              </clipPath>
-            </defs>
-            <image
-              href="/abdel.jpeg"
-              x="0"
-              y="0"
-              width="580"
-              height="430"
-              clipPath="url(#abdel-person)"
-              preserveAspectRatio="none"
-            />
-          </svg>
+            src="/abdel2.png"
+            alt="Abdel, vendeur chez FiSAFi"
+          />
 
           <div className="counter">
             <span className="counter-top" />
 
             <span className="register">
-              <i><em>CAISSE</em></i>
+              <i>
+                <em>CAISSE</em>
+                <span className="register-led" />
+              </i>
               <b />
             </span>
 
+            <span className="checkout-belt" aria-hidden="true" />
+            <span className="checkout-scanner" aria-hidden="true" />
+            <span className="checkout-terminal" aria-hidden="true">
+              <i />
+              <b />
+              <em />
+            </span>
+            <span className="checkout-goods" aria-hidden="true">
+              <img src="/produits/cafe.jpg" alt="" />
+              <img src="/produits/savon.jpg" alt="" />
+            </span>
+            <span className="counter-wordmark" aria-hidden="true">Bon shopping !</span>
             <span className="counter-bag" aria-hidden="true" />
             <span className="counter-fruit" aria-hidden="true" />
             <span className="counter-fruit counter-fruit--2" aria-hidden="true" />
           </div>
         </div>
 
-        {/* ── Rayon épicerie ── */}
-        <a className="aisle" href="#epicerie-produits" aria-label="Découvrir l’épicerie et les gourmandises">
-          <span className="aisle-sign">
-            <small>RAYON 03</small>
-            Épicerie &amp; gourmandises
-          </span>
-
+        {/* ── Rayon modulable ── */}
+        <div className="aisle" role="group" aria-label={`Rayon ${activeAisle.number} : ${activeAisle.name}`}>
+          <div className="aisle-toolbar" role="group" aria-label="Navigation entre les rayons">
+            <button
+              className="aisle-switcher"
+              type="button"
+              onClick={() => setAisleIndex((index) => (index + STORE_AISLES.length - 1) % STORE_AISLES.length)}
+              aria-label="Afficher le rayon précédent"
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <span className="aisle-toolbar-status" aria-live="polite" aria-atomic="true">
+              <small>PARCOURIR LES RAYONS</small>
+              <strong>{activeAisle.number} <i>/</i> {String(STORE_AISLES.length).padStart(2, "0")}</strong>
+            </span>
+            <button
+              className="aisle-switcher"
+              type="button"
+              onClick={() => setAisleIndex((index) => (index + 1) % STORE_AISLES.length)}
+              aria-label="Afficher le rayon suivant"
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
           {[0, 1].map((r) => (
             <div className="aisle-row" key={r}>
-              {SNACKS.map((_, i) => (
-                <span
-                  key={i}
-                  className={`bag${r === 0 && i === 0 ? " bag--pringles" : ""}`}
-                  style={cv(SNACKS[(i + r * 2) % SNACKS.length])}
-                >
-                  {r === 0 && i === 0 ? (
-                    <img src="/produits/pringles.jpg" alt="Pringles Original" />
-                  ) : (
-                    <i className="bag-brand" />
-                  )}
-                </span>
-              ))}
+              {activeAisle.colors.map((color, i) => {
+                const images = activeAisle.images;
+                const image = images ? images[(i + r * 2) % images.length] : undefined;
+                const isPringles = activeAisle.kind === "pantry" && r === 0 && i === 0;
+                return (
+                  <span
+                    key={i}
+                    className={`bag bag--${activeAisle.kind}${image ? " bag--with-image" : ""}${isPringles ? " bag--pringles" : ""}`}
+                    style={cv(activeAisle.colors[(i + r * 2) % activeAisle.colors.length] ?? color)}
+                  >
+                    {image ? (
+                      <img className="aisle-product-image" src={`/produits/${image}`} alt="" />
+                    ) : (
+                      <i className="bag-brand" />
+                    )}
+                  </span>
+                );
+              })}
             </div>
           ))}
 
           <div className="aisle-row aisle-row--candy">
-            {CANDY.map((col, i) => (
+            {activeAisle.candy.map((col, i) => (
               <span key={i} className="jar" style={cv(col)} />
             ))}
           </div>
 
           <span className="aisle-tag" aria-hidden="true">
-            150 <small>FCFA</small>
+            {activeAisle.number}
           </span>
-        </a>
+        </div>
 
         <a className="store-tag store-tag--welcome" href="#infos-market" style={{ left: "17%" }}>
           Infos pratiques <span aria-hidden="true">↗</span>
@@ -225,8 +339,8 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
         <a className="store-tag" href="#boissons-produits" style={{ left: "50%" }}>
           Boissons fraîches <span aria-hidden="true">↗</span>
         </a>
-        <a className="store-tag" href="#epicerie-produits" style={{ left: "83%" }}>
-          Chips &amp; bonbons <span aria-hidden="true">↗</span>
+        <a className="store-tag" href={activeAisle.href} style={{ left: "83%" }}>
+          {activeAisle.name} <span aria-hidden="true">↗</span>
         </a>
       </div>
 
@@ -241,9 +355,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
         </span>
       </div>
 
-      <a className="store-order-link" href="#rayons">
-        Découvrir les rayons <span aria-hidden="true">↓</span>
-      </a>
     </section>
+    </>
   );
 }

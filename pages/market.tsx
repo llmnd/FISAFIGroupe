@@ -681,60 +681,45 @@ export default function MarketPage() {
           </div>
 
           <div className="market-info-card market-info-card--address">
-            <p className="market-kicker">ADRESSE</p>
-            <h2>Nous rendre visite.</h2>
-            <address>
-              <strong>FiSAFi Market</strong><br />
-              Liberté 6 Extension<br />
-              Dakar · Sénégal
-            </address>
-            <div className="market-info-actions">
-              <a
-                className="market-info-btn"
-                href="https://www.openstreetmap.org/search?query=Libert%C3%A9%206%20Extension%2C%20Dakar%2C%20S%C3%A9n%C3%A9gal"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Ouvrir la carte <span aria-hidden="true">↗</span>
-              </a>
-              <a
-                className="market-info-btn market-info-btn--ghost"
-                href="https://wa.me/221787812297?text=Salam%20FiSAFi%20Market%20!"
-                target="_blank"
-                rel="noreferrer"
-              >
-                WhatsApp
-              </a>
+            <div className="market-address-content">
+              <p className="market-kicker">ADRESSE</p>
+              <h2>Nous rendre visite.</h2>
+              <address>
+                <strong>FiSAFi Market</strong><br />
+                Liberté 6 Extension<br />
+                Dakar · Sénégal
+              </address>
+              <div className="market-info-actions">
+                <a
+                  className="market-info-btn"
+                  href="https://www.google.com/maps/search/?api=1&query=FiSAFi%20Market%2C%20Libert%C3%A9%206%20Extension%2C%20Dakar%2C%20S%C3%A9n%C3%A9gal"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Ouvrir la carte <span aria-hidden="true">↗</span>
+                </a>
+                <a
+                  className="market-info-btn market-info-btn--ghost"
+                  href="https://wa.me/221787812297?text=Salam%20FiSAFi%20Market%20!"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
+            <div className="market-location-map">
+              <iframe
+                title="Carte de FiSAFi Market à Liberté 6 Extension, Dakar"
+                src="https://maps.google.com/maps?q=FiSAFi%20Market%2C%20Libert%C3%A9%206%20Extension%2C%20Dakar%2C%20S%C3%A9n%C3%A9gal&output=embed"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </div>
         </section>
 
         {/* ═══ APPEL ═══ */}
-        <section className="market-pantry-callout">
-          <div className="market-pantry-art" aria-hidden="true">
-            <svg viewBox="0 0 220 180" fill="none">
-              <path d="M41 79h138l-12 82H53L41 79Z" fill="#F4D58B" />
-              <path d="M55 91h110l-8 58H63l-8-58Z" fill="#E7B75D" />
-              <circle cx="78" cy="74" r="31" fill="#E75A48" />
-              <circle cx="112" cy="63" r="35" fill="#F2BB3F" />
-              <circle cx="148" cy="75" r="28" fill="#6C9E56" />
-              <path d="M76 47c2-13 10-20 22-20m15 2c-3-13 3-22 15-25m22 40c4-12 13-16 23-14" stroke="#47784A" strokeWidth="6" strokeLinecap="round" />
-              <path d="M42 80h136" stroke="#A9743F" strokeWidth="7" strokeLinecap="round" />
-            </svg>
-          </div>
-
-          <div className="market-pantry-copy">
-            <p className="market-kicker">LE PANIER VOUS ATTEND</p>
-            <h2>Un produit en tête ?</h2>
-            <p>
-              Notre équipe vous renseigne sur les rayons et les disponibilités. Écrivez-nous, nous
-              serons heureux de vous répondre.
-            </p>
-            <a className="market-contact-link" href="mailto:contact@fisafigroupe.com?subject=Demande%20FiSAFi%20Market">
-              Parler à l’équipe <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        </section>
 
       </main>
       <Footer />

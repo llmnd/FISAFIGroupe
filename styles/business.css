@@ -1385,16 +1385,16 @@
 .store {
   position: relative;
   max-width: 1440px;
-  height: clamp(560px, 86svh, 820px);
+  height: clamp(500px, 72svh, 700px);
   margin: 1.5rem auto 0;
   overflow: hidden;
   isolation: isolate;
   perspective: 1500px;
-  border-radius: 30px;
+  border-radius: 18px;
   background: #17122e;
   box-shadow:
-    0 40px 90px -40px rgba(37, 11, 184, 0.5),
-    0 10px 30px rgba(40, 35, 60, 0.14),
+    0 26px 64px -38px rgba(23, 18, 46, 0.38),
+    0 6px 18px rgba(40, 35, 60, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .store-welcome {
@@ -1439,17 +1439,31 @@
   gap: 0.55rem;
   padding: 0.75rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 999px;
+  border-radius: 4px;
   background: #fffdf6;
-  box-shadow: 0 8px 22px rgba(27, 22, 51, 0.18);
+  box-shadow: 0 4px 12px rgba(27, 22, 51, 0.14);
   color: #28233c;
-  font: 700 0.82rem/1 "Jost", system-ui, sans-serif;
+  font: 700 0.76rem/1 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
-.store-order-link:hover { transform: translateY(-2px); }
+.store-order-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 16px rgba(27, 22, 51, 0.16);
+}
 .store-order-link:focus-visible {
   outline: 3px solid #ff7417;
   outline-offset: 3px;
+}
+.aisle-sign a {
+  color: inherit;
+  text-decoration: none;
+}
+.aisle-sign a:focus-visible {
+  outline: 2px solid #28233c;
+  outline-offset: 2px;
 }
 .store::after {
   position: absolute;
@@ -1674,9 +1688,14 @@
   padding: 12px;
   transform-style: preserve-3d;
   box-shadow:
-    0 0 100px 12px rgba(120, 210, 255, 0.42),
-    0 30px 46px -12px rgba(27, 22, 51, 0.55),
+    0 0 58px 8px rgba(120, 210, 255, 0.27),
+    0 24px 36px -14px rgba(27, 22, 51, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.fridge:focus-visible,
+.aisle:focus-visible {
+  outline: 3px solid #ff7417;
+  outline-offset: 6px;
 }
 .fridge-sign {
   position: absolute;
@@ -1929,9 +1948,11 @@
 }
 .abdel {
   position: absolute;
-  bottom: 38%;
-  left: 17%;
-  width: 64%;
+  bottom: 22%;
+  left: -55%;
+  width: 210%;
+  max-width: none;
+  height: auto;
   filter: drop-shadow(0 12px 18px rgba(27, 22, 51, 0.35));
 }
 .counter {
@@ -2059,15 +2080,15 @@
   max-width: 17rem;
   padding: 0.6rem 0.75rem 0.7rem;
   border: 1px solid rgba(40, 35, 60, 0.14);
-  border-radius: 14px 14px 14px 4px;
+  border-radius: 8px 8px 8px 2px;
   background: #fffdf6;
   color: #28233c;
   cursor: pointer;
   font: 600 clamp(0.66rem, 0.9vw, 0.84rem) / 1.4 "Jost", system-ui, sans-serif;
   text-align: left;
   box-shadow:
-    0 12px 24px rgba(20, 14, 48, 0.22),
-    0 2px 6px rgba(20, 14, 48, 0.12);
+    0 8px 18px rgba(20, 14, 48, 0.16),
+    0 2px 5px rgba(20, 14, 48, 0.08);
   animation: store-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 .bubble-hint {
@@ -2370,6 +2391,7 @@
   .bottle:nth-child(n + 6) { display: none; }
   .desk { left: 0; width: 40%; height: 58%; }
   .aisle { right: 0; width: 36%; height: 50%; }
+  .aisle-sign { max-width: calc(100% - 0.5rem); padding: 0.35rem 0.45rem; font-size: 0.62rem; }
   .bag:nth-child(n + 4) { display: none; }
   .bubble {
     top: 14%;
@@ -2619,6 +2641,28 @@
     radial-gradient(circle at 90% 10%, rgba(255, 116, 23, 0.08), transparent 55%),
     #fffdf6;
 }
+.market-info-card--address {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, 34%);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2rem);
+}
+.market-address-content { min-width: 0; }
+.market-location-map {
+  min-height: 13rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: #e8e4dc;
+  box-shadow: 0 12px 28px rgba(20, 16, 38, 0.18);
+}
+.market-location-map iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 13rem;
+  border: 0;
+}
 .market-info-card h2 {
   margin: 0.5rem 0 1.2rem;
   font-family: "Cormorant Garamond", Georgia, serif;
@@ -2772,6 +2816,13 @@
   .market-testimonials-grid,
   .market-infos {
     grid-template-columns: 1fr;
+  }
+  .market-info-card--address {
+    grid-template-columns: 1fr;
+  }
+  .market-location-map,
+  .market-location-map iframe {
+    min-height: 15rem;
   }
   .market-featured-visual { min-height: 7rem; }
   .market-featured-image { height: 7rem; }
@@ -3116,6 +3167,13 @@
 .market-page[data-theme="dark"] .market-info-card--address {
   background: radial-gradient(circle at 90% 10%, rgba(255, 116, 23, 0.08), transparent 55%), #211d2d;
 }
+.market-page[data-theme="dark"] .market-info-btn--ghost {
+  border-color: rgba(226, 218, 255, 0.38);
+  color: #f2eefb;
+}
+.market-page[data-theme="dark"] .market-info-btn--ghost:hover {
+  background: rgba(226, 218, 255, 0.1);
+}
 
 @media (max-width: 760px) {
   .market-page { padding-top: 0.75rem; }
@@ -3370,7 +3428,8 @@
 .market-hours li { border-bottom-style: solid; }
 .market-info-btn {
   border-radius: 1px;
-  background: var(--market-ink);
+  background: #250bb8;
+  color: #fff;
 }
 .market-info-btn:hover { background: var(--market-purple); }
 .market-info-btn--ghost {
@@ -3380,6 +3439,18 @@
 }
 .market-info-btn--ghost:hover {
   background: rgba(40, 35, 60, 0.06);
+}
+.market-page .market-info-btn:not(.market-info-btn--ghost) {
+  background: #250bb8;
+  color: #fff;
+}
+.market-page .market-info-btn:not(.market-info-btn--ghost):hover {
+  background: #1c078f;
+}
+.market-page .market-info-btn--ghost {
+  border: 1px solid rgba(37, 11, 184, 0.3);
+  background: transparent;
+  color: #250bb8;
 }
 .market-testimonial {
   padding: 1.25rem;

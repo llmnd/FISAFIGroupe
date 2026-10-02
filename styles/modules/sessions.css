@@ -1,11 +1,11 @@
 .sessions-hero {
   position: relative;
   display: flex;
-  min-height: clamp(420px, 52vw, 600px);
+  min-height: clamp(320px, 30vw, 380px);
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  padding: clamp(7rem, 10vw, 9rem) clamp(1.25rem, 8vw, 8rem);
+  padding: 4rem clamp(1.25rem, 8vw, 8rem);
   background: #101c35;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .sessions-hero .hero-eyebrow {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #ffc18f;
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   font-weight: 700;
@@ -46,7 +46,7 @@
   max-width: 900px;
   margin: 0;
   color: #fff;
-  font-size: clamp(3rem, 7vw, 6.4rem);
+  font-size: clamp(2.8rem, 6vw, 4.7rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.045em;
@@ -55,9 +55,9 @@
 
 .sessions-hero .hero-sub {
   max-width: 650px;
-  margin: 1.6rem 0 0;
+  margin: 1.25rem 0 0;
   color: #f0f4fa;
-  font-size: clamp(1.12rem, 1.8vw, 1.4rem);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
   font-weight: 500;
   line-height: 1.65;
 }
@@ -100,11 +100,11 @@
 
 @media (max-width: 760px) {
   .sessions-hero {
-    min-height: 440px;
-    padding: 7rem 1.35rem 5rem;
+    min-height: 340px;
+    padding: 5rem 1.35rem 2rem;
   }
 
   .sessions-hero .hero-title {
-    font-size: clamp(2.8rem, 12vw, 4.2rem);
+    font-size: clamp(2.6rem, 11vw, 3.5rem);
   }
 }

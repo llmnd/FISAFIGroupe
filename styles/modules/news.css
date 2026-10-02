@@ -1,11 +1,11 @@
 .news-hero {
   position: relative;
   display: flex;
-  min-height: clamp(460px, 58vw, 680px);
+  min-height: clamp(320px, 30vw, 380px);
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  padding: clamp(7rem, 11vw, 10rem) clamp(1.25rem, 8vw, 8rem);
+  padding: 4rem clamp(1.25rem, 8vw, 8rem);
   color: #fff;
   background: #101c35;
 }
@@ -76,7 +76,7 @@
 }
 
 .news-hero .hero-eyebrow {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #ffc18f;
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   font-weight: 700;
@@ -85,14 +85,14 @@
 }
 
 .news-hero .hero-title {
-  max-width: 850px;
+  max-width: none;
   margin: 0;
   color: #fff;
-  font-size: clamp(3.2rem, 8.7vw, 7.5rem);
+  font-size: clamp(2rem, 4vw, 3.4rem);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.045em;
-  text-wrap: balance;
+  white-space: nowrap;
   text-shadow: 0 3px 24px rgba(0, 0, 0, 0.22);
 }
 
@@ -103,9 +103,9 @@
 
 .news-hero .hero-sub {
   max-width: 630px;
-  margin: 1.8rem 0 0;
+  margin: 1.25rem 0 0;
   color: #f0f4fa;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
   font-weight: 500;
   line-height: 1.65;
 }
@@ -514,8 +514,13 @@
   }
 
   .news-hero {
-    min-height: 480px;
-    padding: 7rem 1.35rem 5rem;
+    min-height: 340px;
+    padding: 5rem 1.35rem 2rem;
+  }
+
+  .news-hero .hero-title {
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    white-space: normal;
   }
 }
 
@@ -531,9 +536,6 @@
     font-size: 0.9rem;
   }
 
-  .news-hero .hero-title {
-    font-size: clamp(3rem, 13vw, 4.3rem);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

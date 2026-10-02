@@ -153,24 +153,23 @@ export default function News() {
       <Header />
 
       {/* HERO */}
-      <section className="hero news-hero" data-observe>
-        <div className="hero-bg" />
-        <div className="hero-lines">
+      <section className="hero news-hero" data-observe aria-labelledby="news-hero-title">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="hero-lines" aria-hidden="true">
           <div className="hero-line" />
           <div className="hero-line" />
           <div className="hero-line" />
         </div>
-        <div className="hero-orbs">
+        <div className="hero-orbs" aria-hidden="true">
           <div className="hero-orb" />
           <div className="hero-orb" />
         </div>
-        <div className="hero-overlay" />
+        <div className="hero-overlay" aria-hidden="true" />
 
         <div className="hero-content">
           <div className="hero-eyebrow">Restez à jour</div>
-          <h1 className="hero-title">
-            Actualités &<br />
-            <em>publications</em>
+          <h1 className="hero-title" id="news-hero-title">
+            Actualités & <em>publications</em>
           </h1>
           <p className="hero-sub">
             Découvrez nos articles techniques, innovations et actualités du secteur.

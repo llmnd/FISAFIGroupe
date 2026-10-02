@@ -77,24 +77,23 @@ export default function Contact() {
       <Header />
 
       {/* HERO */}
-      <section className="hero contact-hero" data-observe>
-        <div className="hero-bg" />
-        <div className="hero-lines">
+      <section className="hero contact-hero" data-observe aria-labelledby="contact-hero-title">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="hero-lines" aria-hidden="true">
           <div className="hero-line" />
           <div className="hero-line" />
           <div className="hero-line" />
         </div>
-        <div className="hero-orbs">
+        <div className="hero-orbs" aria-hidden="true">
           <div className="hero-orb" />
           <div className="hero-orb" />
         </div>
-        <div className="hero-overlay" />
+        <div className="hero-overlay" aria-hidden="true" />
 
         <div className="hero-content">
           <div className="hero-eyebrow">Parlons de votre projet</div>
-          <h1 className="hero-title">
-            Nous<br />
-            <em>contacter</em>
+          <h1 className="hero-title" id="contact-hero-title">
+            Nous <em>contacter</em>
           </h1>
           <p className="hero-sub">
             Exprimez vos besoins et découvrez comment nous pouvons accompagner votre transformation technologique.
