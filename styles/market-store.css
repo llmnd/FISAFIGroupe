@@ -3190,7 +3190,9 @@ body:has(.market-page) { padding-top: 0; }
     right: 0;
     left: 0;
     z-index: 1001;
-    max-height: min(72dvh, 36rem);
+    height: calc(100vh - var(--market-header-height, 3.65rem));
+    height: calc(100dvh - var(--market-header-height, 3.65rem));
+    max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
     border-top: 1px solid var(--market-line);
