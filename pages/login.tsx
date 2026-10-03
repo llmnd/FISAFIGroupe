@@ -23,7 +23,7 @@ const LOGIN_CSS = `
     display: grid;
     grid-template-columns: 1fr 1fr;
     min-height: 100dvh;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Outfit', sans-serif;
   }
 
   .l-left {
@@ -75,10 +75,22 @@ const LOGIN_CSS = `
   /* Mobile logo (hidden by default, shown on small screens) */
   .l-mobile-logo { display: none; }
   .l-mobile-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .l-top { padding-top: 3.25rem; }
+  .l-top-back {
+    position: fixed; top: max(0.5rem, env(safe-area-inset-top)); left: max(0.5rem, env(safe-area-inset-left));
+    z-index: 10; display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 1rem; border: 1px solid rgba(11,24,41,0.15);
+    background: rgba(250,250,248,0.94); color: var(--ink); box-shadow: 0 4px 16px rgba(11,24,41,0.12);
+    font: 500 0.9rem/1 'Outfit', sans-serif; text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .l-top-back:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .l-top-back:focus-visible { outline: 3px solid rgba(30,64,175,0.4); outline-offset: 3px; }
+  .l-top-back::before { content: '←'; }
 
   .l-mid { padding-bottom: 2rem; }
   .l-eyebrow {
-    font-size: 8.5px; letter-spacing: 0.38em; text-transform: uppercase;
+    font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase;
     color: rgba(229,115,60,0.75);
     display: flex; align-items: center; gap: 0.75rem;
     margin-bottom: 1.75rem; animation: fadeUp 0.9s 0.2s both;
@@ -92,17 +104,17 @@ const LOGIN_CSS = `
     animation: fadeUp 0.9s 0.35s both;
   }
   .l-headline em { font-style: italic; color: rgba(255,255,255,0.38); }
-  .l-body { font-size: 12.5px; line-height: 1.9; color: rgba(255,255,255,0.38); font-weight: 300; max-width: 30ch; animation: fadeUp 0.9s 0.5s both; }
+  .l-body { font-size: 1rem; line-height: 1.8; color: rgba(255,255,255,0.55); font-weight: 300; max-width: 30ch; animation: fadeUp 0.9s 0.5s both; }
   .l-stats { display: flex; gap: 1rem; margin-top: 2.5rem; animation: fadeUp 0.9s 0.65s both; }
   .l-stat { border: 0.5px solid rgba(255,255,255,0.1); padding: 0.6rem 1rem; background: rgba(255,255,255,0.03); }
   @supports(backdrop-filter:blur(1px)){.l-stat{backdrop-filter:blur(8px);}}
   .l-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: rgba(255,255,255,0.85); font-weight: 300; line-height: 1; margin-bottom: 4px; }
-  .l-stat-label { font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+  .l-stat-label { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
   .l-sig { display: flex; align-items: center; justify-content: space-between; border-top: 0.5px solid rgba(255,255,255,0.07); padding-top: 1.25rem; animation: fadeUp 0.9s 0.8s both; }
   .l-sig-inner { display: flex; align-items: center; gap: 0.85rem; }
   .l-sig-av { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(229,90,0,0.45); background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
-  .l-sig-name { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 400; letter-spacing: 0.03em; }
-  .l-sig-role { font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 2px; }
+  .l-sig-name { font-size: 0.9rem; color: rgba(255,255,255,0.85); font-weight: 400; letter-spacing: 0.03em; }
+  .l-sig-role { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 2px; }
   .l-sig-ping { display: flex; align-items: center; gap: 0.45rem; }
   .l-sig-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); opacity: 0.7; animation: ping 2.5s ease-in-out infinite; }
   .l-sig-city { font-family: 'Cormorant Garamond', serif; font-size: 11.5px; font-style: italic; color: rgba(255,255,255,0.35); }
@@ -124,39 +136,36 @@ const LOGIN_CSS = `
   }
   .l-form-wrap { width: 100%; max-width: 370px; position: relative; z-index: 1; animation: fadeUp 0.65s 0.1s both; }
   .l-mode-pill { display: inline-flex; border: 0.5px solid rgba(30,64,175,0.18); border-radius: 0; overflow: hidden; margin-bottom: 2rem; }
-  .l-pill-btn { padding: 0.45rem 1.25rem; font-family: 'DM Sans', sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.38); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
+  .l-pill-btn { padding: 0.55rem 1.25rem; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.55); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
   .l-pill-btn.active { background: var(--ink); color: #fff; }
   .l-pill-btn:not(.active):hover { color: var(--ink); background: rgba(30,64,175,0.04); }
-  .l-form-h { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: var(--ink); letter-spacing: -0.015em; line-height: 1.1; margin-bottom: 0.4rem; }
+  .l-form-h { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.75rem, 5vw, 3.5rem); font-weight: 300; color: var(--ink); letter-spacing: -0.015em; line-height: 1.05; margin-bottom: 0.6rem; }
   .l-form-h em { font-style: italic; color: var(--orange); }
-  .l-form-sub { font-size: 11.5px; color: var(--steel); font-weight: 300; letter-spacing: 0.02em; margin-bottom: 2.25rem; line-height: 1.5; }
+  .l-form-sub { font-size: 1rem; color: var(--steel); font-weight: 300; letter-spacing: 0.01em; margin-bottom: 2.25rem; line-height: 1.55; }
   .l-fields { display: flex; flex-direction: column; gap: 0; }
   .l-field { position: relative; padding-top: 1rem; border-bottom: 1px solid rgba(11,24,41,0.1); transition: border-color 0.22s; margin-bottom: 0.2rem; }
   .l-field.focused { border-color: var(--blue); }
-  .l-field label { position: absolute; left: 0; top: 1.5rem; font-size: 13px; color: rgba(11,24,41,0.38); font-weight: 300; pointer-events: none; transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1); }
-  .l-field.focused label, .l-field.filled label { top: 0.15rem; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue); font-weight: 500; }
-  .l-field input { width: 100%; padding: 0.5rem 0 0.65rem; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 400; color: var(--ink); }
+  .l-field label { position: absolute; left: 0; top: 1.5rem; font-size: 1rem; color: rgba(11,24,41,0.55); font-weight: 300; pointer-events: none; transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .l-field.focused label, .l-field.filled label { top: 0.15rem; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--blue); font-weight: 500; }
+  .l-field input { width: 100%; padding: 0.5rem 0 0.65rem; background: transparent; border: none; outline: none; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 400; color: var(--ink); }
   .l-field input::placeholder { color: transparent; }
   .l-field-line { position: absolute; bottom: -1px; left: 0; height: 2px; background: var(--blue); width: 0; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); }
   .l-field.focused .l-field-line { width: 100%; }
   .l-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .l-alert { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.9rem; font-size: 11.5px; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 400; }
+  .l-alert { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.9rem; font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 400; }
   .l-alert-err { background: #fff1f2; border-left: 2px solid #f43f5e; color: #9f1239; }
   .l-alert-ok  { background: #f0fdf4; border-left: 2px solid #22c55e; color: #166534; }
   .l-alert-icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
-  .l-btn { width: 100%; margin-top: 2rem; padding: 1rem; background: var(--ink); color: #fff; border: none; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; position: relative; overflow: hidden; transition: background 0.25s; }
+  .l-btn { width: 100%; margin-top: 2rem; padding: 1rem; background: var(--ink); color: #fff; border: none; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; position: relative; overflow: hidden; transition: background 0.25s; }
   .l-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--orange), #1e40af); opacity: 0; transition: opacity 0.3s; }
   .l-btn:hover:not(:disabled)::before { opacity: 1; }
   .l-btn span { position: relative; z-index: 1; }
   .l-btn:disabled { background: #94a3b8; cursor: not-allowed; }
   .l-btn:disabled::before { display: none; }
   .l-spinner { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; position: relative; z-index: 1; }
-  .l-foot { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 1.75rem; font-size: 11.5px; color: rgba(11,24,41,0.4); }
-  .l-foot button { background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 500; color: var(--blue); cursor: pointer; padding: 0; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .l-foot { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 1.75rem; font-size: 0.9rem; color: rgba(11,24,41,0.65); }
+  .l-foot button { background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 500; color: var(--blue); cursor: pointer; padding: 0; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
   .l-foot button:hover { border-bottom-color: var(--blue); }
-  .l-back { display: block; text-align: center; margin-top: 2.25rem; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(11,24,41,0.28); text-decoration: none; transition: color 0.2s; }
-  .l-back:hover { color: var(--ink); }
-  .l-back::before { content: '← '; }
   .l-divider { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.5rem; }
   .l-divider span { flex: 1; height: 0.5px; background: rgba(11,24,41,0.08); }
   .l-divider small { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(11,24,41,0.25); }
@@ -269,13 +278,14 @@ export default function LoginPage() {
 
   return (
     <div className="lw">
+      <a href="/" className="l-top-back">Retour</a>
       <Head>
         <title>{isLogin ? "Connexion" : "Inscription"} — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@200;300;400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap"
           rel="stylesheet"
         />
       </Head>
@@ -376,7 +386,6 @@ export default function LoginPage() {
             <button onClick={() => switchMode(!isLogin)}>{isLogin ? "S'inscrire" : "Se connecter"}</button>
           </div>
 
-          <a href="/" className="l-back">Retour à l&apos;accueil</a>
         </div>
       </div>
     </div>

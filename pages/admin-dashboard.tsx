@@ -1102,6 +1102,38 @@ export default function AdminDashboard() {
           }
           .section-form-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:300;color:var(--ink);margin-bottom:1.25rem;}
           .section-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--steel);font-weight:400;margin:2rem 0 0.875rem;display:block;}
+
+          .admin-layout{font-family:'Outfit',sans-serif;}
+          .sidebar-name{font-size:15px;}
+          .sidebar-role{font-size:11px;}
+          .sidebar-nav-label{font-size:10px;}
+          .sidebar-link,.sidebar-footer-link{font-size:14px;}
+          .btn-logout-new{font-size:12px;}
+          .mob-logo{font-size:22px;}
+          .mob-menu-name{font-size:15px;}
+          .mob-menu-email{font-size:13px;}
+          .mob-nav-section-label{font-size:10px;}
+          .mob-nav-link{font-size:14px;}
+          .admin-eyebrow{font-size:11px;}
+          .admin-sub{font-size:16px;}
+          .stat-label{font-size:11px;}
+          .search-box input,.form-input,.form-select,.form-textarea{font-size:15px;}
+          select{font-size:14px;}
+          .user-card-name{font-size:15px;}
+          .user-card-email{font-size:13px;}
+          .badge,.sidebar-count{font-size:11px;}
+          th{font-size:11px;}
+          td{font-size:15px;}
+          .btn-sm{font-size:12px;}
+          .form-label{font-size:14px;}
+          .alert{font-size:15px;}
+          .content-card-title{font-size:1.25rem;}
+          .content-card-excerpt{font-size:15px;}
+          .content-date{font-size:12px;}
+          .empty-text{font-size:15px;}
+          .session-card-name{font-size:15px;}
+          .session-card-row{font-size:13px;}
+          .section-label{font-size:11px;}
         `}</style>
       </Head>
 

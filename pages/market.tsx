@@ -1013,6 +1013,9 @@ export default function MarketPage() {
         ref={marketNavRef}
         style={{ "--market-header-height": `${marketHeaderHeight}px` } as React.CSSProperties}
       >
+          <Link href="/" className="market-return-home" aria-label="Retour à l'accueil de FiSAFi">
+          Retour
+          </Link>
           <Link href="/" className="market-wordmark" aria-label="FiSAFi Market, accueil">
             <svg className="market-wordmark-icon" viewBox="0 0 40 40" aria-hidden="true">
               <defs>

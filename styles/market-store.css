@@ -2754,7 +2754,41 @@ body:has(.market-page) { padding-top: 0; }
   backdrop-filter: blur(14px);
 }
 
+.market-return-home {
+  position: fixed;
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: max(0.5rem, env(safe-area-inset-left));
+  z-index: 1001;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(11,24,41,0.15);
+  background: rgba(250,250,248,0.94);
+  box-shadow: 0 4px 16px rgba(11,24,41,0.12);
+  color: #0b1829;
+  font: 500 0.9rem/1 'Outfit', sans-serif;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.market-return-home:hover {
+  background: #0b1829;
+  border-color: #0b1829;
+  color: #fff;
+}
+
+.market-return-home:focus-visible {
+  outline: 3px solid rgba(30,64,175,0.4);
+  outline-offset: 3px;
+}
+
+.market-return-home::before {
+  content: '←';
+}
+
 .market-store-nav .market-wordmark {
+  margin-left: 7rem;
   gap: 0.5rem;
   font-size: 1.35rem;
   font-weight: 700;
@@ -3138,7 +3172,7 @@ body:has(.market-page) { padding-top: 0; }
 
 @media (max-width: 760px) {
   .market-store-nav {
-    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    grid-template-columns: 6.25rem 2.25rem minmax(0, 1fr) auto;
     column-gap: 0.65rem;
     min-height: 3.65rem;
     padding-top: 0.4rem;
@@ -3146,7 +3180,8 @@ body:has(.market-page) { padding-top: 0; }
   }
 
   .market-store-nav .market-wordmark {
-    grid-column: 2;
+    margin-left: 0;
+    grid-column: 3;
     grid-row: 1;
     min-width: 0;
     justify-content: center;
@@ -3165,7 +3200,7 @@ body:has(.market-page) { padding-top: 0; }
     display: grid;
     width: 2.15rem;
     height: 2.15rem;
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
     place-items: center;
     padding: 0;
@@ -3195,7 +3230,7 @@ body:has(.market-page) { padding-top: 0; }
 
   .market-store-nav .market-nav-right {
     display: flex;
-    grid-column: 3;
+    grid-column: 4;
     grid-row: 1;
     justify-content: flex-end;
     gap: 0.3rem;

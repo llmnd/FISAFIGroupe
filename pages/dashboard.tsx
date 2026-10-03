@@ -741,6 +741,34 @@ export default function DashboardPage() {
             cursor:pointer; font-family:'Outfit',sans-serif; letter-spacing:0.1em; text-transform:uppercase; transition:background 0.2s;
           }
           .btn-delete:hover { background:rgba(220,38,38,0.1); }
+
+          .dash-layout { font-family:'Outfit',sans-serif; }
+          .sidebar-role { font-size:11px; }
+          .sidebar-uname { font-size:15px; }
+          .sidebar-uemail { font-size:12px; }
+          .sidebar-tab { font-size:14px; }
+          .sidebar-logout { font-size:13px; }
+          .topbar-logo { font-size:20px; }
+          .page-eyebrow { font-size:11px; }
+          .page-sub { font-size:16px; }
+          .empty-text { font-size:15px; }
+          .formation-num { font-size:12px; }
+          .formation-name { font-size:1.45rem; }
+          .formation-desc { font-size:15px; }
+          .formation-btn, .btn-new, .btn-submit, .btn-cancel { font-size:14px; }
+          th { font-size:11px; }
+          td { font-size:15px; }
+          .badge, .article-badge { font-size:11px; }
+          .form-label { font-size:14px; }
+          .form-input, .form-textarea, .form-select { font-size:15px; }
+          .alert { font-size:15px; }
+          .article-title { font-size:1.3rem; }
+          .article-meta { font-size:13px; }
+          .article-excerpt { font-size:15px; }
+          .btn-small, .btn-publish, .btn-delete { font-size:12px; }
+          .sheet-sub { font-size:14px; }
+          .sheet-btn { font-size:15px; }
+          .sheet-cancel { font-size:12px; }
         `}</style>
       </Head>
 
