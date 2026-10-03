@@ -341,6 +341,21 @@ function ProductArtworkView({ product }: { product: MarketProduct }) {
   );
 }
 
+function MarketMenuImage({ src, artwork }: { src: string; artwork: ProductArtwork }) {
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  if (failedSource === src) return <ProductIllustration artwork={artwork} />;
+
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailedSource(src)}
+    />
+  );
+}
+
 function MarketProductCard({
   product,
   departmentName,
@@ -593,8 +608,25 @@ export default function MarketPage() {
   useEffect(() => {
     if (!departmentsMenuOpen) return;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    root.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
     departmentsMenuCloseRef.current?.focus();
 
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -619,7 +651,14 @@ export default function MarketPage() {
     window.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      root.style.overflow = previousRootOverflow;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.right = previousBodyStyles.right;
+      body.style.width = previousBodyStyles.width;
+      body.style.overflow = previousBodyStyles.overflow;
+      window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [departmentsMenuOpen]);
@@ -794,7 +833,7 @@ export default function MarketPage() {
             </button>
             {departments.map((department) => {
               const departmentProducts = productsByDepartment.get(department.id) || [];
-              const departmentImage = departmentProducts.find((product) => product.imageUrl)?.imageUrl;
+              const representativeProduct = departmentProducts.find((product) => product.imageUrl);
               return (
                 <button
                   className={`market-departments-drawer-item${selectedDepartment === department.id ? " is-selected" : ""}${activeMenuDepartment === department.id ? " is-active" : ""}`}
@@ -813,10 +852,13 @@ export default function MarketPage() {
                   }}
                 >
                   <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
-                    {departmentImage ? (
-                      <img src={departmentImage} alt="" loading="lazy" decoding="async" />
+                    {representativeProduct ? (
+                      <MarketMenuImage
+                        src={representativeProduct.imageUrl}
+                        artwork={representativeProduct.artwork}
+                      />
                     ) : (
-                      <DepartmentIllustration art={department.art} />
+                      <ProductIllustration artwork={getProductArtwork(department.name)} />
                     )}
                   </span>
                   <span className="market-departments-drawer-copy">
@@ -848,9 +890,12 @@ export default function MarketPage() {
                   {(() => {
                     const representativeProduct = productsByDepartment.get(activeMenuDepartmentData.id)?.find((product) => product.imageUrl);
                     return representativeProduct ? (
-                      <img src={representativeProduct.imageUrl} alt="" decoding="async" />
+                      <MarketMenuImage
+                        src={representativeProduct.imageUrl}
+                        artwork={representativeProduct.artwork}
+                      />
                     ) : (
-                      <DepartmentIllustration art={activeMenuDepartmentData.art} />
+                      <ProductIllustration artwork={getProductArtwork(activeMenuDepartmentData.name)} />
                     );
                   })()}
                 </span>
@@ -889,7 +934,7 @@ export default function MarketPage() {
                       key={product.id}
                       onClick={() => selectDepartment(activeMenuDepartmentData.id)}
                     >
-                      <img src={product.imageUrl} alt="" loading="lazy" decoding="async" />
+                      <MarketMenuImage src={product.imageUrl} artwork={product.artwork} />
                       <span>{product.name}</span>
                     </button>
                   ))}
@@ -957,7 +1002,7 @@ export default function MarketPage() {
 
           <div
             className={`market-header-actions${mobileMenuOpen ? " is-open" : ""}`}
-            id="market-mobile-actions"
+            id="market-header-actions"
           >
             <button
               className={`market-rayons-link${departmentsMenuOpen ? " is-open" : ""}`}
@@ -1006,12 +1051,91 @@ export default function MarketPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
               >
-                <span aria-hidden="true">▱</span>
-                Panier
+                <span className="market-cart-icon" aria-hidden="true">▱</span>
+                <span className="market-cart-label">Panier</span>
                 <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
               </Link>
             </div>
           </div>
+          {mobileMenuOpen && (
+            <div className="market-mobile-menu-panel" id="market-mobile-actions">
+              <nav className="market-mobile-menu-list" aria-label="Rayons du marché">
+                <button
+                  className={`market-mobile-menu-item${selectedDepartment ? "" : " is-selected"}`}
+                  type="button"
+                  onClick={() => selectDepartment("")}
+                >
+                  <span className="market-departments-drawer-icon market-departments-drawer-icon--all" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none">
+                      <path d="M8 20h32l-3 20H11L8 20Z" />
+                      <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
+                    </svg>
+                  </span>
+                  <span className="market-mobile-menu-copy">
+                    <strong>Tous les produits</strong>
+                    <small>{marketProducts.length} produits</small>
+                  </span>
+                  <span className="market-mobile-menu-arrow" aria-hidden="true">›</span>
+                </button>
+                {departments.map((department) => {
+                  const departmentProducts = productsByDepartment.get(department.id) || [];
+                  const representativeProduct = departmentProducts.find((product) => product.imageUrl);
+                  const subcategories = getDepartmentSubcategories(department.id);
+                  const isExpanded = activeMenuDepartment === department.id;
+                  return (
+                    <div className="market-mobile-menu-group" key={department.id}>
+                      <button
+                        className={`market-mobile-menu-item${selectedDepartment === department.id ? " is-selected" : ""}${isExpanded ? " is-expanded" : ""}`}
+                        type="button"
+                        aria-expanded={isExpanded}
+                        onClick={() => setActiveMenuDepartment(isExpanded ? "" : department.id)}
+                      >
+                        <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
+                          {representativeProduct ? (
+                            <MarketMenuImage
+                              src={representativeProduct.imageUrl}
+                              artwork={representativeProduct.artwork}
+                            />
+                          ) : (
+                            <ProductIllustration artwork={getProductArtwork(department.name)} />
+                          )}
+                        </span>
+                        <span className="market-mobile-menu-copy">
+                          <strong>{department.name}</strong>
+                          <small>{departmentProducts.length} produits</small>
+                        </span>
+                        <svg className="market-mobile-menu-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="market-mobile-submenu">
+                          <button
+                            className="market-mobile-submenu-all"
+                            type="button"
+                            onClick={() => selectDepartment(department.id)}
+                          >
+                            Voir tous les produits
+                          </button>
+                          {subcategories.map((subcategory) => (
+                            <button
+                              className={`market-mobile-submenu-item${selectedSubcategory === subcategory.path ? " is-selected" : ""}`}
+                              type="button"
+                              key={subcategory.path}
+                              onClick={() => selectSubcategory(department.id, subcategory.path)}
+                            >
+                              <span>{subcategory.name}</span>
+                              <small>{subcategory.productCount}</small>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
       </nav>
       <main
         className="market-page"
