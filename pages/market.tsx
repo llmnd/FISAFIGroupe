@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import MarketStore from "@/components/MarketStore";
@@ -115,8 +115,9 @@ function isMarketApiResponse(value: unknown): value is { products: OdooCatalogPr
   );
 }
 
-const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v2";
+const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v3";
 const MARKET_CATALOG_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function readMarketCatalogCache(): OdooCatalogProduct[] | null {
   try {
@@ -440,6 +441,7 @@ export default function MarketPage() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogRetry, setCatalogRetry] = useState(0);
   const [departmentsMenuOpen, setDepartmentsMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [marketHeaderHeight, setMarketHeaderHeight] = useState(72);
   const [activeMenuDepartment, setActiveMenuDepartment] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -447,6 +449,7 @@ export default function MarketPage() {
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const marketNavRef = useRef<HTMLElement>(null);
   const departmentsDialogRef = useRef<HTMLDivElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const departmentsMenuButtonRef = useRef<HTMLButtonElement>(null);
   const departmentsMenuCloseRef = useRef<HTMLButtonElement>(null);
   const isDark = themeChoice === "dark" || (themeChoice === "system" && systemPrefersDark);
@@ -545,17 +548,23 @@ export default function MarketPage() {
     : [];
 
   const openDepartmentsMenu = () => {
+    setMobileMenuOpen(false);
     setActiveMenuDepartment("");
     setDepartmentsMenuOpen(true);
   };
 
   const closeDepartmentsMenu = () => {
     setDepartmentsMenuOpen(false);
-    departmentsMenuButtonRef.current?.focus();
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      mobileMenuButtonRef.current?.focus();
+    } else {
+      departmentsMenuButtonRef.current?.focus();
+    }
   };
 
   const selectDepartment = (departmentId: string) => {
     setDepartmentsMenuOpen(false);
+    setMobileMenuOpen(false);
     setSelectedDepartment(departmentId);
     setSelectedSubcategory("");
     setCurrentPage(1);
@@ -569,6 +578,7 @@ export default function MarketPage() {
 
   const selectSubcategory = (departmentId: string, categoryPath: string) => {
     setDepartmentsMenuOpen(false);
+    setMobileMenuOpen(false);
     setSelectedDepartment(departmentId);
     setSelectedSubcategory(categoryPath);
     setCurrentPage(1);
@@ -697,20 +707,41 @@ export default function MarketPage() {
     return () => controller.abort();
   }, [catalogRetry]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const savedTheme = window.localStorage.getItem("fisafi-market-theme");
-    if (savedTheme === "dark" || savedTheme === "light") setThemeChoice(savedTheme);
+    let savedTheme: string | null = null;
+    try {
+      savedTheme = window.localStorage.getItem("fisafi-market-theme");
+    } catch (error) {
+      console.warn("[Market] Theme preference could not be read:", error);
+    }
+    const initialChoice =
+      savedTheme === "dark" || savedTheme === "light" ? savedTheme : "system";
+    setThemeChoice(initialChoice);
     setSystemPrefersDark(media.matches);
+    document.documentElement.setAttribute(
+      "data-market-theme",
+      initialChoice === "dark" || (initialChoice === "system" && media.matches) ? "dark" : "light",
+    );
 
-    const updateSystemTheme = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches);
-    media.addEventListener("change", updateSystemTheme);
-    return () => media.removeEventListener("change", updateSystemTheme);
+    const updateSystemTheme = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+      if (initialChoice === "system") {
+        document.documentElement.setAttribute("data-market-theme", event.matches ? "dark" : "light");
+      }
+    };
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", updateSystemTheme);
+      return () => media.removeEventListener("change", updateSystemTheme);
+    }
+    media.addListener(updateSystemTheme);
+    return () => media.removeListener(updateSystemTheme);
   }, []);
 
   const toggleTheme = () => {
     const nextTheme = isDark ? "light" : "dark";
     window.localStorage.setItem("fisafi-market-theme", nextTheme);
+    document.documentElement.setAttribute("data-market-theme", nextTheme);
     setThemeChoice(nextTheme);
   };
 
@@ -883,6 +914,7 @@ export default function MarketPage() {
 
       <nav
         className={`market-store-nav${isDark ? " is-dark" : ""}`}
+        suppressHydrationWarning
         aria-label="Navigation Market"
         ref={marketNavRef}
         style={{ "--market-header-height": `${marketHeaderHeight}px` } as React.CSSProperties}
@@ -906,17 +938,16 @@ export default function MarketPage() {
           </Link>
 
           <button
-            className={`market-rayons-link${departmentsMenuOpen ? " is-open" : ""}`}
+            className="market-mobile-menu-toggle"
             type="button"
-            onClick={() => (departmentsMenuOpen ? closeDepartmentsMenu() : openDepartmentsMenu())}
-            aria-haspopup="dialog"
-            aria-expanded={departmentsMenuOpen}
-            aria-label={departmentsMenuOpen ? "Quitter le menu des rayons" : "Afficher les rayons"}
-            ref={departmentsMenuButtonRef}
+            onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+            aria-controls="market-mobile-actions"
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Fermer le menu principal" : "Ouvrir le menu principal"}
+            ref={mobileMenuButtonRef}
           >
-            {departmentsMenuOpen ? "Quitter" : "Rayons"}
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              {departmentsMenuOpen ? (
+              {mobileMenuOpen ? (
                 <path d="m6 6 12 12M18 6 6 18" />
               ) : (
                 <path d="M4 7h16M4 12h16M4 17h16" />
@@ -924,42 +955,68 @@ export default function MarketPage() {
             </svg>
           </button>
 
-          <div className="market-nav-right">
-            <span
-              className={`market-status${status.open ? " is-open" : " is-closed"}`}
-              aria-live="polite"
-            >
-              <i aria-hidden="true" />
-              <b>{status.label}</b>
-              <em>· {status.detail}</em>
-            </span>
-
+          <div
+            className={`market-header-actions${mobileMenuOpen ? " is-open" : ""}`}
+            id="market-mobile-actions"
+          >
             <button
-              className="market-theme-toggle"
+              className={`market-rayons-link${departmentsMenuOpen ? " is-open" : ""}`}
               type="button"
-              onClick={toggleTheme}
-              aria-label={isDark ? "Activer le thème clair" : "Activer le thème sombre"}
-              aria-pressed={isDark}
-              title={isDark ? "Passer au thème clair" : "Passer au thème sombre"}
+              onClick={() => (departmentsMenuOpen ? closeDepartmentsMenu() : openDepartmentsMenu())}
+              aria-haspopup="dialog"
+              aria-expanded={departmentsMenuOpen}
+              aria-label={departmentsMenuOpen ? "Quitter le menu des rayons" : "Afficher les rayons"}
+              ref={departmentsMenuButtonRef}
             >
-              <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
-              <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
+              Rayons
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                {departmentsMenuOpen ? (
+                  <path d="m6 6 12 12M18 6 6 18" />
+                ) : (
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                )}
+              </svg>
             </button>
 
-            <Link
-              className="market-cart-link"
-              href="/market/commande"
-              aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
-            >
-              <span aria-hidden="true">▱</span>
-              Panier
-              <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
-            </Link>
+            <div className="market-nav-right">
+              <span
+                className={`market-status${status.open ? " is-open" : " is-closed"}`}
+                aria-live="polite"
+              >
+                <i aria-hidden="true" />
+                <b>{status.label}</b>
+                <em>· {status.detail}</em>
+              </span>
+
+              <button
+                className="market-theme-toggle"
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Activer le thème clair" : "Activer le thème sombre"}
+                aria-pressed={isDark}
+                title={isDark ? "Passer au thème clair" : "Passer au thème sombre"}
+              >
+                <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+                <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
+              </button>
+
+              <Link
+                className="market-cart-link"
+                href="/market/commande"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
+              >
+                <span aria-hidden="true">▱</span>
+                Panier
+                <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
+              </Link>
+            </div>
           </div>
       </nav>
       <main
         className="market-page"
         data-theme={isDark ? "dark" : "light"}
+        suppressHydrationWarning
         style={{ paddingTop: `${marketHeaderHeight}px` }}
       >
         {storageError && <p className="market-cart-storage-error" role="alert">{storageError}</p>}

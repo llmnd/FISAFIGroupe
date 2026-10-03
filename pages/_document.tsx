@@ -4,6 +4,23 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+              if (window.location.pathname !== "/market" &&
+                  window.location.pathname !== "/market/commande") return;
+              var preference = null;
+              try {
+                preference = window.localStorage.getItem("fisafi-market-theme");
+              } catch (error) {
+                // Use the system preference when local storage is unavailable.
+              }
+              var dark = preference === "dark" ||
+                (preference !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+              document.documentElement.setAttribute("data-market-theme", dark ? "dark" : "light");
+            })();`,
+          }}
+        />
         <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon/favicon-96x96.png" sizes="96x96" type="image/png" />

@@ -7,6 +7,7 @@ type OdooProduct = {
   categ_id: [number, string] | false;
   uom_name: string;
   compare_list_price: number;
+  write_date: string;
 };
 
 type MarketProduct = {
@@ -36,7 +37,8 @@ function isOdooProduct(value: unknown): value is OdooProduct {
         Number.isInteger(product.categ_id[0]) &&
         typeof product.categ_id[1] === "string")) &&
     typeof product.uom_name === "string" &&
-    typeof product.compare_list_price === "number"
+    typeof product.compare_list_price === "number" &&
+    typeof product.write_date === "string"
   );
 }
 
@@ -79,7 +81,7 @@ export default async function handler(
           ["sale_ok", "=", true],
           ["available_in_pos", "=", true],
         ],
-        fields: ["id", "name", "list_price", "categ_id", "uom_name", "compare_list_price"],
+        fields: ["id", "name", "list_price", "categ_id", "uom_name", "compare_list_price", "write_date"],
         limit: ODOO_PRODUCT_LIMIT,
         order: "name asc",
       }),
@@ -105,12 +107,12 @@ export default async function handler(
         price: product.list_price,
         categoryName,
         unitName: product.uom_name,
-        imageUrl: `/api/market/products/${product.id}/image`,
+        imageUrl: `/api/market/products/${product.id}/image?v=${encodeURIComponent(product.write_date)}`,
         isPromotion: product.compare_list_price > product.list_price,
       };
     });
 
-    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=300");
     return res.status(200).json({ products });
   } catch (error) {
     console.error("[Market/Odoo] Product request failed:", error);

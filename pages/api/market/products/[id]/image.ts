@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const IMAGE_CACHE_CONTROL =
+  "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=2592000";
+const MISSING_IMAGE_CACHE_CONTROL = "public, max-age=300, s-maxage=300";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -17,6 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Identifiant produit invalide." });
   }
 
+  const apiKey = process.env.ODOO_API_KEY?.trim();
+  if (!apiKey) {
+    return res.status(503).json({ error: "Le catalogue Market n’est pas configuré." });
+  }
+
   let odooOrigin: string;
   try {
     const configuredUrl = new URL(process.env.ODOO_URL || "https://fisafigroupe.odoo.com");
@@ -30,27 +37,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await fetch(
-      `${odooOrigin}/web/image/product.template/${productId}/image_512`,
-      { signal: AbortSignal.timeout(20_000) },
-    );
+    const response = await fetch(`${odooOrigin}/json/2/product.template/search_read`, {
+      method: "POST",
+      headers: {
+        Authorization: `bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        domain: [["id", "=", Number(productId)]],
+        fields: ["image_512"],
+        limit: 1,
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
 
     if (!response.ok) {
       console.error(`[Market/Odoo] Product image request failed with HTTP ${response.status}.`);
-      return res.status(response.status === 404 ? 404 : 502).json({
-        error: "Impossible de charger l’image du produit.",
-      });
+      return res.status(502).json({ error: "Impossible de charger l’image du produit." });
     }
 
-    const contentType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
-    if (!contentType || !ALLOWED_IMAGE_TYPES.has(contentType)) {
+    const payload: unknown = await response.json();
+    if (!Array.isArray(payload) || payload.length === 0) {
+      res.setHeader("Cache-Control", MISSING_IMAGE_CACHE_CONTROL);
+      return res.status(404).json({ error: "Ce produit n’a pas de photo." });
+    }
+
+    const firstProduct: unknown = payload[0];
+    if (!firstProduct || typeof firstProduct !== "object" || !("image_512" in firstProduct)) {
+      console.error("[Market/Odoo] Product image response has an unexpected format.");
+      return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
+    }
+
+    const encodedImage = firstProduct.image_512;
+    if (encodedImage === false || encodedImage === null || encodedImage === "") {
+      res.setHeader("Cache-Control", MISSING_IMAGE_CACHE_CONTROL);
+      return res.status(404).json({ error: "Ce produit n’a pas de photo." });
+    }
+    if (typeof encodedImage !== "string" || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encodedImage)) {
       console.error("[Market/Odoo] Product image response has an unexpected content type.");
       return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
     }
 
-    const image = Buffer.from(await response.arrayBuffer());
+    const image = Buffer.from(encodedImage, "base64");
+    const contentType =
+      image.length >= 3 && image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff
+        ? "image/jpeg"
+        : image.length >= 8 &&
+            image.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+          ? "image/png"
+          : image.length >= 12 &&
+              image.toString("ascii", 0, 4) === "RIFF" &&
+              image.toString("ascii", 8, 12) === "WEBP"
+            ? "image/webp"
+            : image.length >= 6 && /^GIF8[79]a$/.test(image.toString("ascii", 0, 6))
+              ? "image/gif"
+              : null;
+    if (!contentType) {
+      console.error("[Market/Odoo] Product image response is not a supported image.");
+      return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
+    }
+
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000");
+    res.setHeader("Cache-Control", IMAGE_CACHE_CONTROL);
     return res.status(200).send(image);
   } catch (error) {
     console.error("[Market/Odoo] Product image request failed:", error);

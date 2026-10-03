@@ -153,7 +153,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
               <div className="back-rack-row" key={rowIndex}>
                 {row.map((image, productIndex) => (
                   <span className="back-rack-product" key={`${image}-${productIndex}`}>
-                    <img src={`/produits/${image}`} alt="" />
+                    <img src={`/produits/${image}`} alt="" loading="lazy" decoding="async" />
                   </span>
                 ))}
               </div>
@@ -165,7 +165,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
               <div className="back-rack-row" key={rowIndex}>
                 {[...row].reverse().map((image, productIndex) => (
                   <span className="back-rack-product" key={`${image}-${productIndex}`}>
-                    <img src={`/produits/${image}`} alt="" />
+                    <img src={`/produits/${image}`} alt="" loading="lazy" decoding="async" />
                   </span>
                 ))}
               </div>
@@ -210,7 +210,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
                       className={`bottle bottle--${product.kind} bottle--image${product.name === "Fromage" ? " bottle--cheese" : ""}`}
                       style={cv(product.c)}
                     >
-                      <img src={`/produits/${product.image}`} alt="" />
+                      <img src={`/produits/${product.image}`} alt="" loading="lazy" decoding="async" />
                     </span>
                   );
                 })}
@@ -244,6 +244,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
             className="abdel"
             src="/abdel2.png"
             alt="Abdel, vendeur chez FiSAFi"
+            loading="eager"
             decoding="async"
           />
 
@@ -266,8 +267,8 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
               <em />
             </span>
             <span className="checkout-goods" aria-hidden="true">
-              <img src="/produits/cafe.jpg" alt="" />
-              <img src="/produits/savon.jpg" alt="" />
+              <img src="/produits/cafe.jpg" alt="" loading="lazy" decoding="async" />
+              <img src="/produits/savon.jpg" alt="" loading="lazy" decoding="async" />
             </span>
             <span className="counter-wordmark" aria-hidden="true">Bon shopping !</span>
             <span className="counter-bag" aria-hidden="true" />

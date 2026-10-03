@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -14,6 +14,7 @@ const THEME_KEY = "fisafi-market-theme";
 const CUSTOMER_KEY = "fisafi-market-customer";
 const MAX_QUANTITY = 99;
 const CUSTOMER_SAVE_DELAY = 400;
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const formatAmount = (amount: number) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(amount);
@@ -28,6 +29,28 @@ function FieldError({ id, message }: { id: string; message?: string }) {
     <p className="market-field-error" id={id} role="alert">
       {message}
     </p>
+  );
+}
+
+function CartProductImage({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className="market-cart-art" aria-hidden="true">
+        F
+      </span>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      width={72}
+      height={72}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -52,7 +75,7 @@ export default function MarketOrderPage() {
   const hasItems = items.length > 0;
 
   /* Thème : préférence enregistrée, sinon thème du système */
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     let saved: string | null = null;
     try {
@@ -60,10 +83,15 @@ export default function MarketOrderPage() {
     } catch {
       /* stockage indisponible */
     }
-    setIsDark(saved === "dark" || (saved !== "light" && media.matches));
+    const initialIsDark = saved === "dark" || (saved !== "light" && media.matches);
+    document.documentElement.setAttribute("data-market-theme", initialIsDark ? "dark" : "light");
+    setIsDark(initialIsDark);
 
     const onChange = (event: MediaQueryListEvent) => {
-      if (!saved) setIsDark(event.matches);
+      if (!saved) {
+        document.documentElement.setAttribute("data-market-theme", event.matches ? "dark" : "light");
+        setIsDark(event.matches);
+      }
     };
 
     if (typeof media.addEventListener === "function") {
@@ -223,9 +251,14 @@ export default function MarketOrderPage() {
           content="Vérifiez votre panier FiSAFi Market, renseignez vos coordonnées et envoyez votre commande sur WhatsApp."
         />
       </Head>
-      <main className="market-page" data-theme={isDark ? "dark" : "light"}>
+      <main
+        className="market-page"
+        data-theme={isDark ? "dark" : "light"}
+        suppressHydrationWarning
+      >
         <nav
           className={`market-store-nav market-checkout-nav${isDark ? " is-dark" : ""}`}
+          suppressHydrationWarning
           aria-label="Navigation panier"
         >
           <Link href="/market#rayons" className="market-back">
@@ -305,14 +338,7 @@ export default function MarketOrderPage() {
                       return (
                         <li className="market-cart-item" key={item.id}>
                           {imageSource ? (
-                            <img
-                              src={imageSource}
-                              alt=""
-                              width={72}
-                              height={72}
-                              loading="lazy"
-                              decoding="async"
-                            />
+                            <CartProductImage src={imageSource} />
                           ) : (
                             <span className="market-cart-art" aria-hidden="true">
                               F

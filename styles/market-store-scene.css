@@ -1973,12 +1973,34 @@
 
 @media (max-width: 760px) {
   .store {
-    height: clamp(26rem, 130vw, 34rem);
+    height: clamp(22rem, 94vw, 27rem);
   }
 
-  .aisle-toolbar {
-    width: min(14rem, 60vw);
-    min-height: 3.25rem;
+  .store-backdrop,
+  .store .aisle,
+  .store-tag {
+    display: none;
+  }
+
+  .fridge {
+    left: 76%;
+    bottom: 14%;
+    width: 36%;
+    height: 48%;
+  }
+
+  .desk {
+    left: 4%;
+    bottom: 12%;
+    width: 44%;
+    height: 58%;
+  }
+
+  .bubble { display: none; }
+
+  .register {
+    right: 5%;
+    width: 42%;
   }
 
   .aisle-switcher {

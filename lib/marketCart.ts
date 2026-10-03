@@ -26,7 +26,10 @@ export function getMarketPriceAmount(price: string) {
 
 export function getMarketImageSource(image?: string) {
   if (!image) return null;
-  return image.startsWith("https://") ? image : `/produits/${image}`;
+  if (image.startsWith("https://") || (image.startsWith("/") && !image.startsWith("//"))) {
+    return image;
+  }
+  return `/produits/${image}`;
 }
 
 function isMarketCartItem(value: unknown): value is MarketCartItem {
