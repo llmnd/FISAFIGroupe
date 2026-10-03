@@ -6,6 +6,7 @@ type OdooProduct = {
   list_price: number;
   categ_id: [number, string] | false;
   uom_name: string;
+  image_128: string | false | null;
   compare_list_price: number;
   write_date: string;
 };
@@ -16,6 +17,7 @@ type MarketProduct = {
   price: number;
   categoryName: string | null;
   unitName: string;
+  hasImage: boolean;
   imageUrl: string;
   isPromotion: boolean;
 };
@@ -37,6 +39,7 @@ function isOdooProduct(value: unknown): value is OdooProduct {
         Number.isInteger(product.categ_id[0]) &&
         typeof product.categ_id[1] === "string")) &&
     typeof product.uom_name === "string" &&
+    (typeof product.image_128 === "string" || product.image_128 === false || product.image_128 === null) &&
     typeof product.compare_list_price === "number" &&
     typeof product.write_date === "string"
   );
@@ -81,7 +84,7 @@ export default async function handler(
           ["sale_ok", "=", true],
           ["available_in_pos", "=", true],
         ],
-        fields: ["id", "name", "list_price", "categ_id", "uom_name", "compare_list_price", "write_date"],
+        fields: ["id", "name", "list_price", "categ_id", "uom_name", "image_128", "compare_list_price", "write_date"],
         limit: ODOO_PRODUCT_LIMIT,
         order: "name asc",
       }),
@@ -107,6 +110,7 @@ export default async function handler(
         price: product.list_price,
         categoryName,
         unitName: product.uom_name,
+        hasImage: typeof product.image_128 === "string" && product.image_128.length > 0,
         imageUrl: `/api/market/products/${product.id}/image?v=${encodeURIComponent(product.write_date)}`,
         isPromotion: product.compare_list_price > product.list_price,
       };

@@ -23,6 +23,7 @@ type OdooCatalogProduct = {
   price: number;
   categoryName: string | null;
   unitName: string;
+  hasImage: boolean;
   imageUrl: string;
   isPromotion: boolean;
 };
@@ -33,6 +34,7 @@ type MarketProduct = {
   price: string;
   badge?: "PROMO";
   artwork: ProductArtwork;
+  hasImage: boolean;
   imageUrl: string;
   categoryPath: string | null;
   departmentId: string;
@@ -108,6 +110,7 @@ function isMarketApiResponse(value: unknown): value is { products: OdooCatalogPr
         typeof candidate.price === "number" &&
         (candidate.categoryName === null || typeof candidate.categoryName === "string") &&
         typeof candidate.unitName === "string" &&
+        typeof candidate.hasImage === "boolean" &&
         typeof candidate.imageUrl === "string" &&
         typeof candidate.isPromotion === "boolean"
       );
@@ -115,7 +118,7 @@ function isMarketApiResponse(value: unknown): value is { products: OdooCatalogPr
   );
 }
 
-const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v3";
+const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v4";
 const MARKET_CATALOG_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -515,6 +518,7 @@ export default function MarketPage() {
       price: pricePerKilogram ? `${price} / kg` : price,
       badge: product.isPromotion ? "PROMO" : undefined,
       artwork: getProductArtwork(departmentName),
+      hasImage: product.hasImage,
       imageUrl: product.imageUrl,
       categoryPath: product.categoryName,
       departmentId: getDepartmentId(departmentName),
@@ -553,6 +557,7 @@ export default function MarketPage() {
     return searchableText.includes(normalizedQuery);
   });
   const sortedProducts = [...filteredProducts].sort((left, right) => {
+    if (left.hasImage !== right.hasImage) return left.hasImage ? -1 : 1;
     if (productSort === "price-asc" || productSort === "price-desc") {
       const priceDifference =
         (getMarketPriceAmount(left.price) ?? 0) - (getMarketPriceAmount(right.price) ?? 0);
