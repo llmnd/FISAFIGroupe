@@ -545,12 +545,7 @@ export default function MarketPage() {
     : [];
 
   const openDepartmentsMenu = () => {
-    const departmentWithSubcategories = departments.reduce<Department | undefined>((best, department) => (
-      !best || getDepartmentSubcategories(department.id).length > getDepartmentSubcategories(best.id).length
-        ? department
-        : best
-    ), undefined);
-    setActiveMenuDepartment(selectedDepartment || departmentWithSubcategories?.id || departments[0]?.id || "");
+    setActiveMenuDepartment("");
     setDepartmentsMenuOpen(true);
   };
 
@@ -738,77 +733,71 @@ export default function MarketPage() {
         aria-label="Fermer le menu des rayons"
         tabIndex={-1}
       />
-      <section
-        className="market-departments-drawer"
+      <div
+        className="market-departments-content"
+        onMouseLeave={() => setActiveMenuDepartment("")}
       >
-        <div className="market-departments-drawer-heading">
-          <h2 id="market-departments-drawer-title">Tous les rayons</h2>
-          <button
-            className="market-departments-drawer-close"
-            type="button"
-            onClick={closeDepartmentsMenu}
-            aria-label="Fermer le menu des rayons"
-            ref={departmentsMenuCloseRef}
-          >
-            ×
-          </button>
-        </div>
-        <nav className="market-departments-drawer-list" aria-label="Choisir un rayon">
-          <button
-            className={`market-departments-drawer-item${selectedDepartment ? "" : " is-selected"}`}
-            type="button"
-            aria-pressed={!selectedDepartment}
-            onClick={() => selectDepartment("")}
-          >
-            <span className="market-departments-drawer-icon market-departments-drawer-icon--all" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none">
-                <path d="M8 20h32l-3 20H11L8 20Z" />
-                <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
-              </svg>
-            </span>
-            <span className="market-departments-drawer-copy">
-              <strong>Tous les produits</strong>
-              <small>{marketProducts.length} produits</small>
-            </span>
-            <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
-          </button>
-          {departments.map((department) => {
-            const departmentProducts = productsByDepartment.get(department.id) || [];
-            const departmentImage = departmentProducts.find((product) => product.imageUrl)?.imageUrl;
-            return (
-              <button
-                className={`market-departments-drawer-item${selectedDepartment === department.id ? " is-selected" : ""}${activeMenuDepartment === department.id ? " is-active" : ""}`}
-                type="button"
-                key={department.id}
-                aria-pressed={selectedDepartment === department.id}
-                aria-current={activeMenuDepartment === department.id ? "true" : undefined}
-                onMouseEnter={() => setActiveMenuDepartment(department.id)}
-                onFocus={() => setActiveMenuDepartment(department.id)}
-                onClick={() => {
-                  if (window.matchMedia("(max-width: 760px)").matches) {
-                    setActiveMenuDepartment(department.id);
-                  } else {
-                    selectDepartment(department.id);
-                  }
-                }}
-              >
-                <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
-                  {departmentImage ? (
-                    <img src={departmentImage} alt="" loading="lazy" decoding="async" />
-                  ) : (
-                    <DepartmentIllustration art={department.art} />
-                  )}
-                </span>
-                <span className="market-departments-drawer-copy">
-                  <strong>{department.name}</strong>
-                  <small>{departmentProducts.length} produits</small>
-                </span>
-                <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
-              </button>
-            );
-          })}
-        </nav>
-      </section>
+        <section className="market-departments-drawer">
+          <div className="market-departments-drawer-heading">
+            <h2 id="market-departments-drawer-title">Tous les rayons</h2>
+          </div>
+          <nav className="market-departments-drawer-list" aria-label="Choisir un rayon">
+            <button
+              className={`market-departments-drawer-item${selectedDepartment ? "" : " is-selected"}`}
+              type="button"
+              aria-pressed={!selectedDepartment}
+              onMouseEnter={() => setActiveMenuDepartment("")}
+              onClick={() => selectDepartment("")}
+            >
+              <span className="market-departments-drawer-icon market-departments-drawer-icon--all" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <path d="M8 20h32l-3 20H11L8 20Z" />
+                  <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
+                </svg>
+              </span>
+              <span className="market-departments-drawer-copy">
+                <strong>Tous les produits</strong>
+                <small>{marketProducts.length} produits</small>
+              </span>
+              <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
+            </button>
+            {departments.map((department) => {
+              const departmentProducts = productsByDepartment.get(department.id) || [];
+              const departmentImage = departmentProducts.find((product) => product.imageUrl)?.imageUrl;
+              return (
+                <button
+                  className={`market-departments-drawer-item${selectedDepartment === department.id ? " is-selected" : ""}${activeMenuDepartment === department.id ? " is-active" : ""}`}
+                  type="button"
+                  key={department.id}
+                  aria-pressed={selectedDepartment === department.id}
+                  aria-current={activeMenuDepartment === department.id ? "true" : undefined}
+                  onMouseEnter={() => setActiveMenuDepartment(department.id)}
+                  onFocus={() => setActiveMenuDepartment(department.id)}
+                  onClick={() => {
+                    if (window.matchMedia("(max-width: 760px)").matches) {
+                      setActiveMenuDepartment(department.id);
+                    } else {
+                      selectDepartment(department.id);
+                    }
+                  }}
+                >
+                  <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
+                    {departmentImage ? (
+                      <img src={departmentImage} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <DepartmentIllustration art={department.art} />
+                    )}
+                  </span>
+                  <span className="market-departments-drawer-copy">
+                    <strong>{department.name}</strong>
+                    <small>{departmentProducts.length} produits</small>
+                  </span>
+                  <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
+                </button>
+              );
+            })}
+          </nav>
+        </section>
         <aside
           className="market-departments-submenu"
           aria-label={activeMenuDepartmentData ? `Contenu du rayon ${activeMenuDepartmentData.name}` : "Contenu du rayon"}
@@ -878,6 +867,7 @@ export default function MarketPage() {
             </>
           )}
         </aside>
+      </div>
     </div>
   ) : null;
 
@@ -916,16 +906,21 @@ export default function MarketPage() {
           </Link>
 
           <button
-            className="market-rayons-link"
+            className={`market-rayons-link${departmentsMenuOpen ? " is-open" : ""}`}
             type="button"
-            onClick={openDepartmentsMenu}
+            onClick={() => (departmentsMenuOpen ? closeDepartmentsMenu() : openDepartmentsMenu())}
             aria-haspopup="dialog"
             aria-expanded={departmentsMenuOpen}
+            aria-label={departmentsMenuOpen ? "Quitter le menu des rayons" : "Afficher les rayons"}
             ref={departmentsMenuButtonRef}
           >
-            Rayons
+            {departmentsMenuOpen ? "Quitter" : "Rayons"}
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h16M4 12h16M4 17h16" />
+              {departmentsMenuOpen ? (
+                <path d="m6 6 12 12M18 6 6 18" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              )}
             </svg>
           </button>
 
