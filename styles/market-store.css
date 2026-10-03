@@ -1995,16 +1995,90 @@ body:has(.market-page) { padding-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   .market-page .market-product-card,
   .market-page .market-product-image,
-  .market-page .market-product-add {
+  .market-page .market-product-add,
+  .market-catalog-tool-panel,
+  .market-catalog-search-toggle {
     transition: none;
+    animation: none;
   }
 }
 
 .market-page .market-catalog-tools {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.market-catalog-search-toggle {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--market-line);
+  border-radius: 0.7rem;
+  background: var(--market-surface);
+  color: var(--market-ink);
+  cursor: pointer;
+  font: 600 0.88rem/1 "Jost", system-ui, sans-serif;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.market-catalog-search-toggle:hover,
+.market-catalog-search-toggle:focus-visible,
+.market-catalog-search-toggle[aria-expanded="true"] {
+  border-color: rgba(37, 11, 184, 0.3);
+  background: #eff4f8;
+}
+
+.market-catalog-search-toggle:focus-visible {
+  outline: 3px solid var(--market-orange);
+  outline-offset: 2px;
+}
+
+.market-catalog-search-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.market-catalog-search-toggle.has-query::after {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--market-orange);
+  content: "";
+}
+
+.market-page[data-theme="dark"] .market-catalog-search-toggle {
+  border-color: var(--market-line);
+  background: #211d2d;
+  color: var(--market-ink);
+}
+
+.market-page[data-theme="dark"] .market-catalog-search-toggle:hover,
+.market-page[data-theme="dark"] .market-catalog-search-toggle:focus-visible,
+.market-page[data-theme="dark"] .market-catalog-search-toggle[aria-expanded="true"] {
+  background: #302b3e;
+}
+
+.market-catalog-tool-panel {
+  display: grid;
+  width: 100%;
   grid-template-columns: minmax(16rem, 1fr) auto;
   align-items: end;
   gap: 1rem;
+  animation: market-catalog-tools-in 180ms ease both;
+}
+
+@keyframes market-catalog-tools-in {
+  from { opacity: 0; transform: translateY(-0.35rem); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .market-category-rail {
@@ -2347,6 +2421,11 @@ body:has(.market-page) { padding-top: 0; }
   }
 
   .market-page .market-catalog-tools {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .market-catalog-tool-panel {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.7rem;
   }

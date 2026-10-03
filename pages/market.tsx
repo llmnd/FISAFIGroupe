@@ -462,7 +462,9 @@ export default function MarketPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+  const [catalogToolsOpen, setCatalogToolsOpen] = useState(false);
   const marketNavRef = useRef<HTMLElement>(null);
+  const catalogSearchInputRef = useRef<HTMLInputElement>(null);
   const departmentsDialogRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const departmentsMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -1159,50 +1161,75 @@ export default function MarketPage() {
 
 
           <div className="market-catalog-tools">
-            <label className="market-search-field">
+            <button
+              className={`market-catalog-search-toggle${searchQuery ? " has-query" : ""}`}
+              type="button"
+              aria-controls={catalogToolsOpen ? "market-catalog-tool-panel" : undefined}
+              aria-expanded={catalogToolsOpen}
+              aria-label={catalogToolsOpen ? "Masquer la recherche et les filtres" : "Afficher la recherche et les filtres"}
+              onClick={() => {
+                const willOpen = !catalogToolsOpen;
+                setCatalogToolsOpen(willOpen);
+                if (willOpen) {
+                  window.requestAnimationFrame(() => catalogSearchInputRef.current?.focus());
+                }
+              }}
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="10.8" cy="10.8" r="6.8" />
                 <path d="m16 16 5 5" />
               </svg>
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => {
-                  setSearchQuery(event.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Rechercher un produit ou un rayon…"
-                aria-label="Rechercher un produit ou un rayon"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCurrentPage(1);
-                  }}
-                >
-                  Effacer
-                </button>
-              )}
-            </label>
-            <div className="market-catalog-options">
-              <label className="market-catalog-control">
-                <span>Trier par</span>
-                <select
-                  value={productSort}
-                  onChange={(event) => {
-                    setProductSort(event.target.value as ProductSort);
-                    setCurrentPage(1);
-                  }}
-                  aria-label="Trier les produits"
-                >
-                  <option value="name-asc">Nom (A à Z)</option>
-                  <option value="price-asc">Prix croissant</option>
-                  <option value="price-desc">Prix décroissant</option>
-                </select>
-              </label>
-            </div>
+              <span>Rechercher</span>
+            </button>
+            {catalogToolsOpen && (
+              <div className="market-catalog-tool-panel" id="market-catalog-tool-panel">
+                <label className="market-search-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10.8" cy="10.8" r="6.8" />
+                    <path d="m16 16 5 5" />
+                  </svg>
+                  <input
+                    ref={catalogSearchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Rechercher un produit ou un rayon…"
+                    aria-label="Rechercher un produit ou un rayon"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Effacer
+                    </button>
+                  )}
+                </label>
+                <div className="market-catalog-options">
+                  <label className="market-catalog-control">
+                    <span>Trier par</span>
+                    <select
+                      value={productSort}
+                      onChange={(event) => {
+                        setProductSort(event.target.value as ProductSort);
+                        setCurrentPage(1);
+                      }}
+                      aria-label="Trier les produits"
+                    >
+                      <option value="name-asc">Nom (A à Z)</option>
+                      <option value="price-asc">Prix croissant</option>
+                      <option value="price-desc">Prix décroissant</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {catalogError && (

@@ -261,8 +261,9 @@ export default function MarketOrderPage() {
           suppressHydrationWarning
           aria-label="Navigation panier"
         >
-          <Link href="/market#rayons" className="market-back">
-            <span aria-hidden="true">←</span> Continuer mes achats
+          <Link href="/market#rayons" className="market-back" aria-label="Retourner au marché">
+            <span aria-hidden="true">←</span>
+            <span className="market-checkout-back-label">Continuer mes achats</span>
           </Link>
           <Link href="/market" className="market-wordmark">
             FiSAFi <strong>Market</strong>

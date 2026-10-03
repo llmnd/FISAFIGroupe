@@ -523,13 +523,44 @@
 
 @media (max-width: 600px) {
   .market-checkout-nav {
+    display: grid;
+    grid-template-columns: auto 1fr;
     min-height: 3.25rem;
     gap: 0.5rem;
     padding-inline: 0;
+    justify-content: flex-start;
   }
+
   .market-checkout-nav .market-wordmark {
-    font-size: 1.25rem;
+    display: none;
   }
+
+  .market-checkout-nav a.market-back {
+    display: grid;
+    grid-column: 1;
+    grid-row: 1;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    justify-self: start;
+    place-items: center;
+    border-radius: 0.65rem;
+    background: var(--market-surface-soft);
+    color: var(--market-ink);
+    font-size: 1.35rem;
+  }
+
+  .market-checkout-nav .market-checkout-back-label {
+    display: none;
+  }
+
+  .market-page[data-theme="dark"] .market-checkout-nav a.market-back,
+  .market-page[data-theme="dark"] .market-checkout-nav a.market-back:hover {
+    border-color: transparent;
+    background: #302b3e;
+    color: #fff;
+  }
+
   .market-checkout {
     padding-top: 0.75rem;
   }
