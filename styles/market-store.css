@@ -2606,7 +2606,7 @@ body:has(.market-page) { padding-top: 0; }
   display: -webkit-box;
   min-height: 2.5em;
   overflow: hidden;
-  margin: 0 0 0.75rem;
+  margin: 0.2rem 0 0.75rem;
   color: var(--market-ink);
   font: 600 clamp(0.9rem, 1vw, 1rem)/1.3 "Jost", system-ui, sans-serif;
   letter-spacing: -0.012em;
@@ -3981,5 +3981,306 @@ body:has(.market-page) { padding-top: 0; }
   .market-page .market-product-cart-controls button:hover,
   .market-page .market-category-tile:hover {
     transform: none;
+  }
+}
+
+.market-product-card .market-product-details-trigger {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.market-product-details-trigger:focus-visible,
+.market-product-name-trigger:focus-visible {
+  outline: 3px solid var(--market-orange);
+  outline-offset: 3px;
+}
+
+.market-product-name-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.market-product-name-trigger:hover {
+  color: var(--market-purple);
+}
+
+.market-product-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(19, 16, 29, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: market-product-dialog-fade-in 180ms ease both;
+}
+
+.market-product-dialog {
+  position: relative;
+  display: grid;
+  width: min(48rem, 100%);
+  max-height: min(90dvh, 48rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  overflow: auto;
+  border: 1px solid var(--market-line);
+  border-radius: 1.1rem;
+  background: var(--market-surface, #fff);
+  color: var(--market-ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  animation: market-product-dialog-enter 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.market-product-dialog-visual {
+  position: relative;
+  display: grid;
+  min-height: 23rem;
+  place-items: center;
+  overflow: hidden;
+  padding: 2.5rem;
+  background: linear-gradient(145deg, #f5f1e7, #fffdf6);
+}
+
+.market-product-dialog-visual > .market-product-image,
+.market-product-dialog-visual > .market-product-art {
+  width: min(100%, 20rem);
+  height: min(20rem, 55vw);
+  object-fit: contain;
+}
+
+.market-product-dialog-badge {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 1;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  background: #d84a3b;
+  color: #fff;
+  font: 700 0.68rem/1 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.market-product-dialog-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.market-product-dialog-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--market-line);
+  border-radius: 50%;
+  background: var(--market-surface, #fff);
+  color: var(--market-ink);
+  cursor: pointer;
+}
+
+.market-product-dialog-close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.market-product-dialog-close:focus-visible,
+.market-product-dialog-add:focus-visible,
+.market-product-dialog-quantity button:focus-visible {
+  outline: 3px solid var(--market-orange);
+  outline-offset: 3px;
+}
+
+.market-product-dialog-department {
+  color: var(--market-purple);
+  font: 700 0.7rem/1.2 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.market-product-dialog-content h2 {
+  margin: 0.7rem 0 0;
+  color: var(--market-ink);
+  font: 600 clamp(1.6rem, 3vw, 2.3rem)/1.08 "Jost", system-ui, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.market-product-dialog-category {
+  margin: 0.65rem 0 0;
+  color: var(--market-muted);
+  font: 400 0.85rem/1.45 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 1.5rem 0 0;
+}
+
+.market-product-dialog-price strong {
+  color: var(--market-purple);
+  font: 700 1.9rem/1 "Jost", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-product-dialog-price span {
+  color: var(--market-muted);
+  font: 600 0.78rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-note {
+  margin: 0.65rem 0 1.5rem;
+  color: var(--market-muted);
+  font: 400 0.78rem/1.45 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-add,
+.market-product-dialog-quantity {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--market-purple);
+  border-radius: 999px;
+  background: var(--market-purple);
+  color: #fff;
+  font: 700 0.88rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-add {
+  cursor: pointer;
+}
+
+.market-product-dialog-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.market-product-dialog-quantity {
+  justify-content: space-between;
+  min-width: 11rem;
+}
+
+.market-product-dialog-quantity button {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  cursor: pointer;
+  font: 700 1.1rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-quantity span {
+  font: 600 0.83rem/1.2 "Jost", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog {
+  --market-ink: #f2eefb;
+  --market-muted: #b5aec6;
+  --market-line: rgba(226, 218, 255, 0.16);
+  --market-purple: #c7b7ff;
+  --market-surface: #211d2d;
+  background: #211d2d;
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog-visual {
+  background: linear-gradient(145deg, #302a3d, #282333);
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog-visual .market-product-image {
+  mix-blend-mode: normal;
+}
+
+@keyframes market-product-dialog-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes market-product-dialog-enter {
+  from { opacity: 0; transform: translateY(0.6rem) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 600px) {
+  .market-product-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .market-product-dialog {
+    width: 100%;
+    max-height: min(92dvh, 48rem);
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 1.1rem 1.1rem 0 0;
+  }
+
+  .market-product-dialog-visual {
+    min-height: 12rem;
+    max-height: 34dvh;
+    padding: 1.25rem;
+  }
+
+  .market-product-dialog-visual > .market-product-image,
+  .market-product-dialog-visual > .market-product-art {
+    height: min(12rem, 32dvh);
+  }
+
+  .market-product-dialog-content {
+    padding: 1.25rem 1.4rem calc(1.4rem + env(safe-area-inset-bottom));
+  }
+
+  .market-product-dialog-content h2 {
+    margin-top: 0.65rem;
+    padding-right: 2rem;
+    font-size: 1.5rem;
+  }
+
+  .market-product-dialog-price {
+    margin-top: 1rem;
+  }
+
+  .market-product-dialog-price strong {
+    font-size: 1.65rem;
+  }
+
+  .market-product-dialog-note {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-product-dialog-backdrop,
+  .market-product-dialog {
+    animation: none;
   }
 }
