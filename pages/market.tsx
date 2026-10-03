@@ -327,6 +327,7 @@ function ProductIllustration({ artwork }: { artwork: ProductArtwork }) {
 
 function ProductArtworkView({ product }: { product: MarketProduct }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageObjectPosition, setImageObjectPosition] = useState("center");
   if (imageFailed) return <ProductIllustration artwork={product.artwork} />;
 
   return (
@@ -336,6 +337,16 @@ function ProductArtworkView({ product }: { product: MarketProduct }) {
       alt={product.name}
       loading="lazy"
       decoding="async"
+      style={{ objectPosition: imageObjectPosition }}
+      onLoad={(event) => {
+        const { naturalWidth, naturalHeight } = event.currentTarget;
+        if (!naturalWidth || !naturalHeight) return;
+
+        const aspectRatio = naturalWidth / naturalHeight;
+        setImageObjectPosition(
+          aspectRatio < 0.78 ? "center 18%" : aspectRatio < 1 ? "center 34%" : "center",
+        );
+      }}
       onError={() => setImageFailed(true)}
     />
   );

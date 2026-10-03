@@ -2553,10 +2553,6 @@ body:has(.market-page) { padding-top: 0; }
   object-fit: cover;
 }
 
-.market-page .market-product-card:hover .market-product-image {
-  transform: scale(1.04);
-}
-
 .market-page .market-product-visual .market-product-art {
   object-fit: contain;
 }
