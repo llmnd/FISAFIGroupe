@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 
 const LINES = [
@@ -98,7 +98,7 @@ const STORE_AISLES: StoreAisle[] = [
 
 const cv = (v: string) => ({ "--c": v }) as CSSProperties;
 
-export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
+function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
   const [customerPass, setCustomerPass] = useState(0);
@@ -361,3 +361,5 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
     </>
   );
 }
+
+export default memo(MarketStore);
