@@ -358,12 +358,12 @@ function MarketProductCard({
 
   return (
     <article className="market-product-card">
-      {product.badge && (
-        <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
-          {product.badge}
-        </span>
-      )}
       <div className="market-product-visual">
+        {product.badge && (
+          <span className={`market-product-badge market-product-badge--${product.badge.toLowerCase()}`}>
+            {product.badge}
+          </span>
+        )}
         <ProductArtworkView product={product} />
       </div>
       <div className="market-product-info">

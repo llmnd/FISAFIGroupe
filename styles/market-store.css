@@ -755,13 +755,13 @@
   justify-content: space-between;
   padding: 0.7rem 0;
   border-bottom: 1px dashed rgba(40, 35, 60, 0.12);
-  color: #28233c;
+  color: #ccc8db;
   font: 500 1rem/1.4 "Jost", system-ui, sans-serif;
 }
 .market-hours li:last-child { border-bottom: none; }
 .market-hours b {
   font-weight: 700;
-  color: #250bb8;
+  color: #c3c0d6;
 }
 .market-info-card address {
   margin: 0 0 1.3rem;
