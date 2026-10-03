@@ -244,6 +244,7 @@ export default function MarketStore({ isMarketOpen }: { isMarketOpen: boolean })
             className="abdel"
             src="/abdel2.png"
             alt="Abdel, vendeur chez FiSAFi"
+            decoding="async"
           />
 
           <div className="counter">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import MarketStore from "@/components/MarketStore";
@@ -34,6 +34,7 @@ type MarketProduct = {
   badge?: "PROMO";
   artwork: ProductArtwork;
   imageUrl: string;
+  categoryPath: string | null;
   departmentId: string;
   departmentName: string;
 };
@@ -42,6 +43,7 @@ type ProductArtwork = "produce" | "pantry" | "bakery" | "drink" | "fresh" | "hom
 
 type ThemeChoice = "system" | "light" | "dark";
 type ProductSort = "name-asc" | "price-asc" | "price-desc";
+type MarketSubcategory = { path: string; name: string; productCount: number };
 
 const DEPARTMENT_COLORS = ["green", "orange", "gold", "blue", "pink", "purple"] as const;
 const MARKET_PAGE_SIZE = 24;
@@ -111,6 +113,45 @@ function isMarketApiResponse(value: unknown): value is { products: OdooCatalogPr
       );
     })
   );
+}
+
+const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v2";
+const MARKET_CATALOG_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function readMarketCatalogCache(): OdooCatalogProduct[] | null {
+  try {
+    const cached = window.localStorage.getItem(MARKET_CATALOG_CACHE_KEY);
+    if (!cached) return null;
+
+    const value: unknown = JSON.parse(cached);
+    if (
+      !value ||
+      typeof value !== "object" ||
+      !("cachedAt" in value) ||
+      typeof value.cachedAt !== "number" ||
+      Date.now() - value.cachedAt > MARKET_CATALOG_MAX_STALE_MS ||
+      value.cachedAt > Date.now() ||
+      !("products" in value)
+    ) {
+      return null;
+    }
+    const catalog: unknown = { products: value.products };
+    return isMarketApiResponse(catalog) ? catalog.products : null;
+  } catch (error) {
+    console.warn("[Market] Cached product catalog could not be read:", error);
+    return null;
+  }
+}
+
+function writeMarketCatalogCache(products: OdooCatalogProduct[]) {
+  try {
+    window.localStorage.setItem(
+      MARKET_CATALOG_CACHE_KEY,
+      JSON.stringify({ cachedAt: Date.now(), products }),
+    );
+  } catch (error) {
+    console.warn("[Market] Product catalog could not be saved to cache:", error);
+  }
 }
 
 const SERVICES = [
@@ -398,8 +439,16 @@ export default function MarketPage() {
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogRetry, setCatalogRetry] = useState(0);
+  const [departmentsMenuOpen, setDepartmentsMenuOpen] = useState(false);
+  const [marketHeaderHeight, setMarketHeaderHeight] = useState(72);
+  const [activeMenuDepartment, setActiveMenuDepartment] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+  const marketNavRef = useRef<HTMLElement>(null);
+  const departmentsDialogRef = useRef<HTMLDivElement>(null);
+  const departmentsMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const departmentsMenuCloseRef = useRef<HTMLButtonElement>(null);
   const isDark = themeChoice === "dark" || (themeChoice === "system" && systemPrefersDark);
   const normalizedQuery = searchQuery
     .trim()
@@ -417,6 +466,7 @@ export default function MarketPage() {
       badge: product.isPromotion ? "PROMO" : undefined,
       artwork: getProductArtwork(departmentName),
       imageUrl: product.imageUrl,
+      categoryPath: product.categoryName,
       departmentId: getDepartmentId(departmentName),
       departmentName,
     };
@@ -442,6 +492,9 @@ export default function MarketPage() {
     }));
   const filteredProducts = marketProducts.filter((product) => {
     if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
+    if (selectedSubcategory && !product.categoryPath?.startsWith(`${selectedSubcategory} /`) && product.categoryPath !== selectedSubcategory) {
+      return false;
+    }
     if (!normalizedQuery) return true;
     const searchableText = `${product.name} ${product.departmentName}`
       .normalize("NFD")
@@ -467,10 +520,49 @@ export default function MarketPage() {
   const firstProductNumber = sortedProducts.length ? (page - 1) * MARKET_PAGE_SIZE + 1 : 0;
   const lastProductNumber = Math.min(page * MARKET_PAGE_SIZE, sortedProducts.length);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const hasActiveCatalogFilters = Boolean(searchQuery.trim() || selectedDepartment);
+  const hasActiveCatalogFilters = Boolean(searchQuery.trim() || selectedDepartment || selectedSubcategory);
+
+  const getDepartmentSubcategories = (departmentId: string): MarketSubcategory[] => {
+    const products = productsByDepartment.get(departmentId) || [];
+    const subcategories = new Map<string, MarketSubcategory>();
+    for (const product of products) {
+      const path = product.categoryPath?.split("/").map((part) => part.trim()).filter(Boolean) ?? [];
+      if (path.length < 2) continue;
+      const categoryPath = path.slice(0, 2).join(" / ");
+      const existing = subcategories.get(categoryPath);
+      if (existing) {
+        existing.productCount += 1;
+      } else {
+        subcategories.set(categoryPath, { path: categoryPath, name: path[1], productCount: 1 });
+      }
+    }
+    return [...subcategories.values()].sort((left, right) => left.name.localeCompare(right.name, "fr"));
+  };
+
+  const activeMenuDepartmentData = departments.find((department) => department.id === activeMenuDepartment);
+  const activeMenuSubcategories = activeMenuDepartmentData
+    ? getDepartmentSubcategories(activeMenuDepartmentData.id)
+    : [];
+
+  const openDepartmentsMenu = () => {
+    const departmentWithSubcategories = departments.reduce<Department | undefined>((best, department) => (
+      !best || getDepartmentSubcategories(department.id).length > getDepartmentSubcategories(best.id).length
+        ? department
+        : best
+    ), undefined);
+    setActiveMenuDepartment(selectedDepartment || departmentWithSubcategories?.id || departments[0]?.id || "");
+    setDepartmentsMenuOpen(true);
+  };
+
+  const closeDepartmentsMenu = () => {
+    setDepartmentsMenuOpen(false);
+    departmentsMenuButtonRef.current?.focus();
+  };
 
   const selectDepartment = (departmentId: string) => {
+    setDepartmentsMenuOpen(false);
     setSelectedDepartment(departmentId);
+    setSelectedSubcategory("");
     setCurrentPage(1);
     window.requestAnimationFrame(() => {
       document.getElementById("market-products")?.scrollIntoView({
@@ -480,9 +572,68 @@ export default function MarketPage() {
     });
   };
 
+  const selectSubcategory = (departmentId: string, categoryPath: string) => {
+    setDepartmentsMenuOpen(false);
+    setSelectedDepartment(departmentId);
+    setSelectedSubcategory(categoryPath);
+    setCurrentPage(1);
+    window.requestAnimationFrame(() => {
+      document.getElementById("market-products")?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (!departmentsMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    departmentsMenuCloseRef.current?.focus();
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeDepartmentsMenu();
+      if (event.key !== "Tab") return;
+
+      const focusableElements = departmentsDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [departmentsMenuOpen]);
+
+  useEffect(() => {
+    const nav = marketNavRef.current;
+    if (!nav) return;
+
+    const updateHeaderHeight = () => setMarketHeaderHeight(nav.getBoundingClientRect().height);
+    updateHeaderHeight();
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
+
   const clearCatalogFilters = () => {
     setSearchQuery("");
     setSelectedDepartment("");
+    setSelectedSubcategory("");
     setCurrentPage(1);
   };
 
@@ -514,7 +665,13 @@ export default function MarketPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    setCatalogLoading(true);
+    const cachedProducts = readMarketCatalogCache();
+    if (cachedProducts) {
+      setCatalog(cachedProducts);
+      setCatalogLoading(false);
+    } else {
+      setCatalogLoading(true);
+    }
     setCatalogError(null);
 
     fetch("/api/market/products", { signal: controller.signal })
@@ -531,6 +688,7 @@ export default function MarketPage() {
           throw new Error("La réponse du catalogue est invalide.");
         }
         setCatalog(payload.products);
+        writeMarketCatalogCache(payload.products);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -561,6 +719,168 @@ export default function MarketPage() {
     setThemeChoice(nextTheme);
   };
 
+  const departmentsMenu = departmentsMenuOpen ? (
+    <div
+      className={`market-departments-modal${isDark ? " is-dark" : ""}${activeMenuDepartmentData ? "" : " is-submenu-empty"}`}
+      style={{
+        "--market-departments-modal-top": `${marketHeaderHeight}px`,
+        "--market-orange": "#ff7417",
+      } as React.CSSProperties}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="market-departments-drawer-title"
+      ref={departmentsDialogRef}
+    >
+      <button
+        className="market-departments-backdrop"
+        type="button"
+        onClick={closeDepartmentsMenu}
+        aria-label="Fermer le menu des rayons"
+        tabIndex={-1}
+      />
+      <section
+        className="market-departments-drawer"
+      >
+        <div className="market-departments-drawer-heading">
+          <h2 id="market-departments-drawer-title">Tous les rayons</h2>
+          <button
+            className="market-departments-drawer-close"
+            type="button"
+            onClick={closeDepartmentsMenu}
+            aria-label="Fermer le menu des rayons"
+            ref={departmentsMenuCloseRef}
+          >
+            ×
+          </button>
+        </div>
+        <nav className="market-departments-drawer-list" aria-label="Choisir un rayon">
+          <button
+            className={`market-departments-drawer-item${selectedDepartment ? "" : " is-selected"}`}
+            type="button"
+            aria-pressed={!selectedDepartment}
+            onClick={() => selectDepartment("")}
+          >
+            <span className="market-departments-drawer-icon market-departments-drawer-icon--all" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M8 20h32l-3 20H11L8 20Z" />
+                <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
+              </svg>
+            </span>
+            <span className="market-departments-drawer-copy">
+              <strong>Tous les produits</strong>
+              <small>{marketProducts.length} produits</small>
+            </span>
+            <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
+          </button>
+          {departments.map((department) => {
+            const departmentProducts = productsByDepartment.get(department.id) || [];
+            const departmentImage = departmentProducts.find((product) => product.imageUrl)?.imageUrl;
+            return (
+              <button
+                className={`market-departments-drawer-item${selectedDepartment === department.id ? " is-selected" : ""}${activeMenuDepartment === department.id ? " is-active" : ""}`}
+                type="button"
+                key={department.id}
+                aria-pressed={selectedDepartment === department.id}
+                aria-current={activeMenuDepartment === department.id ? "true" : undefined}
+                onMouseEnter={() => setActiveMenuDepartment(department.id)}
+                onFocus={() => setActiveMenuDepartment(department.id)}
+                onClick={() => {
+                  if (window.matchMedia("(max-width: 760px)").matches) {
+                    setActiveMenuDepartment(department.id);
+                  } else {
+                    selectDepartment(department.id);
+                  }
+                }}
+              >
+                <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
+                  {departmentImage ? (
+                    <img src={departmentImage} alt="" loading="lazy" decoding="async" />
+                  ) : (
+                    <DepartmentIllustration art={department.art} />
+                  )}
+                </span>
+                <span className="market-departments-drawer-copy">
+                  <strong>{department.name}</strong>
+                  <small>{departmentProducts.length} produits</small>
+                </span>
+                <span className="market-departments-drawer-arrow" aria-hidden="true">›</span>
+              </button>
+            );
+          })}
+        </nav>
+      </section>
+        <aside
+          className="market-departments-submenu"
+          aria-label={activeMenuDepartmentData ? `Contenu du rayon ${activeMenuDepartmentData.name}` : "Contenu du rayon"}
+        >
+          {activeMenuDepartmentData && (
+            <>
+              <header className="market-departments-submenu-heading">
+                <button
+                  className="market-departments-submenu-back"
+                  type="button"
+                  onClick={() => setActiveMenuDepartment("")}
+                  aria-label="Retour à la liste des rayons"
+                >
+                  ←
+                </button>
+                <span className="market-departments-submenu-icon" aria-hidden="true">
+                  {(() => {
+                    const representativeProduct = productsByDepartment.get(activeMenuDepartmentData.id)?.find((product) => product.imageUrl);
+                    return representativeProduct ? (
+                      <img src={representativeProduct.imageUrl} alt="" decoding="async" />
+                    ) : (
+                      <DepartmentIllustration art={activeMenuDepartmentData.art} />
+                    );
+                  })()}
+                </span>
+                <span>
+                  <strong>{activeMenuDepartmentData.name}</strong>
+                  <button
+                    type="button"
+                    className="market-departments-submenu-all"
+                    onClick={() => selectDepartment(activeMenuDepartmentData.id)}
+                  >
+                    Voir tous les produits
+                  </button>
+                </span>
+              </header>
+              {activeMenuSubcategories.length > 0 ? (
+                <nav className="market-departments-submenu-list" aria-label={`Sous-rayons de ${activeMenuDepartmentData.name}`}>
+                  {activeMenuSubcategories.map((subcategory) => (
+                    <button
+                      className={`market-departments-submenu-item${selectedSubcategory === subcategory.path ? " is-selected" : ""}`}
+                      key={subcategory.path}
+                      type="button"
+                      onClick={() => selectSubcategory(activeMenuDepartmentData.id, subcategory.path)}
+                    >
+                      <span>{subcategory.name}</span>
+                      <small>{subcategory.productCount}</small>
+                    </button>
+                  ))}
+                </nav>
+              ) : (
+                <div className="market-departments-submenu-products">
+                  <p>Produits du rayon</p>
+                  {(productsByDepartment.get(activeMenuDepartmentData.id) || []).slice(0, 6).map((product) => (
+                    <button
+                      className="market-departments-submenu-product"
+                      type="button"
+                      key={product.id}
+                      onClick={() => selectDepartment(activeMenuDepartmentData.id)}
+                    >
+                      <img src={product.imageUrl} alt="" loading="lazy" decoding="async" />
+                      <span>{product.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </aside>
+    </div>
+  ) : null;
+
   return (
     <>
       <Head>
@@ -571,12 +891,12 @@ export default function MarketPage() {
         />
       </Head>
 
-      <main className="market-page" data-theme={isDark ? "dark" : "light"}>
-        <nav className="market-store-nav" aria-label="Navigation Market">
-          <Link href="/business" className="market-back">
-            <span aria-hidden="true">←</span> Retour
-          </Link>
-
+      <nav
+        className={`market-store-nav${isDark ? " is-dark" : ""}`}
+        aria-label="Navigation Market"
+        ref={marketNavRef}
+        style={{ "--market-header-height": `${marketHeaderHeight}px` } as React.CSSProperties}
+      >
           <Link href="/" className="market-wordmark" aria-label="FiSAFi Market, accueil">
             <svg className="market-wordmark-icon" viewBox="0 0 40 40" aria-hidden="true">
               <defs>
@@ -594,6 +914,20 @@ export default function MarketPage() {
               FiSAFi <strong>Market</strong>
             </span>
           </Link>
+
+          <button
+            className="market-rayons-link"
+            type="button"
+            onClick={openDepartmentsMenu}
+            aria-haspopup="dialog"
+            aria-expanded={departmentsMenuOpen}
+            ref={departmentsMenuButtonRef}
+          >
+            Rayons
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
 
           <div className="market-nav-right">
             <span
@@ -617,9 +951,6 @@ export default function MarketPage() {
               <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
             </button>
 
-            <a className="market-nav-contact" href="mailto:contact@fisafigroupe.com">
-              Nous contacter <span aria-hidden="true">↗</span>
-            </a>
             <Link
               className="market-cart-link"
               href="/market/commande"
@@ -630,11 +961,16 @@ export default function MarketPage() {
               <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
             </Link>
           </div>
-        </nav>
+      </nav>
+      <main
+        className="market-page"
+        data-theme={isDark ? "dark" : "light"}
+        style={{ paddingTop: `${marketHeaderHeight}px` }}
+      >
         {storageError && <p className="market-cart-storage-error" role="alert">{storageError}</p>}
 
         <MarketStore isMarketOpen={status.open} />
-        
+
         {/* ═══ RAYONS ═══ */}
         <section className="market-departments" id="rayons" aria-labelledby="market-departments-title">
           <div className="market-section-heading">
@@ -644,52 +980,7 @@ export default function MarketPage() {
             </div>
           </div>
 
-          <nav className="market-category-rail" aria-label="Parcourir les rayons">
-            <button
-              className={`market-category-tile${selectedDepartment ? "" : " is-selected"}`}
-              type="button"
-              aria-pressed={!selectedDepartment}
-              onClick={() => selectDepartment("")}
-            >
-              <span className="market-category-tile-visual market-category-tile-visual--all" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <path d="M8 20h32l-3 20H11L8 20Z" />
-                  <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
-                </svg>
-              </span>
-              <strong>Tous</strong>
-              <small>{marketProducts.length} produits</small>
-            </button>
-            {departments.map((department) => {
-              const departmentProducts = productsByDepartment.get(department.id) || [];
-              const representativeProduct = departmentProducts.find((product) => product.imageUrl) ?? departmentProducts[0];
-              return (
-                <button
-                  className={`market-category-tile market-category-tile--${department.color}${selectedDepartment === department.id ? " is-selected" : ""}`}
-                  type="button"
-                  key={department.id}
-                  aria-pressed={selectedDepartment === department.id}
-                  onClick={() => selectDepartment(department.id)}
-                >
-                  <span className="market-category-tile-visual" aria-hidden="true">
-                    <DepartmentIllustration art={department.art} />
-                    {representativeProduct && (
-                      <img
-                        src={representativeProduct.imageUrl}
-                        alt=""
-                        loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.hidden = true;
-                        }}
-                      />
-                    )}
-                  </span>
-                  <strong>{department.name}</strong>
-                  <small>{departmentProducts.length} produits</small>
-                </button>
-              );
-            })}
-          </nav>
+
 
           <div className="market-catalog-tools">
             <label className="market-search-field">
@@ -740,7 +1031,7 @@ export default function MarketPage() {
 
           {catalogError && (
             <div className="market-search-results" role="alert">
-              <p>{catalogError}</p>
+              <p>{catalog.length ? "Le catalogue affiché est en cache. " : ""}{catalogError}</p>
               <button type="button" onClick={() => setCatalogRetry((retry) => retry + 1)}>
                 Réessayer
               </button>
@@ -749,11 +1040,15 @@ export default function MarketPage() {
 
           {catalogLoading ? (
             <p className="market-search-count" role="status">Chargement du catalogue du magasin…</p>
-          ) : !catalogError && (
+          ) : (!catalogError || catalog.length > 0) && (
             <div className="market-search-results" aria-live="polite">
               <div className="market-results-toolbar">
                 <div className="market-results-title">
-                  <h3>{departments.find((department) => department.id === selectedDepartment)?.name ?? "Tous les produits"}</h3>
+                  <h3>
+                    {selectedSubcategory.split("/").pop()?.trim() ||
+                      departments.find((department) => department.id === selectedDepartment)?.name ||
+                      "Tous les produits"}
+                  </h3>
                   <p className="market-search-count">
                     {sortedProducts.length
                       ? `${firstProductNumber}–${lastProductNumber} sur ${sortedProducts.length} produits`
@@ -887,6 +1182,7 @@ export default function MarketPage() {
         {/* ═══ APPEL ═══ */}
 
       </main>
+      {departmentsMenu}
       <Footer />
     </>
   );

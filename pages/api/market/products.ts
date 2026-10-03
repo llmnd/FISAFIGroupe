@@ -105,12 +105,12 @@ export default async function handler(
         price: product.list_price,
         categoryName,
         unitName: product.uom_name,
-        imageUrl: `${odooUrl}/web/image/product.template/${product.id}/image_512`,
+        imageUrl: `/api/market/products/${product.id}/image`,
         isPromotion: product.compare_list_price > product.list_price,
       };
     });
 
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
     return res.status(200).json({ products });
   } catch (error) {
     console.error("[Market/Odoo] Product request failed:", error);

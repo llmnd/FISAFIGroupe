@@ -27,7 +27,8 @@
   --market-orange: #ff7417;
   --market-line: rgba(38, 55, 43, 0.12);
   padding: 1rem var(--market-page-gutter) 2rem;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   background:
     radial-gradient(ellipse at 85% 10%, rgba(255, 116, 23, 0.08), transparent 30rem),
     #fbfaf5;
@@ -867,7 +868,7 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 980px) {
+@media (max-width: 1200px) {
   .market-featured-grid,.market-testimonials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .market-services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -1258,7 +1259,7 @@
     radial-gradient(ellipse at 85% 10%, rgba(255, 116, 23, 0.07), transparent 30rem),
     #15121f;
 }
-.market-page[data-theme="dark"] .market-store-nav { border-color: var(--market-line); }
+.market-store-nav.is-dark { border-color: var(--market-line); }
 .market-page[data-theme="dark"] .market-back,.market-page[data-theme="dark"] .market-wordmark,.market-page[data-theme="dark"] .market-nav-contact,.market-page[data-theme="dark"] .market-section-heading h2,.market-page[data-theme="dark"] .market-pantry-copy h2,.market-page[data-theme="dark"] .market-department-card,.market-page[data-theme="dark"] .market-department-copy > span:nth-child(2),.market-page[data-theme="dark"] .market-service-card strong,.market-page[data-theme="dark"] .market-info-card h2,.market-page[data-theme="dark"] .market-hours li,.market-page[data-theme="dark"] .market-info-card address,.market-page[data-theme="dark"] .market-info-card address strong,.market-page[data-theme="dark"] .market-testimonial blockquote,.market-page[data-theme="dark"] .market-testimonial figcaption strong,.market-page[data-theme="dark"] .market-pantry-copy > p:not(.market-kicker) {
   color: var(--market-ink);
 }
@@ -2656,6 +2657,683 @@ body:has(.market-page) { padding-top: 0; }
   font: 700 0.75rem/1 "Jost", system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   text-align: center;
+}
+
+/* Market shopping header */
+.market-store-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto auto minmax(12rem, 1fr) auto;
+  align-items: center;
+  gap: clamp(0.65rem, 1.8vw, 1.5rem);
+  min-height: 4.5rem;
+  margin: 0 calc(var(--market-page-gutter) * -1);
+  padding: 0.6rem var(--market-page-gutter);
+  border-bottom: 1px solid rgba(36, 57, 78, 0.1);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 18px rgba(27, 42, 58, 0.045);
+  backdrop-filter: blur(14px);
+}
+
+.market-store-nav .market-wordmark {
+  gap: 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.market-store-nav .market-wordmark-icon {
+  width: 2.15rem;
+  height: 2.15rem;
+}
+
+.market-rayons-link {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: #edf3f8;
+  color: #294861;
+  cursor: pointer;
+  font: 600 0.9rem/1 "Jost", system-ui, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.market-rayons-link svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.market-rayons-link:hover,
+.market-rayons-link:focus-visible {
+  background: #dfeaf3;
+  color: var(--market-purple);
+}
+
+.market-header-search {
+  display: flex;
+  min-width: 0;
+  min-height: 2.65rem;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.85rem;
+  background: #eff4f8;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.market-header-search:focus-within {
+  border-color: rgba(37, 11, 184, 0.3);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 11, 184, 0.08);
+}
+
+.market-header-search svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--market-purple);
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.market-header-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--market-ink);
+  font: 400 0.9rem/1.3 "Jost", system-ui, sans-serif;
+}
+
+.market-header-search input::placeholder {
+  color: #7e8993;
+}
+
+.market-header-search button {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--market-muted);
+  cursor: pointer;
+  font-size: 1.3rem;
+}
+
+.market-store-nav .market-nav-right {
+  gap: 0.65rem;
+}
+
+.market-store-nav .market-status {
+  padding: 0.45rem 0.65rem;
+  white-space: nowrap;
+}
+
+.market-store-nav .market-cart-link {
+  min-height: 2.65rem;
+  padding-inline: 0.85rem;
+  background: var(--market-purple);
+  color: #fff;
+}
+
+.market-store-nav .market-cart-link:hover {
+  border-color: #1d078f;
+  background: #1d078f;
+}
+
+.market-store-nav .market-cart-link b {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.market-store-nav .market-theme-toggle {
+  min-height: 2.65rem;
+}
+
+.market-store-nav.is-dark {
+  border-color: rgba(226, 218, 255, 0.12);
+  background: rgba(31, 27, 42, 0.96);
+}
+
+.market-store-nav.is-dark .market-wordmark {
+  color: #f2eefb;
+}
+
+.market-store-nav.is-dark .market-rayons-link,
+.market-store-nav.is-dark .market-header-search {
+  background: #302b3e;
+  color: #f2eefb;
+}
+
+.market-store-nav.is-dark .market-rayons-link:hover,
+.market-store-nav.is-dark .market-rayons-link:focus-visible {
+  background: #3d3652;
+}
+
+.market-store-nav.is-dark .market-header-search:focus-within {
+  border-color: rgba(199, 183, 255, 0.45);
+}
+
+.market-store-nav.is-dark .market-header-search input {
+  color: #f2eefb;
+}
+
+.market-departments-modal {
+  position: fixed;
+  inset: var(--market-departments-modal-top, 4.5rem) 0 0;
+  z-index: 25;
+}
+
+.market-departments-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(24, 33, 43, 0.34);
+  cursor: default;
+  animation: market-drawer-backdrop-in 180ms ease both;
+}
+
+.market-departments-drawer {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  width: min(21rem, calc(100vw - 3rem));
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid rgba(36, 57, 78, 0.12);
+  background: #fff;
+  box-shadow: 12px 0 35px rgba(22, 37, 51, 0.14);
+  animation: market-drawer-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.market-departments-drawer-heading {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(36, 57, 78, 0.1);
+}
+
+.market-departments-drawer-heading h2 {
+  margin: 0;
+  color: #294861;
+  font: 700 1.05rem/1.2 "Jost", system-ui, sans-serif;
+}
+
+.market-departments-drawer-close {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #edf3f8;
+  color: #294861;
+  cursor: pointer;
+  font: 400 1.6rem/1 system-ui, sans-serif;
+}
+
+.market-departments-drawer-close:hover {
+  background: #dfeaf3;
+}
+
+.market-departments-drawer-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.45rem 0.5rem 1rem;
+}
+
+.market-departments-drawer-item {
+  display: flex;
+  width: 100%;
+  min-height: 3.65rem;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: #294861;
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms ease;
+}
+
+.market-departments-drawer-item:hover,
+.market-departments-drawer-item.is-selected {
+  background: #f0f5f8;
+}
+
+.market-departments-drawer-item:focus-visible,
+.market-departments-drawer-close:focus-visible {
+  outline: 3px solid var(--market-orange);
+  outline-offset: 2px;
+}
+
+.market-departments-drawer-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f0f5f8;
+}
+
+.market-departments-drawer-icon--green { background: #e6efe2; }
+.market-departments-drawer-icon--orange { background: #f7e9dc; }
+.market-departments-drawer-icon--gold { background: #f2eddc; }
+.market-departments-drawer-icon--blue { background: #e4edf0; }
+.market-departments-drawer-icon--pink { background: #f2e3df; }
+.market-departments-drawer-icon--purple { background: #eae6f3; }
+
+.market-departments-drawer-icon svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.market-departments-drawer-icon--all svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.market-departments-drawer-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.market-departments-drawer-copy strong {
+  overflow: hidden;
+  font: 600 0.91rem/1.25 "Jost", system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-departments-drawer-copy small {
+  color: #778694;
+  font: 400 0.73rem/1.2 "Jost", system-ui, sans-serif;
+}
+
+.market-departments-drawer-arrow {
+  padding: 0 0.35rem;
+  color: #607a8d;
+  font: 400 1.5rem/1 system-ui, sans-serif;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer {
+  border-color: rgba(226, 218, 255, 0.12);
+  background: #211d2d;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-heading {
+  border-color: rgba(226, 218, 255, 0.12);
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-heading h2,
+.market-departments-modal.is-dark .market-departments-drawer-item {
+  color: #f2eefb;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-item:hover,
+.market-departments-modal.is-dark .market-departments-drawer-item.is-selected,
+.market-departments-modal.is-dark .market-departments-drawer-close {
+  background: #302b3e;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-copy small,
+.market-departments-modal.is-dark .market-departments-drawer-arrow {
+  color: #b2aabd;
+}
+
+@keyframes market-drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes market-drawer-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 980px) {
+  .market-store-nav {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .market-store-nav .market-nav-right {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .market-store-nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.55rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .market-store-nav .market-wordmark {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .market-rayons-link {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .market-header-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .market-store-nav .market-nav-right {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: space-between;
+    margin: 0;
+  }
+
+  .market-store-nav .market-status {
+    margin-right: auto;
+  }
+
+  .market-departments-modal {
+    inset-block-start: var(--market-departments-modal-top, 10rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-departments-drawer,
+  .market-departments-backdrop {
+    animation: none;
+  }
+}
+
+/* Sticky header and category mega-menu */
+.market-store-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  width: 100%;
+  margin: 0;
+  --market-page-gutter: clamp(1.25rem, 6vw, 6rem);
+  --market-ink: #28233c;
+  --market-muted: #706b7c;
+  --market-purple: #250bb8;
+  --market-orange: #ff7417;
+  --market-line: rgba(38, 55, 43, 0.12);
+}
+
+.market-departments-modal {
+  z-index: 999;
+}
+
+.market-departments-drawer {
+  z-index: 2;
+  width: min(18rem, calc(100vw - 3rem));
+}
+
+.market-departments-drawer-item.is-active {
+  border-radius: 0.2rem;
+  background: #edf4fa;
+  box-shadow: inset 3px 0 #df332d;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-item.is-active {
+  background: #302b3e;
+}
+
+.market-departments-drawer-icon > img,
+.market-departments-submenu-icon > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.market-departments-modal.is-dark .market-departments-drawer-icon > img,
+.market-departments-modal.is-dark .market-departments-submenu-icon > img {
+  mix-blend-mode: normal;
+}
+
+.market-departments-submenu {
+  position: absolute;
+  inset: 0 auto 0 min(18rem, calc(100vw - 3rem));
+  z-index: 2;
+  width: min(22rem, calc(100vw - 18rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-left: 1px solid rgba(36, 57, 78, 0.1);
+  background: #fff;
+  box-shadow: 8px 0 26px rgba(22, 37, 51, 0.08);
+  animation: market-submenu-in 160ms ease both;
+}
+
+.market-departments-submenu-heading {
+  display: flex;
+  min-height: 5.25rem;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(36, 57, 78, 0.1);
+}
+
+.market-departments-submenu-icon {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f0f5f8;
+}
+
+.market-departments-submenu-icon > svg {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.market-departments-submenu-heading > span:last-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.market-departments-submenu-heading strong {
+  color: #294861;
+  font: 600 0.95rem/1.2 "Jost", system-ui, sans-serif;
+}
+
+.market-departments-submenu-all {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #627d91;
+  cursor: pointer;
+  font: 400 0.75rem/1.3 "Jost", system-ui, sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.market-departments-submenu-all:hover {
+  color: var(--market-purple);
+}
+
+.market-departments-submenu-back {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #edf3f8;
+  color: #294861;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.market-departments-submenu-list {
+  display: grid;
+  padding: 0.35rem 0;
+}
+
+.market-departments-submenu-item {
+  display: flex;
+  min-height: 2.95rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  background: transparent;
+  color: #294861;
+  cursor: pointer;
+  font: 400 0.86rem/1.3 "Jost", system-ui, sans-serif;
+  text-align: left;
+}
+
+.market-departments-submenu-item:hover,
+.market-departments-submenu-item.is-selected {
+  background: #edf4fa;
+}
+
+.market-departments-submenu-item small {
+  color: #778694;
+  font-size: 0.72rem;
+}
+
+.market-departments-submenu-products {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+}
+
+.market-departments-submenu-products > p {
+  margin: 0 0 0.35rem;
+  color: #778694;
+  font: 600 0.7rem/1.2 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.market-departments-submenu-product {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: #294861;
+  cursor: pointer;
+  font: 400 0.8rem/1.25 "Jost", system-ui, sans-serif;
+  text-align: left;
+}
+
+.market-departments-submenu-product:hover {
+  background: #edf4fa;
+}
+
+.market-departments-submenu-product img {
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: 0 0 auto;
+  border-radius: 0.4rem;
+  background: #f4f5f5;
+  object-fit: contain;
+}
+
+.market-departments-modal.is-dark .market-departments-submenu {
+  border-color: rgba(226, 218, 255, 0.12);
+  background: #211d2d;
+}
+
+.market-departments-modal.is-dark .market-departments-submenu-heading {
+  border-color: rgba(226, 218, 255, 0.12);
+}
+
+.market-departments-modal.is-dark .market-departments-submenu-heading strong,
+.market-departments-modal.is-dark .market-departments-submenu-item,
+.market-departments-modal.is-dark .market-departments-submenu-product {
+  color: #f2eefb;
+}
+
+.market-departments-modal.is-dark .market-departments-submenu-item:hover,
+.market-departments-modal.is-dark .market-departments-submenu-item.is-selected,
+.market-departments-modal.is-dark .market-departments-submenu-product:hover {
+  background: #302b3e;
+}
+
+.market-departments-modal.is-dark .market-departments-submenu-item small,
+.market-departments-modal.is-dark .market-departments-submenu-products > p {
+  color: #b2aabd;
+}
+
+@keyframes market-submenu-in {
+  from { opacity: 0; transform: translateX(-0.35rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 760px) {
+  .market-departments-drawer {
+    width: 100%;
+  }
+
+  .market-departments-submenu {
+    inset: 0;
+    z-index: 3;
+    width: auto;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .market-departments-modal.is-submenu-empty .market-departments-submenu {
+    display: none;
+  }
+
+  .market-departments-submenu-back {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-departments-submenu {
+    animation: none;
+  }
 }
 
 /* ── Focus visible ── */
