@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -7,58 +7,211 @@ import useMarketCart from "@/hooks/useMarketCart";
 import { getMarketImageSource } from "@/lib/marketCart";
 
 type Fulfillment = "delivery" | "pickup";
+type Field = "name" | "phone" | "address";
+
+const WHATSAPP_NUMBER = "221787812297";
+const THEME_KEY = "fisafi-market-theme";
+const CUSTOMER_KEY = "fisafi-market-customer";
+const MAX_QUANTITY = 99;
+const CUSTOMER_SAVE_DELAY = 400;
 
 const formatAmount = (amount: number) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(amount);
 
+const roundQuantity = (value: number) => Math.round(value * 100) / 100;
+
+const toCents = (amount: number) => Math.round(amount * 100);
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="market-field-error" id={id} role="alert">
+      {message}
+    </p>
+  );
+}
+
 export default function MarketOrderPage() {
   const { items, ready, storageError, setQuantity, removeItem, clearCart } = useMarketCart();
+
   const [isDark, setIsDark] = useState(false);
   const [fulfillment, setFulfillment] = useState<Fulfillment>("delivery");
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
-  const [canConfirm, setCanConfirm] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(false);
 
+  const formRef = useRef<HTMLFormElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+
+  const hasItems = items.length > 0;
+
+  /* Thème : préférence enregistrée, sinon thème du système */
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const savedTheme = window.localStorage.getItem("fisafi-market-theme");
-    setIsDark(savedTheme === "dark" || (savedTheme !== "light" && media.matches));
-    const updateSystemTheme = (event: MediaQueryListEvent) => {
-      if (!savedTheme) setIsDark(event.matches);
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(THEME_KEY);
+    } catch {
+      /* stockage indisponible */
+    }
+    setIsDark(saved === "dark" || (saved !== "light" && media.matches));
+
+    const onChange = (event: MediaQueryListEvent) => {
+      if (!saved) setIsDark(event.matches);
     };
-    media.addEventListener("change", updateSystemTheme);
-    return () => media.removeEventListener("change", updateSystemTheme);
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
   }, []);
 
-  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const orderMessage = [
-    "Salam FiSAFi Market ! Je souhaite confirmer cette commande :",
-    ...items.map((item) =>
-      `- ${item.name} x${formatAmount(item.quantity)}${item.priceUnit === "kg" ? " kg" : ""} (${item.priceLabel} FCFA${item.priceUnit === "kg" ? " / kg" : ""})`,
-    ),
-    `Estimation : ${formatAmount(total)} FCFA, à confirmer.`,
-    `Nom : ${customerName}`,
-    `Téléphone : ${phone}`,
-    `Mode : ${fulfillment === "delivery" ? "Livraison" : "Retrait en magasin"}`,
-    ...(fulfillment === "delivery" ? [`Adresse : ${address}`] : []),
-    ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
-    "Merci de confirmer la disponibilité, le montant final et les modalités.",
-  ].join("\n");
-  const whatsappUrl = `https://wa.me/221787812297?text=${encodeURIComponent(orderMessage)}`;
+  /* Coordonnées : on retient nom, téléphone, adresse et mode pour la prochaine commande */
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CUSTOMER_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<{
+          name: string;
+          phone: string;
+          address: string;
+          fulfillment: Fulfillment;
+        }>;
+        if (typeof saved.name === "string") setCustomerName(saved.name);
+        if (typeof saved.phone === "string") setPhone(saved.phone);
+        if (typeof saved.address === "string") setAddress(saved.address);
+        if (saved.fulfillment === "pickup" || saved.fulfillment === "delivery") {
+          setFulfillment(saved.fulfillment);
+        }
+      }
+    } catch {
+      /* données illisibles : on repart de zéro */
+    }
+    setDetailsLoaded(true);
+  }, []);
+
+  /* Écriture différée : on ne touche pas au stockage à chaque frappe */
+  useEffect(() => {
+    if (!detailsLoaded) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          CUSTOMER_KEY,
+          JSON.stringify({ name: customerName, phone, address, fulfillment }),
+        );
+      } catch {
+        /* stockage indisponible */
+      }
+    }, CUSTOMER_SAVE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [detailsLoaded, customerName, phone, address, fulfillment]);
+
+  /* La barre mobile n'apparaît que lorsque le formulaire n'est pas à l'écran */
+  useEffect(() => {
+    const node = panelRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPanelVisible(entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ready, hasItems]);
+
+  /* Confirmation « Vider le panier » : se referme seule */
+  useEffect(() => {
+    if (!confirmClear) return;
+    const timer = window.setTimeout(() => setConfirmClear(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [confirmClear]);
+
+  const totalCents = items.reduce(
+    (sum, item) => sum + toCents(item.unitPrice) * item.quantity,
+    0,
+  );
+  const total = totalCents / 100;
+  const lineAmount = (item: (typeof items)[number]) =>
+    (toCents(item.unitPrice) * item.quantity) / 100;
+
+  const phoneDigits = phone.replace(/\D/g, "");
+  const errors: Partial<Record<Field, string>> = {};
+  if (customerName.trim().length < 2) errors.name = "Indiquez votre nom.";
+  if (phoneDigits.length < 9 || phoneDigits.length > 15) {
+    errors.phone = "Saisissez un numéro valide, par exemple +221 77 000 00 00.";
+  }
+  if (fulfillment === "delivery" && address.trim().length < 6) {
+    errors.address = "Indiquez votre quartier et votre rue.";
+  }
+  const showError = (field: Field) => (touched[field] ? errors[field] : undefined);
+  const markTouched = (field: Field) => setTouched((current) => ({ ...current, [field]: true }));
+
+  const orderMessage = useMemo(
+    () =>
+      [
+        "Salam FiSAFi Market ! Je souhaite confirmer cette commande :",
+        ...items.map((item) => {
+          const isKg = item.priceUnit === "kg";
+          const line = (toCents(item.unitPrice) * item.quantity) / 100;
+          return `- ${item.name} x${formatAmount(item.quantity)}${isKg ? " kg" : ""} (${item.priceLabel} FCFA${isKg ? " / kg" : ""}) = ${formatAmount(line)} FCFA`;
+        }),
+        `Estimation : ${formatAmount(total)} FCFA, à confirmer.`,
+        `Nom : ${customerName.trim()}`,
+        `Téléphone : ${phone.trim()}`,
+        `Mode : ${fulfillment === "delivery" ? "Livraison" : "Retrait en magasin"}`,
+        ...(fulfillment === "delivery" ? [`Adresse : ${address.trim()}`] : []),
+        ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
+        "Merci de confirmer la disponibilité, le montant final et les modalités.",
+      ].join("\n"),
+    [items, total, customerName, phone, fulfillment, address, note],
+  );
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
+
+  /* Si le message change après l'envoi, la confirmation n'est plus à jour.
+     On dépend de `whatsappUrl` (chaîne, comparée par valeur) plutôt que de
+     `orderMessage` (identité potentiellement instable). */
+  useEffect(() => {
+    setSent(false);
+  }, [whatsappUrl]);
+
+  const changeQuantity = (item: (typeof items)[number], delta: number) => {
+    const next = roundQuantity(Math.min(MAX_QUANTITY, item.quantity + delta));
+    setQuantity(item.id, next);
+  };
+
+  const scrollToOrder = () => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    panelRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    window.setTimeout(
+      () => {
+        (formRef.current?.elements.namedItem("name") as HTMLElement | null)?.focus({
+          preventScroll: true,
+        });
+      },
+      reduce ? 0 : 450,
+    );
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (items.length === 0) return;
-    if (!formRef.current?.reportValidity()) return;
-    setCanConfirm(true);
-  };
-
-  const updateDetails = (update: () => void) => {
-    update();
-    setCanConfirm(false);
+    if (!hasItems) return;
+    setTouched({ name: true, phone: true, address: true });
+    const firstInvalid = (["name", "phone", "address"] as Field[]).find((field) => errors[field]);
+    if (firstInvalid) {
+      (formRef.current?.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
+      return;
+    }
+    const popup = window.open(whatsappUrl, "_blank");
+    if (popup) popup.opener = null;
+    else window.location.href = whatsappUrl;
+    setSent(true);
   };
 
   return (
@@ -67,11 +220,14 @@ export default function MarketOrderPage() {
         <title>Mon panier — FiSAFi Market</title>
         <meta
           name="description"
-          content="Vérifiez votre panier FiSAFi Market, renseignez vos coordonnées et confirmez votre commande sur WhatsApp."
+          content="Vérifiez votre panier FiSAFi Market, renseignez vos coordonnées et envoyez votre commande sur WhatsApp."
         />
       </Head>
       <main className="market-page" data-theme={isDark ? "dark" : "light"}>
-        <nav className="market-store-nav market-checkout-nav" aria-label="Navigation panier">
+        <nav
+          className={`market-store-nav market-checkout-nav${isDark ? " is-dark" : ""}`}
+          aria-label="Navigation panier"
+        >
           <Link href="/market#rayons" className="market-back">
             <span aria-hidden="true">←</span> Continuer mes achats
           </Link>
@@ -80,176 +236,297 @@ export default function MarketOrderPage() {
           </Link>
         </nav>
 
-        <section className="market-checkout" aria-labelledby="market-checkout-title">
-          <div className="market-checkout-heading">
-            <p className="market-kicker">VOTRE SÉLECTION</p>
-            <h1 id="market-checkout-title">Le panier, puis on s’occupe de vous.</h1>
-            <p>Vérifiez les quantités, indiquez comment vous souhaitez récupérer vos achats, puis confirmez avec notre équipe.</p>
-          </div>
-
-          {storageError && <p className="market-checkout-alert" role="alert">{storageError}</p>}
+        <section className="market-checkout">
+          {storageError && (
+            <p className="market-checkout-alert" role="alert">
+              {storageError}
+            </p>
+          )}
 
           {!ready ? (
-            <p className="market-checkout-loading" role="status">Chargement de votre panier…</p>
-          ) : items.length === 0 ? (
+            <p className="market-checkout-loading" role="status">
+              Chargement de votre panier…
+            </p>
+          ) : !hasItems ? (
             <div className="market-cart-empty">
-              <span aria-hidden="true">✳</span>
-              <h2>Votre panier attend ses premiers produits.</h2>
-              <p>Parcourez les rayons et ajoutez tout ce qui vous fait envie.</p>
-              <Link href="/market#rayons">Découvrir les rayons <span aria-hidden="true">↗</span></Link>
+              <h1>Votre panier est vide.</h1>
+              <p>Parcourez les rayons et ajoutez les produits qui vous font envie.</p>
+              <Link href="/market#rayons">Voir les rayons</Link>
             </div>
           ) : (
             <div className="market-checkout-layout">
-              <section className="market-cart-panel" aria-labelledby="market-cart-title">
-                <div className="market-cart-panel-heading">
-                  <h2 id="market-cart-title">Vos produits <span>{items.length}</span></h2>
-                  <button type="button" onClick={clearCart}>Vider le panier</button>
-                </div>
+              <div className="market-cart-column">
+                <header className="market-checkout-heading">
+                  <h1>Votre panier</h1>
+                  <p>
+                    Vérifiez vos produits, puis envoyez votre commande. Nous confirmons le montant
+                    final avec vous sur WhatsApp.
+                  </p>
+                </header>
 
-                <ul className="market-cart-items">
-                  {items.map((item) => {
-                    const step = item.priceUnit === "kg" ? 0.5 : 1;
-                    const imageSource = getMarketImageSource(item.image);
-                    return (
-                      <li className="market-cart-item" key={item.id}>
-                        {imageSource ? (
-                          <img src={imageSource} alt="" />
-                        ) : (
-                          <span className="market-cart-art" aria-hidden="true">F</span>
-                        )}
-                        <div className="market-cart-item-copy">
-                          <span>{item.departmentName}</span>
-                          <h3>{item.name}</h3>
-                          <p>{item.priceLabel} FCFA{item.priceUnit === "kg" ? " / kg" : ""}</p>
-                        </div>
-                        <div className="market-cart-quantity" role="group" aria-label={`Quantité de ${item.name}`}>
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(item.id, item.quantity - step)}
-                            aria-label={`Diminuer ${item.name}`}
-                          >
-                            −
-                          </button>
-                          <span aria-live="polite">
-                            {formatAmount(item.quantity)}{item.priceUnit === "kg" ? " kg" : ""}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(item.id, item.quantity + step)}
-                            aria-label={`Augmenter ${item.name}`}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <strong className="market-cart-line-total">
-                          {formatAmount(item.unitPrice * item.quantity)} FCFA
-                        </strong>
+                <section className="market-cart-panel" aria-labelledby="market-cart-title">
+                  <div className="market-cart-panel-heading">
+                    <h2 id="market-cart-title">
+                      Vos produits <span>{items.length}</span>
+                    </h2>
+                    {confirmClear ? (
+                      <span
+                        className="market-clear-confirm"
+                        role="group"
+                        aria-label="Vider le panier ?"
+                      >
                         <button
-                          className="market-cart-remove"
                           type="button"
-                          onClick={() => removeItem(item.id)}
-                          aria-label={`Retirer ${item.name} du panier`}
+                          onClick={() => {
+                            clearCart();
+                            setConfirmClear(false);
+                          }}
                         >
-                          ×
+                          Oui, tout retirer
                         </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <p className="market-cart-price-note">
-                  Les prix affichés sont indicatifs. Les produits, le stock et le montant final seront confirmés par FiSAFi.
-                </p>
-              </section>
+                        <button type="button" onClick={() => setConfirmClear(false)}>
+                          Annuler
+                        </button>
+                      </span>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmClear(true)}>
+                        Vider le panier
+                      </button>
+                    )}
+                  </div>
 
-              <section className="market-order-panel" aria-labelledby="market-order-title">
-                <h2 id="market-order-title">Comment vous joindre ?</h2>
-                <form ref={formRef} onSubmit={handleSubmit}>
-                  <label>
-                    Votre nom
+                  <ul className="market-cart-items">
+                    {items.map((item) => {
+                      const isKg = item.priceUnit === "kg";
+                      const step = isKg ? 0.5 : 1;
+                      const atMin = item.quantity <= step;
+                      const atMax = item.quantity >= MAX_QUANTITY;
+                      const imageSource = getMarketImageSource(item.image);
+                      return (
+                        <li className="market-cart-item" key={item.id}>
+                          {imageSource ? (
+                            <img
+                              src={imageSource}
+                              alt=""
+                              width={72}
+                              height={72}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className="market-cart-art" aria-hidden="true">
+                              F
+                            </span>
+                          )}
+                          <div className="market-cart-item-copy">
+                            <span>{item.departmentName}</span>
+                            <h3>{item.name}</h3>
+                            <p>
+                              {item.priceLabel} FCFA{isKg ? " / kg" : ""}
+                            </p>
+                          </div>
+                          <div
+                            className="market-cart-quantity"
+                            role="group"
+                            aria-label={`Quantité de ${item.name}`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!atMin) changeQuantity(item, -step);
+                              }}
+                              aria-disabled={atMin}
+                              aria-label={`Diminuer ${item.name}`}
+                            >
+                              −
+                            </button>
+                            <span aria-live="polite">
+                              {formatAmount(item.quantity)}
+                              {isKg ? " kg" : ""}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!atMax) changeQuantity(item, step);
+                              }}
+                              aria-disabled={atMax}
+                              aria-label={`Augmenter ${item.name}`}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <strong className="market-cart-line-total">
+                            {formatAmount(lineAmount(item))} FCFA
+                          </strong>
+                          <button
+                            className="market-cart-remove"
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            aria-label={`Retirer ${item.name} du panier`}
+                          >
+                            ×
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="market-cart-price-note">
+                    Les prix affichés sont indicatifs. Le stock et le montant final sont confirmés
+                    par FiSAFi.
+                  </p>
+                </section>
+              </div>
+
+              <section
+                className="market-order-panel"
+                aria-labelledby="market-order-title"
+                ref={panelRef}
+              >
+                <h2 id="market-order-title">Votre commande</h2>
+                <form ref={formRef} onSubmit={handleSubmit} noValidate>
+                  <fieldset className="market-fulfillment">
+                    <legend className="market-sr">Mode de récupération</legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name="fulfillment"
+                        value="delivery"
+                        checked={fulfillment === "delivery"}
+                        onChange={() => setFulfillment("delivery")}
+                      />
+                      <span>Livraison</span>
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="fulfillment"
+                        value="pickup"
+                        checked={fulfillment === "pickup"}
+                        onChange={() => setFulfillment("pickup")}
+                      />
+                      <span>Retrait en magasin</span>
+                    </label>
+                  </fieldset>
+
+                  <div className="market-field">
+                    <label htmlFor="market-name">Votre nom</label>
                     <input
-                      autoComplete="name"
+                      id="market-name"
                       name="name"
+                      autoComplete="name"
                       required
+                      aria-required="true"
                       value={customerName}
-                      onChange={(event) => updateDetails(() => setCustomerName(event.target.value))}
-                      placeholder="Ex. Aïssatou Diallo"
+                      onChange={(event) => setCustomerName(event.target.value)}
+                      onBlur={() => markTouched("name")}
+                      aria-invalid={Boolean(showError("name"))}
+                      aria-describedby={showError("name") ? "market-name-error" : undefined}
+                      placeholder="Aïssatou Diallo"
                     />
-                  </label>
-                  <label>
-                    Téléphone
+                    <FieldError id="market-name-error" message={showError("name")} />
+                  </div>
+
+                  <div className="market-field">
+                    <label htmlFor="market-phone">Téléphone</label>
                     <input
-                      autoComplete="tel"
+                      id="market-phone"
                       name="phone"
                       type="tel"
                       inputMode="tel"
-                      pattern="[0-9+(). -]{8,20}"
-                      title="Saisissez un numéro de téléphone valide."
+                      autoComplete="tel"
                       required
+                      aria-required="true"
                       value={phone}
-                      onChange={(event) => updateDetails(() => setPhone(event.target.value))}
+                      onChange={(event) => setPhone(event.target.value)}
+                      onBlur={() => markTouched("phone")}
+                      aria-invalid={Boolean(showError("phone"))}
+                      aria-describedby={showError("phone") ? "market-phone-error" : undefined}
                       placeholder="+221 77 000 00 00"
                     />
-                  </label>
-                  <label>
-                    Récupération
-                    <select
-                      name="fulfillment"
-                      value={fulfillment}
-                      onChange={(event) => {
-                        setFulfillment(event.target.value === "pickup" ? "pickup" : "delivery");
-                        setCanConfirm(false);
-                      }}
-                    >
-                      <option value="delivery">Livraison à domicile</option>
-                      <option value="pickup">Retrait en magasin</option>
-                    </select>
-                  </label>
+                    <FieldError id="market-phone-error" message={showError("phone")} />
+                  </div>
+
                   {fulfillment === "delivery" && (
-                    <label>
-                      Adresse de livraison à Dakar
+                    <div className="market-field">
+                      <label htmlFor="market-address">Adresse de livraison à Dakar</label>
                       <textarea
-                        autoComplete="street-address"
+                        id="market-address"
                         name="address"
-                        required
+                        autoComplete="street-address"
                         rows={3}
+                        required
+                        aria-required="true"
                         value={address}
-                        onChange={(event) => updateDetails(() => setAddress(event.target.value))}
-                        placeholder="Quartier, rue et indications pour vous trouver"
+                        onChange={(event) => setAddress(event.target.value)}
+                        onBlur={() => markTouched("address")}
+                        aria-invalid={Boolean(showError("address"))}
+                        aria-describedby={showError("address") ? "market-address-error" : undefined}
+                        placeholder="Quartier, rue, repère pour vous trouver"
                       />
-                    </label>
+                      <FieldError id="market-address-error" message={showError("address")} />
+                    </div>
                   )}
-                  <label>
-                    Une précision ? <span>(facultatif)</span>
+
+                  <div className="market-field">
+                    <label htmlFor="market-note">
+                      Une précision ? <span>facultatif</span>
+                    </label>
                     <textarea
+                      id="market-note"
                       name="note"
                       rows={2}
                       maxLength={300}
                       value={note}
-                      onChange={(event) => updateDetails(() => setNote(event.target.value))}
+                      onChange={(event) => setNote(event.target.value)}
                       placeholder="Créneau souhaité, détail utile…"
                     />
-                  </label>
+                  </div>
 
                   <div className="market-order-total">
                     <span>Estimation du panier</span>
                     <strong>{formatAmount(total)} FCFA</strong>
                   </div>
-                  <p className="market-order-disclaimer">Aucun paiement en ligne : la disponibilité et le montant sont confirmés avec vous sur WhatsApp.</p>
 
-                  {canConfirm ? (
-                    <a className="market-order-confirm" href={whatsappUrl} target="_blank" rel="noreferrer">
-                      Confirmer sur WhatsApp <span aria-hidden="true">↗</span>
-                    </a>
-                  ) : (
-                    <button className="market-order-submit" type="submit">
-                      Vérifier mes informations <span aria-hidden="true">→</span>
-                    </button>
+                  <button className="market-order-submit" type="submit">
+                    Envoyer ma commande sur WhatsApp
+                  </button>
+                  <p className="market-order-disclaimer">
+                    Aucun paiement en ligne. Vos coordonnées restent sur cet appareil pour vos
+                    prochaines commandes.
+                  </p>
+
+                  {sent && (
+                    <div className="market-order-sent">
+                      <p role="status">
+                        Votre commande est prête dans WhatsApp. Envoyez le message pour la valider.
+                      </p>
+                      <div>
+                        <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                          Rouvrir WhatsApp
+                        </a>
+                        <button type="button" onClick={clearCart}>
+                          Vider le panier
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </form>
               </section>
             </div>
           )}
         </section>
+
+        {ready && hasItems && !panelVisible && (
+          <div className="market-mobile-bar">
+            <div>
+              <span>Estimation</span>
+              <strong>{formatAmount(total)} FCFA</strong>
+            </div>
+            <button type="button" onClick={scrollToOrder}>
+              Commander
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </>
