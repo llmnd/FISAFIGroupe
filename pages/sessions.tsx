@@ -13,12 +13,68 @@ interface Session {
   formationTitle: string;
   startDate: string;
   endDate: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   maxParticipants: number;
   currentParticipants: number;
   location: string;
   status: "ouverte" | "complète" | "terminée";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeApiSession(value: unknown): Session {
+  if (!isRecord(value)) {
+    throw new Error("Invalid session returned by the API");
+  }
+
+  const id = value.id;
+  const formationId = value.formationId;
+  const startDate = value.startDate;
+  const endDate = value.endDate;
+  const status = value.status;
+  const capacity = Number(value.capacity ?? value.maxParticipants ?? 0);
+  const available = Number(value.available ?? capacity);
+  const currentParticipants = Number(
+    value.currentParticipants ?? Math.max(0, capacity - available),
+  );
+  const formation = isRecord(value.formation) ? value.formation : null;
+  const formationTitle =
+    typeof value.formationTitle === "string"
+      ? value.formationTitle
+      : formation && typeof formation.name === "string"
+        ? formation.name
+        : "Formation";
+
+  if (
+    (typeof id !== "number" && typeof id !== "string") ||
+    (typeof formationId !== "number" && typeof formationId !== "string") ||
+    typeof startDate !== "string" ||
+    Number.isNaN(Date.parse(startDate)) ||
+    typeof endDate !== "string" ||
+    Number.isNaN(Date.parse(endDate)) ||
+    (status !== "ouverte" && status !== "complète" && status !== "terminée") ||
+    !Number.isFinite(capacity) ||
+    !Number.isFinite(currentParticipants)
+  ) {
+    throw new Error("Invalid session data returned by the API");
+  }
+
+  return {
+    id: String(id),
+    formationId: String(formationId),
+    formationTitle,
+    startDate,
+    endDate,
+    startTime: typeof value.startTime === "string" ? value.startTime : "",
+    endTime: typeof value.endTime === "string" ? value.endTime : "",
+    maxParticipants: capacity,
+    currentParticipants,
+    location: typeof value.location === "string" ? value.location : "",
+    status,
+  };
 }
 
 const MONTH_NAMES = [
@@ -50,13 +106,18 @@ export default function SessionsPage() {
     try {
       setLoading(true);
       setLoadError(false);
-      const res = await fetch("/api/sessions");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "");
+      const res = await fetch(backendUrl ? `${backendUrl}/api/sessions` : "/api/sessions");
       if (!res.ok) {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      setSessions(Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : []);
+      const payload: unknown = await res.json();
+      const apiSessions = isRecord(payload) ? payload.data : payload;
+      if (!Array.isArray(apiSessions)) {
+        throw new Error("Invalid sessions response from the API");
+      }
+      setSessions(apiSessions.map(normalizeApiSession));
     } catch (err) {
       console.error("Error fetching sessions:", err);
       setLoadError(true);
