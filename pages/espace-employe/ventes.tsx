@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import EmployeePortalHeader from "@/components/EmployeePortalHeader";
 import { useRouter } from "next/router";
 import type {
   SalesCustomer,
@@ -412,12 +412,12 @@ export default function EmployeeSalesPage() {
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-sales">
-        <header className="employee-sales-header">
-          <Link href="/espace-employe" className="employee-sales-back">← Espace employé</Link>
-          <span className="employee-sales-brand">FiSAFi Groupe · Ventes</span>
-          <PortalThemeToggle />
-          <Link href="/" className="employee-portal-home-link">Accueil</Link>
-        </header>
+        <EmployeePortalHeader
+          pageClassName="employee-sales-header"
+          title="Ventes, devis et commandes"
+          backHref="/espace-employe"
+          backLabel="Espace employé"
+        />
         <section className="employee-sales-content">
           <p className="employee-sales-eyebrow">Module Odoo</p>
           <h1 className="employee-sales-title">Ventes, devis et commandes</h1>

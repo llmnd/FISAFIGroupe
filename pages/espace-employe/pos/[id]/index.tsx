@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import EmployeePortalHeader from "@/components/EmployeePortalHeader";
 import { useRouter } from "next/router";
 import type {
   PointOfSale,
@@ -415,18 +415,18 @@ export default function EmployeePOSPage() {
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-pos">
-        <header className="employee-pos-header">
-          <div>
-            <Link href="/espace-employe/points-de-vente" className="employee-pos-back">← Points de vente</Link>
-            <h1 className="employee-pos-headerTitle">FiSAFi POS</h1>
-          </div>
-          <div className="employee-pos-headerPoint">
-            <span className="employee-pos-headerLabel">Point de vente</span>
-            <strong>{point?.name || "Chargement…"}</strong>
-          </div>
-          <PortalThemeToggle />
-          <Link href="/" className="employee-portal-home-link">Accueil</Link>
-        </header>
+        <EmployeePortalHeader
+          pageClassName="employee-pos-header"
+          title="FiSAFi POS"
+          backHref="/espace-employe/points-de-vente"
+          backLabel="Points de vente"
+          context={
+            <div className="employee-pos-headerPoint">
+              <span className="employee-pos-headerLabel">Point de vente</span>
+              <strong>{point?.name || "Chargement…"}</strong>
+            </div>
+          }
+        />
         <div className="employee-pos-workspace">
           {error && <p role="alert" className="employee-pos-error">{error}</p>}
           {loading ? (

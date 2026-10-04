@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import EmployeePortalHeader from "@/components/EmployeePortalHeader";
 import { useRouter } from "next/router";
 import type { POSClosingSummary } from "@/lib/erp/contracts";
 
@@ -154,12 +154,12 @@ export default function ClosePOSPage() {
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-close">
-        <header className="employee-close-header">
-          <Link href="/espace-employe/points-de-vente" className="employee-close-link">← Points de vente</Link>
-          <strong className="employee-close-brand">FiSAFi POS</strong>
-          <PortalThemeToggle />
-          <Link href="/" className="employee-portal-home-link">Accueil</Link>
-        </header>
+        <EmployeePortalHeader
+          pageClassName="employee-close-header"
+          title="Clôturer la caisse"
+          backHref="/espace-employe/points-de-vente"
+          backLabel="Points de vente"
+        />
         <section className="employee-close-content">
           <p className="employee-close-eyebrow">Fin de session</p>
           <h1 className="employee-close-title">Clôturer la caisse</h1>

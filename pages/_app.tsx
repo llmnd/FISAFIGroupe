@@ -1,8 +1,9 @@
 import type { AppProps } from 'next/app';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import AdminNavigationSkeleton from '@/components/AdminNavigationSkeleton';
 import '../styles/globals.css';
 import '../styles/competences.css';
 import '../styles/header.css';
@@ -27,6 +28,37 @@ function isBlinkEngine(): boolean {
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+  const [adminNavigationLoading, setAdminNavigationLoading] = useState(false);
+
+  useEffect(() => {
+    let showTimer: number | undefined;
+    const clearPendingTimer = () => {
+      if (showTimer !== undefined) {
+        window.clearTimeout(showTimer);
+        showTimer = undefined;
+      }
+    };
+    const handleRouteStart = (url: string) => {
+      clearPendingTimer();
+      setAdminNavigationLoading(false);
+      if (url.split(/[?#]/, 1)[0] !== '/admin-dashboard') return;
+      showTimer = window.setTimeout(() => setAdminNavigationLoading(true), 120);
+    };
+    const handleRouteEnd = () => {
+      clearPendingTimer();
+      setAdminNavigationLoading(false);
+    };
+
+    router.events.on('routeChangeStart', handleRouteStart);
+    router.events.on('routeChangeComplete', handleRouteEnd);
+    router.events.on('routeChangeError', handleRouteEnd);
+    return () => {
+      clearPendingTimer();
+      router.events.off('routeChangeStart', handleRouteStart);
+      router.events.off('routeChangeComplete', handleRouteEnd);
+      router.events.off('routeChangeError', handleRouteEnd);
+    };
+  }, [router.events]);
 
   useEffect(() => {
     try {
@@ -164,6 +196,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <LanguageProvider>
       <ThemeProvider>
         <Component {...pageProps} />
+        {adminNavigationLoading && <AdminNavigationSkeleton />}
       </ThemeProvider>
     </LanguageProvider>
   );

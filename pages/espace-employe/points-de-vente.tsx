@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import EmployeePortalHeader from "@/components/EmployeePortalHeader";
 import { useRouter } from "next/router";
 import type { PointOfSale } from "@/lib/erp/contracts";
 
@@ -61,12 +61,12 @@ export default function EmployeePointsOfSalePage() {
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-points">
-        <header className="employee-points-header">
-          <Link href="/espace-employe" className="employee-points-back">← Espace employé</Link>
-          <span className="employee-points-brand">FiSAFi Groupe</span>
-          <PortalThemeToggle />
-          <Link href="/" className="employee-portal-home-link">Accueil</Link>
-        </header>
+        <EmployeePortalHeader
+          pageClassName="employee-points-header"
+          title="Points de vente"
+          backHref="/espace-employe"
+          backLabel="Espace employé"
+        />
         <section className="employee-points-content">
           <p className="employee-points-eyebrow">Opérations</p>
           <h1 className="employee-points-title">Points de vente</h1>

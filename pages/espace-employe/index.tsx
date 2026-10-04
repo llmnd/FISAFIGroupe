@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import EmployeePortalHeader from "@/components/EmployeePortalHeader";
 
 type EmployeeProfile = {
   email: string;
@@ -60,34 +59,19 @@ export default function EmployeeHomePage() {
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-home">
-        <header className="employee-home-header">
-          <Link href="/" className="employee-home-brand" aria-label="Accueil FiSAFi Groupe">
-            <span className="employee-home-logo" aria-hidden="true">
-              <Image
-                src="/favicon/employee-mark.png"
-                alt=""
-                width={60}
-                height={60}
-                priority
-              />
-            </span>
-          </Link>
-          <div className="employee-header-actions employee-home-header-actions">
-            <PortalThemeToggle />
-            <Link href="/" className="employee-portal-home-link">Accueil</Link>
-            {employee?.role === "admin" && <Link href="/admin-dashboard" className="employee-home-admin-link">Administration</Link>}
-            <button
-              className="employee-home-logout"
-              onClick={() => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-                void router.replace("/login");
-              }}
-            >
-              Se déconnecter
-            </button>
-          </div>
-        </header>
+        <EmployeePortalHeader pageClassName="employee-home-header" title="Accueil">
+          {employee?.role === "admin" && <Link href="/admin-dashboard" className="employee-portal-header-extra">Administration</Link>}
+          <button
+            className="employee-portal-header-extra employee-portal-header-logout"
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              void router.replace("/login");
+            }}
+          >
+            Se déconnecter
+          </button>
+        </EmployeePortalHeader>
 
         <section className="employee-home-content">
           {loading ? (
