@@ -60,6 +60,89 @@ interface InscriptionFormation {
   session?: SessionFormation;
 }
 
+type MarketOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
+
+interface MarketStats {
+  period: {
+    orders: number;
+    confirmedOrders: number;
+    pendingOrders: number;
+    canceledOrders: number;
+    confirmedRevenue: number;
+    averageConfirmedOrder: number;
+    conversionRate: number;
+    customers: number;
+  };
+  monthly: Array<{
+    label: string;
+    month: number;
+    year: number;
+    orders: number;
+    confirmedRevenue: number;
+  }>;
+  recentOrders: Array<{
+    id: number;
+    reference: string;
+    customer: string;
+    state: MarketOrderState;
+    amountTotal: number;
+    date: string;
+  }>;
+  generatedAt: string;
+}
+
+function formatMarketCurrency(amount: number): string {
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(amount)} FCFA`;
+}
+
+function getMarketOrderStatusLabel(state: MarketOrderState): string {
+  const labels: Record<MarketOrderState, string> = {
+    draft: "Brouillon",
+    sent: "Devis envoyé",
+    sale: "Confirmée",
+    done: "Terminée",
+    cancel: "Annulée",
+  };
+  return labels[state];
+}
+
+function isMarketStats(value: unknown): value is MarketStats {
+  if (!value || typeof value !== "object") return false;
+  const stats = value as Partial<MarketStats>;
+  const period = stats.period;
+  return (
+    !!period &&
+    Number.isFinite(period.orders) &&
+    Number.isFinite(period.confirmedOrders) &&
+    Number.isFinite(period.pendingOrders) &&
+    Number.isFinite(period.canceledOrders) &&
+    Number.isFinite(period.confirmedRevenue) &&
+    Number.isFinite(period.averageConfirmedOrder) &&
+    Number.isFinite(period.conversionRate) &&
+    Number.isFinite(period.customers) &&
+    Array.isArray(stats.monthly) &&
+    stats.monthly.every(
+      (month) =>
+        typeof month.label === "string" &&
+        Number.isInteger(month.month) &&
+        Number.isInteger(month.year) &&
+        Number.isFinite(month.orders) &&
+        Number.isFinite(month.confirmedRevenue),
+    ) &&
+    Array.isArray(stats.recentOrders) &&
+    stats.recentOrders.every(
+      (order) =>
+        Number.isSafeInteger(order.id) &&
+        typeof order.reference === "string" &&
+        typeof order.customer === "string" &&
+        ["draft", "sent", "sale", "done", "cancel"].includes(order.state) &&
+        Number.isFinite(order.amountTotal) &&
+        typeof order.date === "string",
+    ) &&
+    typeof stats.generatedAt === "string"
+  );
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const buildApiUrl = (ep: string) => {
@@ -67,13 +150,14 @@ export default function AdminDashboard() {
     return b ? `${b}${ep}` : ep;
   };
 
-  const getTabLabel = (tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions"): string => {
+  const getTabLabel = (tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce"): string => {
     const labels: Record<string, string> = {
       users: "Utilisateurs",
       articles: "Articles",
       brochures: "Brochures",
       inscriptions: "Inscriptions",
-      sessions: "Sessions"
+      sessions: "Sessions",
+      ecommerce: "E-commerce",
     };
     return labels[tab] || "";
   };
@@ -168,7 +252,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce">("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
@@ -177,6 +261,9 @@ export default function AdminDashboard() {
   const [loadingInscriptions, setLoadingInscriptions] = useState(false);
   const [filterInscriptionStatus, setFilterInscriptionStatus] = useState<"all" | "liste_attente" | "confirme" | "annule">("all");
   const [actionSheetInscription, setActionSheetInscription] = useState<InscriptionFormation | null>(null);
+  const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
+  const [loadingMarketStats, setLoadingMarketStats] = useState(false);
+  const [marketStatsError, setMarketStatsError] = useState("");
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -239,7 +326,7 @@ export default function AdminDashboard() {
   }, [router]);
 
   useEffect(() => {
-    const VALID_TABS = ["users", "articles", "brochures", "inscriptions", "sessions"] as const;
+    const VALID_TABS = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const;
     try {
       const params = new URLSearchParams(window.location.search);
       const q = params.get("tab");
@@ -300,6 +387,7 @@ export default function AdminDashboard() {
     else if (activeTab === "brochures") fetchBrochures();
     else if (activeTab === "inscriptions") fetchInscriptions();
     else if (activeTab === "sessions") { fetchFormations(); fetchSessions(); }
+    else if (activeTab === "ecommerce") fetchMarketStats();
   }, [activeTab]);
 
   useEffect(() => {
@@ -312,6 +400,39 @@ export default function AdminDashboard() {
       const r = await fetch(buildApiUrl("/api/users"), { headers: { Authorization: `Bearer ${token}` } });
       if (r.ok) setUsers(await r.json());
     } catch {}
+  };
+
+  const fetchMarketStats = async () => {
+    setLoadingMarketStats(true);
+    setMarketStatsError("");
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setMarketStatsError("Votre session a expiré. Reconnectez-vous.");
+        return;
+      }
+      const response = await fetch("/api/admin/market-stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de charger les statistiques e-commerce.";
+        setMarketStatsError(message);
+        return;
+      }
+      if (!isMarketStats(payload)) {
+        setMarketStatsError("Le serveur a renvoyé des statistiques e-commerce invalides.");
+        return;
+      }
+      setMarketStats(payload);
+    } catch {
+      setMarketStatsError("Erreur réseau : impossible de charger les statistiques e-commerce.");
+    } finally {
+      setLoadingMarketStats(false);
+    }
   };
 
   const fetchInscriptions = async () => {
@@ -594,7 +715,7 @@ export default function AdminDashboard() {
             <span>Accueil du site</span>
             <span aria-hidden="true">↗</span>
           </a>
-          {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
+          {(["users","articles","brochures","inscriptions","sessions","ecommerce"] as const).map(tab => (
             <button key={tab} className={`mob-nav-link${activeTab === tab ? " active" : ""}`} onClick={() => { handleSetActiveTab(tab); setNavOpen(false); }}>
               <span>{getTabLabel(tab)}</span>
               {tab === "users" && users.length > 0 && <span className="mob-nav-badge">{users.length}</span>}
@@ -632,7 +753,7 @@ export default function AdminDashboard() {
               <span aria-hidden="true">↗</span>
             </a>
             <span className="sidebar-nav-label">Gestion</span>
-            {(["users","articles","brochures","inscriptions","sessions"] as const).map(tab => (
+            {(["users","articles","brochures","inscriptions","sessions","ecommerce"] as const).map(tab => (
               <button key={tab} className={`sidebar-link${activeTab === tab ? " active" : ""}`} onClick={() => handleSetActiveTab(tab)}>
                 <span className="sidebar-link-left">{getTabLabel(tab)}</span>
                 {tab === "users" && users.length > 0 && <span className="sidebar-count blue">{users.length}</span>}
@@ -1078,6 +1199,132 @@ export default function AdminDashboard() {
               }
             </>)}
 
+            {/* ═══ E-COMMERCE ═══ */}
+            {activeTab === "ecommerce" && (<>
+              <div className="admin-header">
+                <div className="admin-eyebrow">Commerce</div>
+                <div className="market-stats-heading">
+                  <div>
+                    <h1 className="admin-title">Activité e-commerce</h1>
+                    <p className="admin-sub">Commandes du Market FiSAFi confirmées et suivies dans Odoo.</p>
+                  </div>
+                  <button className="btn-sm market-refresh" onClick={fetchMarketStats} disabled={loadingMarketStats}>
+                    {loadingMarketStats ? "Actualisation…" : "Actualiser"}
+                  </button>
+                </div>
+              </div>
+
+              {marketStatsError && (
+                <div className="alert alert-err" role="alert">
+                  {marketStatsError}
+                  <button className="market-retry" onClick={fetchMarketStats}>Réessayer</button>
+                </div>
+              )}
+
+              {loadingMarketStats && !marketStats ? (
+                <div className="empty"><div className="spinner"/></div>
+              ) : marketStats ? (
+                <>
+                  <div className="stats-row market-stats-grid">
+                    <div className="stat-card">
+                      <div className="stat-num blue">{marketStats.period.orders}</div>
+                      <div className="stat-label">Demandes · 30 jours</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-num green">{formatMarketCurrency(marketStats.period.confirmedRevenue)}</div>
+                      <div className="stat-label">Ventes confirmées · 30 jours</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-num orange">{marketStats.period.pendingOrders}</div>
+                      <div className="stat-label">Devis en attente</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-num">{marketStats.period.customers}</div>
+                      <div className="stat-label">Clients · 30 jours</div>
+                    </div>
+                  </div>
+
+                  <div className="market-stats-secondary">
+                    <div className="content-card">
+                      <span className="market-secondary-label">Taux de conversion · 30 jours</span>
+                      <strong>{marketStats.period.conversionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%</strong>
+                      <span className="market-secondary-note">
+                        {marketStats.period.confirmedOrders} vente{marketStats.period.confirmedOrders === 1 ? "" : "s"} confirmée{marketStats.period.confirmedOrders === 1 ? "" : "s"} sur {marketStats.period.orders} demande{marketStats.period.orders === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <div className="content-card">
+                      <span className="market-secondary-label">Panier moyen confirmé · 30 jours</span>
+                      <strong>{formatMarketCurrency(marketStats.period.averageConfirmedOrder)}</strong>
+                      <span className="market-secondary-note">
+                        {marketStats.period.canceledOrders} demande{marketStats.period.canceledOrders === 1 ? "" : "s"} annulée{marketStats.period.canceledOrders === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <section className="market-panel" aria-labelledby="market-monthly-title">
+                    <div className="market-panel-heading">
+                      <div>
+                        <h2 id="market-monthly-title">Ventes confirmées</h2>
+                        <p>Évolution sur les six derniers mois</p>
+                      </div>
+                      <span className="market-chart-legend"><i/> Chiffre d’affaires</span>
+                    </div>
+                    {marketStats.monthly.some((month) => month.orders > 0) ? (
+                      <div className="market-chart">
+                        {marketStats.monthly.map((month) => {
+                          const maxRevenue = Math.max(...marketStats.monthly.map((item) => item.confirmedRevenue), 0);
+                          const height = maxRevenue > 0 ? Math.max((month.confirmedRevenue / maxRevenue) * 100, month.confirmedRevenue > 0 ? 6 : 0) : 0;
+                          return (
+                            <div className="market-chart-column" key={`${month.year}-${month.month}`}>
+                              <span className="market-chart-value">{formatMarketCurrency(month.confirmedRevenue)}</span>
+                              <div className="market-chart-track" aria-label={`${month.orders} demande${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
+                                <div className="market-chart-bar" style={{ height: `${height}%` }}/>
+                              </div>
+                              <span className="market-chart-label">{month.label} {month.year}</span>
+                              <span className="market-chart-count">{month.orders} demande{month.orders === 1 ? "" : "s"}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="empty"><p className="empty-text">Aucune demande Market sur les six derniers mois</p></div>
+                    )}
+                  </section>
+
+                  <section className="market-panel" aria-labelledby="market-recent-title">
+                    <div className="market-panel-heading">
+                      <div>
+                        <h2 id="market-recent-title">Demandes récentes</h2>
+                        <p>Statut actuel récupéré depuis Odoo</p>
+                      </div>
+                    </div>
+                    {marketStats.recentOrders.length ? (
+                      <div className="market-order-list">
+                        {marketStats.recentOrders.map((order) => (
+                          <article className="market-order-row" key={order.id}>
+                            <div className="market-order-main">
+                              <strong>{order.reference}</strong>
+                              <span>{order.customer}</span>
+                            </div>
+                            <span className={`market-order-status market-status-${order.state}`}>
+                              {getMarketOrderStatusLabel(order.state)}
+                            </span>
+                            <time dateTime={order.date}>{new Date(order.date).toLocaleDateString("fr-FR")}</time>
+                            <strong className="market-order-total">{formatMarketCurrency(order.amountTotal)}</strong>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="empty"><p className="empty-text">Aucune demande Market enregistrée</p></div>
+                    )}
+                  </section>
+                  <p className="market-stats-updated">
+                    Actualisé le {new Date(marketStats.generatedAt).toLocaleString("fr-FR")}
+                  </p>
+                </>
+              ) : null}
+            </>)}
+
           </div>
         </div>
       </div>
@@ -1090,6 +1337,7 @@ export default function AdminDashboard() {
           { id:"brochures", label:"Brochures", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>, badge: 0 },
           { id:"inscriptions", label:"Inscrip.", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="10.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>, badge: inscriptionsPending },
           { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: 0 },
+          { id:"ecommerce", label:"Market", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>, badge: 0 },
         ] as const).map(t => (
           <button key={t.id} className={`tab-btn${activeTab === t.id ? " active" : ""}`} onClick={() => handleSetActiveTab(t.id)}>
             <div className="tab-active-dot"/>
