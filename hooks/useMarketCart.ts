@@ -3,6 +3,7 @@ import {
   getMarketProductId,
   MARKET_CART_CHANGE_EVENT,
   MARKET_CART_KEY,
+  MARKET_CART_MAX_QUANTITY,
   readMarketCart,
   writeMarketCart,
 } from "@/lib/marketCart";
@@ -50,11 +51,24 @@ export default function useMarketCart() {
   }, []);
 
   const addItem = useCallback((product: MarketCartItemInput) => {
-    const id = getMarketProductId(product.departmentId, product.name);
+    const id = getMarketProductId(product.departmentId, product.name, product.odooProductId);
     const existing = items.find((item) => item.id === id);
     commit(existing
-      ? items.map((item) => item.id === id ? { ...item, quantity: item.quantity + 1 } : item)
-      : [...items, { ...product, id, quantity: 1 }]);
+      ? items.map((item) => item.id === id
+        ? {
+            ...item,
+            ...product,
+            quantity: Math.min(
+              MARKET_CART_MAX_QUANTITY,
+              item.quantity + (product.quantity ?? 1),
+            ),
+          }
+        : item)
+      : [...items, {
+          ...product,
+          id,
+          quantity: Math.min(MARKET_CART_MAX_QUANTITY, product.quantity ?? 1),
+        }]);
   }, [commit, items]);
 
   const setQuantity = useCallback((id: string, quantity: number) => {

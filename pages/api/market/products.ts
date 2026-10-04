@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { callOdoo, getTemplateStock, OdooApiError } from "@/lib/marketOdoo";
 
 type OdooProduct = {
   id: number;
@@ -20,6 +21,8 @@ type MarketProduct = {
   hasImage: boolean;
   imageUrl: string;
   isPromotion: boolean;
+  availableQuantity: number;
+  variantChoiceRequired: boolean;
 };
 
 type ApiResponse = { products?: MarketProduct[]; error?: string };
@@ -54,54 +57,24 @@ export default async function handler(
     return res.status(405).json({ error: "Méthode non autorisée." });
   }
 
-  const apiKey = process.env.ODOO_API_KEY?.trim();
-  if (!apiKey) {
-    return res.status(503).json({ error: "Le catalogue Market n’est pas configuré." });
-  }
-
-  let odooUrl: string;
   try {
-    const configuredUrl = new URL(process.env.ODOO_URL || "https://fisafigroupe.odoo.com");
-    if (configuredUrl.protocol !== "https:" || configuredUrl.username || configuredUrl.password) {
-      throw new Error("ODOO_URL must be an HTTPS URL without embedded credentials.");
-    }
-    odooUrl = configuredUrl.origin;
-  } catch (error) {
-    console.error("[Market/Odoo] Invalid Odoo URL configuration:", error);
-    return res.status(500).json({ error: "La configuration du catalogue Odoo est invalide." });
-  }
-
-  try {
-    const response = await fetch(`${odooUrl}/json/2/product.template/search_read`, {
-      method: "POST",
-      headers: {
-        Authorization: `bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        domain: [
-          ["active", "=", true],
-          ["sale_ok", "=", true],
-          ["available_in_pos", "=", true],
-        ],
-        fields: ["id", "name", "list_price", "categ_id", "uom_name", "image_128", "compare_list_price", "write_date"],
-        limit: ODOO_PRODUCT_LIMIT,
-        order: "name asc",
-      }),
-      signal: AbortSignal.timeout(20_000),
+    const payload: unknown = await callOdoo("product.template", "search_read", {
+      domain: [
+        ["active", "=", true],
+        ["sale_ok", "=", true],
+        ["available_in_pos", "=", true],
+      ],
+      fields: ["id", "name", "list_price", "categ_id", "uom_name", "image_128", "compare_list_price", "write_date"],
+      limit: ODOO_PRODUCT_LIMIT,
+      order: "name asc",
     });
 
-    if (!response.ok) {
-      console.error(`[Market/Odoo] Product request failed with HTTP ${response.status}.`);
-      return res.status(502).json({ error: "Impossible de charger le catalogue Odoo." });
-    }
-
-    const payload: unknown = await response.json();
     if (!Array.isArray(payload) || !payload.every(isOdooProduct)) {
       console.error("[Market/Odoo] Product response has an unexpected format.");
       return res.status(502).json({ error: "Le catalogue Odoo a renvoyé des données invalides." });
     }
 
+    const stockByTemplate = await getTemplateStock(payload.map((product) => product.id));
     const products = payload.map((product) => {
       const categoryName = product.categ_id ? product.categ_id[1] : null;
       return {
@@ -113,12 +86,17 @@ export default async function handler(
         hasImage: typeof product.image_128 === "string" && product.image_128.length > 0,
         imageUrl: `/api/market/products/${product.id}/image?v=${encodeURIComponent(product.write_date)}`,
         isPromotion: product.compare_list_price > product.list_price,
+        availableQuantity: stockByTemplate.get(product.id)?.availableQuantity ?? 0,
+        variantChoiceRequired: (stockByTemplate.get(product.id)?.variants.length ?? 0) > 1,
       };
     });
 
     res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=300");
     return res.status(200).json({ products });
   } catch (error) {
+    if (error instanceof OdooApiError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("[Market/Odoo] Product request failed:", error);
     return res.status(502).json({ error: "Impossible de joindre le catalogue Odoo." });
   }

@@ -1,12 +1,27 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config';
 
-// Create transporter for OVH SMTP
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character] ?? character);
+
+const emailHost = process.env.EMAIL_HOST || 'mail.ovh.net';
+const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
+const emailFromAddress = process.env.EMAIL_FROM || 'contact@fisafigroupe.com';
+const emailFrom = {
+  name: process.env.EMAIL_FROM_NAME || 'FiSAFi Groupe',
+  address: emailFromAddress,
+};
+
+// Create transporter for the configured SMTP provider
 const createTransporter = () => {
   const emailPassword = process.env.EMAIL_PASSWORD;
-  const emailHost = process.env.EMAIL_HOST || 'mail.ovh.net';
-  const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
-  const emailFrom = process.env.EMAIL_FROM || 'contact@fisafigroupe.com';
+  const emailUser = process.env.EMAIL_USER || emailFromAddress;
   
   console.log('[📧 Email Service] Initializing OVH SMTP transporter...');
   console.log('[📧 Email Service] From:', emailFrom);
@@ -23,7 +38,7 @@ const createTransporter = () => {
     port: emailPort,
     secure: emailPort === 465,  // true for 465, false for 587
     auth: {
-      user: emailFrom,
+      user: emailUser,
       pass: emailPassword || '',
     },
     // Timeouts to prevent long blocking during startup/deploys
@@ -47,7 +62,7 @@ export const emailService = {
     try {
       console.log(`[📧 Email Service] Sending contact confirmation to: ${visitorEmail}`);
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: visitorEmail,
         subject: `Confirmation: ${subject} - FiSAFi Groupe`,
         html: `
@@ -80,7 +95,7 @@ export const emailService = {
   ): Promise<boolean> {
     try {
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: 'contact@fisafigroupe.com', // Send to admin
         subject: `[NEW CONTACT] ${subject}`,
         html: `
@@ -107,22 +122,29 @@ export const emailService = {
    */
   async sendRegistrationConfirmation(
     userEmail: string,
-    userName: string
+    userName: string,
+    verificationUrl?: string,
   ): Promise<boolean> {
     try {
+      const safeUserName = escapeHtml(userName);
+      const safeVerificationUrl = verificationUrl ? escapeHtml(verificationUrl) : undefined;
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: userEmail,
-        subject: 'Confirmation d\'inscription - FiSAFi Groupe',
+        subject: verificationUrl
+          ? 'Vérifiez votre adresse email - FiSAFi Groupe'
+          : 'Confirmation d\'inscription - FiSAFi Groupe',
         html: `
-          <h2>Bienvenue ${userName}!</h2>
+          <h2>Bienvenue ${safeUserName}!</h2>
           <p>Merci de vous être inscrit sur <strong>FiSAFi Groupe</strong>.</p>
-          <p>Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter à votre espace personnel.</p>
-          <p>
-            <a href="https://www.fisafigroupe.com/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Se connecter
-            </a>
-          </p>
+          ${
+            safeVerificationUrl
+              ? `<p>Confirmez votre adresse pour recevoir par email les mises à jour de vos devis FiSAFi Market. Vous pouvez déjà vous connecter et passer commande.</p>
+            <p><a href="${safeVerificationUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Vérifier mon adresse email</a></p>
+            <p>Ce lien expire dans 24 heures. Si vous n’avez pas créé ce compte, ignorez ce message.</p>`
+              : `<p>Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter à votre espace personnel.</p>
+            <p><a href="https://www.fisafigroupe.com/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Se connecter</a></p>`
+          }
           <br/>
           <p>Cordialement,<br/>
           <strong>FiSAFi Groupe</strong><br/>
@@ -137,6 +159,34 @@ export const emailService = {
     }
   },
 
+  async sendMarketQuotationStatus(
+    userEmail: string,
+    userName: string,
+    reference: string,
+    status: string,
+    amount: number,
+  ): Promise<boolean> {
+    try {
+      await this.transporter.sendMail({
+        from: emailFrom,
+        to: userEmail,
+        subject: `Mise à jour de votre devis ${reference} — FiSAFi Market`,
+        html: `
+          <h2>Bonjour ${escapeHtml(userName)},</h2>
+          <p>Le statut de votre demande FiSAFi Market a changé.</p>
+          <p><strong>Devis :</strong> ${escapeHtml(reference)}<br/>
+          <strong>Statut :</strong> ${escapeHtml(status)}<br/>
+          <strong>Total :</strong> ${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(amount)} FCFA</p>
+          <p>Connectez-vous à votre <a href="https://www.fisafigroupe.com/dashboard">espace FiSAFi</a> pour consulter vos devis.</p>
+        `,
+      });
+      return true;
+    } catch (error) {
+      console.error(`❌ Market quotation status email failed for ${userEmail}:`, error);
+      return false;
+    }
+  },
+
   /**
    * Send formation subscription confirmation
    */
@@ -147,7 +197,7 @@ export const emailService = {
   ): Promise<boolean> {
     try {
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: userEmail,
         subject: `Inscription confirmée: ${formationName} - FiSAFi Groupe`,
         html: `
@@ -182,7 +232,7 @@ export const emailService = {
   ): Promise<boolean> {
     try {
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: 'contact@fisafigroupe.com',
         subject: `[NEW INSCRIPTION] ${formationName} - ${userName}`,
         html: `
@@ -217,7 +267,7 @@ export const emailService = {
         : 'À déterminer';
       
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: userEmail,
         subject: `Votre inscription acceptée: ${formationName} - FiSAFi Groupe`,
         html: `
@@ -261,7 +311,7 @@ export const emailService = {
   ): Promise<boolean> {
     try {
       await this.transporter.sendMail({
-        from: 'contact@fisafigroupe.com',
+        from: emailFrom,
         to: userEmail,
         subject: `Statut de votre inscription: ${formationName} - FiSAFi Groupe`,
         html: `

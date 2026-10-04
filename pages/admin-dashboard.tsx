@@ -581,7 +581,7 @@ export default function AdminDashboard() {
 
           /* ── SCROLL FIX ── */
           html{overflow-y:auto;}
-          body{background:var(--mist);color:var(--ink);font-family:'Outfit',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+          body{padding-top:0!important;background:var(--mist);color:var(--ink);font-family:'Outfit',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
           @keyframes spin{to{transform:rotate(360deg);}}
           @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}

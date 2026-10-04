@@ -13,8 +13,13 @@ export const config = {
     url: process.env.DATABASE_URL || '',
   },
   server: {
-    // Prefer the container/platform provided PORT (e.g. Render, Heroku)
-    port: parseInt(process.env.PORT || process.env.BACKEND_PORT || '3001', 10),
+    // Use the platform-assigned port in production; locally, keep the API separate from Next.js.
+    port: parseInt(
+      (process.env.NODE_ENV === 'production'
+        ? process.env.PORT || process.env.BACKEND_PORT
+        : process.env.BACKEND_PORT || process.env.PORT) || '3001',
+      10,
+    ),
     host: process.env.BACKEND_HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'),
     env: process.env.NODE_ENV || 'development',
   },

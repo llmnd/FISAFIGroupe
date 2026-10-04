@@ -62,6 +62,13 @@ body {
   padding: 0 28px;
   gap: 0;
   isolation: isolate;
+  transform: translateY(0);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.header.is-hidden {
+  transform: translateY(-100%);
 }
 
 @supports (backdrop-filter: blur(1px)) {
@@ -454,12 +461,15 @@ body {
   border-radius: 50%;
   background: linear-gradient(135deg, #C9B49A 0%, #9A7055 100%);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
   color: white;
-  letter-spacing: 0.3px;
   border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(74, 55, 40, 0.2);
+}
+
+.header-avatar-inner svg {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 1px rgba(74, 55, 40, 0.18));
 }
 
 .header-avatar-badge {

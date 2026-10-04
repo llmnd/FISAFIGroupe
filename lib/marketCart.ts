@@ -1,5 +1,6 @@
 export type MarketCartItem = {
   id: string;
+  odooProductId?: number;
   departmentId: string;
   departmentName: string;
   name: string;
@@ -10,12 +11,18 @@ export type MarketCartItem = {
   quantity: number;
 };
 
-export type MarketCartItemInput = Omit<MarketCartItem, "id" | "quantity">;
+export type MarketCartItemInput = Omit<MarketCartItem, "id" | "quantity"> & {
+  quantity?: number;
+};
 
 export const MARKET_CART_KEY = "fisafi-market-cart";
 export const MARKET_CART_CHANGE_EVENT = "fisafi-market-cart-change";
+export const MARKET_CART_MAX_QUANTITY = 99;
 
-export function getMarketProductId(departmentId: string, productName: string) {
+export function getMarketProductId(departmentId: string, productName: string, odooProductId?: number) {
+  if (Number.isSafeInteger(odooProductId) && Number(odooProductId) > 0) {
+    return `${departmentId}:odoo-${odooProductId}`;
+  }
   return `${departmentId}:${productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr")}`;
 }
 
@@ -37,6 +44,8 @@ function isMarketCartItem(value: unknown): value is MarketCartItem {
   const candidate = value as Partial<MarketCartItem>;
   return (
     typeof candidate.id === "string" &&
+    (candidate.odooProductId === undefined ||
+      (Number.isSafeInteger(candidate.odooProductId) && candidate.odooProductId > 0)) &&
     typeof candidate.departmentId === "string" &&
     typeof candidate.departmentName === "string" &&
     typeof candidate.name === "string" &&

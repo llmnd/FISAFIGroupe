@@ -187,6 +187,10 @@ const LOGIN_CSS = `
 
 export default function LoginPage() {
   const router = useRouter();
+  const getPostLoginPath = (role?: string) =>
+    router.query.next === "/market/commande"
+      ? "/market/commande"
+      : role === "admin" ? "/admin-dashboard" : "/";
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: "", password: "", firstName: "", lastName: "" });
   const [loading,      setLoading]      = useState(false);
@@ -196,12 +200,13 @@ export default function LoginPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
     if (token && userData) {
       try {
         const user = JSON.parse(userData);
-        router.push(user.role === "admin" ? "/admin-dashboard" : "/dashboard");
+        router.push(getPostLoginPath(user.role));
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -268,7 +273,7 @@ export default function LoginPage() {
         const userData = data.data.user || {};
         localStorage.setItem("user", JSON.stringify(userData));
         setSuccess("Connexion réussie !");
-        setTimeout(() => router.push(userData.role === "admin" ? "/admin-dashboard" : "/dashboard"), 1200);
+        setTimeout(() => router.push(getPostLoginPath(userData.role)), 1200);
       }
     } catch { setError("Erreur de connexion au serveur"); }
     finally  { setLoading(false); }

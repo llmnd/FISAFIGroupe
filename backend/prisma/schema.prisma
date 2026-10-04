@@ -18,12 +18,31 @@ model User {
   lastName  String?
   role      String  @default("user") // "admin" or "user"
   active    Boolean @default(true)
+  emailVerifiedAt DateTime?
+  emailVerificationTokenHash String? @unique
+  emailVerificationExpiresAt DateTime?
+  odooPartnerId Int? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  marketQuotations MarketQuotation[]
 
   @@index([email])
   @@index([role])
   @@index([active])
+}
+
+model MarketQuotation {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  odooOrderId Int      @unique
+  reference   String
+  state       String
+  amountTotal Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, createdAt])
 }
 model Inscription {
   id        Int     @id @default(autoincrement())

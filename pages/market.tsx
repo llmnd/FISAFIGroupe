@@ -1,10 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Header from "@/components/Header";
 import MarketStore from "@/components/MarketStore";
 import Footer from "@/components/Footer";
 import useMarketCart from "@/hooks/useMarketCart";
-import { getMarketPriceAmount, getMarketProductId } from "@/lib/marketCart";
+import {
+  getMarketPriceAmount,
+  getMarketProductId,
+  MARKET_CART_MAX_QUANTITY,
+} from "@/lib/marketCart";
 import type { MarketCartItemInput } from "@/lib/marketCart";
 
 /* ═══════════ TYPES ═══════════ */
@@ -26,6 +31,8 @@ type OdooCatalogProduct = {
   hasImage: boolean;
   imageUrl: string;
   isPromotion: boolean;
+  availableQuantity: number;
+  variantChoiceRequired: boolean;
 };
 
 type MarketProduct = {
@@ -39,6 +46,8 @@ type MarketProduct = {
   categoryPath: string | null;
   departmentId: string;
   departmentName: string;
+  availableQuantity: number;
+  variantChoiceRequired: boolean;
 };
 
 type ProductArtwork = "produce" | "pantry" | "bakery" | "drink" | "fresh" | "home";
@@ -112,13 +121,17 @@ function isMarketApiResponse(value: unknown): value is { products: OdooCatalogPr
         typeof candidate.unitName === "string" &&
         typeof candidate.hasImage === "boolean" &&
         typeof candidate.imageUrl === "string" &&
-        typeof candidate.isPromotion === "boolean"
+        typeof candidate.isPromotion === "boolean" &&
+        typeof candidate.availableQuantity === "number" &&
+        Number.isFinite(candidate.availableQuantity) &&
+        candidate.availableQuantity >= 0 &&
+        typeof candidate.variantChoiceRequired === "boolean"
       );
     })
   );
 }
 
-const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v4";
+const MARKET_CATALOG_CACHE_KEY = "fisafi-market-catalog-v5";
 const MARKET_CATALOG_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -382,11 +395,21 @@ function MarketProductCard({
   departmentName: string;
   cartQuantity: number;
   onShowDetails: () => void;
-  onAddToCart: () => void;
+  onAddToCart: (quantity: number) => void;
   onSetQuantity: (quantity: number) => void;
 }) {
   const unitPrice = getMarketPriceAmount(product.price);
   const priceUnit = /\/\s*kg\b/i.test(product.price) ? "kg" : "unité";
+  const step = priceUnit === "kg" ? 0.5 : 1;
+  const firstQuantity = priceUnit === "kg"
+    ? Math.min(1, Math.floor(product.availableQuantity / step) * step)
+    : 1;
+  const canAdd = product.availableQuantity >= firstQuantity && firstQuantity > 0;
+  const stockLabel = product.variantChoiceRequired
+    ? "Choix de variante requis"
+    : product.availableQuantity > 0
+      ? `Disponible : ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(product.availableQuantity)}${priceUnit === "kg" ? " kg" : ""}`
+      : "Indisponible";
 
   return (
     <article className="market-product-card">
@@ -415,6 +438,9 @@ function MarketProductCard({
             {product.name}
           </button>
         </h4>
+        <p className={`market-product-stock${product.availableQuantity <= 0 || product.variantChoiceRequired ? " is-unavailable" : ""}`}>
+          {stockLabel}
+        </p>
         <div className="market-product-meta">
           <p className="market-product-price">
             <strong>
@@ -441,6 +467,11 @@ function MarketProductCard({
                 <button
                   type="button"
                   onClick={() => onSetQuantity(cartQuantity + (priceUnit === "kg" ? 0.5 : 1))}
+                  disabled={
+                    product.variantChoiceRequired ||
+                    cartQuantity + (priceUnit === "kg" ? 0.5 : 1) >
+                      Math.min(product.availableQuantity, MARKET_CART_MAX_QUANTITY)
+                  }
                   aria-label={`Ajouter ${priceUnit === "kg" ? "0,5 kg" : "un"} de ${product.name}`}
                 >
                   +
@@ -450,11 +481,13 @@ function MarketProductCard({
               <button
                 className="market-product-add"
                 type="button"
-                onClick={onAddToCart}
-                disabled={unitPrice === null}
+                onClick={() => onAddToCart(firstQuantity)}
+                disabled={unitPrice === null || !canAdd || product.variantChoiceRequired}
                 aria-label={`Ajouter ${product.name} au panier`}
               >
-                Ajouter <span aria-hidden="true">+</span>
+                {product.variantChoiceRequired
+                  ? "Contacter FiSAFi"
+                  : canAdd ? <>Ajouter <span aria-hidden="true">+</span></> : "Indisponible"}
               </button>
             )}
           </div>
@@ -487,18 +520,15 @@ export default function MarketPage() {
   const [catalogRetry, setCatalogRetry] = useState(0);
   const [departmentsMenuOpen, setDepartmentsMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MarketProduct | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [marketHeaderHeight, setMarketHeaderHeight] = useState(72);
+  const [marketHeaderHeight, setMarketHeaderHeight] = useState(120);
   const [activeMenuDepartment, setActiveMenuDepartment] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>("system");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const [catalogToolsOpen, setCatalogToolsOpen] = useState(false);
-  const marketNavRef = useRef<HTMLElement>(null);
   const catalogSearchInputRef = useRef<HTMLInputElement>(null);
   const departmentsDialogRef = useRef<HTMLDivElement>(null);
   const productDialogRef = useRef<HTMLDivElement>(null);
-  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const departmentsMenuButtonRef = useRef<HTMLButtonElement>(null);
   const departmentsMenuCloseRef = useRef<HTMLButtonElement>(null);
   const productDialogCloseRef = useRef<HTMLButtonElement>(null);
@@ -523,6 +553,8 @@ export default function MarketPage() {
       categoryPath: product.categoryName,
       departmentId: getDepartmentId(departmentName),
       departmentName,
+      availableQuantity: product.availableQuantity,
+      variantChoiceRequired: product.variantChoiceRequired,
     };
   });
   const productsByDepartment = new Map<string, MarketProduct[]>();
@@ -600,23 +632,17 @@ export default function MarketPage() {
     : [];
 
   const openDepartmentsMenu = () => {
-    setMobileMenuOpen(false);
     setActiveMenuDepartment("");
     setDepartmentsMenuOpen(true);
   };
 
   const closeDepartmentsMenu = () => {
     setDepartmentsMenuOpen(false);
-    if (window.matchMedia("(max-width: 760px)").matches) {
-      mobileMenuButtonRef.current?.focus();
-    } else {
-      departmentsMenuButtonRef.current?.focus();
-    }
+    departmentsMenuButtonRef.current?.focus();
   };
 
   const selectDepartment = (departmentId: string) => {
     setDepartmentsMenuOpen(false);
-    setMobileMenuOpen(false);
     setSelectedDepartment(departmentId);
     setSelectedSubcategory("");
     setCurrentPage(1);
@@ -630,7 +656,6 @@ export default function MarketPage() {
 
   const selectSubcategory = (departmentId: string, categoryPath: string) => {
     setDepartmentsMenuOpen(false);
-    setMobileMenuOpen(false);
     setSelectedDepartment(departmentId);
     setSelectedSubcategory(categoryPath);
     setCurrentPage(1);
@@ -713,13 +738,16 @@ export default function MarketPage() {
   }, [departmentsMenuOpen, selectedProduct]);
 
   useEffect(() => {
-    const nav = marketNavRef.current;
-    if (!nav) return;
+    const header = document.querySelector<HTMLElement>(".header");
+    const socialBar = document.querySelector<HTMLElement>(".header-social-flags-bar");
+    if (!header || !socialBar) return;
 
-    const updateHeaderHeight = () => setMarketHeaderHeight(nav.getBoundingClientRect().height);
+    const updateHeaderHeight = () =>
+      setMarketHeaderHeight(header.getBoundingClientRect().bottom + socialBar.getBoundingClientRect().height);
     updateHeaderHeight();
     const observer = new ResizeObserver(updateHeaderHeight);
-    observer.observe(nav);
+    observer.observe(header);
+    observer.observe(socialBar);
     return () => observer.disconnect();
   }, []);
 
@@ -738,13 +766,21 @@ export default function MarketPage() {
     });
   };
 
-  const getCartQuantity = (departmentId: string, productName: string) =>
-    cartItems.find((item) => item.id === getMarketProductId(departmentId, productName))?.quantity ?? 0;
+  const getCartQuantity = (departmentId: string, productName: string, odooProductId: number) =>
+    cartItems.find((item) =>
+      item.id === getMarketProductId(departmentId, productName, odooProductId),
+    )?.quantity ?? 0;
 
-  const addProduct = (departmentId: string, departmentName: string, product: MarketProduct) => {
+  const addProduct = (
+    departmentId: string,
+    departmentName: string,
+    product: MarketProduct,
+    quantity = 1,
+  ) => {
     const unitPrice = getMarketPriceAmount(product.price);
     if (unitPrice === null) return;
     const item: MarketCartItemInput = {
+      odooProductId: product.id,
       departmentId,
       departmentName,
       name: product.name,
@@ -752,6 +788,7 @@ export default function MarketPage() {
       priceLabel: product.price.replace(/\s*\/\s*kg\b/i, ""),
       unitPrice,
       priceUnit: /\/\s*kg\b/i.test(product.price) ? "kg" : "unité",
+      quantity,
     };
     addItem(item);
   };
@@ -1006,56 +1043,37 @@ export default function MarketPage() {
         />
       </Head>
 
-      <nav
-        className={`market-store-nav${isDark ? " is-dark" : ""}`}
-        suppressHydrationWarning
-        aria-label="Navigation Market"
-        ref={marketNavRef}
-        style={{ "--market-header-height": `${marketHeaderHeight}px` } as React.CSSProperties}
-      >
-          <Link href="/" className="market-return-home" aria-label="Retour à l'accueil de FiSAFi">
-          Retour
-          </Link>
-          <Link href="/" className="market-wordmark" aria-label="FiSAFi Market, accueil">
-            <svg className="market-wordmark-icon" viewBox="0 0 40 40" aria-hidden="true">
-              <defs>
-                <linearGradient id="mk-bg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#4a1ee8" />
-                  <stop offset="1" stopColor="#250bb8" />
-                </linearGradient>
-              </defs>
-              <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#mk-bg)" />
-              <rect x="1" y="1" width="38" height="38" rx="11" fill="none" stroke="rgba(255,255,255,.16)" />
-              <text x="20" y="28" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontStyle="italic" fontWeight="700" fontSize="22" fill="#fffdf6">F</text>
-              <circle cx="30" cy="30" r="2.2" fill="#ff7417" />
-            </svg>
-            <span>
-              FiSAFi <strong>Market</strong>
-            </span>
-          </Link>
-
-          <button
-            className="market-mobile-menu-toggle"
-            type="button"
-            onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
-            aria-controls="market-mobile-actions"
-            aria-expanded={mobileMenuOpen}
-            aria-label={mobileMenuOpen ? "Fermer le menu principal" : "Ouvrir le menu principal"}
-            ref={mobileMenuButtonRef}
+      <Header
+        marketCartAction={
+          <Link
+            className="market-header-cart"
+            href="/market/commande"
+            aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
+            title="Panier"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              {mobileMenuOpen ? (
-                <path d="m6 6 12 12M18 6 6 18" />
-              ) : (
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              )}
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M2.75 4.25h2.1l2.05 10.1a1.8 1.8 0 0 0 1.76 1.45h8.8a1.8 1.8 0 0 0 1.74-1.35L21.25 8H6"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M8.25 10.2h11.6M9.1 13.2h10"
+                stroke="currentColor"
+                strokeWidth="1.35"
+                strokeLinecap="round"
+                opacity="0.72"
+              />
+              <circle cx="9.5" cy="19.1" r="1.35" fill="currentColor" />
+              <circle cx="18.1" cy="19.1" r="1.35" fill="currentColor" />
             </svg>
-          </button>
-
-          <div
-            className={`market-header-actions${mobileMenuOpen ? " is-open" : ""}`}
-            id="market-header-actions"
-          >
+            <span>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</span>
+          </Link>
+        }
+        marketActions={
+          <>
             <button
               className={`market-rayons-link${departmentsMenuOpen ? " is-open" : ""}`}
               type="button"
@@ -1074,126 +1092,32 @@ export default function MarketPage() {
                 )}
               </svg>
             </button>
-
-            <div className="market-nav-right">
-              <span
-                className={`market-status${status.open ? " is-open" : " is-closed"}`}
-                aria-live="polite"
-              >
-                <i aria-hidden="true" />
-                <b>{status.label}</b>
-                <em>· {status.detail}</em>
-              </span>
-
-              <button
-                className="market-theme-toggle"
-                type="button"
-                onClick={toggleTheme}
-                aria-label={isDark ? "Activer le thème clair" : "Activer le thème sombre"}
-                aria-pressed={isDark}
-                title={isDark ? "Passer au thème clair" : "Passer au thème sombre"}
-              >
-                <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
-                <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
-              </button>
-
-              <Link
-                className="market-cart-link"
-                href="/market/commande"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
-              >
-                <span className="market-cart-icon" aria-hidden="true">▱</span>
-                <span className="market-cart-label">Panier</span>
-                <b>{cartReady ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount) : "…"}</b>
-              </Link>
-            </div>
-          </div>
-          {mobileMenuOpen && (
-            <div className="market-mobile-menu-panel" id="market-mobile-actions">
-              <nav className="market-mobile-menu-list" aria-label="Rayons du marché">
-                <button
-                  className={`market-mobile-menu-item${selectedDepartment ? "" : " is-selected"}`}
-                  type="button"
-                  onClick={() => selectDepartment("")}
-                >
-                  <span className="market-departments-drawer-icon market-departments-drawer-icon--all" aria-hidden="true">
-                    <svg viewBox="0 0 48 48" fill="none">
-                      <path d="M8 20h32l-3 20H11L8 20Z" />
-                      <path d="m13 20 5-11h12l5 11M18 9l6 11 6-11M17 27v7m7-7v7m7-7v7" />
-                    </svg>
-                  </span>
-                  <span className="market-mobile-menu-copy">
-                    <strong>Tous les produits</strong>
-                    <small>{marketProducts.length} produits</small>
-                  </span>
-                  <span className="market-mobile-menu-arrow" aria-hidden="true">›</span>
-                </button>
-                {departments.map((department) => {
-                  const departmentProducts = productsByDepartment.get(department.id) || [];
-                  const representativeProduct = departmentProducts.find((product) => product.imageUrl);
-                  const subcategories = getDepartmentSubcategories(department.id);
-                  const isExpanded = activeMenuDepartment === department.id;
-                  return (
-                    <div className="market-mobile-menu-group" key={department.id}>
-                      <button
-                        className={`market-mobile-menu-item${selectedDepartment === department.id ? " is-selected" : ""}${isExpanded ? " is-expanded" : ""}`}
-                        type="button"
-                        aria-expanded={isExpanded}
-                        onClick={() => setActiveMenuDepartment(isExpanded ? "" : department.id)}
-                      >
-                        <span className={`market-departments-drawer-icon market-departments-drawer-icon--${department.color}`} aria-hidden="true">
-                          {representativeProduct ? (
-                            <MarketMenuImage
-                              src={representativeProduct.imageUrl}
-                              artwork={representativeProduct.artwork}
-                            />
-                          ) : (
-                            <ProductIllustration artwork={getProductArtwork(department.name)} />
-                          )}
-                        </span>
-                        <span className="market-mobile-menu-copy">
-                          <strong>{department.name}</strong>
-                          <small>{departmentProducts.length} produits</small>
-                        </span>
-                        <svg className="market-mobile-menu-arrow" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                      </button>
-                      {isExpanded && (
-                        <div className="market-mobile-submenu">
-                          <button
-                            className="market-mobile-submenu-all"
-                            type="button"
-                            onClick={() => selectDepartment(department.id)}
-                          >
-                            Voir tous les produits
-                          </button>
-                          {subcategories.map((subcategory) => (
-                            <button
-                              className={`market-mobile-submenu-item${selectedSubcategory === subcategory.path ? " is-selected" : ""}`}
-                              type="button"
-                              key={subcategory.path}
-                              onClick={() => selectSubcategory(department.id, subcategory.path)}
-                            >
-                              <span>{subcategory.name}</span>
-                              <small>{subcategory.productCount}</small>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
-            </div>
-          )}
-      </nav>
+            <span
+              className={`market-status${status.open ? " is-open" : " is-closed"}`}
+              aria-live="polite"
+            >
+              <i aria-hidden="true" />
+              <b>{status.label}</b>
+              <em>· {status.detail}</em>
+            </span>
+            <button
+              className="market-theme-toggle"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isDark ? "Activer le thème clair" : "Activer le thème sombre"}
+              aria-pressed={isDark}
+              title={isDark ? "Passer au thème clair" : "Passer au thème sombre"}
+            >
+              <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+              <span className="market-theme-toggle-label">{isDark ? "Clair" : "Sombre"}</span>
+            </button>
+          </>
+        }
+      />
       <main
         className="market-page"
         data-theme={isDark ? "dark" : "light"}
         suppressHydrationWarning
-        style={{ paddingTop: `${marketHeaderHeight}px` }}
       >
         {storageError && <p className="market-cart-storage-error" role="alert">{storageError}</p>}
 
@@ -1321,11 +1245,13 @@ export default function MarketPage() {
                       key={product.id}
                       product={product}
                       departmentName={product.departmentName}
-                      cartQuantity={getCartQuantity(product.departmentId, product.name)}
+                      cartQuantity={getCartQuantity(product.departmentId, product.name, product.id)}
                       onShowDetails={() => setSelectedProduct(product)}
-                      onAddToCart={() => addProduct(product.departmentId, product.departmentName, product)}
+                      onAddToCart={(quantity) =>
+                        addProduct(product.departmentId, product.departmentName, product, quantity)
+                      }
                       onSetQuantity={(quantity) => setQuantity(
-                        getMarketProductId(product.departmentId, product.name),
+                        getMarketProductId(product.departmentId, product.name, product.id),
                         quantity,
                       )}
                     />
@@ -1485,18 +1411,32 @@ export default function MarketPage() {
                 </span>
               </p>
               <p className="market-product-dialog-note">
-                Prix indicatif, disponibilité à confirmer en magasin.
+                {selectedProduct.variantChoiceRequired
+                  ? "Contactez FiSAFi pour préciser la variante souhaitée."
+                  : `Stock indicatif : ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(selectedProduct.availableQuantity)}${/\/\s*kg\b/i.test(selectedProduct.price) ? " kg" : ""}. Revérifié à la commande.`}
               </p>
               {(() => {
-                const quantity = getCartQuantity(selectedProduct.departmentId, selectedProduct.name);
+                const quantity = getCartQuantity(
+                  selectedProduct.departmentId,
+                  selectedProduct.name,
+                  selectedProduct.id,
+                );
                 const isKg = /\/\s*kg\b/i.test(selectedProduct.price);
+                const quantityStep = isKg ? 0.5 : 1;
+                const firstQuantity = isKg
+                  ? Math.min(1, Math.floor(selectedProduct.availableQuantity / quantityStep) * quantityStep)
+                  : 1;
                 return quantity > 0 ? (
                   <div className="market-product-dialog-quantity" role="group" aria-label={`Quantité de ${selectedProduct.name} dans le panier`}>
                     <button
                       type="button"
                       onClick={() => setQuantity(
-                        getMarketProductId(selectedProduct.departmentId, selectedProduct.name),
-                        quantity - (isKg ? 0.5 : 1),
+                        getMarketProductId(
+                          selectedProduct.departmentId,
+                          selectedProduct.name,
+                          selectedProduct.id,
+                        ),
+                        quantity - quantityStep,
                       )}
                       aria-label={`Retirer ${isKg ? "0,5 kg" : "un"} de ${selectedProduct.name}`}
                     >
@@ -1508,7 +1448,19 @@ export default function MarketPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => addProduct(selectedProduct.departmentId, selectedProduct.departmentName, selectedProduct)}
+                      onClick={() =>
+                        addProduct(
+                          selectedProduct.departmentId,
+                          selectedProduct.departmentName,
+                          selectedProduct,
+                          quantityStep,
+                        )
+                      }
+                      disabled={
+                        selectedProduct.variantChoiceRequired ||
+                        quantity + quantityStep >
+                          Math.min(selectedProduct.availableQuantity, MARKET_CART_MAX_QUANTITY)
+                      }
                       aria-label={`Ajouter ${isKg ? "0,5 kg" : "un"} de ${selectedProduct.name}`}
                     >
                       +
@@ -1518,10 +1470,23 @@ export default function MarketPage() {
                   <button
                     className="market-product-dialog-add"
                     type="button"
-                    onClick={() => addProduct(selectedProduct.departmentId, selectedProduct.departmentName, selectedProduct)}
-                    disabled={getMarketPriceAmount(selectedProduct.price) === null}
+                    onClick={() =>
+                      addProduct(
+                        selectedProduct.departmentId,
+                        selectedProduct.departmentName,
+                        selectedProduct,
+                        firstQuantity,
+                      )
+                    }
+                    disabled={
+                      getMarketPriceAmount(selectedProduct.price) === null ||
+                      firstQuantity <= 0 ||
+                      selectedProduct.variantChoiceRequired
+                    }
                   >
-                    Ajouter au panier
+                    {selectedProduct.variantChoiceRequired || firstQuantity <= 0
+                      ? "Indisponible"
+                      : "Ajouter au panier"}
                     <span aria-hidden="true">+</span>
                   </button>
                 );

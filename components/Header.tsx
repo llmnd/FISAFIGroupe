@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { type ReactNode, useEffect, useRef, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -36,6 +36,14 @@ const IconUser = () => (
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const IconProfile = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.2)" />
+    <circle cx="12" cy="9" r="3.1" fill="currentColor" />
+    <path d="M5.8 18.1a6.2 6.2 0 0 1 12.4 0" fill="currentColor" />
   </svg>
 );
 
@@ -116,7 +124,13 @@ const SocialsGrid = () => (
 );
 
 /* ─── Component ──────────────────────────────────────────── */
-export default function Header() {
+export default function Header({
+  marketActions,
+  marketCartAction,
+}: {
+  marketActions?: ReactNode;
+  marketCartAction?: ReactNode;
+}) {
   const [mobileOpen,    setMobileOpen]    = useState(false);
   const [showSocials,   setShowSocials]   = useState(false);
   const [showSearch,    setShowSearch]    = useState(false);
@@ -130,12 +144,14 @@ export default function Header() {
 
   /* ─── Refs ─────────────────────────────────────────────── */
   const progressFillRef  = useRef<HTMLDivElement>(null);
+  const headerRef        = useRef<HTMLElement>(null);
   const socialBarRef     = useRef<HTMLDivElement>(null);
   const searchRef        = useRef<HTMLInputElement>(null);
   const shareButtonRef   = useRef<HTMLButtonElement>(null);
   const socialPopupRef   = useRef<HTMLDivElement>(null);
   const rafIdRef         = useRef<number | null>(null);
   const lastScrolledRef  = useRef(false);
+  const lastScrollTopRef = useRef(0);
   const navMenuCloseRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearNavMenuClose = () => {
@@ -161,7 +177,13 @@ export default function Header() {
 
   /* ─── Auth (localStorage côté client uniquement) ───────── */
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("token"));
+    const syncAuth = () => {
+      setIsLoggedIn(Boolean(localStorage.getItem("token")));
+    };
+
+    syncAuth();
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
   }, []);
 
   /* ─── Body scroll lock ──────────────────────────────────── */
@@ -177,6 +199,8 @@ export default function Header() {
    * (2 fois max : false→true et true→false).
    * ─────────────────────────────────────────────────────────*/
   useEffect(() => {
+    lastScrollTopRef.current = window.scrollY;
+
     const onScroll = () => {
       if (rafIdRef.current !== null) return;
       rafIdRef.current = requestAnimationFrame(() => {
@@ -186,12 +210,25 @@ export default function Header() {
         const docH      = document.documentElement.scrollHeight - window.innerHeight;
         const pct       = docH > 0 ? (scrollTop / docH) * 100 : 0;
         const isScrolled = scrollTop > 10;
+        const scrollDelta = scrollTop - lastScrollTopRef.current;
+
+        if (headerRef.current) {
+          if (scrollTop <= 10 || scrollDelta < -2) {
+            headerRef.current.classList.remove("is-hidden");
+          } else if (scrollDelta > 2) {
+            headerRef.current.classList.add("is-hidden");
+          }
+        }
+        if (Math.abs(scrollDelta) > 2) {
+          lastScrollTopRef.current = scrollTop;
+        }
 
         if (progressFillRef.current) {
           progressFillRef.current.style.width = `${pct}%`;
         }
         if (socialBarRef.current) {
-          const opacity = Math.max(0, 1 - pct / 30);
+          const isMarketBar = socialBarRef.current.classList.contains("has-market-actions");
+          const opacity = isMarketBar ? 1 : Math.max(0, 1 - pct / 30);
           socialBarRef.current.style.opacity = String(opacity);
         }
 
@@ -315,7 +352,10 @@ export default function Header() {
   return (
     <>
       {/* ── Header ──────────────────────────────────────── */}
-      <header className={`header${scrolled ? " scrolled" : ""}`}>
+      <header
+        ref={headerRef}
+        className={`header${scrolled ? " scrolled" : ""}${marketActions ? " has-market-actions" : ""}${marketCartAction ? " has-market-cart" : ""}`}
+      >
 
         {/* Logo */}
         <Link
@@ -363,29 +403,37 @@ export default function Header() {
 
         {/* Action zone */}
         <div className="header-actions">
-          <button
-            className="header-icon-btn"
-            onClick={() => setShowSearch(true)}
-            aria-label="Rechercher"
-            title="Rechercher (⌘K)"
-          >
-            <IconSearch />
-          </button>
+          {marketCartAction}
 
-          <button
-            className="header-plus-btn"
-            aria-label="Informations"
-            title="Informations"
-            onClick={() => setShowInfoModal(true)}
-          >
-            <IconPlus />
-          </button>
+          {!marketActions && (
+            <button
+              className="header-icon-btn"
+              onClick={() => setShowSearch(true)}
+              aria-label="Rechercher"
+              title="Rechercher (⌘K)"
+            >
+              <IconSearch />
+            </button>
+          )}
+
+          {!marketActions && (
+            <button
+              className="header-plus-btn"
+              aria-label="Informations"
+              title="Informations"
+              onClick={() => setShowInfoModal(true)}
+            >
+              <IconPlus />
+            </button>
+          )}
 
           <div className="header-divider" />
 
           {isLoggedIn ? (
             <Link href="/dashboard" className="header-avatar-btn" aria-label="Mon compte">
-              <div className="header-avatar-inner">FS</div>
+              <span className="header-avatar-inner">
+                <IconProfile />
+              </span>
               <span className="header-avatar-badge" aria-hidden="true" />
             </Link>
           ) : (
@@ -447,7 +495,10 @@ export default function Header() {
       {/* ── Social / Flags Bar ──────────────────────────────
        *  Opacité écrite via ref (RAF) → 0 re-render
        * ─────────────────────────────────────────────────── */}
-      <div ref={socialBarRef} className="header-social-flags-bar">
+      <div
+        ref={socialBarRef}
+        className={`header-social-flags-bar${marketActions ? " has-market-actions" : ""}`}
+      >
         <div className="bar-content">
           <div className="bar-socials">
             <button
@@ -472,6 +523,20 @@ export default function Header() {
               <SocialsGrid />
             </div>
           </div>
+
+          {marketActions && (
+            <div className="header-market-actions" aria-label="Commandes FiSAFi Market">
+              <button
+                className="header-icon-btn market-search-button"
+                onClick={() => setShowSearch(true)}
+                aria-label="Rechercher"
+                title="Rechercher (⌘K)"
+              >
+                <IconSearch />
+              </button>
+              {marketActions}
+            </div>
+          )}
 
           <div className="bar-flags">
             <span className="flag" role="img" aria-label="Sénégal">🇸🇳</span>

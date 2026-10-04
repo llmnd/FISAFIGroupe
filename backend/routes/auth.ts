@@ -1,6 +1,6 @@
 // backend/routes/auth.ts
 import { FastifyInstance } from 'fastify';
-import { register, login, getMe } from '../controllers/authController';
+import { register, login, getMe, verifyEmail, resendEmailVerification } from '../controllers/authController';
 import { CreateUserRequest, LoginRequest } from '../types';
 
 export async function authRoutes(app: FastifyInstance) {
@@ -13,9 +13,18 @@ export async function authRoutes(app: FastifyInstance) {
     return login(request as any, reply);
   });
 
+  app.get('/auth/verify-email', async (request, reply) => {
+    return verifyEmail(request as any, reply);
+  });
+
   // Protected routes
   app.get('/auth/me', async (request, reply) => {
     await request.jwtVerify();
     return getMe(request, reply);
+  });
+
+  app.post('/auth/resend-verification', async (request, reply) => {
+    await request.jwtVerify();
+    return resendEmailVerification(request as any, reply);
   });
 }

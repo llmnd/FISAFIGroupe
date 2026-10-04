@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -64,7 +65,16 @@ interface Article {
   author?: string;
 }
 
-type TabId = "inscriptions" | "formations" | "inscriptions-manage" | "users" | "articles";
+interface MarketQuotation {
+  id: number;
+  reference: string;
+  state: "draft" | "sent" | "sale" | "done" | "cancel";
+  statusLabel: string;
+  amountTotal: number;
+  date: string;
+}
+
+type TabId = "inscriptions" | "formations" | "market-orders" | "inscriptions-manage" | "users" | "articles";
 
 interface TabType {
   id: TabId;
@@ -76,6 +86,7 @@ interface TabType {
 const ALL_TABS: TabType[] = [
   { id: "inscriptions",        label: "Mes inscriptions",       icon: "◈" },
   { id: "formations",          label: "Formations",             icon: "◉" },
+  { id: "market-orders",       label: "Mes devis Market",       icon: "▱" },
   { id: "inscriptions-manage", label: "Gérer inscriptions",     icon: "◎", admin: true },
   { id: "users",               label: "Utilisateurs",           icon: "◇", admin: true },
   { id: "articles",            label: "Articles",               icon: "◆", admin: true },
@@ -83,6 +94,14 @@ const ALL_TABS: TabType[] = [
 
 export default function DashboardPage() {
   const router = useRouter();
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
   
   // Helper para construir URLs com backend
   const buildApiUrl = (endpoint: string) => {
@@ -100,6 +119,12 @@ export default function DashboardPage() {
   const [loadingFormations, setLoadingFormations] = useState(false);
   const [userInscriptions, setUserInscriptions] = useState<InscriptionFormation[]>([]);
   const [loadingInscriptions, setLoadingInscriptions] = useState(false);
+  const [marketQuotations, setMarketQuotations] = useState<MarketQuotation[]>([]);
+  const [loadingMarketQuotations, setLoadingMarketQuotations] = useState(false);
+  const [marketQuotationError, setMarketQuotationError] = useState("");
+  const [marketEmailVerified, setMarketEmailVerified] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
   const [showInscriptionModal, setShowInscriptionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
@@ -132,6 +157,91 @@ export default function DashboardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  async function fetchMarketQuotations() {
+    setLoadingMarketQuotations(true);
+    setMarketQuotationError("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/market/orders", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de charger vos devis.";
+        throw new Error(message);
+      }
+      if (
+        !payload ||
+        typeof payload !== "object" ||
+        !("orders" in payload) ||
+        !Array.isArray(payload.orders) ||
+        !("emailVerified" in payload) ||
+        typeof payload.emailVerified !== "boolean"
+      ) {
+        throw new Error("La réponse de suivi des devis est invalide.");
+      }
+      const orders = payload.orders;
+      if (!orders.every((order) =>
+        Boolean(order) &&
+        typeof order === "object" &&
+        "id" in order &&
+        Number.isSafeInteger(order.id) &&
+        "reference" in order &&
+        typeof order.reference === "string" &&
+        "state" in order &&
+        ["draft", "sent", "sale", "done", "cancel"].includes(String(order.state)) &&
+        "statusLabel" in order &&
+        typeof order.statusLabel === "string" &&
+        "amountTotal" in order &&
+        typeof order.amountTotal === "number" &&
+        "date" in order &&
+        typeof order.date === "string"
+      )) {
+        throw new Error("Les devis reçus ne sont pas valides.");
+      }
+      setMarketQuotations(orders as MarketQuotation[]);
+      setMarketEmailVerified(payload.emailVerified);
+    } catch (fetchError) {
+      console.error("[Dashboard] Could not load Market quotations:", fetchError);
+      setMarketQuotationError(
+        fetchError instanceof Error ? fetchError.message : "Impossible de charger vos devis.",
+      );
+    } finally {
+      setLoadingMarketQuotations(false);
+    }
+  }
+
+  const resendMarketEmailVerification = async () => {
+    setResendingVerification(true);
+    setVerificationMessage("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible d’envoyer le lien de vérification.";
+        throw new Error(message);
+      }
+      setVerificationMessage("Un nouveau lien de vérification a été envoyé à votre adresse email.");
+    } catch (resendError) {
+      console.error("[Dashboard] Could not resend the verification email:", resendError);
+      setVerificationMessage(
+        resendError instanceof Error ? resendError.message : "Impossible d’envoyer le lien de vérification.",
+      );
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   useEffect(() => {
     const token    = localStorage.getItem("token");
@@ -170,7 +280,17 @@ export default function DashboardPage() {
       fetchFormations();
     } else if (activeTab === "inscriptions" && user) {
       fetchUserInscriptions();
+    } else if (activeTab === "market-orders" && user) {
+      void fetchMarketQuotations();
     }
+  }, [activeTab, user]);
+
+  useEffect(() => {
+    if (activeTab !== "market-orders" || !user) return;
+    const interval = window.setInterval(() => {
+      void fetchMarketQuotations();
+    }, 60_000);
+    return () => window.clearInterval(interval);
   }, [activeTab, user]);
 
   const fetchAdminInscriptions = async () => {
@@ -535,7 +655,7 @@ export default function DashboardPage() {
             --line: rgba(30,64,175,0.10);
             --sidebar-w: 240px;
           }
-          body { font-family:'Outfit',sans-serif; font-weight:300; color:var(--ink); background:var(--mist); -webkit-font-smoothing:antialiased; }
+          body { padding-top:0 !important; font-family:'Outfit',sans-serif; font-weight:300; color:var(--ink); background:var(--mist); -webkit-font-smoothing:antialiased; }
 
           /* ── LOADING ── */
           .dash-loading { display:flex; align-items:center; justify-content:center; min-height:100svh; background:var(--mist); }
@@ -625,11 +745,19 @@ export default function DashboardPage() {
 
           /* ── MAIN ── */
           .dash-main { flex:1; min-width:0; display:flex; flex-direction:column; }
-          @media(min-width:900px) { .dash-main { margin-left:var(--sidebar-w); } }
+          @media(min-width:900px) { .dash-main { margin-left:0; } }
 
           .dash-content { padding:0 1rem 3rem; max-width:900px; }
           @media(min-width:600px) { .dash-content { padding:2rem 2rem 3rem; } }
           @media(min-width:900px) { .dash-content { padding:2.5rem 3rem 4rem; } }
+          .dashboard-home-link {
+            display:flex; width:fit-content; align-items:center; gap:0.5rem;
+            margin:0 0 1.5rem auto; padding:0.65rem 1rem;
+            border:1px solid var(--line); background:#fff; color:var(--blue);
+            font-family:'Outfit',sans-serif; font-size:12px; text-decoration:none;
+            transition:background 0.15s, color 0.15s, border-color 0.15s;
+          }
+          .dashboard-home-link:hover { background:var(--blue); border-color:var(--blue); color:#fff; }
 
           /* ── PAGE HEADER ── */
           .page-eyebrow { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--orange); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; }
@@ -769,6 +897,74 @@ export default function DashboardPage() {
           .sheet-sub { font-size:14px; }
           .sheet-btn { font-size:15px; }
           .sheet-cancel { font-size:12px; }
+
+          /* ── DASHBOARD VISUAL REFRESH ── */
+          body { padding-top:0 !important; font-family:'Outfit',sans-serif; }
+          .dash-layout { background:linear-gradient(135deg,#f8f9fc 0%,#f3f5f9 55%,#f7f5f1 100%); }
+          .dash-sidebar {
+            background:
+              radial-gradient(ellipse at 10% 0%,rgba(44,91,184,0.34),transparent 42%),
+              linear-gradient(180deg,#101f3e 0%,#0b1730 100%);
+            box-shadow:8px 0 30px rgba(11,24,41,0.12);
+          }
+          .sidebar-head { padding-top:2.25rem; }
+          .sidebar-logo { letter-spacing:0.12em; }
+          .sidebar-user { margin:0.75rem 0.5rem 0; padding:1rem; border:1px solid rgba(255,255,255,0.09); border-radius:14px; background:rgba(255,255,255,0.045); }
+          .sidebar-avatar { width:42px; height:42px; background:linear-gradient(145deg,#f07a3e,#d94e08); box-shadow:0 5px 14px rgba(229,90,0,0.24); }
+          .sidebar-nav { padding:1.25rem 0.8rem; gap:0.35rem; }
+          .sidebar-tab { border-radius:10px; padding:0.82rem 0.95rem; letter-spacing:0.035em; }
+          .sidebar-tab:hover { background:rgba(255,255,255,0.09); }
+          .sidebar-tab.active { background:linear-gradient(100deg,rgba(255,255,255,0.16),rgba(255,255,255,0.075)); box-shadow:inset 3px 0 #f0783e; }
+          .sidebar-tab-icon { width:1.25rem; text-align:center; opacity:0.85; }
+          .sidebar-foot { padding:1rem; }
+          .sidebar-logout { justify-content:center; border-radius:10px; }
+          .dash-topbar { display:flex; height:64px; background:rgba(255,255,255,0.9); border-bottom:1px solid rgba(16,38,75,0.08); }
+          .dash-content { width:100%; max-width:1180px; margin:0 auto; padding:1rem 1rem 3.5rem; }
+          @media(min-width:600px) { .dash-content { padding:1.4rem 2rem 3.5rem; } }
+          @media(min-width:900px) { .dash-content { padding:1.5rem 3rem 4rem; } }
+          .topbar-back-link {
+            display:inline-flex; align-items:center; justify-content:center; gap:0.45rem;
+            min-height:40px; margin-left:auto; padding:0.55rem 0.9rem;
+            border:1px solid rgba(30,64,175,0.14); border-radius:999px;
+            background:rgba(255,255,255,0.84); color:var(--blue);
+            box-shadow:0 4px 14px rgba(15,36,112,0.045);
+            font-size:13px; font-weight:500; text-decoration:none;
+            transition:background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+          }
+          .topbar-back-link:hover { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 8px 20px rgba(30,64,175,0.18); transform:translateY(-1px); }
+          .topbar-back-link:focus-visible, .sidebar-tab:focus-visible, .sidebar-logout:focus-visible, .topbar-hamburger:focus-visible {
+            outline:3px solid rgba(240,120,62,0.55); outline-offset:3px;
+          }
+          @media(min-width:900px) { .topbar-hamburger { display:none; } }
+          .page-eyebrow { letter-spacing:0.2em; font-weight:500; }
+          .page-title { font-size:clamp(2rem,4vw,3rem); font-weight:400; letter-spacing:-0.025em; }
+          .page-sub { max-width:64ch; line-height:1.7; color:#64748b; }
+          .empty-box, .formation-card, .table-wrap, .article-form, .article-item {
+            border:1px solid rgba(30,64,175,0.09); border-radius:16px;
+            box-shadow:0 8px 24px rgba(18,38,75,0.045);
+          }
+          .empty-box { padding:clamp(2rem,5vw,3.5rem); }
+          .empty-icon { color:var(--blue); opacity:0.58; }
+          .formation-card { padding:1.6rem; transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s; }
+          .formation-card:hover { transform:translateY(-3px); box-shadow:0 14px 30px rgba(30,64,175,0.1); }
+          .article-item { padding:1.35rem 1.5rem; transition:transform 0.18s,box-shadow 0.18s,border-color 0.18s; }
+          .article-item:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(18,38,75,0.08); }
+          .table-wrap { overflow:hidden; }
+          .article-form { padding:clamp(1.25rem,3vw,2rem); }
+          .form-input, .form-textarea, .form-select { border-radius:9px; }
+          .formation-btn, .btn-new, .btn-submit, .btn-cancel, .btn-small, .btn-publish, .btn-delete, .sheet-btn, .sheet-cancel {
+            border-radius:8px; letter-spacing:0.06em;
+          }
+          .alert { border-radius:12px; }
+          @media(max-width:599px) {
+            .dash-content { padding-top:1rem; }
+            .article-item { flex-direction:column; }
+            .article-actions { width:100%; }
+          }
+          @media(max-width:380px) {
+            .dash-mobile-logo { display:none; }
+            .topbar-back-link { min-height:36px; padding:0.45rem 0.7rem; font-size:12px; }
+          }
         `}</style>
       </Head>
 
@@ -829,13 +1025,17 @@ export default function DashboardPage() {
         {/* ── MAIN ── */}
         <div className="dash-main">
 
-          {/* Topbar mobile */}
+          {/* Dashboard header */}
           <div className="dash-topbar">
             {/* Mobile circular logo */}
             <div className="dash-mobile-logo" aria-hidden="true">
               <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
             </div>
             <div className="topbar-logo">Fi<span>SAFI</span></div>
+            <button type="button" className="topbar-back-link" onClick={handleGoBack}>
+              <span aria-hidden="true">←</span>
+              <span>Retour</span>
+            </button>
             <button
               className={`topbar-hamburger${sidebarOpen ? " open" : ""}`}
               aria-label="Menu"
@@ -847,7 +1047,6 @@ export default function DashboardPage() {
 
           {/* Content */}
           <div className="dash-content">
-
             {/* ── Mes inscriptions ── */}
             {activeTab === "inscriptions" && (
               <>
@@ -902,6 +1101,95 @@ export default function DashboardPage() {
                               Annuler
                             </button>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === "market-orders" && (
+              <>
+                <div className="page-eyebrow">FiSAFi Market</div>
+                <h1 className="page-title">Mes devis Market</h1>
+                <p className="page-sub">
+                  Consultez le statut de vos demandes. Le devis devient une commande confirmée
+                  seulement après validation du vendeur dans Odoo.
+                </p>
+
+                {!marketEmailVerified && (
+                  <div className="alert alert-error" style={{ marginTop: "1rem" }}>
+                    <span className="alert-icon">✉</span>
+                    <span>
+                      Vérifiez votre adresse email pour recevoir les changements de statut par email.
+                      <button
+                        type="button"
+                        className="btn-small"
+                        disabled={resendingVerification}
+                        onClick={resendMarketEmailVerification}
+                        style={{ marginLeft: "0.75rem" }}
+                      >
+                        {resendingVerification ? "Envoi…" : "Renvoyer le lien"}
+                      </button>
+                    </span>
+                  </div>
+                )}
+                {verificationMessage && (
+                  <p className="page-sub" role="status" style={{ marginTop: "0.75rem" }}>
+                    {verificationMessage}
+                  </p>
+                )}
+
+                {marketQuotationError && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                    {marketQuotationError}
+                  </div>
+                )}
+                {loadingMarketQuotations ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">⟳</div>
+                    <div className="empty-text">Actualisation de vos devis…</div>
+                  </div>
+                ) : marketQuotations.length === 0 ? (
+                  <div className="empty-box">
+                    <div className="empty-icon">▱</div>
+                    <div className="empty-text">Vous n’avez pas encore de demande Market.</div>
+                    <Link href="/market#rayons" className="btn-small" style={{ marginTop: "1rem" }}>
+                      Découvrir FiSAFi Market
+                    </Link>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", margin: "1rem 0" }}>
+                      <button className="btn-small" type="button" onClick={() => void fetchMarketQuotations()}>
+                        Actualiser
+                      </button>
+                    </div>
+                    {marketQuotations.map((quotation) => (
+                      <div key={quotation.id} className="article-item">
+                        <div className="article-info">
+                          <div className="article-title">Devis {quotation.reference}</div>
+                          <div className="article-meta">
+                            <span className="article-badge">{quotation.statusLabel}</span>
+                            <span>
+                              {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
+                                quotation.amountTotal,
+                              )} FCFA
+                            </span>
+                            <span>{new Date(quotation.date).toLocaleDateString("fr-FR")}</span>
+                          </div>
+                          <div className="article-excerpt">
+                            {quotation.state === "draft"
+                              ? "En attente de vérification et de confirmation par le vendeur."
+                              : quotation.state === "sent"
+                                ? "Le vendeur vous a envoyé un devis à examiner."
+                                : quotation.state === "sale"
+                                  ? "Votre demande a été confirmée dans Odoo."
+                                  : quotation.state === "done"
+                                    ? "Cette commande est terminée."
+                                    : "Cette demande a été annulée."}
+                          </div>
                         </div>
                       </div>
                     ))}

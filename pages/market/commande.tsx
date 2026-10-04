@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -16,12 +16,35 @@ const MAX_QUANTITY = 99;
 const CUSTOMER_SAVE_DELAY = 400;
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+type OrderConfirmation = {
+  reference: string;
+  total: number;
+  whatsappUrl: string;
+};
+
+type CreateOrderResponse = {
+  orderReference: string;
+  total: number;
+};
+
 const formatAmount = (amount: number) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(amount);
 
 const roundQuantity = (value: number) => Math.round(value * 100) / 100;
 
 const toCents = (amount: number) => Math.round(amount * 100);
+
+function isCreateOrderResponse(value: unknown): value is CreateOrderResponse {
+  if (!value || typeof value !== "object") return false;
+  return (
+    "orderReference" in value &&
+    typeof value.orderReference === "string" &&
+    value.orderReference.length > 0 &&
+    "total" in value &&
+    typeof value.total === "number" &&
+    Number.isFinite(value.total)
+  );
+}
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -65,7 +88,12 @@ export default function MarketOrderPage() {
   const [note, setNote] = useState("");
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [detailsLoaded, setDetailsLoaded] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [accountChecked, setAccountChecked] = useState(false);
+  const [accountToken, setAccountToken] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
+  const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmation | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
 
@@ -73,6 +101,23 @@ export default function MarketOrderPage() {
   const panelRef = useRef<HTMLElement>(null);
 
   const hasItems = items.length > 0;
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("token") ?? "";
+    const rawUser = window.localStorage.getItem("user");
+    let email = "";
+    try {
+      const parsed: unknown = rawUser ? JSON.parse(rawUser) : null;
+      if (parsed && typeof parsed === "object" && "email" in parsed && typeof parsed.email === "string") {
+        email = parsed.email;
+      }
+    } catch (error) {
+      console.warn("[Market] Could not read the signed-in customer profile:", error);
+    }
+    setAccountToken(token);
+    setAccountEmail(email);
+    setAccountChecked(true);
+  }, []);
 
   /* Thème : préférence enregistrée, sinon thème du système */
   useIsomorphicLayoutEffect(() => {
@@ -181,34 +226,6 @@ export default function MarketOrderPage() {
   const showError = (field: Field) => (touched[field] ? errors[field] : undefined);
   const markTouched = (field: Field) => setTouched((current) => ({ ...current, [field]: true }));
 
-  const orderMessage = useMemo(
-    () =>
-      [
-        "Salam FiSAFi Market ! Je souhaite confirmer cette commande :",
-        ...items.map((item) => {
-          const isKg = item.priceUnit === "kg";
-          const line = (toCents(item.unitPrice) * item.quantity) / 100;
-          return `- ${item.name} x${formatAmount(item.quantity)}${isKg ? " kg" : ""} (${item.priceLabel} FCFA${isKg ? " / kg" : ""}) = ${formatAmount(line)} FCFA`;
-        }),
-        `Estimation : ${formatAmount(total)} FCFA, à confirmer.`,
-        `Nom : ${customerName.trim()}`,
-        `Téléphone : ${phone.trim()}`,
-        `Mode : ${fulfillment === "delivery" ? "Livraison" : "Retrait en magasin"}`,
-        ...(fulfillment === "delivery" ? [`Adresse : ${address.trim()}`] : []),
-        ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
-        "Merci de confirmer la disponibilité, le montant final et les modalités.",
-      ].join("\n"),
-    [items, total, customerName, phone, fulfillment, address, note],
-  );
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
-
-  /* Si le message change après l'envoi, la confirmation n'est plus à jour.
-     On dépend de `whatsappUrl` (chaîne, comparée par valeur) plutôt que de
-     `orderMessage` (identité potentiellement instable). */
-  useEffect(() => {
-    setSent(false);
-  }, [whatsappUrl]);
-
   const changeQuantity = (item: (typeof items)[number], delta: number) => {
     const next = roundQuantity(Math.min(MAX_QUANTITY, item.quantity + delta));
     setQuantity(item.id, next);
@@ -227,19 +244,88 @@ export default function MarketOrderPage() {
     );
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!hasItems) return;
+    if (!hasItems || submitting) return;
     setTouched({ name: true, phone: true, address: true });
     const firstInvalid = (["name", "phone", "address"] as Field[]).find((field) => errors[field]);
     if (firstInvalid) {
       (formRef.current?.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
       return;
     }
-    const popup = window.open(whatsappUrl, "_blank");
-    if (popup) popup.opener = null;
-    else window.location.href = whatsappUrl;
-    setSent(true);
+    const linkedItems = items.filter(
+      (item): item is typeof item & { odooProductId: number } =>
+        Number.isSafeInteger(item.odooProductId) && Boolean(item.odooProductId),
+    );
+    if (linkedItems.length !== items.length) {
+      setSubmitError(
+        "Un article de ce panier est ancien et n’est plus associé au catalogue Odoo. Retirez-le puis ajoutez-le à nouveau depuis le marché.",
+      );
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const response = await fetch("/api/market/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accountToken}`,
+        },
+        body: JSON.stringify({
+          customerName,
+          phone,
+          address,
+          fulfillment,
+          note,
+          items: linkedItems.map((item) => ({
+            productId: item.odooProductId,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible d’enregistrer la demande dans Odoo.";
+        throw new Error(message);
+      }
+      if (!isCreateOrderResponse(payload)) {
+        throw new Error("La réponse de confirmation est invalide. Contactez FiSAFi avant de recommencer.");
+      }
+
+      const orderMessage = [
+        "Salam FiSAFi Market ! Une nouvelle demande de commande attend votre validation dans Odoo.",
+        `Référence du devis : ${payload.orderReference}`,
+        `Nom du client : ${customerName.trim()}`,
+        `Téléphone du client : ${phone.trim()}`,
+        `Mode : ${fulfillment === "delivery" ? "Livraison" : "Retrait en magasin"}`,
+        ...(fulfillment === "delivery" ? [`Adresse : ${address.trim()}`] : []),
+        "",
+        "Produits :",
+        ...items.map((item) => {
+          const isKg = item.priceUnit === "kg";
+          return `- ${item.name} x${formatAmount(item.quantity)}${isKg ? " kg" : ""}`;
+        }),
+        `Total du devis Odoo : ${formatAmount(payload.total)} FCFA`,
+        ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
+        "Merci de vérifier le stock et de confirmer le devis dans Odoo.",
+      ].join("\n");
+      setOrderConfirmation({
+        reference: payload.orderReference,
+        total: payload.total,
+        whatsappUrl: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`,
+      });
+      clearCart();
+    } catch (error) {
+      console.error("[Market] Could not create the Odoo quotation:", error);
+      setSubmitError(error instanceof Error ? error.message : "Impossible de transmettre la demande à Odoo.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -248,7 +334,7 @@ export default function MarketOrderPage() {
         <title>Mon panier — FiSAFi Market</title>
         <meta
           name="description"
-          content="Vérifiez votre panier FiSAFi Market, renseignez vos coordonnées et envoyez votre commande sur WhatsApp."
+          content="Vérifiez le stock de votre panier FiSAFi Market et envoyez une demande de devis à valider par le vendeur dans Odoo."
         />
       </Head>
       <main
@@ -281,6 +367,35 @@ export default function MarketOrderPage() {
             <p className="market-checkout-loading" role="status">
               Chargement de votre panier…
             </p>
+          ) : !accountChecked ? (
+            <p className="market-checkout-loading" role="status">
+              Vérification de votre compte…
+            </p>
+          ) : !accountToken ? (
+            <div className="market-cart-empty">
+              <h1>Connectez-vous pour commander.</h1>
+              <p>Vos demandes et leur statut seront ensuite disponibles dans votre espace client.</p>
+              <Link href="/login?next=%2Fmarket%2Fcommande">Se connecter ou créer un compte</Link>
+            </div>
+          ) : orderConfirmation ? (
+            <div className="market-order-confirmation">
+              <span>Demande enregistrée</span>
+              <h1>Votre devis est dans Odoo.</h1>
+              <p>
+                Référence <strong>{orderConfirmation.reference}</strong> · Total du devis{" "}
+                <strong>{formatAmount(orderConfirmation.total)} FCFA</strong>.
+              </p>
+              <p>
+                Le vendeur doit vérifier le stock et confirmer le devis dans Odoo. Prévenez-le sur
+                WhatsApp pour qu’il puisse traiter votre demande.
+              </p>
+              <div>
+                <a href={orderConfirmation.whatsappUrl} target="_blank" rel="noreferrer">
+                  Prévenir le vendeur sur WhatsApp
+                </a>
+                <Link href="/market#rayons">Retour au marché</Link>
+              </div>
+            </div>
           ) : !hasItems ? (
             <div className="market-cart-empty">
               <h1>Votre panier est vide.</h1>
@@ -293,8 +408,8 @@ export default function MarketOrderPage() {
                 <header className="market-checkout-heading">
                   <h1>Votre panier</h1>
                   <p>
-                    Vérifiez vos produits, puis envoyez votre commande. Nous confirmons le montant
-                    final avec vous sur WhatsApp.
+                    Le stock sera vérifié dans Odoo. Votre demande deviendra un devis que le vendeur
+                    vérifiera et validera avant la commande définitive.
                   </p>
                 </header>
 
@@ -410,6 +525,11 @@ export default function MarketOrderPage() {
                 ref={panelRef}
               >
                 <h2 id="market-order-title">Votre commande</h2>
+                {accountEmail && (
+                  <p className="market-account-email">
+                    Connecté en tant que <strong>{accountEmail}</strong>
+                  </p>
+                )}
                 <form ref={formRef} onSubmit={handleSubmit} noValidate>
                   <fieldset className="market-fulfillment">
                     <legend className="market-sr">Mode de récupération</legend>
@@ -514,28 +634,18 @@ export default function MarketOrderPage() {
                     <strong>{formatAmount(total)} FCFA</strong>
                   </div>
 
-                  <button className="market-order-submit" type="submit">
-                    Envoyer ma commande sur WhatsApp
+                  <button className="market-order-submit" type="submit" disabled={submitting}>
+                    {submitting ? "Vérification du stock et création du devis…" : "Envoyer ma demande au vendeur"}
                   </button>
                   <p className="market-order-disclaimer">
-                    Aucun paiement en ligne. Vos coordonnées restent sur cet appareil pour vos
-                    prochaines commandes.
+                    Le stock est vérifié dans Odoo avant l’enregistrement d’un devis à valider par
+                    le vendeur. Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
                   </p>
 
-                  {sent && (
-                    <div className="market-order-sent">
-                      <p role="status">
-                        Votre commande est prête dans WhatsApp. Envoyez le message pour la valider.
-                      </p>
-                      <div>
-                        <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                          Rouvrir WhatsApp
-                        </a>
-                        <button type="button" onClick={clearCart}>
-                          Vider le panier
-                        </button>
-                      </div>
-                    </div>
+                  {submitError && (
+                    <p className="market-checkout-alert" role="alert">
+                      {submitError}
+                    </p>
                   )}
                 </form>
               </section>
