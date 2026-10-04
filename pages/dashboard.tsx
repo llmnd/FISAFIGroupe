@@ -390,7 +390,6 @@ export default function DashboardPage() {
 
       const res = await fetch("/api/my-inscriptions", {
         headers: { 
-          'x-user-email': user.email,
           'Authorization': `Bearer ${token || ""}`
         }
       });
@@ -859,6 +858,36 @@ export default function DashboardPage() {
             font-family:'Outfit',sans-serif; letter-spacing:0.1em; text-transform:uppercase; transition:background 0.2s;
           }
           .btn-small:hover { background:var(--line); }
+          .market-verification-notice {
+            display:flex; align-items:center; justify-content:space-between; gap:1.25rem;
+            margin:1.25rem 0; padding:1rem 1.15rem;
+            border:1px solid rgba(180,83,9,0.2); border-radius:14px;
+            background:linear-gradient(110deg,#fff8eb,#fffdf8); color:#713f12;
+            box-shadow:0 6px 18px rgba(120,72,12,0.055);
+          }
+          .market-verification-copy { display:flex; align-items:flex-start; gap:0.8rem; min-width:0; }
+          .market-verification-icon {
+            display:grid; place-items:center; width:2.35rem; height:2.35rem; flex:0 0 auto;
+            border-radius:11px; background:rgba(217,119,6,0.12); color:#a45108;
+          }
+          .market-verification-title { margin-bottom:0.18rem; font-size:13px; font-weight:600; color:#713f12; }
+          .market-verification-text { font-size:12px; line-height:1.55; color:#805b35; }
+          .market-action-button {
+            display:inline-flex; align-items:center; justify-content:center; gap:0.55rem;
+            min-height:44px; padding:0.7rem 1rem; border:1px solid transparent; border-radius:10px;
+            background:#1e40af; color:#fff; cursor:pointer; white-space:nowrap;
+            font-family:'Outfit',sans-serif; font-size:12px; font-weight:500; letter-spacing:0.015em;
+            box-shadow:0 5px 13px rgba(30,64,175,0.18);
+            transition:background 0.18s, transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+          }
+          .market-action-button:hover:not(:disabled) { background:#17358f; transform:translateY(-1px); box-shadow:0 8px 18px rgba(30,64,175,0.24); }
+          .market-action-button:focus-visible { outline:3px solid rgba(240,120,62,0.58); outline-offset:3px; }
+          .market-action-button:disabled { opacity:0.62; cursor:wait; }
+          .market-refresh-row { display:flex; justify-content:flex-end; margin:1.1rem 0; }
+          .market-refresh-button { min-width:154px; }
+          .market-action-icon { width:16px; height:16px; flex:none; }
+          .market-action-icon.spinning { animation:market-refresh-spin 0.85s linear infinite; }
+          @keyframes market-refresh-spin { to { transform:rotate(360deg); } }
           .btn-publish {
             padding:0.5rem 1rem; font-size:10px; border:none; background:var(--orange); color:#fff;
             cursor:pointer; font-family:'Outfit',sans-serif; letter-spacing:0.1em; text-transform:uppercase; transition:background 0.2s;
@@ -960,6 +989,10 @@ export default function DashboardPage() {
             .dash-content { padding-top:1rem; }
             .article-item { flex-direction:column; }
             .article-actions { width:100%; }
+            .market-verification-notice { align-items:stretch; flex-direction:column; gap:1rem; padding:1rem; }
+            .market-verification-notice .market-action-button { width:100%; }
+            .market-refresh-row { justify-content:stretch; }
+            .market-refresh-button { width:100%; }
           }
           @media(max-width:380px) {
             .dash-mobile-logo { display:none; }
@@ -1119,24 +1152,36 @@ export default function DashboardPage() {
                 </p>
 
                 {!marketEmailVerified && (
-                  <div className="alert alert-error" style={{ marginTop: "1rem" }}>
-                    <span className="alert-icon">✉</span>
-                    <span>
-                      Vérifiez votre adresse email pour recevoir les changements de statut par email.
-                      <button
-                        type="button"
-                        className="btn-small"
-                        disabled={resendingVerification}
-                        onClick={resendMarketEmailVerification}
-                        style={{ marginLeft: "0.75rem" }}
-                      >
-                        {resendingVerification ? "Envoi…" : "Renvoyer le lien"}
-                      </button>
-                    </span>
+                  <div className="market-verification-notice">
+                    <div className="market-verification-copy">
+                      <span className="market-verification-icon" aria-hidden="true">
+                        <svg className="market-action-icon" viewBox="0 0 24 24" fill="none">
+                          <path d="M3.75 6.75h16.5v10.5H3.75z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                          <path d="m4.5 7.5 7.5 6 7.5-6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <div>
+                        <div className="market-verification-title">Confirmez votre adresse email</div>
+                        <div className="market-verification-text">
+                          Vérifiez votre adresse pour recevoir les changements de statut de vos devis.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="market-action-button"
+                      disabled={resendingVerification}
+                      onClick={resendMarketEmailVerification}
+                    >
+                      <svg className="market-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M4 12a8 8 0 0 1 13.66-5.66L20 8.7M20 4.5v4.2h-4.2M20 12a8 8 0 0 1-13.66 5.66L4 15.3m0 4.2v-4.2h4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {resendingVerification ? "Envoi en cours…" : "Renvoyer le lien"}
+                    </button>
                   </div>
                 )}
                 {verificationMessage && (
-                  <p className="page-sub" role="status" style={{ marginTop: "0.75rem" }}>
+                  <p className="page-sub" role="status" aria-live="polite" style={{ marginTop: "0.75rem" }}>
                     {verificationMessage}
                   </p>
                 )}
@@ -1146,6 +1191,26 @@ export default function DashboardPage() {
                     {marketQuotationError}
                   </div>
                 )}
+                <div className="market-refresh-row">
+                  <button
+                    className="market-action-button market-refresh-button"
+                    type="button"
+                    onClick={() => void fetchMarketQuotations()}
+                    disabled={loadingMarketQuotations}
+                    aria-label={loadingMarketQuotations ? "Actualisation des devis en cours" : "Actualiser les devis"}
+                  >
+                    <svg
+                      className={`market-action-icon${loadingMarketQuotations ? " spinning" : ""}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5.6 9a7 7 0 0 1 11.7-2L20 9M4 15l2.7 2a7 7 0 0 0 11.7-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {loadingMarketQuotations ? "Actualisation…" : "Actualiser les devis"}
+                  </button>
+                </div>
                 {loadingMarketQuotations ? (
                   <div className="empty-box">
                     <div className="empty-icon">⟳</div>
@@ -1161,11 +1226,6 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div>
-                    <div style={{ display: "flex", justifyContent: "flex-end", margin: "1rem 0" }}>
-                      <button className="btn-small" type="button" onClick={() => void fetchMarketQuotations()}>
-                        Actualiser
-                      </button>
-                    </div>
                     {marketQuotations.map((quotation) => (
                       <div key={quotation.id} className="article-item">
                         <div className="article-info">

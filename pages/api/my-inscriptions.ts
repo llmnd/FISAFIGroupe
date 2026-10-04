@@ -1,18 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-// Reuse PrismaClient across lambda invocations to avoid exhausting DB connections
-declare global {
-  // eslint-disable-next-line no-var
-  var __prisma: PrismaClient | undefined;
-}
-
-const prisma: PrismaClient = global.__prisma ?? new PrismaClient();
-if (!global.__prisma) global.__prisma = prisma;
+import { prisma } from '@/backend/lib/db';
+import { authenticateMarketUser, MarketAuthError, type MarketUser } from '@/lib/marketAuth';
 
 type ResponseData = {
   success?: boolean;
-  data?: any;
+  data?: unknown[];
   message?: string;
   error?: string;
 };
@@ -25,17 +17,20 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  let account: MarketUser;
   try {
-    const userEmail = req.headers['x-user-email'] as string;
-    
-    if (!userEmail) {
-      return res.status(400).json({ error: 'User email not provided' });
+    account = await authenticateMarketUser(req);
+  } catch (error) {
+    if (error instanceof MarketAuthError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
     }
+    console.error('[Inscriptions/Auth] Could not verify account session:', error);
+    return res.status(502).json({ success: false, error: 'Impossible de vérifier votre compte.' });
+  }
 
+  try {
     const inscriptions = await prisma.inscriptionFormation.findMany({
-      where: {
-        email: userEmail,
-      },
+      where: { email: account.email },
       orderBy: { createdAt: 'desc' },
       include: {
         formation: { select: { name: true, slug: true } },
@@ -49,10 +44,9 @@ export default async function handler(
     });
   } catch (error) {
     console.error('Error fetching user inscriptions:', error);
-    return res.status(500).json({ 
+    return res.status(503).json({
       success: false,
-      error: 'Error fetching your inscriptions',
-      data: []
+      error: 'Impossible de charger vos inscriptions pour le moment.',
     });
   }
 }
