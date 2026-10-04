@@ -7,7 +7,7 @@
     "dev:backend": "npm run build:backend && node dist/backend/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "prisma generate && next build --webpack",
-    "build:backend": "tsc --project tsconfig.backend.json",
+    "build:backend": "prisma generate && tsc --project tsconfig.backend.json",
     "start": "next start",
     "start:backend": "node dist/backend/server.js",
     "lint": "next lint",
