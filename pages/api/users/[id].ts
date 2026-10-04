@@ -1,27 +1,19 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/backend/lib/db";
 import { hashPassword } from "@/backend/utils/auth";
-
-// Middleware pour vérifier le token admin (simplifié)
-async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {
-  const authHeader = req.headers.authorization;
-  return typeof authHeader === 'string' && authHeader.startsWith("Bearer ");
-}
+import { EmployeeAuthError, EMPLOYEE_ROLES, authenticateEmployee, requireAdmin } from "@/lib/employeeAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
   const { id } = req.query;
 
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Invalid user ID" });
   }
 
-  // Vérifier l'authentification admin
-  const isAdmin = await verifyAdminToken(req);
-  if (!isAdmin) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
   try {
+    const account = await authenticateEmployee(req);
+    requireAdmin(account);
     if (req.method === "GET") {
       // Récupérer un utilisateur spécifique
       const user = await prisma.user.findUnique({
@@ -32,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -47,7 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "PUT") {
       // Mettre à jour un utilisateur
-      const { firstName, lastName, password, role, active } = req.body;
+      const { firstName, lastName, password, role, active, employeeRole } = req.body;
+      if (
+        employeeRole !== undefined &&
+        employeeRole !== null &&
+        !EMPLOYEE_ROLES.includes(employeeRole)
+      ) {
+        return res.status(400).json({ error: "Invalid employee role" });
+      }
 
       const updateData: Partial<{
         firstName?: string;
@@ -55,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         password?: string;
         role?: string;
         active?: boolean;
+        employeeRole?: string | null;
       }> = {};
       
       if (firstName) updateData.firstName = firstName;
@@ -62,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (password) updateData.password = await hashPassword(password);
       if (role) updateData.role = role;
       if (active !== undefined) updateData.active = active;
+      if (employeeRole !== undefined) updateData.employeeRole = employeeRole;
 
       const user = await prisma.user.update({
         where: { id },
@@ -72,6 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -92,6 +95,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error: any) {
+    if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Error in user API:", error);
     if (error.code === "P2025") {
       return res.status(404).json({ error: "User not found" });

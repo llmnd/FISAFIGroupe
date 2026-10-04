@@ -145,6 +145,7 @@ model User {
   lastName  String?
   role      String   @default("user") // "user", "admin", "moderator"
   active    Boolean  @default(true)
+  employeeRole String?
   sessionVersion Int @default(0)
   emailVerifiedAt DateTime?
   emailVerificationTokenHash String? @unique

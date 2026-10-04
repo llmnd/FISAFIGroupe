@@ -124,6 +124,31 @@ SMTP_USER="your-email@gmail.com"
 SMTP_PASS="your-app-password"
 ```
 
+## Espace employé — point de vente
+
+Les employés autorisés peuvent ouvrir une session, préparer une vente, encaisser et clôturer une caisse depuis `/espace-employe/points-de-vente`. Les écritures passent par les API FiSAFi puis par le fournisseur ERP côté serveur ; le navigateur n'appelle jamais Odoo directement. `ODOO_URL`, `ODOO_API_KEY` et `DATABASE_URL` doivent être configurés côté serveur. La base PostgreSQL FiSAFi fournit aussi un verrou transactionnel pour sérialiser les opérations d'une caisse.
+
+Les ventes sont recalculées côté serveur à partir des articles, du stock de l'emplacement source POS et des données Odoo. Les clés d'opération rendent les reprises après une interruption idempotentes. Les configurations qui ne peuvent pas être calculées sans approximation sont refusées explicitement : règles de liste de prix, position fiscale par défaut, arrondi de caisse, devise avec décimales, taxes autres qu'une taxe simple en pourcentage, articles suivis par lot/série, et moyens de paiement terminaux intégrés. Valider les droits JSON-2 et les paramètres POS sur une base Odoo de test avant toute utilisation en production ; aucune vente de test ne doit être faite sur la base réelle.
+
+## Espace administrateur — ventes Odoo
+
+Les administrateurs FiSAFi disposent du module `/espace-employe/ventes` depuis le dashboard et l'espace employé. Il permet de consulter les devis et commandes, de créer un devis brouillon avec un client et des produits Odoo, de modifier les brouillons et de confirmer un devis. L'API Odoo doit autoriser le compte associé à `ODOO_API_KEY` à lire `sale.order`, `sale.order.line`, `res.partner`, `product.template` et `product.product`, à créer/modifier `sale.order` et à appeler `sale.order.action_confirm`.
+
+La confirmation d'un devis est une action commerciale Odoo et peut déclencher les flux logistiques ; elle ne crée pas de facture ni de paiement. Les devis envoyés et commandes confirmées ne sont pas modifiables depuis FiSAFi. Ce premier module ne donne pas accès aux autres applications Odoo (CRM, achats, comptabilité, inventaire général ou ressources humaines), qui devront être intégrées séparément avec leurs propres permissions. Tester les droits, les règles multi-sociétés et les calculs sur une base Odoo de test avant activation en production.
+
+## Tester l'authentification en local
+
+La base locale `fisafi_local` doit être synchronisée avec les migrations avant le démarrage du backend :
+
+```powershell
+npx prisma migrate deploy
+npx prisma migrate status
+```
+
+`migrate deploy` applique uniquement les migrations en attente ; ne lancez pas `prisma migrate reset` pour corriger une colonne manquante. Pour créer un compte de test, définissez `LOCAL_ADMIN_EMAIL` et `LOCAL_ADMIN_PASSWORD` dans le terminal, puis exécutez `npm run create:admin`. Le script refuse les bases distantes et les bases locales dont le nom n'est pas `fisafi_local`, exige un mot de passe d'au moins 14 caractères, n'affiche pas le mot de passe, et ne modifie pas un compte existant.
+
+Sous Windows, arrêtez temporairement les serveurs Node du projet avant `npm run build:backend` ou `npm run prisma:generate` si Prisma signale `EPERM` en remplaçant `query_engine-windows.dll.node`. Un backend déjà lancé peut continuer à servir les requêtes après une migration additive, mais arrêtez-le puis reconstruisez-le avant de tester une nouvelle compilation.
+
 ## 🤝 Contribution
 
 1. Créer une branche: `git checkout -b feature/ma-feature`

@@ -2,11 +2,34 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/db';
 
+async function requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    reply.code(401).send({ error: 'Authentication required' });
+    return false;
+  }
+
+  const userId = (request.user as { id?: string } | undefined)?.id;
+  const actor = userId
+    ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true, active: true } })
+    : null;
+  if (!actor?.active) {
+    reply.code(401).send({ error: 'Authentication required' });
+    return false;
+  }
+  if (actor.role !== 'admin') {
+    reply.code(403).send({ error: 'Administrator access required' });
+    return false;
+  }
+  return true;
+}
+
 export async function usersRoutes(app: FastifyInstance) {
   // Get all users (admin only)
   app.get('/users', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await request.jwtVerify();
+      if (!await requireAdmin(request, reply)) return;
       
       const users = await prisma.user.findMany({
         select: {
@@ -15,6 +38,7 @@ export async function usersRoutes(app: FastifyInstance) {
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
         },
@@ -29,7 +53,7 @@ export async function usersRoutes(app: FastifyInstance) {
   // Get user by ID
   app.get('/users/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await request.jwtVerify();
+      if (!await requireAdmin(request, reply)) return;
 
       const { id } = request.params as { id: string };
 
@@ -41,6 +65,7 @@ export async function usersRoutes(app: FastifyInstance) {
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
         },
@@ -59,10 +84,23 @@ export async function usersRoutes(app: FastifyInstance) {
   // Update user
   app.put('/users/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await request.jwtVerify();
+      if (!await requireAdmin(request, reply)) return;
 
       const { id } = request.params as { id: string };
-      const { email, firstName, lastName } = request.body as any;
+      const { email, firstName, lastName, employeeRole } = request.body as {
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        employeeRole?: string | null;
+      };
+      const allowedEmployeeRoles = ['manager', 'seller', 'cashier', 'stock', 'accountant'];
+      if (
+        employeeRole !== undefined &&
+        employeeRole !== null &&
+        !allowedEmployeeRoles.includes(employeeRole)
+      ) {
+        return reply.code(400).send({ error: 'Invalid employee role' });
+      }
 
       const user = await prisma.user.update({
         where: { id },
@@ -70,6 +108,7 @@ export async function usersRoutes(app: FastifyInstance) {
           email,
           firstName,
           lastName,
+          ...(employeeRole !== undefined ? { employeeRole } : {}),
         },
         select: {
           id: true,
@@ -77,6 +116,7 @@ export async function usersRoutes(app: FastifyInstance) {
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
         },
@@ -91,7 +131,7 @@ export async function usersRoutes(app: FastifyInstance) {
   // Delete user
   app.delete('/users/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await request.jwtVerify();
+      if (!await requireAdmin(request, reply)) return;
 
       const { id } = request.params as { id: string };
 
@@ -108,7 +148,7 @@ export async function usersRoutes(app: FastifyInstance) {
   // Toggle user active status
   app.patch('/users/:id/toggle-active', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await request.jwtVerify();
+      if (!await requireAdmin(request, reply)) return;
 
       const { id } = request.params as { id: string };
 
@@ -130,6 +170,7 @@ export async function usersRoutes(app: FastifyInstance) {
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
         },

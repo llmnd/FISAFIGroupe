@@ -187,10 +187,14 @@ const LOGIN_CSS = `
 
 export default function LoginPage() {
   const router = useRouter();
-  const getPostLoginPath = (role?: string) =>
+  const getPostLoginPath = (role?: string, employeeRole?: string | null) =>
     router.query.next === "/market/commande"
       ? "/market/commande"
-      : role === "admin" ? "/admin-dashboard" : "/";
+      : role === "admin"
+        ? "/admin-dashboard"
+        : employeeRole
+          ? "/espace-employe"
+          : "/";
   const [isLogin, setIsLogin] = useState(true);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", firstName: "", lastName: "" });
@@ -242,7 +246,12 @@ export default function LoginPage() {
           throw new Error("Session check returned invalid account data.");
         }
         localStorage.setItem("user", JSON.stringify(payload.data));
-        await router.replace(getPostLoginPath(payload.data.role));
+        await router.replace(getPostLoginPath(
+          payload.data.role,
+          "employeeRole" in payload.data && typeof payload.data.employeeRole === "string"
+            ? payload.data.employeeRole
+            : null,
+        ));
       } catch (sessionError) {
         console.error("[Auth] Could not validate existing login:", sessionError);
         setError("Impossible de vérifier votre session. Réessayez ou reconnectez-vous.");
@@ -320,7 +329,7 @@ export default function LoginPage() {
         const userData = data.data.user || {};
         localStorage.setItem("user", JSON.stringify(userData));
         setSuccess("Connexion réussie !");
-        setTimeout(() => router.push(getPostLoginPath(userData.role)), 1200);
+        setTimeout(() => router.push(getPostLoginPath(userData.role, userData.employeeRole)), 1200);
       }
     } catch { setError("Erreur de connexion au serveur"); }
     finally  { setLoading(false); }

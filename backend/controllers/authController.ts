@@ -72,6 +72,7 @@ export async function register(
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
         role: (user as any).role || 'user',
+        employeeRole: user.employeeRole,
       },
     };
 
@@ -220,6 +221,7 @@ export async function login(
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
         role: (user as any).role || 'user',
+        employeeRole: user.employeeRole,
       },
     };
 
@@ -419,6 +421,7 @@ export async function getMe(
         firstName: true,
         lastName: true,
         role: true,
+        employeeRole: true,
         active: true,
         createdAt: true,
         emailVerifiedAt: true,

@@ -161,6 +161,7 @@ export interface AuthResponse {
     firstName?: string;
     lastName?: string;
     role?: string;
+    employeeRole?: string | null;
   };
 }
 

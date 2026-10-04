@@ -6,6 +6,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import '../styles/globals.css';
 import '../styles/competences.css';
 import '../styles/header.css';
+import '../styles/employee-portal.css';
 import '../styles/floating-logo.css';
 import '../styles/carousel.css';
 import '../styles/footer-enhanced.css';
@@ -15,6 +16,7 @@ import '../styles/business.css';
 import '../styles/market-store.css';
 import '../styles/market-store-scene.css';
 import '../styles/market-checkout.css';
+import '../styles/admin-dashboard.css';
 
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;
@@ -50,7 +52,10 @@ export default function App({ Component, pageProps }: AppProps) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.dispatchEvent(new Event('fisafi:session-expired'));
-        if (['/dashboard', '/admin-dashboard', '/market/commande'].includes(router.pathname)) {
+        if (
+          ['/dashboard', '/admin-dashboard', '/market/commande'].includes(router.pathname) ||
+          router.pathname.startsWith('/espace-employe')
+        ) {
           void router.replace('/login?session=expired');
         }
       } catch (error) {

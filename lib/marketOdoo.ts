@@ -2,6 +2,8 @@ type OdooProductVariant = {
   id: number;
   product_tmpl_id: [number, string];
   free_qty: number;
+  lst_price: number;
+  tracking: string;
 };
 
 export type OdooTemplateStock = {
@@ -113,7 +115,10 @@ function isProductVariant(value: unknown): value is OdooProductVariant {
     Number.isInteger(variant.product_tmpl_id[0]) &&
     typeof variant.product_tmpl_id[1] === "string" &&
     typeof variant.free_qty === "number" &&
-    Number.isFinite(variant.free_qty)
+    Number.isFinite(variant.free_qty) &&
+    typeof variant.lst_price === "number" &&
+    Number.isFinite(variant.lst_price) &&
+    typeof variant.tracking === "string"
   );
 }
 
@@ -124,7 +129,7 @@ export async function getTemplateStock(
 
   const payload: unknown = await callOdoo("product.product", "search_read", {
     domain: [["product_tmpl_id", "in", templateIds], ["active", "=", true]],
-    fields: ["id", "product_tmpl_id", "free_qty"],
+    fields: ["id", "product_tmpl_id", "free_qty", "lst_price", "tracking"],
     limit: ODOO_VARIANT_LIMIT,
     order: "id asc",
   });

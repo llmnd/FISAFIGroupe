@@ -1,26 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/backend/lib/db";
 import { hashPassword } from "@/backend/utils/auth";
-
-// Middleware pour vérifier le token admin
-async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-  
-  // Token exists, simplified verification
-  return true;
-}
+import { EmployeeAuthError, EMPLOYEE_ROLES, authenticateEmployee, requireAdmin } from "@/lib/employeeAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Vérifier l'authentification admin
-  const isAdmin = await verifyAdminToken(req);
-  if (!isAdmin) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
+  res.setHeader("Cache-Control", "no-store");
   try {
+    const account = await authenticateEmployee(req);
+    requireAdmin(account);
     if (req.method === "GET") {
       // Lister tous les utilisateurs
       const users = await prisma.user.findMany({
@@ -30,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -42,10 +30,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "POST") {
       // Créer un nouvel utilisateur
-      const { email, firstName, lastName, password } = req.body;
+      const { email, firstName, lastName, password, employeeRole } = req.body;
 
       if (!email || !firstName || !lastName || !password) {
         return res.status(400).json({ error: "Missing required fields" });
+      }
+      if (employeeRole !== undefined && employeeRole !== null && !EMPLOYEE_ROLES.includes(employeeRole)) {
+        return res.status(400).json({ error: "Invalid employee role" });
       }
 
       // Vérifier si l'email existe déjà
@@ -68,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastName,
           password: hashedPassword,
           role: "user",
+          employeeRole: employeeRole || null,
           active: true,
         },
         select: {
@@ -76,6 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -87,6 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
+    if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Error in users API:", error);
     return res.status(500).json({ error: "Internal server error" });
   }

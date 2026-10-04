@@ -1,26 +1,18 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/backend/lib/db";
-
-// Middleware pour vérifier le token admin (simplifié)
-async function verifyAdminToken(req: NextApiRequest): Promise<boolean> {
-  const authHeader = req.headers.authorization;
-  return typeof authHeader === 'string' && authHeader.startsWith("Bearer ");
-}
+import { EmployeeAuthError, authenticateEmployee, requireAdmin } from "@/lib/employeeAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
   const { id } = req.query;
 
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Invalid user ID" });
   }
 
-  // Vérifier l'authentification admin
-  const isAdmin = await verifyAdminToken(req);
-  if (!isAdmin) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
   try {
+    const account = await authenticateEmployee(req);
+    requireAdmin(account);
     if (req.method === "PATCH") {
       // Récupérer l'utilisateur actuel
       const currentUser = await prisma.user.findUnique({
@@ -42,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           firstName: true,
           lastName: true,
           role: true,
+          employeeRole: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -53,6 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
+    if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Error toggling user active status:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
