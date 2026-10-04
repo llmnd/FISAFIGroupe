@@ -70,6 +70,9 @@ const IconInstagram = () => (
 const MARKET_HEADER_HIDE_THRESHOLD = 18;
 const MARKET_HEADER_REVEAL_THRESHOLD = 10;
 const MARKET_HEADER_HIDE_AFTER = 96;
+const HOME_HEADER_HIDE_THRESHOLD = 22;
+const HOME_HEADER_REVEAL_THRESHOLD = 12;
+const HOME_HEADER_HIDE_AFTER = 96;
 
 type NavItem = {
   label: string;
@@ -156,7 +159,7 @@ export default function Header({
   const rafIdRef         = useRef<number | null>(null);
   const lastScrolledRef  = useRef(false);
   const lastScrollTopRef = useRef(0);
-  const marketScrollIntentRef = useRef(0);
+  const scrollIntentRef = useRef(0);
   const navMenuCloseRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearNavMenuClose = () => {
@@ -209,6 +212,8 @@ export default function Header({
    * ─────────────────────────────────────────────────────────*/
   useEffect(() => {
     lastScrollTopRef.current = window.scrollY;
+    scrollIntentRef.current = 0;
+    headerRef.current?.classList.remove("is-hidden");
 
     const onScroll = () => {
       if (rafIdRef.current !== null) return;
@@ -223,28 +228,39 @@ export default function Header({
 
         if (headerRef.current) {
           const isMarketHeader = headerRef.current.classList.contains("has-market-actions");
+          const isHomeHeader = pathname === "/";
 
-          if (isMarketHeader) {
+          if (isMarketHeader || isHomeHeader) {
             if (scrollDelta !== 0) {
-              const currentIntent = marketScrollIntentRef.current;
-              marketScrollIntentRef.current =
+              const currentIntent = scrollIntentRef.current;
+              scrollIntentRef.current =
                 currentIntent === 0 || Math.sign(currentIntent) === Math.sign(scrollDelta)
                   ? currentIntent + scrollDelta
                   : scrollDelta;
             }
 
+            const hideThreshold = isMarketHeader
+              ? MARKET_HEADER_HIDE_THRESHOLD
+              : HOME_HEADER_HIDE_THRESHOLD;
+            const revealThreshold = isMarketHeader
+              ? MARKET_HEADER_REVEAL_THRESHOLD
+              : HOME_HEADER_REVEAL_THRESHOLD;
+            const hideAfter = isMarketHeader
+              ? MARKET_HEADER_HIDE_AFTER
+              : HOME_HEADER_HIDE_AFTER;
+
             if (
               scrollTop <= 10 ||
-              marketScrollIntentRef.current <= -MARKET_HEADER_REVEAL_THRESHOLD
+              scrollIntentRef.current <= -revealThreshold
             ) {
               headerRef.current.classList.remove("is-hidden");
-              marketScrollIntentRef.current = 0;
+              scrollIntentRef.current = 0;
             } else if (
-              scrollTop > MARKET_HEADER_HIDE_AFTER &&
-              marketScrollIntentRef.current >= MARKET_HEADER_HIDE_THRESHOLD
+              scrollTop > hideAfter &&
+              scrollIntentRef.current >= hideThreshold
             ) {
               headerRef.current.classList.add("is-hidden");
-              marketScrollIntentRef.current = 0;
+              scrollIntentRef.current = 0;
             }
 
             lastScrollTopRef.current = scrollTop;
@@ -285,7 +301,7 @@ export default function Header({
         rafIdRef.current = null;
       }
     };
-  }, []);
+  }, [pathname]);
 
   /* ─── Click outside → ferme le popup socials ───────────── */
   useEffect(() => {
@@ -392,7 +408,7 @@ export default function Header({
       {/* ── Header ──────────────────────────────────────── */}
       <header
         ref={headerRef}
-        className={`header${scrolled ? " scrolled" : ""}${marketActions ? " has-market-actions" : ""}${marketCartAction ? " has-market-cart" : ""}`}
+        className={`header${scrolled ? " scrolled" : ""}${pathname === "/" ? " is-home" : ""}${marketActions ? " has-market-actions" : ""}${marketCartAction ? " has-market-cart" : ""}`}
       >
 
         {/* Logo */}

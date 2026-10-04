@@ -208,10 +208,6 @@
   box-shadow: var(--od-focus);
 }
 
-.dashboard-home-error {
-  margin-bottom: 1rem;
-}
-
 .dashboard-home-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -369,6 +365,169 @@
   color: var(--od-primary);
 }
 
+.dashboard-home-activity-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 30px 2px 14px;
+}
+
+.dashboard-home-activity-heading h2 {
+  margin: 4px 0 0;
+  color: var(--od-text-strong);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.dashboard-home-refresh,
+.dashboard-home-view-all {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-r);
+  background: var(--od-surface);
+  color: var(--od-primary);
+  cursor: pointer;
+  font: 600 12px/1.4 var(--od-font);
+  white-space: nowrap;
+}
+
+.dashboard-home-refresh:hover:not(:disabled),
+.dashboard-home-view-all:hover {
+  border-color: var(--od-primary-border);
+  background: var(--od-primary-light);
+}
+
+.dashboard-home-refresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.dashboard-home-activity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-home-activity-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-r-md);
+  background: var(--od-surface);
+  box-shadow: var(--od-sh-xs);
+}
+
+.dashboard-home-activity-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--od-border-light);
+}
+
+.dashboard-home-activity-title-row h3 {
+  margin: 0;
+  color: var(--od-text-strong);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-home-view-all {
+  min-height: 30px;
+  padding: 4px 7px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.dashboard-home-activity-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-home-activity-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--od-border-light);
+}
+
+.dashboard-home-activity-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.dashboard-home-activity-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--od-r);
+  background: var(--od-primary-light);
+  color: var(--od-primary);
+}
+
+.dashboard-home-activity-mark--teal {
+  background: var(--od-secondary-light);
+  color: var(--od-secondary-dark);
+}
+
+.dashboard-home-activity-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.dashboard-home-activity-copy strong {
+  overflow: hidden;
+  color: var(--od-text-strong);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-home-activity-copy > span {
+  overflow: hidden;
+  color: var(--od-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-home-activity-status {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 4px 7px;
+  border-radius: var(--od-r-pill);
+  background: var(--od-bg-alt);
+  color: var(--od-text);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.dashboard-home-activity-message {
+  margin: 0;
+  padding: 18px 2px 4px;
+  color: var(--od-text-muted);
+  font-size: 12px;
+}
+
+.dashboard-home-activity-message--error {
+  color: var(--od-danger);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dash-layout.user-dashboard *,
   .dash-layout.user-dashboard *::before,
@@ -383,6 +542,10 @@
   .dashboard-home-shortcuts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dashboard-home-activity {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -393,5 +556,9 @@
 
   .dashboard-home-summary-card {
     min-height: 140px;
+  }
+
+  .dashboard-home-activity-heading {
+    align-items: flex-start;
   }
 }

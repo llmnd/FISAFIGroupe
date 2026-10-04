@@ -794,6 +794,12 @@ export default function DashboardPage() {
   const confirmedOrderCount = marketQuotations.filter((quotation) =>
     quotation.state === "sale" || quotation.state === "done",
   ).length;
+  const recentMarketQuotations = [...marketQuotations]
+    .sort((left, right) => Date.parse(right.date) - Date.parse(left.date))
+    .slice(0, 3);
+  const recentInscriptions = [...userInscriptions]
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    .slice(0, 3);
 
   return (
     <>
@@ -1303,12 +1309,6 @@ export default function DashboardPage() {
                   Retrouvez ici vos devis, commandes et inscriptions FiSAFi.
                 </p>
 
-                {(marketQuotationError || inscriptionFetchError) && (
-                  <div className="alert alert-error dashboard-home-error" role="alert">
-                    {marketQuotationError || inscriptionFetchError}
-                  </div>
-                )}
-
                 <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
                   <button
                     className="dashboard-home-summary-card"
@@ -1376,6 +1376,88 @@ export default function DashboardPage() {
                     </span>
                     <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
                   </button>
+                </div>
+
+                <div className="dashboard-home-activity-heading">
+                  <div>
+                    <p className="dashboard-home-section-kicker">Votre activité</p>
+                    <h2>Les dernières mises à jour</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-home-refresh"
+                    onClick={() => {
+                      void fetchMarketQuotations();
+                      void fetchUserInscriptions();
+                    }}
+                    disabled={loadingMarketQuotations || loadingInscriptions}
+                  >
+                    Actualiser
+                  </button>
+                </div>
+
+                <div className="dashboard-home-activity">
+                  <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-quotes-title">
+                    <div className="dashboard-home-activity-title-row">
+                      <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
+                      <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("market-orders")}>
+                        Tout voir <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                    {loadingMarketQuotations ? (
+                      <p className="dashboard-home-activity-message" role="status">Chargement de vos devis…</p>
+                    ) : marketQuotationError ? (
+                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
+                        {marketQuotationError}
+                      </p>
+                    ) : recentMarketQuotations.length === 0 ? (
+                      <p className="dashboard-home-activity-message">Aucun devis ou commande pour le moment.</p>
+                    ) : (
+                      <ul className="dashboard-home-activity-list">
+                        {recentMarketQuotations.map((quotation) => (
+                          <li key={quotation.id} className="dashboard-home-activity-item">
+                            <span className="dashboard-home-activity-mark" aria-hidden="true">▱</span>
+                            <span className="dashboard-home-activity-copy">
+                              <strong>{quotation.reference}</strong>
+                              <span>{new Date(quotation.date).toLocaleDateString("fr-FR")}</span>
+                            </span>
+                            <span className="dashboard-home-activity-status">{quotation.statusLabel}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+
+                  <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-inscriptions-title">
+                    <div className="dashboard-home-activity-title-row">
+                      <h3 id="dashboard-home-inscriptions-title">Formations</h3>
+                      <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("inscriptions")}>
+                        Tout voir <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                    {loadingInscriptions ? (
+                      <p className="dashboard-home-activity-message" role="status">Chargement de vos inscriptions…</p>
+                    ) : inscriptionFetchError ? (
+                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
+                        {inscriptionFetchError}
+                      </p>
+                    ) : recentInscriptions.length === 0 ? (
+                      <p className="dashboard-home-activity-message">Aucune inscription récente.</p>
+                    ) : (
+                      <ul className="dashboard-home-activity-list">
+                        {recentInscriptions.map((inscription) => (
+                          <li key={inscription.id} className="dashboard-home-activity-item">
+                            <span className="dashboard-home-activity-mark dashboard-home-activity-mark--teal" aria-hidden="true">◉</span>
+                            <span className="dashboard-home-activity-copy">
+                              <strong>{inscription.formation?.name || "Formation"}</strong>
+                              <span>{inscription.session?.location || "Lieu à confirmer"}</span>
+                            </span>
+                            <span className="dashboard-home-activity-status">{inscription.status}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
                 </div>
               </section>
             )}
