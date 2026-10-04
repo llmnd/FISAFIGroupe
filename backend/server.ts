@@ -4,6 +4,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { config } from './config';
+import { prisma } from './lib/db';
 import { emailService } from './services/emailService';
 import { authRoutes } from './routes/auth';
 import { articleRoutes } from './routes/articles';
@@ -40,6 +41,25 @@ app.register(fastifyHelmet);
 
 app.register(fastifyJwt, {
   secret: config.jwt.secret,
+});
+
+app.addHook('preHandler', async (request) => {
+  const authorization = request.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) return;
+
+  await request.jwtVerify();
+  const tokenUser = request.user as { id?: string; sessionVersion?: number };
+  if (!tokenUser.id) {
+    throw Object.assign(new Error('Unauthorized'), { statusCode: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: tokenUser.id },
+    select: { active: true, sessionVersion: true },
+  });
+  if (!user?.active || tokenUser.sessionVersion !== user.sessionVersion) {
+    throw Object.assign(new Error('Session expired'), { statusCode: 401 });
+  }
 });
 
 // Health check

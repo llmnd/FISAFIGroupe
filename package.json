@@ -12,6 +12,7 @@
     "start:backend": "node dist/backend/server.js",
     "lint": "next lint",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
     "prisma:reset": "prisma migrate reset --force",
     "seed": "ts-node -P tsconfig.backend.json backend/seed.ts",

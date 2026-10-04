@@ -60,7 +60,7 @@ export async function register(
 
     // Generate token
     const token = request.server.jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, sessionVersion: user.sessionVersion },
       { expiresIn: '7d' }
     );
 
@@ -189,6 +189,13 @@ export async function login(
       });
     }
 
+    if (!user.active) {
+      return reply.status(401).send({
+        success: false,
+        error: 'Ce compte est désactivé. Contactez FiSAFi.',
+      });
+    }
+
     // Verify password
     const passwordMatch = await verifyPassword(password, user.password);
 
@@ -201,7 +208,7 @@ export async function login(
 
     // Generate token
     const token = request.server.jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, sessionVersion: user.sessionVersion },
       { expiresIn: '7d' }
     );
 
@@ -230,6 +237,166 @@ export async function login(
   }
 }
 
+export async function requestPasswordReset(
+    request: FastifyRequest<{ Body: { email?: string } }>,
+    reply: FastifyReply
+  ) {
+    const email = typeof request.body?.email === 'string'
+      ? request.body.email.trim().toLowerCase()
+      : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return reply.status(400).send({ success: false, error: 'Saisissez une adresse email valide.' });
+    }
+
+    const genericMessage = 'Si un compte correspond à cette adresse, un lien de réinitialisation va être envoyé.';
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true, email: true, firstName: true, lastName: true, active: true },
+      });
+      if (!user || !user.active) {
+        return reply.send({ success: true, message: genericMessage });
+      }
+
+      const resetToken = randomBytes(32).toString('hex');
+      const resetTokenHash = createHash('sha256').update(resetToken).digest('hex');
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetTokenHash: resetTokenHash,
+          passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const frontendUrl = (process.env.FRONTEND_URL || 'https://www.fisafigroupe.com').replace(/\/$/, '');
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+      const sent = await emailService.sendPasswordReset(user.email, fullName, resetUrl);
+      if (!sent) {
+        console.error(`[Auth] Password reset email could not be sent to ${user.email}.`);
+      }
+      return reply.send({ success: true, message: genericMessage });
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      return reply.status(500).send({
+        success: false,
+        error: 'Impossible de traiter votre demande pour le moment.',
+      });
+    }
+  }
+
+export async function resetPassword(
+    request: FastifyRequest<{ Body: { token?: string; password?: string } }>,
+    reply: FastifyReply
+  ) {
+    const { token, password } = request.body ?? {};
+    if (
+      typeof token !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(token) ||
+      typeof password !== 'string' ||
+      password.length < 8 ||
+      password.length > 128
+    ) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Le lien ou le mot de passe est invalide. Le mot de passe doit contenir au moins 8 caractères.',
+      });
+    }
+
+    try {
+      const tokenHash = createHash('sha256').update(token).digest('hex');
+      const user = await prisma.user.findUnique({
+        where: { passwordResetTokenHash: tokenHash },
+        select: { id: true, passwordResetExpiresAt: true, active: true },
+      });
+      if (
+        !user ||
+        !user.active ||
+        !user.passwordResetExpiresAt ||
+        user.passwordResetExpiresAt <= new Date()
+      ) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Ce lien est invalide ou expiré. Demandez un nouveau lien.',
+        });
+      }
+
+      const updated = await prisma.user.updateMany({
+        where: {
+          id: user.id,
+          active: true,
+          passwordResetTokenHash: tokenHash,
+          passwordResetExpiresAt: { gt: new Date() },
+        },
+        data: {
+          password: await hashPassword(password),
+          passwordResetTokenHash: null,
+          passwordResetExpiresAt: null,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Ce lien est invalide ou expiré. Demandez un nouveau lien.',
+        });
+      }
+      return reply.send({ success: true, message: 'Votre mot de passe a été réinitialisé. Vous pouvez vous connecter.' });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      return reply.status(500).send({
+        success: false,
+        error: 'Impossible de réinitialiser votre mot de passe pour le moment.',
+      });
+    }
+  }
+
+export async function changePassword(
+    request: FastifyRequest<{ Body: { currentPassword?: string; newPassword?: string } }>,
+    reply: FastifyReply
+  ) {
+    const { currentPassword, newPassword } = request.body ?? {};
+    if (
+      typeof currentPassword !== 'string' ||
+      typeof newPassword !== 'string' ||
+      newPassword.length < 8 ||
+      newPassword.length > 128
+    ) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Le nouveau mot de passe doit contenir entre 8 et 128 caractères.',
+      });
+    }
+
+    const userId = (request.user as { id?: string } | undefined)?.id;
+    if (!userId) {
+      return reply.status(401).send({ success: false, error: 'Votre session a expiré. Reconnectez-vous.' });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || !user.active) {
+        return reply.status(401).send({ success: false, error: 'Votre session a expiré. Reconnectez-vous.' });
+      }
+      if (!(await verifyPassword(currentPassword, user.password))) {
+        return reply.status(400).send({ success: false, error: 'Votre mot de passe actuel est incorrect.' });
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: await hashPassword(newPassword),
+          passwordResetTokenHash: null,
+          passwordResetExpiresAt: null,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      return reply.send({ success: true, message: 'Mot de passe modifié. Reconnectez-vous avec votre nouveau mot de passe.' });
+    } catch (error) {
+      console.error('Password change error:', error);
+      return reply.status(500).send({ success: false, error: 'Impossible de modifier votre mot de passe.' });
+    }
+  }
 export async function getMe(
   request: FastifyRequest,
   reply: FastifyReply
@@ -252,21 +419,23 @@ export async function getMe(
         firstName: true,
         lastName: true,
         role: true,
+        active: true,
         createdAt: true,
         emailVerifiedAt: true,
       },
     });
 
-    if (!user) {
+    if (!user || !user.active) {
       return reply.status(404).send({
         success: false,
         error: 'User not found',
       });
     }
 
+    const { active: _active, ...publicUser } = user;
     return reply.send({
       success: true,
-      data: user,
+      data: publicUser,
     });
   } catch (error) {
     console.error('Get user error:', error);

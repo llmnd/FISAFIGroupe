@@ -183,7 +183,11 @@ export default function Header({
 
     syncAuth();
     window.addEventListener("storage", syncAuth);
-    return () => window.removeEventListener("storage", syncAuth);
+    window.addEventListener("fisafi:session-expired", syncAuth);
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("fisafi:session-expired", syncAuth);
+    };
   }, []);
 
   /* ─── Body scroll lock ──────────────────────────────────── */

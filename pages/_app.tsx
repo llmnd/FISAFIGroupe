@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import React, { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import '../styles/globals.css';
@@ -23,6 +24,8 @@ function isBlinkEngine(): boolean {
 }
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+
   useEffect(() => {
     try {
       if (isBlinkEngine()) {
@@ -32,6 +35,33 @@ export default function App({ Component, pageProps }: AppProps) {
       // defensive - do nothing if DOM not available
     }
   }, []);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || router.pathname === '/login') return;
+
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (![401, 403, 404].includes(response.status)) return;
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('fisafi:session-expired'));
+        if (['/dashboard', '/admin-dashboard', '/market/commande'].includes(router.pathname)) {
+          void router.replace('/login?session=expired');
+        }
+      } catch (error) {
+        console.error('[Auth] Session status check failed:', error);
+      }
+    };
+
+    void checkSession();
+    const interval = window.setInterval(() => void checkSession(), 60_000);
+    return () => window.clearInterval(interval);
+  }, [router]);
 
   // ─── GLOBAL SCROLL ANIMATIONS (Optimized avec MutationObserver) ──────────────────────────────────────
   useEffect(() => {

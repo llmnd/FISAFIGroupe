@@ -192,6 +192,7 @@ export default function LoginPage() {
       ? "/market/commande"
       : role === "admin" ? "/admin-dashboard" : "/";
   const [isLogin, setIsLogin] = useState(true);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", firstName: "", lastName: "" });
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState<string | null>(null);
@@ -201,17 +202,52 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (router.query.session === "expired") {
+      setError("Votre session a expiré. Veuillez vous reconnecter.");
+    } else if (router.query.passwordChanged === "1") {
+      setSuccess("Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.");
+    }
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-    if (token && userData) {
+    if (!token || !userData) return;
+
+    void (async () => {
       try {
-        const user = JSON.parse(userData);
-        router.push(getPostLoginPath(user.role));
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        const cachedUser: unknown = JSON.parse(userData);
+        if (!cachedUser || typeof cachedUser !== "object" || !("role" in cachedUser)) {
+          throw new Error("Stored account data is invalid.");
+        }
+        const response = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if ([401, 403, 404].includes(response.status)) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setError("Votre session a expiré. Veuillez vous reconnecter.");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`Session check returned HTTP ${response.status}.`);
+        }
+        const payload: unknown = await response.json();
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          !("data" in payload) ||
+          !payload.data ||
+          typeof payload.data !== "object" ||
+          !("role" in payload.data) ||
+          typeof payload.data.role !== "string"
+        ) {
+          throw new Error("Session check returned invalid account data.");
+        }
+        localStorage.setItem("user", JSON.stringify(payload.data));
+        await router.replace(getPostLoginPath(payload.data.role));
+      } catch (sessionError) {
+        console.error("[Auth] Could not validate existing login:", sessionError);
+        setError("Impossible de vérifier votre session. Réessayez ou reconnectez-vous.");
       }
-    }
+    })();
   }, [router]);
 
   useEffect(() => {
@@ -259,6 +295,17 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(null); setSuccess(null);
     try {
+      if (forgotPassword) {
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+        const data = await response.json();
+        if (!response.ok) { setError(data.error || "Impossible de traiter la demande."); return; }
+        setSuccess(data.message || "Si un compte correspond à cette adresse, un lien va être envoyé.");
+        return;
+      }
       const endpoint   = isLogin ? "/api/auth/login" : "/api/auth/register";
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       if (!backendUrl) throw new Error("Backend URL not configured. Contact admin.");
@@ -279,13 +326,18 @@ export default function LoginPage() {
     finally  { setLoading(false); }
   };
 
-  const switchMode = (login: boolean) => { setIsLogin(login); setError(null); setSuccess(null); };
+  const switchMode = (login: boolean) => {
+    setIsLogin(login);
+    setForgotPassword(false);
+    setError(null);
+    setSuccess(null);
+  };
 
   return (
     <div className="lw">
       <a href="/" className="l-top-back">Retour</a>
       <Head>
-        <title>{isLogin ? "Connexion" : "Inscription"} — FiSAFi Groupe</title>
+        <title>{forgotPassword ? "Mot de passe oublié" : isLogin ? "Connexion" : "Inscription"} — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -356,39 +408,65 @@ export default function LoginPage() {
           <div className="l-mobile-logo" aria-hidden="true">
             <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
           </div>
-          <div className="l-mode-pill">
-            <button className={`l-pill-btn${isLogin ? " active" : ""}`}  onClick={() => switchMode(true)}>Connexion</button>
-            <button className={`l-pill-btn${!isLogin ? " active" : ""}`} onClick={() => switchMode(false)}>Inscription</button>
-          </div>
+          {!forgotPassword && (
+            <div className="l-mode-pill">
+              <button type="button" className={`l-pill-btn${isLogin ? " active" : ""}`} onClick={() => switchMode(true)}>Connexion</button>
+              <button type="button" className={`l-pill-btn${!isLogin ? " active" : ""}`} onClick={() => switchMode(false)}>Inscription</button>
+            </div>
+          )}
 
-          <h2 className="l-form-h">{isLogin ? <>Bon <em>retour.</em></> : <>Créer un <em>compte.</em></>}</h2>
-          <p className="l-form-sub">{isLogin ? "Connectez-vous à votre espace FISAFI" : "Rejoignez la plateforme FISAFI Groupe"}</p>
+          <h2 className="l-form-h">
+            {forgotPassword ? <>Mot de passe <em>oublié ?</em></> : isLogin ? <>Bon <em>retour.</em></> : <>Créer un <em>compte.</em></>}
+          </h2>
+          <p className="l-form-sub">
+            {forgotPassword
+              ? "Indiquez l’adresse email de votre compte pour recevoir un lien de réinitialisation."
+              : isLogin ? "Connectez-vous à votre espace FISAFI" : "Rejoignez la plateforme FISAFI Groupe"}
+          </p>
 
           <form onSubmit={handleSubmit}>
             <div className="l-fields">
               {error   && <div className="l-alert l-alert-err"><span className="l-alert-icon">⚠</span>{error}</div>}
               {success && <div className="l-alert l-alert-ok"><span className="l-alert-icon">✓</span>{success}</div>}
 
-              {!isLogin && (
+              {!isLogin && !forgotPassword && (
                 <div className="l-row">
                   <FloatField id="firstName" label="Prénom"  type="text" name="firstName" value={formData.firstName} onChange={handleChange} required={!isLogin} focused={focusedField==="firstName"} onFocus={()=>setFocusedField("firstName")} onBlur={()=>setFocusedField(null)} />
                   <FloatField id="lastName"  label="Nom"     type="text" name="lastName"  value={formData.lastName}  onChange={handleChange} required={!isLogin} focused={focusedField==="lastName"}  onFocus={()=>setFocusedField("lastName")}  onBlur={()=>setFocusedField(null)} />
                 </div>
               )}
 
-              <FloatField id="email"    label="Adresse email" type="email"    name="email"    value={formData.email}    onChange={handleChange} required focused={focusedField==="email"}    onFocus={()=>setFocusedField("email")}    onBlur={()=>setFocusedField(null)} />
-              <FloatField id="password" label="Mot de passe"  type="password" name="password" value={formData.password} onChange={handleChange} required focused={focusedField==="password"} onFocus={()=>setFocusedField("password")} onBlur={()=>setFocusedField(null)} />
+              <FloatField id="email" label="Adresse email" type="email" name="email" value={formData.email} onChange={handleChange} required focused={focusedField==="email"} onFocus={()=>setFocusedField("email")} onBlur={()=>setFocusedField(null)} />
+              {!forgotPassword && (
+                <FloatField id="password" label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} required focused={focusedField==="password"} onFocus={()=>setFocusedField("password")} onBlur={()=>setFocusedField(null)} />
+              )}
             </div>
 
             <button type="submit" className="l-btn" disabled={loading}>
               {loading && <span className="l-spinner" />}
-              <span>{loading ? "Chargement…" : isLogin ? "Se connecter" : "Créer mon compte"}</span>
+              <span>
+                {loading ? "Chargement…" : forgotPassword ? "Envoyer le lien" : isLogin ? "Se connecter" : "Créer mon compte"}
+              </span>
             </button>
           </form>
 
+          {isLogin && !forgotPassword && (
+            <div style={{ textAlign: "right", marginTop: "0.8rem" }}>
+              <button
+                type="button"
+                onClick={() => { setForgotPassword(true); setError(null); setSuccess(null); }}
+                style={{ background: "none", border: 0, color: "#1e40af", cursor: "pointer", font: "inherit", fontSize: "0.88rem" }}
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
+
           <div className="l-foot">
-            {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
-            <button onClick={() => switchMode(!isLogin)}>{isLogin ? "S'inscrire" : "Se connecter"}</button>
+            {forgotPassword ? "Vous vous souvenez de votre mot de passe ?" : isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+            <button type="button" onClick={() => forgotPassword ? switchMode(true) : switchMode(!isLogin)}>
+              {forgotPassword ? "Se connecter" : isLogin ? "S'inscrire" : "Se connecter"}
+            </button>
           </div>
 
         </div>

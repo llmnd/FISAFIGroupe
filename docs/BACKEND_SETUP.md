@@ -19,12 +19,14 @@ FRONTEND_URL="http://localhost:3000"
 
 ### 3. Initialiser la base de données
 ```bash
-# Créer les tables et migrations
-npm run prisma:migrate
+# Appliquer les migrations déjà présentes dans le dépôt
+npm run prisma:deploy
 
 # Vérifier que Prisma est à jour
 npm run prisma:generate
 ```
+
+`npm run build:backend` régénère le client Prisma et compile le backend, mais n'applique pas les migrations. En local, vérifiez d'abord que `DATABASE_URL` pointe bien vers la base de développement prévue, puis lancez `npm run prisma:deploy` et redémarrez le backend. Cette commande ne réinitialise pas la base. Si Prisma signale un historique incohérent ou demande une réinitialisation, arrêtez-vous et vérifiez la base ciblée au lieu d'utiliser `prisma migrate reset`.
 
 ### 4. Lancer le serveur
 ```bash
@@ -549,4 +551,3 @@ npx prisma generate
 - [Prisma Documentation](https://www.prisma.io/docs/)
 - [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-

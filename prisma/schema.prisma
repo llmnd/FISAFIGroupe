@@ -145,9 +145,12 @@ model User {
   lastName  String?
   role      String   @default("user") // "user", "admin", "moderator"
   active    Boolean  @default(true)
+  sessionVersion Int @default(0)
   emailVerifiedAt DateTime?
   emailVerificationTokenHash String? @unique
   emailVerificationExpiresAt DateTime?
+  passwordResetTokenHash String? @unique
+  passwordResetExpiresAt DateTime?
   odooPartnerId Int? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

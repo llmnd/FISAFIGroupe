@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -11,7 +11,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "moderator";
 }
 
 interface SessionFormation {
@@ -72,9 +72,17 @@ interface MarketQuotation {
   statusLabel: string;
   amountTotal: number;
   date: string;
+  items: Array<{
+    id: number;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    imageUrl: string | null;
+  }>;
 }
 
-type TabId = "inscriptions" | "formations" | "market-orders" | "inscriptions-manage" | "users" | "articles";
+type TabId = "inscriptions" | "formations" | "market-orders" | "security" | "inscriptions-manage" | "users" | "articles";
 
 interface TabType {
   id: TabId;
@@ -87,6 +95,7 @@ const ALL_TABS: TabType[] = [
   { id: "inscriptions",        label: "Mes inscriptions",       icon: "◈" },
   { id: "formations",          label: "Formations",             icon: "◉" },
   { id: "market-orders",       label: "Mes devis Market",       icon: "▱" },
+  { id: "security",            label: "Sécurité du compte",      icon: "◇" },
   { id: "inscriptions-manage", label: "Gérer inscriptions",     icon: "◎", admin: true },
   { id: "users",               label: "Utilisateurs",           icon: "◇", admin: true },
   { id: "articles",            label: "Articles",               icon: "◆", admin: true },
@@ -94,6 +103,24 @@ const ALL_TABS: TabType[] = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const sessionRedirecting = useRef(false);
+
+  const expireSession = () => {
+    if (sessionRedirecting.current) return;
+    sessionRedirecting.current = true;
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    void router.replace("/login?session=expired");
+  };
+
+  const authenticatedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const headers = new Headers(init.headers);
+    const token = localStorage.getItem("token");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const response = await fetch(input, { ...init, headers });
+    if (response.status === 401) expireSession();
+    return response;
+  };
 
   const handleGoBack = () => {
     if (window.history.length > 1) {
@@ -125,6 +152,12 @@ export default function DashboardPage() {
   const [marketEmailVerified, setMarketEmailVerified] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const [showInscriptionModal, setShowInscriptionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
@@ -163,7 +196,7 @@ export default function DashboardPage() {
     setMarketQuotationError("");
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/market/orders", {
+      const response = await authenticatedFetch("/api/market/orders", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const payload: unknown = await response.json();
@@ -199,7 +232,25 @@ export default function DashboardPage() {
         "amountTotal" in order &&
         typeof order.amountTotal === "number" &&
         "date" in order &&
-        typeof order.date === "string"
+        typeof order.date === "string" &&
+        "items" in order &&
+        Array.isArray(order.items) &&
+        order.items.every((item: unknown) =>
+          item !== null &&
+          typeof item === "object" &&
+          "id" in item &&
+          Number.isSafeInteger(item.id) &&
+          "name" in item &&
+          typeof item.name === "string" &&
+          "quantity" in item &&
+          typeof item.quantity === "number" &&
+          "unitPrice" in item &&
+          typeof item.unitPrice === "number" &&
+          "subtotal" in item &&
+          typeof item.subtotal === "number" &&
+          "imageUrl" in item &&
+          (typeof item.imageUrl === "string" || item.imageUrl === null)
+        )
       )) {
         throw new Error("Les devis reçus ne sont pas valides.");
       }
@@ -220,7 +271,7 @@ export default function DashboardPage() {
     setVerificationMessage("");
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/auth/resend-verification", {
+      const response = await authenticatedFetch("/api/auth/resend-verification", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -243,6 +294,44 @@ export default function DashboardPage() {
     }
   };
 
+  const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordMessage("");
+    if (newPassword.length < 8) {
+      setPasswordError("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("Les deux nouveaux mots de passe ne correspondent pas.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const response = await authenticatedFetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const payload: { error?: string; message?: string } = await response.json();
+      if (!response.ok) {
+        setPasswordError(payload.error || "Impossible de modifier votre mot de passe.");
+        return;
+      }
+      setPasswordMessage(payload.message || "Mot de passe modifié. Vous allez être déconnecté.");
+      window.setTimeout(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        void router.replace("/login?passwordChanged=1");
+      }, 1200);
+    } catch (changeError) {
+      console.error("[Dashboard] Could not change password:", changeError);
+      setPasswordError("Impossible de contacter le service. Réessayez dans quelques instants.");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   useEffect(() => {
     const token    = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
@@ -253,20 +342,68 @@ export default function DashboardPage() {
     }
     
     try {
-      const user = JSON.parse(userData);
-      
-      // Rediriger les admins vers le dashboard admin
-      if (user && user.role === "admin") {
-        router.push("/admin-dashboard");
-        setLoading(false);
-        return;
+      const cachedUser: unknown = JSON.parse(userData);
+      if (
+        !cachedUser ||
+        typeof cachedUser !== "object" ||
+        !("id" in cachedUser) ||
+        typeof cachedUser.id !== "string" ||
+        !("email" in cachedUser) ||
+        typeof cachedUser.email !== "string" ||
+        !("role" in cachedUser) ||
+        typeof cachedUser.role !== "string"
+      ) {
+        throw new Error("Stored account data is invalid.");
       }
-      
-      setUser(user);
-      setLoading(false);
+      const cachedAccount = cachedUser as User;
+      void (async () => {
+        try {
+          const response = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if ([401, 403, 404].includes(response.status)) {
+            expireSession();
+            return;
+          }
+          if (response.ok) {
+            const payload: unknown = await response.json();
+            if (
+              !payload ||
+              typeof payload !== "object" ||
+              !("data" in payload) ||
+              !payload.data ||
+              typeof payload.data !== "object" ||
+              !("id" in payload.data) ||
+              typeof payload.data.id !== "string" ||
+              !("email" in payload.data) ||
+              typeof payload.data.email !== "string" ||
+              !("role" in payload.data) ||
+              typeof payload.data.role !== "string"
+            ) {
+              throw new Error("Session validation returned an invalid account.");
+            }
+            const freshUser = payload.data as User;
+            setUser(freshUser);
+            localStorage.setItem("user", JSON.stringify(freshUser));
+            if (freshUser.role === "admin") {
+              await router.replace("/admin-dashboard");
+              return;
+            }
+          } else {
+            console.error("[Dashboard] Could not validate session:", response.status);
+            setUser(cachedAccount);
+          }
+        } catch (sessionError) {
+          console.error("[Dashboard] Session validation request failed:", sessionError);
+          setUser(cachedAccount);
+        } finally {
+          setLoading(false);
+        }
+      })();
     } catch (error) {
       console.error("Error parsing user data:", error);
-      router.push("/login");
+      expireSession();
+      setLoading(false);
     }
   }, [router]);
 
@@ -297,7 +434,7 @@ export default function DashboardPage() {
     setLoadingAdminInscriptions(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(buildApiUrl('/api/inscriptions-manage'), {
+      const res = await authenticatedFetch(buildApiUrl('/api/inscriptions-manage'), {
         headers: { Authorization: `Bearer ${token || ''}` }
       });
       if (res.ok) {
@@ -318,7 +455,7 @@ export default function DashboardPage() {
     if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(buildApiUrl('/api/inscriptions-manage'), {
+      const res = await authenticatedFetch(buildApiUrl('/api/inscriptions-manage'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
         body: JSON.stringify({ id, action })
@@ -343,7 +480,7 @@ export default function DashboardPage() {
     if (!confirm('Confirmer la suppression permanente de cette inscription ?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(buildApiUrl(`/api/inscriptions-manage/${id}`), {
+      const res = await authenticatedFetch(buildApiUrl(`/api/inscriptions-manage/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token || ''}` }
       });
@@ -388,7 +525,7 @@ export default function DashboardPage() {
         return;
       }
 
-      const res = await fetch("/api/my-inscriptions", {
+      const res = await authenticatedFetch("/api/my-inscriptions", {
         headers: { 
           'Authorization': `Bearer ${token || ""}`
         }
@@ -428,7 +565,7 @@ export default function DashboardPage() {
 
     setSubmittingInscription(true);
     try {
-      const res = await fetch(buildApiUrl("/api/inscriptions-formations"), {
+      const res = await authenticatedFetch(buildApiUrl("/api/inscriptions-formations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -460,7 +597,7 @@ export default function DashboardPage() {
     if (!confirm('Confirmer l\'annulation de cette inscription ?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(buildApiUrl(`/api/inscriptions/${inscriptionId}`), {
+      const res = await authenticatedFetch(buildApiUrl(`/api/inscriptions/${inscriptionId}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token || ''}` },
       });
@@ -514,7 +651,7 @@ export default function DashboardPage() {
 
   const handlePublishArticle = async (articleId: number, currentPublished: boolean) => {
     try {
-      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
+      const res = await authenticatedFetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ published: !currentPublished })
@@ -539,7 +676,7 @@ export default function DashboardPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet article?')) return;
     
     try {
-      const res = await fetch(buildApiUrl(`/api/articles/${articleId}`), {
+      const res = await authenticatedFetch(buildApiUrl(`/api/articles/${articleId}`), {
         method: "DELETE"
       });
 
@@ -575,7 +712,7 @@ export default function DashboardPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(buildApiUrl("/api/articles"), {
+      const res = await authenticatedFetch(buildApiUrl("/api/articles"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -643,18 +780,18 @@ export default function DashboardPage() {
         <style>{`
           *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
           :root {
-            --ink: #0b1829;
+            --ink: #080f1c;
             --blue: #1e40af;
             --blue-deep: #0f2470;
             --orange: #e55a00;
             --orange-light: #f07030;
             --mist: #f5f4f0;
             --white: #ffffff;
-            --steel: #7a8ea8;
+            --steel: #475569;
             --line: rgba(30,64,175,0.10);
             --sidebar-w: 240px;
           }
-          body { padding-top:0 !important; font-family:'Outfit',sans-serif; font-weight:300; color:var(--ink); background:var(--mist); -webkit-font-smoothing:antialiased; }
+          body { padding-top:0 !important; font-family:'Outfit',sans-serif; font-weight:400; color:var(--ink); background:var(--mist); -webkit-font-smoothing:auto; }
 
           /* ── LOADING ── */
           .dash-loading { display:flex; align-items:center; justify-content:center; min-height:100svh; background:var(--mist); }
@@ -985,6 +1122,58 @@ export default function DashboardPage() {
             border-radius:8px; letter-spacing:0.06em;
           }
           .alert { border-radius:12px; }
+          .dash-layout { color:#080f1c; font-weight:400; }
+          .page-title { color:#080f1c; font-weight:600; }
+          .page-eyebrow { color:#b84400; font-weight:600; }
+          .page-sub, .empty-text, .formation-desc, .article-meta, .article-excerpt {
+            color:#334155; font-weight:500;
+          }
+          .formation-name, .article-title { color:#080f1c; font-weight:600; }
+          .formation-num { color:#b84400; font-weight:600; }
+          .sidebar-role, .sidebar-uemail { color:rgba(255,255,255,0.78); font-weight:500; }
+          .sidebar-uname { color:#fff; font-weight:600; }
+          .sidebar-tab { color:rgba(255,255,255,0.82); font-weight:500; }
+          .sidebar-tab.active, .sidebar-tab:hover { color:#fff; font-weight:600; }
+          .sidebar-logout { color:rgba(255,255,255,0.9); font-weight:600; }
+          th { color:#334155; font-weight:600; }
+          td { color:#111827; font-weight:500; }
+          .form-label { color:#111827; font-weight:600; }
+          .form-input, .form-textarea, .form-select { color:#111827; font-weight:500; }
+          .market-verification-text { color:#713f12; font-weight:500; }
+          @media(min-width:1200px) {
+            .dash-content { max-width:1320px; padding:2rem 3.5rem 4rem; }
+            .sidebar-tab { font-size:15px; }
+            .page-title { font-size:clamp(3rem,3.5vw,3.6rem); }
+            .page-eyebrow { font-size:13px; }
+            .page-sub { font-size:18px; }
+            .empty-text { font-size:17px; }
+            .formation-num { font-size:14px; }
+            .formation-name { font-size:1.65rem; }
+            .formation-desc { font-size:17px; }
+            .formation-btn, .btn-new, .btn-submit, .btn-cancel { font-size:15px; }
+            th { font-size:13px; }
+            td { font-size:17px; }
+            .badge, .article-badge { font-size:12px; }
+            .form-label { font-size:15px; }
+            .form-input, .form-textarea, .form-select { font-size:17px; }
+            .alert { font-size:17px; }
+            .article-title { font-size:1.5rem; }
+            .article-meta { font-size:15px; }
+            .article-excerpt { font-size:17px; }
+            .btn-small, .btn-publish, .btn-delete { font-size:13px; }
+            .market-verification-title { font-size:15px; }
+            .market-verification-text { font-size:14px; }
+          }
+          @media(min-width:1600px) {
+            .dash-content { max-width:1480px; padding:2.5rem 4rem 5rem; }
+            .page-title { font-size:clamp(3.6rem,3.2vw,4.1rem); }
+            .page-sub { font-size:20px; }
+            .empty-text { font-size:18px; }
+            .formation-name { font-size:1.8rem; }
+            .formation-desc, td, .form-input, .form-textarea, .form-select, .alert, .article-excerpt { font-size:18px; }
+            .article-title { font-size:1.65rem; }
+            .article-meta { font-size:16px; }
+          }
           @media(max-width:599px) {
             .dash-content { padding-top:1rem; }
             .article-item { flex-direction:column; }
@@ -1250,11 +1439,108 @@ export default function DashboardPage() {
                                     ? "Cette commande est terminée."
                                     : "Cette demande a été annulée."}
                           </div>
+                          {quotation.items.length > 0 && (
+                            <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
+                              <strong style={{ color: "var(--ink)" }}>Produits commandés</strong>
+                              {quotation.items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.9rem",
+                                    padding: "0.75rem",
+                                    background: "rgba(30,64,175,0.03)",
+                                    borderRadius: "8px",
+                                  }}
+                                >
+                                  {item.imageUrl ? (
+                                    <Image
+                                      src={item.imageUrl}
+                                      alt={item.name}
+                                      width={64}
+                                      height={64}
+                                      unoptimized
+                                      style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, background: "#fff" }}
+                                    />
+                                  ) : (
+                                    <div
+                                      aria-hidden="true"
+                                      style={{ width: 64, height: 64, display: "grid", placeItems: "center", background: "#fff", color: "var(--steel)", borderRadius: 6 }}
+                                    >
+                                      ◇
+                                    </div>
+                                  )}
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ color: "var(--ink)", fontWeight: 500 }}>{item.name}</div>
+                                    <div style={{ color: "var(--steel)", fontSize: "0.85rem", marginTop: "0.2rem" }}>
+                                      {item.quantity} × {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(item.unitPrice)} FCFA
+                                    </div>
+                                    <div style={{ color: "var(--ink)", fontSize: "0.85rem", marginTop: "0.2rem" }}>
+                                      Sous-total : {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(item.subtotal)} FCFA
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
+              </>
+            )}
+
+            {activeTab === "security" && (
+              <>
+                <div className="page-eyebrow">Compte personnel</div>
+                <h1 className="page-title">Sécurité du compte</h1>
+                <p className="page-sub">Modifiez votre mot de passe. Pour votre sécurité, toutes les sessions ouvertes seront ensuite déconnectées.</p>
+                {passwordError && <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>{passwordError}</div>}
+                {passwordMessage && <div className="alert alert-success" role="status" style={{ marginTop: "1rem" }}>{passwordMessage}</div>}
+                <form onSubmit={handleChangePassword} style={{ display: "grid", gap: "1rem", maxWidth: 520, marginTop: "1.5rem" }}>
+                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
+                    Mot de passe actuel
+                    <input
+                      className="form-input"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
+                    Nouveau mot de passe
+                    <input
+                      className="form-input"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      maxLength={128}
+                      required
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
+                    Confirmer le nouveau mot de passe
+                    <input
+                      className="form-input"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      maxLength={128}
+                      required
+                      value={confirmNewPassword}
+                      onChange={(event) => setConfirmNewPassword(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit" className="btn-submit" disabled={changingPassword}>
+                    {changingPassword ? "Modification…" : "Modifier mon mot de passe"}
+                  </button>
+                </form>
               </>
             )}
 

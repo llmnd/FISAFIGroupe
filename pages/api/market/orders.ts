@@ -26,9 +26,32 @@ type OdooOrder = {
   amount_total: number;
   state: MarketOrderStatus;
   date_order: string;
+  order_line: number[];
+};
+
+type OdooOrderLine = {
+  id: number;
+  order_id: [number, string];
+  product_id: [number, string] | false;
+  product_uom_qty: number;
+  price_unit: number;
+  price_subtotal: number;
+};
+
+type OdooVariantTemplate = {
+  id: number;
+  product_tmpl_id: [number, string];
 };
 
 type MarketOrderStatus = "draft" | "sent" | "sale" | "done" | "cancel";
+type QuotationItem = {
+  id: number;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  imageUrl: string | null;
+};
 type ApiResponse = {
   orderReference?: string;
   total?: number;
@@ -39,6 +62,7 @@ type ApiResponse = {
     statusLabel: string;
     amountTotal: number;
     date: string;
+    items: QuotationItem[];
   }>;
   emailVerified?: boolean;
   error?: string;
@@ -128,7 +152,41 @@ function isOdooOrder(value: unknown): value is OdooOrder {
     typeof order.amount_total === "number" &&
     Number.isFinite(order.amount_total) &&
     isMarketOrderStatus(order.state) &&
-    typeof order.date_order === "string"
+    typeof order.date_order === "string" &&
+    Array.isArray(order.order_line) &&
+    order.order_line.every((lineId) => Number.isSafeInteger(lineId) && lineId > 0)
+  );
+}
+
+function isOdooOrderLine(value: unknown): value is OdooOrderLine {
+  if (!value || typeof value !== "object") return false;
+  const line = value as Partial<OdooOrderLine>;
+  return (
+    Number.isSafeInteger(line.id) &&
+    Array.isArray(line.order_id) &&
+    Number.isSafeInteger(line.order_id[0]) &&
+    typeof line.order_id[1] === "string" &&
+    (line.product_id === false ||
+      (Array.isArray(line.product_id) &&
+        Number.isSafeInteger(line.product_id[0]) &&
+        typeof line.product_id[1] === "string")) &&
+    typeof line.product_uom_qty === "number" &&
+    Number.isFinite(line.product_uom_qty) &&
+    typeof line.price_unit === "number" &&
+    Number.isFinite(line.price_unit) &&
+    typeof line.price_subtotal === "number" &&
+    Number.isFinite(line.price_subtotal)
+  );
+}
+
+function isOdooVariantTemplate(value: unknown): value is OdooVariantTemplate {
+  if (!value || typeof value !== "object") return false;
+  const variant = value as Partial<OdooVariantTemplate>;
+  return (
+    Number.isSafeInteger(variant.id) &&
+    Array.isArray(variant.product_tmpl_id) &&
+    Number.isSafeInteger(variant.product_tmpl_id[0]) &&
+    typeof variant.product_tmpl_id[1] === "string"
   );
 }
 
@@ -164,7 +222,7 @@ async function getCustomerOrders(
     const ids = quotations.map((quotation) => quotation.odooOrderId);
     const payload: unknown = await callOdoo("sale.order", "search_read", {
       domain: [["id", "in", ids]],
-      fields: ["id", "name", "state", "amount_total", "date_order"],
+      fields: ["id", "name", "state", "amount_total", "date_order", "order_line"],
       limit: ids.length,
       order: "date_order desc",
     });
@@ -175,6 +233,67 @@ async function getCustomerOrders(
     ) {
       console.error("[Market/Odoo] Customer quotation response has an unexpected format.");
       throw new OdooApiError("Odoo a renvoyé des données de devis invalides.");
+    }
+
+    const orderLineIds = [...new Set(payload.flatMap((order) => order.order_line))];
+    const linePayload: unknown = orderLineIds.length
+      ? await callOdoo("sale.order.line", "search_read", {
+          domain: [["id", "in", orderLineIds]],
+          fields: ["id", "order_id", "product_id", "product_uom_qty", "price_unit", "price_subtotal"],
+          limit: orderLineIds.length,
+        })
+      : [];
+    if (
+      !Array.isArray(linePayload) ||
+      !linePayload.every(isOdooOrderLine) ||
+      linePayload.some((line) => !orderLineIds.includes(line.id))
+    ) {
+      console.error("[Market/Odoo] Quotation line response has an unexpected format.");
+      throw new OdooApiError("Odoo a renvoyé des lignes de devis invalides.");
+    }
+
+    const productLines = linePayload.filter(
+      (line): line is OdooOrderLine & { product_id: [number, string] } =>
+        line.product_id !== false,
+    );
+    const productIds = [...new Set(productLines.map((line) => line.product_id[0]))];
+    const variantPayload: unknown = productIds.length
+      ? await callOdoo("product.product", "search_read", {
+          domain: [["id", "in", productIds]],
+          fields: ["id", "product_tmpl_id"],
+          limit: productIds.length,
+        })
+      : [];
+    if (
+      !Array.isArray(variantPayload) ||
+      !variantPayload.every(isOdooVariantTemplate) ||
+      variantPayload.some((variant) => !productIds.includes(variant.id))
+    ) {
+      console.error("[Market/Odoo] Quotation product response has an unexpected format.");
+      throw new OdooApiError("Odoo a renvoyé des produits de devis invalides.");
+    }
+
+    const templateByVariantId = new Map(
+      variantPayload.map((variant) => [variant.id, variant.product_tmpl_id[0]]),
+    );
+    const linesByOrderId = new Map<number, QuotationItem[]>();
+    for (const line of productLines) {
+      const orderId = line.order_id[0];
+      if (!ids.includes(orderId)) {
+        console.error("[Market/Odoo] Quotation line belongs to an unexpected order.");
+        throw new OdooApiError("Odoo a renvoyé des lignes de devis invalides.");
+      }
+      const templateId = templateByVariantId.get(line.product_id[0]);
+      const orderItems = linesByOrderId.get(orderId) ?? [];
+      orderItems.push({
+        id: line.id,
+        name: line.product_id[1],
+        quantity: line.product_uom_qty,
+        unitPrice: line.price_unit,
+        subtotal: line.price_subtotal,
+        imageUrl: templateId ? `/api/market/products/${templateId}/image` : null,
+      });
+      linesByOrderId.set(orderId, orderItems);
     }
 
     const quotationById = new Map(quotations.map((quotation) => [quotation.odooOrderId, quotation]));
@@ -211,6 +330,7 @@ async function getCustomerOrders(
         statusLabel: STATUS_LABELS[order.state],
         amountTotal: order.amount_total,
         date: order.date_order || previous?.createdAt.toISOString() || "",
+        items: linesByOrderId.get(order.id) ?? [],
       };
     }));
 

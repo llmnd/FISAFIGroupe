@@ -159,6 +159,31 @@ export const emailService = {
     }
   },
 
+  async sendPasswordReset(
+    userEmail: string,
+    userName: string,
+    resetUrl: string,
+  ): Promise<boolean> {
+    try {
+      await this.transporter.sendMail({
+        from: emailFrom,
+        to: userEmail,
+        subject: 'Réinitialisation de votre mot de passe - FiSAFi Groupe',
+        html: `
+          <h2>Bonjour ${escapeHtml(userName)},</h2>
+          <p>Une demande de réinitialisation du mot de passe de votre compte FiSAFi a été reçue.</p>
+          <p><a href="${escapeHtml(resetUrl)}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Choisir un nouveau mot de passe</a></p>
+          <p>Ce lien est valable pendant une heure et ne peut être utilisé qu’une seule fois. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</p>
+          <p>Cordialement,<br/><strong>FiSAFi Groupe</strong></p>
+        `,
+      });
+      return true;
+    } catch (error) {
+      console.error(`Password reset email failed for ${userEmail}:`, error);
+      return false;
+    }
+  },
+
   async sendMarketQuotationStatus(
     userEmail: string,
     userName: string,

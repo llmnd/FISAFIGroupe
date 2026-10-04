@@ -13,7 +13,12 @@ Votre backend est maintenant configuré pour envoyer des emails via votre compte
 ### 2. **Inscription Utilisateur (Register)**
 - ✉️ **Confirmation d'inscription** - Bienvenue + lien de connexion
 
-### 3. **Inscription Formation** ✨ NOUVEAU
+### 3. **Réinitialisation du mot de passe**
+- ✉️ **Lien de réinitialisation** - Lien à usage unique, valable une heure
+- Le message est envoyé depuis le formulaire « Mot de passe oublié » de la page de connexion.
+- La réponse ne révèle pas si l'adresse email correspond à un compte.
+
+### 4. **Inscription Formation** ✨ NOUVEAU
 - ✉️ **Confirmation utilisateur** - Remerciement pour l'inscription
 - ✉️ **Notification admin** - Alert nouvel inscrit
 - ✉️ **Email d'acceptation** - Quand l'admin accepte l'inscription
@@ -166,6 +171,7 @@ Si vous voulez envoyer depuis une autre adresse (ex: `noreply@fisafigroupe.com`)
 |-------|----------------|--------|
 | **POST /api/v1/inscriptions** (Contact form) | ✉️ Confirmation + ✉️ Admin notif | ✅ FAIT |
 | **POST /api/v1/auth/register** | ✉️ Confirmation registration | ✅ FAIT |
+| **POST /api/v1/auth/forgot-password** | ✉️ Lien de réinitialisation | ✅ FAIT |
 | **POST /api/v1/inscriptions-formations** | ✉️ Confirmation + ✉️ Admin notif | ✅ FAIT |
 | **PATCH /api/v1/inscriptions-manage (accept)** | ✉️ Email d'acceptation | ✅ FAIT |
 | **PATCH /api/v1/inscriptions-manage (reject)** | ✉️ Email de rejet | ✅ FAIT |

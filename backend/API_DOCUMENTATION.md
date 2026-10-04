@@ -122,6 +122,37 @@ Authorization: Bearer <jwt-token>
 
 ---
 
+#### Request a Password Reset
+```http
+POST /api/v1/auth/forgot-password
+Content-Type: application/json
+
+{ "email": "user@example.com" }
+```
+
+The response is the same whether or not the account exists. For an active account, FiSAFi sends a one-time link that expires after one hour.
+
+#### Reset Password
+```http
+POST /api/v1/auth/reset-password
+Content-Type: application/json
+
+{ "token": "<token-from-email>", "password": "new-secure-password" }
+```
+
+Passwords must contain at least 8 characters. A successful reset invalidates every existing session.
+
+#### Change Password (Protected)
+```http
+POST /api/v1/auth/change-password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{ "currentPassword": "current-password", "newPassword": "new-secure-password" }
+```
+
+Changing a password also invalidates every existing session. Sessions are rejected when expired, when the account is inactive, or after a password reset/change; clients should clear the stored token and ask the user to sign in again after a `401`.
+
 ### 📰 Articles
 
 #### Get All Articles
