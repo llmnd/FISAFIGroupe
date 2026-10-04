@@ -26,6 +26,43 @@ export type POSProduct = {
   variantChoiceRequired: boolean;
 };
 
+export type ProductAvailability = "in_stock" | "low_stock" | "out_of_stock" | "unavailable";
+export type ProductStatus = "active" | "inactive";
+
+export type Product = {
+  id: number;
+  name: string;
+  reference: string | null;
+  barcode: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  salesPrice: number;
+  costPrice: number | null;
+  unitName: string | null;
+  stock: number;
+  availability: ProductAvailability;
+  status: ProductStatus;
+  imageUrl: string | null;
+  updatedAt: string | null;
+};
+
+export type ProductListPage = {
+  products: Product[];
+  hasMore: boolean;
+  totalCount: number;
+  categories: Array<{ id: number; name: string }>;
+};
+
+export type ProductUpdateInput = {
+  name?: string;
+  reference?: string | null;
+  barcode?: string | null;
+  categoryId?: number | null;
+  salesPrice?: number;
+  costPrice?: number | null;
+  active?: boolean;
+};
+
 export type POSProductPage = {
   products: POSProduct[];
   hasMore: boolean;
@@ -75,6 +112,17 @@ export type POSClosingSummary = {
 };
 
 export interface ERPProvider {
+  getProducts(options: {
+    search: string;
+    categoryId?: number | null;
+    onlyAvailable?: boolean;
+    offset: number;
+    limit: number;
+  }): Promise<ProductListPage>;
+  getProduct(id: number): Promise<Product>;
+  updateProduct(id: number, input: ProductUpdateInput): Promise<Product>;
+  updateProductImage(id: number, imageBase64: string): Promise<Product>;
+  removeProductImage(id: number): Promise<Product>;
   getPointsOfSale(): Promise<PointOfSale[]>;
   getPOSProducts(options: {
     configId: number;

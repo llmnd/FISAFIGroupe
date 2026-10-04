@@ -101,6 +101,15 @@ export default function EmployeeHomePage() {
                   <span className="employee-home-card-text">Suivez l’état des caisses Odoo et accédez aux opérations autorisées.</span>
                   <span className="employee-card-link employee-home-card-link">Afficher les points de vente →</span>
                 </Link>
+                {["admin", "manager", "seller", "stock", "accountant"].includes(employee.role) ||
+                ["manager", "seller", "stock", "accountant"].includes(employee.employeeRole || "") ? (
+                  <Link href="/espace-employe/produits" className="employee-tool-card">
+                    <span className="employee-home-card-icon employee-home-card-icon-green" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="m3 12 9 4 9-4M3 17l9 4 9-4"/></svg></span>
+                    <span className="employee-home-card-title">Catalogue produits</span>
+                    <span className="employee-home-card-text">Consultez les produits Odoo, leurs prix, leur stock et leur disponibilité.</span>
+                    <span className="employee-card-link employee-home-card-link">Ouvrir le catalogue →</span>
+                  </Link>
+                ) : null}
                 {employee.role === "admin" && (
                   <Link href="/espace-employe/ventes" className="employee-tool-card">
                     <span className="employee-home-card-icon employee-home-card-icon-orange" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg></span>

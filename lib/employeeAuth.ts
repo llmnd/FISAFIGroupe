@@ -114,6 +114,43 @@ export function requireAdmin(account: EmployeeAccount): void {
   }
 }
 
+export function requireProductRead(account: EmployeeAccount): void {
+  if (
+    account.role !== "admin" &&
+    account.employeeRole !== "manager" &&
+    account.employeeRole !== "seller" &&
+    account.employeeRole !== "stock" &&
+    account.employeeRole !== "accountant"
+  ) {
+    throw new EmployeeAuthError("Votre rôle ne permet pas de consulter le catalogue produits.", 403);
+  }
+}
+
+export function requireProductWrite(account: EmployeeAccount): void {
+  if (
+    account.role !== "admin" &&
+    account.employeeRole !== "manager" &&
+    account.employeeRole !== "stock" &&
+    account.employeeRole !== "accountant"
+  ) {
+    throw new EmployeeAuthError("Votre rôle ne permet pas de modifier le catalogue produits.", 403);
+  }
+}
+
+export function canViewProductCost(account: EmployeeAccount): boolean {
+  return (
+    account.role === "admin" ||
+    account.employeeRole === "manager" ||
+    account.employeeRole === "accountant"
+  );
+}
+
+export function requireProductCostWrite(account: EmployeeAccount): void {
+  if (!canViewProductCost(account)) {
+    throw new EmployeeAuthError("Votre rôle ne permet pas de modifier le coût des produits.", 403);
+  }
+}
+
 export function requirePOSRead(account: EmployeeAccount): void {
   if (
     account.role !== "admin" &&

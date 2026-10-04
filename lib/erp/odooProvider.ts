@@ -13,6 +13,10 @@ import type {
   POSSession,
   POSSessionStatus,
   POSSaleQuote,
+  Product,
+  ProductAvailability,
+  ProductListPage,
+  ProductUpdateInput,
 } from "./contracts";
 import { ERPOperationError } from "./errors";
 
@@ -92,6 +96,21 @@ type OdooSaleTemplate = {
   taxes_id: number[];
   uom_name: string;
 };
+type OdooProductTemplate = {
+  id: number;
+  name: string;
+  active: boolean;
+  default_code: string | false;
+  barcode: string | false | null;
+  categ_id: OdooRelation;
+  list_price: number;
+  standard_price: number;
+  uom_name: string;
+  image_128: string | false | null;
+  write_date: string;
+  virtual_available: number;
+};
+
 type OdooTax = {
   id: number;
   amount: number;
@@ -262,6 +281,26 @@ function isOdooSaleProduct(value: unknown): value is OdooSaleProduct {
   );
 }
 
+function isOdooProductTemplate(value: unknown): value is OdooProductTemplate {
+  if (!value || typeof value !== "object") return false;
+  const template = value as Partial<OdooProductTemplate>;
+  return (
+    Number.isSafeInteger(template.id) &&
+    typeof template.name === "string" &&
+    typeof template.active === "boolean" &&
+    (typeof template.default_code === "string" || template.default_code === false) &&
+    (typeof template.barcode === "string" || template.barcode === false || template.barcode === null) &&
+    isRelation(template.categ_id) &&
+    typeof template.list_price === "number" &&
+    Number.isFinite(template.list_price) &&
+    typeof template.standard_price === "number" &&
+    Number.isFinite(template.standard_price) &&
+    typeof template.uom_name === "string" &&
+    (typeof template.image_128 === "string" || template.image_128 === false || template.image_128 === null) &&
+    typeof template.write_date === "string"
+  );
+}
+
 function isOdooSaleTemplate(value: unknown): value is OdooSaleTemplate {
   if (!value || typeof value !== "object") return false;
   const template = value as Partial<OdooSaleTemplate>;
@@ -344,6 +383,18 @@ function isPOSOrder(value: unknown): value is OdooPOSOrder {
   );
 }
 
+function computeStock(product: OdooProductTemplate): number {
+  const raw = Number(product.virtual_available ?? 0);
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+function getAvailability(stock: number): ProductAvailability {
+  if (!Number.isFinite(stock)) return "unavailable";
+  if (stock <= 0) return "out_of_stock";
+  if (stock < 5) return "low_stock";
+  return "in_stock";
+}
+
 function isOdooPickingType(value: unknown): value is OdooPickingType {
   if (!value || typeof value !== "object") return false;
   const pickingType = value as Partial<OdooPickingType>;
@@ -412,6 +463,203 @@ function normalizeSessionStatus(value: string): POSSessionStatus {
 }
 
 export class OdooERPProvider implements ERPProvider {
+  async getProducts(options: {
+    search: string;
+    categoryId?: number | null;
+    onlyAvailable?: boolean;
+    offset: number;
+    limit: number;
+  }): Promise<ProductListPage> {
+    const { search, categoryId, onlyAvailable, offset, limit } = options;
+    const domain: unknown[] = [["active", "=", true], ["sale_ok", "=", true]];
+    if (search) {
+      domain.push("|", ["name", "ilike", search], ["default_code", "ilike", search]);
+    }
+    if (categoryId !== undefined && categoryId !== null) {
+      domain.push(["categ_id", "=", categoryId]);
+    }
+    if (onlyAvailable) {
+      domain.push(["virtual_available", ">", 0]);
+    }
+
+    const [payload, rawTotalCount]: [unknown, unknown] = await Promise.all([
+      callOdoo("product.template", "search_read", {
+        domain,
+        fields: [
+          "id",
+          "name",
+          "default_code",
+          "barcode",
+          "categ_id",
+          "list_price",
+          "standard_price",
+          "uom_name",
+          "image_128",
+          "write_date",
+          "active",
+          "virtual_available",
+        ],
+        limit: limit + 1,
+        offset,
+        order: "name asc",
+      }),
+      callOdoo("product.template", "search_count", { domain }),
+    ]);
+    if (!Array.isArray(payload) || !payload.every(isOdooProductTemplate)) {
+      console.error("[ERP/Odoo] Product catalog response has an unexpected format.");
+      throw new OdooApiError("Le catalogue produit a renvoyé des données invalides.");
+    }
+    if (typeof rawTotalCount !== "number" || !Number.isSafeInteger(rawTotalCount) || rawTotalCount < 0) {
+      console.error("[ERP/Odoo] Product catalog count response has an unexpected format.");
+      throw new OdooApiError("Odoo a renvoyé un nombre de produits invalide.");
+    }
+
+    const products = payload.slice(0, limit).map((product) => {
+      const stock = computeStock(product);
+      return {
+        id: product.id,
+        name: product.name,
+        reference: product.default_code || null,
+        barcode: product.barcode || null,
+        categoryId: product.categ_id === false ? null : product.categ_id[0],
+        categoryName: product.categ_id === false ? null : product.categ_id[1],
+        salesPrice: product.list_price,
+        costPrice: product.standard_price || null,
+        unitName: product.uom_name,
+        stock,
+        availability: getAvailability(stock),
+        status: product.active ? "active" : "inactive",
+        imageUrl: product.image_128 ? `/api/market/products/${product.id}/image?v=${encodeURIComponent(product.write_date)}` : null,
+        updatedAt: product.write_date || null,
+      } satisfies Product;
+    });
+
+    const categorySet = new Map<number, string>();
+    for (const product of payload) {
+      if (product.categ_id !== false) {
+        categorySet.set(product.categ_id[0], product.categ_id[1]);
+      }
+    }
+
+    return {
+      products,
+      hasMore: payload.length > limit,
+      totalCount: rawTotalCount,
+      categories: Array.from(categorySet.entries()).map(([id, name]) => ({ id, name })),
+    };
+  }
+
+  async getProduct(id: number): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw operationError("L’identifiant produit est invalide.", 400);
+    }
+
+    const payload: unknown = await callOdoo("product.template", "search_read", {
+      domain: [["id", "=", id]],
+      fields: [
+        "id",
+        "name",
+        "default_code",
+        "barcode",
+        "categ_id",
+        "list_price",
+        "standard_price",
+        "uom_name",
+        "image_128",
+        "write_date",
+        "active",
+        "virtual_available",
+      ],
+      limit: 1,
+    });
+    if (!Array.isArray(payload) || payload.length !== 1 || !isOdooProductTemplate(payload[0])) {
+      throw new OdooApiError("Le produit demandé n’a pas été trouvé dans Odoo.");
+    }
+    const product = payload[0];
+    const stock = computeStock(product);
+    return {
+      id: product.id,
+      name: product.name,
+      reference: product.default_code || null,
+      barcode: product.barcode || null,
+      categoryId: product.categ_id === false ? null : product.categ_id[0],
+      categoryName: product.categ_id === false ? null : product.categ_id[1],
+      salesPrice: product.list_price,
+      costPrice: product.standard_price || null,
+      unitName: product.uom_name,
+      stock,
+      availability: getAvailability(stock),
+      status: product.active ? "active" : "inactive",
+      imageUrl: product.image_128 ? `/api/market/products/${product.id}/image?v=${encodeURIComponent(product.write_date)}` : null,
+      updatedAt: product.write_date || null,
+    };
+  }
+
+  async updateProduct(id: number, input: ProductUpdateInput): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw operationError("L’identifiant produit est invalide.", 400);
+    }
+    if (
+      input.salesPrice !== undefined &&
+      (!Number.isFinite(input.salesPrice) || input.salesPrice < 0)
+    ) {
+      throw operationError("Le prix de vente est invalide.", 400);
+    }
+    if (
+      input.costPrice !== undefined &&
+      (input.costPrice !== null && (!Number.isFinite(input.costPrice) || input.costPrice < 0))
+    ) {
+      throw operationError("Le coût est invalide.", 400);
+    }
+
+    const odooPayload: Record<string, unknown> = {};
+    if (input.name !== undefined) odooPayload.name = input.name;
+    if (input.reference !== undefined) odooPayload.default_code = input.reference;
+    if (input.barcode !== undefined) odooPayload.barcode = input.barcode;
+    if (input.categoryId !== undefined) odooPayload.categ_id = input.categoryId;
+    if (input.salesPrice !== undefined) odooPayload.list_price = input.salesPrice;
+    if (input.costPrice !== undefined) odooPayload.standard_price = input.costPrice;
+    if (input.active !== undefined) odooPayload.active = input.active;
+
+    if (Object.keys(odooPayload).length === 0) {
+      return this.getProduct(id);
+    }
+
+    await callOdoo("product.template", "write", { ids: [id], vals: odooPayload });
+    return this.getProduct(id);
+  }
+
+  async updateProductImage(id: number, imageBase64: string): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw operationError("L’identifiant produit est invalide.", 400);
+    }
+    if (typeof imageBase64 !== "string" || !imageBase64.trim()) {
+      throw operationError("Une image valide est requise.", 400);
+    }
+
+    const cleaned = imageBase64.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "").trim();
+    if (!cleaned || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(cleaned)) {
+      throw operationError("Le fichier image est invalide.", 400);
+    }
+
+    await callOdoo("product.template", "write", {
+      ids: [id],
+      vals: { image_1920: cleaned },
+    });
+    return this.getProduct(id);
+  }
+
+  async removeProductImage(id: number): Promise<Product> {
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw operationError("L’identifiant produit est invalide.", 400);
+    }
+    await callOdoo("product.template", "write", {
+      ids: [id],
+      vals: { image_1920: false },
+    });
+    return this.getProduct(id);
+  }
+
   async getPointsOfSale(): Promise<PointOfSale[]> {
     const configs: unknown = await callOdoo("pos.config", "search_read", {
       domain: [],

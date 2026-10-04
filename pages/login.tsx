@@ -134,16 +134,17 @@ const LOGIN_CSS = `
     background-image: linear-gradient(rgba(30,64,175,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(30,64,175,0.025) 1px, transparent 1px);
     background-size: 40px 40px; pointer-events: none;
   }
-  .l-form-wrap { width: 100%; max-width: 370px; position: relative; z-index: 1; animation: fadeUp 0.65s 0.1s both; }
-  .l-mode-pill { display: inline-flex; border: 0.5px solid rgba(30,64,175,0.18); border-radius: 0; overflow: hidden; margin-bottom: 2rem; }
-  .l-pill-btn { padding: 0.55rem 1.25rem; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.55); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
-  .l-pill-btn.active { background: var(--ink); color: #fff; }
+  .l-form-wrap { width: 100%; max-width: 410px; position: relative; z-index: 1; animation: fadeUp 0.65s 0.1s both; }
+  .l-mode-pill { display: inline-flex; padding: 4px; border: 1px solid rgba(30,64,175,0.12); border-radius: 999px; background: rgba(255,255,255,0.75); margin-bottom: 1.6rem; }
+  .l-pill-btn { min-width: 118px; padding: 0.62rem 1.15rem; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.55); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
+  .l-pill-btn.active { background: var(--ink); color: #fff; box-shadow: 0 2px 6px rgba(11,24,41,0.14); }
   .l-pill-btn:not(.active):hover { color: var(--ink); background: rgba(30,64,175,0.04); }
-  .l-form-h { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.75rem, 5vw, 3.5rem); font-weight: 300; color: var(--ink); letter-spacing: -0.015em; line-height: 1.05; margin-bottom: 0.6rem; }
+  .l-pill-btn:focus-visible, .l-forgot button:focus-visible, .l-foot button:focus-visible { outline: 3px solid rgba(30,64,175,0.3); outline-offset: 3px; }
+  .l-form-h { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.6rem, 4.5vw, 3.35rem); font-weight: 300; color: var(--ink); letter-spacing: -0.015em; line-height: 1.05; margin-bottom: 0.55rem; }
   .l-form-h em { font-style: italic; color: var(--orange); }
-  .l-form-sub { font-size: 1rem; color: var(--steel); font-weight: 300; letter-spacing: 0.01em; margin-bottom: 2.25rem; line-height: 1.55; }
-  .l-fields { display: flex; flex-direction: column; gap: 0; }
-  .l-field { position: relative; padding-top: 1rem; border-bottom: 1px solid rgba(11,24,41,0.1); transition: border-color 0.22s; margin-bottom: 0.2rem; }
+  .l-form-sub { font-size: 0.96rem; color: var(--steel); font-weight: 300; letter-spacing: 0.01em; margin-bottom: 1.6rem; line-height: 1.6; }
+  .l-fields { display: flex; flex-direction: column; gap: 0.3rem; }
+  .l-field { position: relative; padding-top: 1rem; border-bottom: 1px solid rgba(11,24,41,0.1); transition: border-color 0.22s; margin-bottom: 0.35rem; }
   .l-field.focused { border-color: var(--blue); }
   .l-field label { position: absolute; left: 0; top: 1.5rem; font-size: 1rem; color: rgba(11,24,41,0.55); font-weight: 300; pointer-events: none; transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1); }
   .l-field.focused label, .l-field.filled label { top: 0.15rem; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--blue); font-weight: 500; }
@@ -151,19 +152,22 @@ const LOGIN_CSS = `
   .l-field input::placeholder { color: transparent; }
   .l-field-line { position: absolute; bottom: -1px; left: 0; height: 2px; background: var(--blue); width: 0; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); }
   .l-field.focused .l-field-line { width: 100%; }
-  .l-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .l-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .l-alert { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.9rem; font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 400; }
   .l-alert-err { background: #fff1f2; border-left: 2px solid #f43f5e; color: #9f1239; }
   .l-alert-ok  { background: #f0fdf4; border-left: 2px solid #22c55e; color: #166534; }
   .l-alert-icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
-  .l-btn { width: 100%; margin-top: 2rem; padding: 1rem; background: var(--ink); color: #fff; border: none; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; position: relative; overflow: hidden; transition: background 0.25s; }
+  .l-btn { width: 100%; margin-top: 1.4rem; padding: 1rem; border-radius: 5px; background: var(--ink); color: #fff; border: none; font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; position: relative; overflow: hidden; transition: background 0.25s; }
   .l-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--orange), #1e40af); opacity: 0; transition: opacity 0.3s; }
   .l-btn:hover:not(:disabled)::before { opacity: 1; }
   .l-btn span { position: relative; z-index: 1; }
   .l-btn:disabled { background: #94a3b8; cursor: not-allowed; }
   .l-btn:disabled::before { display: none; }
   .l-spinner { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; position: relative; z-index: 1; }
-  .l-foot { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 1.75rem; font-size: 0.9rem; color: rgba(11,24,41,0.65); }
+  .l-forgot { display: flex; justify-content: flex-end; margin-top: 0.7rem; }
+  .l-forgot button { background: none; border: 0; color: var(--blue); cursor: pointer; font: inherit; font-size: 0.88rem; padding: 0.2rem 0; }
+  .l-forgot button:hover, .l-foot button:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .l-foot { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 1.5rem; font-size: 0.9rem; color: rgba(11,24,41,0.65); }
   .l-foot button { background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 500; color: var(--blue); cursor: pointer; padding: 0; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
   .l-foot button:hover { border-bottom-color: var(--blue); }
   .l-divider { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.5rem; }
@@ -177,11 +181,20 @@ const LOGIN_CSS = `
   @media (max-width: 768px) {
     .lw { grid-template-columns: 1fr; }
     .l-left { display: none; }
-    .l-right { min-height: 100dvh; padding: 5rem 1.75rem 3rem; justify-content: flex-start; }
+    .l-right { min-height: 100dvh; padding: 4.75rem 1.5rem 2.5rem; justify-content: flex-start; }
     /* hide the text pseudo-element on mobile; show circular logo instead */
     .l-form-wrap::before { display: none; }
-    .l-mobile-logo { display: flex; justify-content: center; margin: -4rem auto 0.70rem; width: 72px; height: 72px; border-radius: 50%; overflow: hidden; border: 1px solid var(--orange); background: #fff; }
+    .l-mobile-logo { display: flex; justify-content: center; margin: -3.25rem auto 1rem; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 1px solid var(--orange); background: #fff; }
     .l-mobile-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .l-form-h { font-size: clamp(2.5rem, 10vw, 3.1rem); }
+    .l-form-sub { margin-bottom: 1.25rem; }
+    .l-row { gap: 0.75rem; }
+  }
+
+  @media (max-width: 380px) {
+    .l-row { grid-template-columns: 1fr; gap: 0; }
+    .l-mode-pill { display: flex; width: 100%; }
+    .l-pill-btn { flex: 1; min-width: 0; padding-inline: 0.6rem; }
   }
 `;
 
@@ -418,9 +431,9 @@ export default function LoginPage() {
             <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
           </div>
           {!forgotPassword && (
-            <div className="l-mode-pill">
-              <button type="button" className={`l-pill-btn${isLogin ? " active" : ""}`} onClick={() => switchMode(true)}>Connexion</button>
-              <button type="button" className={`l-pill-btn${!isLogin ? " active" : ""}`} onClick={() => switchMode(false)}>Inscription</button>
+            <div className="l-mode-pill" role="group" aria-label="Choisir le mode d’accès">
+              <button type="button" className={`l-pill-btn${isLogin ? " active" : ""}`} aria-pressed={isLogin} onClick={() => switchMode(true)}>Connexion</button>
+              <button type="button" className={`l-pill-btn${!isLogin ? " active" : ""}`} aria-pressed={!isLogin} onClick={() => switchMode(false)}>Inscription</button>
             </div>
           )}
 
@@ -447,7 +460,7 @@ export default function LoginPage() {
 
               <FloatField id="email" label="Adresse email" type="email" name="email" value={formData.email} onChange={handleChange} required focused={focusedField==="email"} onFocus={()=>setFocusedField("email")} onBlur={()=>setFocusedField(null)} />
               {!forgotPassword && (
-                <FloatField id="password" label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} required focused={focusedField==="password"} onFocus={()=>setFocusedField("password")} onBlur={()=>setFocusedField(null)} />
+                <FloatField id="password" label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} required focused={focusedField==="password"} onFocus={()=>setFocusedField("password")} onBlur={()=>setFocusedField(null)} autoComplete={isLogin ? "current-password" : "new-password"} />
               )}
             </div>
 
@@ -460,23 +473,22 @@ export default function LoginPage() {
           </form>
 
           {isLogin && !forgotPassword && (
-            <div style={{ textAlign: "right", marginTop: "0.8rem" }}>
+            <div className="l-forgot">
               <button
                 type="button"
                 onClick={() => { setForgotPassword(true); setError(null); setSuccess(null); }}
-                style={{ background: "none", border: 0, color: "#1e40af", cursor: "pointer", font: "inherit", fontSize: "0.88rem" }}
               >
                 Mot de passe oublié ?
               </button>
             </div>
           )}
 
-          <div className="l-foot">
-            {forgotPassword ? "Vous vous souvenez de votre mot de passe ?" : isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
-            <button type="button" onClick={() => forgotPassword ? switchMode(true) : switchMode(!isLogin)}>
-              {forgotPassword ? "Se connecter" : isLogin ? "S'inscrire" : "Se connecter"}
-            </button>
-          </div>
+          {forgotPassword && (
+            <div className="l-foot">
+              <span>Vous vous souvenez de votre mot de passe ?</span>
+              <button type="button" onClick={() => switchMode(true)}>Se connecter</button>
+            </div>
+          )}
 
         </div>
       </div>
@@ -484,10 +496,11 @@ export default function LoginPage() {
   );
 }
 
-function FloatField({ id, label, type, name, value, onChange, required, focused, onFocus, onBlur }: {
+function FloatField({ id, label, type, name, value, onChange, required, focused, onFocus, onBlur, autoComplete }: {
   id: string; label: string; type: string; name: string; value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean; focused: boolean; onFocus: () => void; onBlur: () => void;
+  autoComplete?: string;
 }) {
   const filled = value.length > 0;
   return (
@@ -496,7 +509,7 @@ function FloatField({ id, label, type, name, value, onChange, required, focused,
       <input
         id={id} type={type} name={name} value={value}
         onChange={onChange} onFocus={onFocus} onBlur={onBlur} required={required}
-        autoComplete={type === "password" ? "current-password" : type === "email" ? "email" : "given-name"}
+        autoComplete={autoComplete ?? (type === "password" ? "current-password" : type === "email" ? "email" : name === "lastName" ? "family-name" : "given-name")}
         placeholder={label}
       />
       <div className="l-field-line" />
