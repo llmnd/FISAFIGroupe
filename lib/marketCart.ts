@@ -19,6 +19,38 @@ export const MARKET_CART_KEY = "fisafi-market-cart";
 export const MARKET_CART_CHANGE_EVENT = "fisafi-market-cart-change";
 export const MARKET_CART_MAX_QUANTITY = 99;
 
+export function getMarketDepartmentName(categoryName: string | null) {
+  const name = categoryName?.split("/")[0].trim();
+  if (!name || /^\d+$/.test(name)) return "Autres produits";
+  if (/fruit|l[eé]gume|frittes/i.test(name)) return "Fruits & légumes";
+  if (/boisson|^eau$/i.test(name)) return "Boissons";
+  if (/boulangerie|p[aâ]tisserie/i.test(name)) return "Boulangerie";
+  if (/frais|lait|fromage/i.test(name)) return "Produits frais";
+  if (/bonbon|biscuit|chips|cuisine|food|[eé]picerie|b[eé]b[eé]|enfants/i.test(name)) return "Épicerie";
+  if (/hygien|cosm[eé]tique|electricit[eé]|insecticide|ustensile|librairie|sant[eé]/i.test(name)) {
+    return "Maison & entretien";
+  }
+  return name;
+}
+
+export function getMarketDepartmentId(name: string) {
+  const departmentIds: Record<string, string> = {
+    "Fruits & légumes": "fruits-legumes",
+    Épicerie: "epicerie",
+    Boulangerie: "boulangerie",
+    Boissons: "boissons",
+    "Produits frais": "frais",
+    "Maison & entretien": "maison",
+  };
+  if (departmentIds[name]) return departmentIds[name];
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("fr")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "autres-produits";
+}
+
 export function getMarketProductId(departmentId: string, productName: string, odooProductId?: number) {
   if (Number.isSafeInteger(odooProductId) && Number(odooProductId) > 0) {
     return `${departmentId}:odoo-${odooProductId}`;

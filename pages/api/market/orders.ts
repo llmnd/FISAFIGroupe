@@ -43,14 +43,23 @@ type OdooVariantTemplate = {
   product_tmpl_id: [number, string];
 };
 
+type OdooProductTemplateDetails = {
+  id: number;
+  categ_id: [number, string] | false;
+  uom_name: string;
+};
+
 type MarketOrderStatus = "draft" | "sent" | "sale" | "done" | "cancel";
 type QuotationItem = {
   id: number;
+  productId: number;
   name: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;
   imageUrl: string | null;
+  categoryName: string | null;
+  unitName: string;
 };
 type ApiResponse = {
   orderReference?: string;
@@ -190,6 +199,19 @@ function isOdooVariantTemplate(value: unknown): value is OdooVariantTemplate {
   );
 }
 
+function isOdooProductTemplateDetails(value: unknown): value is OdooProductTemplateDetails {
+  if (!value || typeof value !== "object") return false;
+  const product = value as Partial<OdooProductTemplateDetails>;
+  return (
+    Number.isSafeInteger(product.id) &&
+    (product.categ_id === false ||
+      (Array.isArray(product.categ_id) &&
+        Number.isSafeInteger(product.categ_id[0]) &&
+        typeof product.categ_id[1] === "string")) &&
+    typeof product.uom_name === "string"
+  );
+}
+
 const STATUS_LABELS: Record<MarketOrderStatus, string> = {
   draft: "En attente de validation",
   sent: "Devis envoyé par le vendeur",
@@ -276,6 +298,23 @@ async function getCustomerOrders(
     const templateByVariantId = new Map(
       variantPayload.map((variant) => [variant.id, variant.product_tmpl_id[0]]),
     );
+    const templateIds = [...new Set(variantPayload.map((variant) => variant.product_tmpl_id[0]))];
+    const templatePayload: unknown = templateIds.length
+      ? await callOdoo("product.template", "search_read", {
+          domain: [["id", "in", templateIds]],
+          fields: ["id", "categ_id", "uom_name"],
+          limit: templateIds.length,
+        })
+      : [];
+    if (
+      !Array.isArray(templatePayload) ||
+      !templatePayload.every(isOdooProductTemplateDetails) ||
+      templatePayload.some((product) => !templateIds.includes(product.id))
+    ) {
+      console.error("[Market/Odoo] Quotation product template response has an unexpected format.");
+      throw new OdooApiError("Odoo a renvoyé des catégories de produits invalides.");
+    }
+    const templateById = new Map(templatePayload.map((product) => [product.id, product]));
     const linesByOrderId = new Map<number, QuotationItem[]>();
     for (const line of productLines) {
       const orderId = line.order_id[0];
@@ -284,14 +323,22 @@ async function getCustomerOrders(
         throw new OdooApiError("Odoo a renvoyé des lignes de devis invalides.");
       }
       const templateId = templateByVariantId.get(line.product_id[0]);
+      const template = templateId ? templateById.get(templateId) : undefined;
+      if (!templateId || !template) {
+        console.error("[Market/Odoo] A quotation line references a missing product template.");
+        throw new OdooApiError("Un produit de ce devis n’est plus disponible dans Odoo.");
+      }
       const orderItems = linesByOrderId.get(orderId) ?? [];
       orderItems.push({
         id: line.id,
+        productId: templateId,
         name: line.product_id[1],
         quantity: line.product_uom_qty,
         unitPrice: line.price_unit,
         subtotal: line.price_subtotal,
-        imageUrl: templateId ? `/api/market/products/${templateId}/image` : null,
+        imageUrl: `/api/market/products/${templateId}/image`,
+        categoryName: template.categ_id ? template.categ_id[1] : null,
+        unitName: template.uom_name,
       });
       linesByOrderId.set(orderId, orderItems);
     }

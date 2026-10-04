@@ -196,6 +196,20 @@
   transform: none;
 }
 
+.dashboard-market-reorder {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: start;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.dashboard-market-reorder > span {
+  color: var(--od-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .dash-layout.user-dashboard .form-input:focus,
 .dash-layout.user-dashboard .form-textarea:focus,
 .dash-layout.user-dashboard .form-select:focus {

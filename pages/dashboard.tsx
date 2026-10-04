@@ -5,6 +5,15 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  getMarketDepartmentId,
+  getMarketDepartmentName,
+  getMarketProductId,
+  MARKET_CART_MAX_QUANTITY,
+  readMarketCart,
+  writeMarketCart,
+} from "@/lib/marketCart";
+import type { MarketCartItem } from "@/lib/marketCart";
 
 interface User {
   id: string;
@@ -74,11 +83,14 @@ interface MarketQuotation {
   date: string;
   items: Array<{
     id: number;
+    productId: number;
     name: string;
     quantity: number;
     unitPrice: number;
     subtotal: number;
     imageUrl: string | null;
+    categoryName: string | null;
+    unitName: string;
   }>;
 }
 
@@ -151,6 +163,8 @@ export default function DashboardPage() {
   const [marketQuotations, setMarketQuotations] = useState<MarketQuotation[]>([]);
   const [loadingMarketQuotations, setLoadingMarketQuotations] = useState(false);
   const [marketQuotationError, setMarketQuotationError] = useState("");
+  const [reorderingQuotationId, setReorderingQuotationId] = useState<number | null>(null);
+  const [marketReorderError, setMarketReorderError] = useState("");
   const [marketEmailVerified, setMarketEmailVerified] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
@@ -242,6 +256,8 @@ export default function DashboardPage() {
           typeof item === "object" &&
           "id" in item &&
           Number.isSafeInteger(item.id) &&
+          "productId" in item &&
+          Number.isSafeInteger(item.productId) &&
           "name" in item &&
           typeof item.name === "string" &&
           "quantity" in item &&
@@ -251,7 +267,11 @@ export default function DashboardPage() {
           "subtotal" in item &&
           typeof item.subtotal === "number" &&
           "imageUrl" in item &&
-          (typeof item.imageUrl === "string" || item.imageUrl === null)
+          (typeof item.imageUrl === "string" || item.imageUrl === null) &&
+          "categoryName" in item &&
+          (typeof item.categoryName === "string" || item.categoryName === null) &&
+          "unitName" in item &&
+          typeof item.unitName === "string"
         )
       )) {
         throw new Error("Les devis reçus ne sont pas valides.");
@@ -267,6 +287,80 @@ export default function DashboardPage() {
       setLoadingMarketQuotations(false);
     }
   }
+
+  const reorderMarketQuotation = async (quotation: MarketQuotation) => {
+    if (reorderingQuotationId !== null) return;
+    setReorderingQuotationId(quotation.id);
+    setMarketReorderError("");
+
+    try {
+      if (quotation.items.length === 0) {
+        throw new Error("Ce devis ne contient aucun produit à recommander.");
+      }
+
+      const cart = readMarketCart();
+      const nextCart = [...cart];
+
+      for (const product of quotation.items) {
+        if (
+          !Number.isSafeInteger(product.productId) ||
+          product.productId <= 0 ||
+          !Number.isFinite(product.quantity) ||
+          product.quantity <= 0 ||
+          product.quantity > MARKET_CART_MAX_QUANTITY ||
+          !Number.isFinite(product.unitPrice) ||
+          product.unitPrice < 0
+        ) {
+          throw new Error("Un produit de ce devis ne peut pas être ajouté au panier.");
+        }
+
+        const departmentName = getMarketDepartmentName(product.categoryName);
+        const departmentId = getMarketDepartmentId(departmentName);
+        const priceUnit = /kg|kilogram/i.test(product.unitName) ? "kg" : "unité";
+        const itemId = getMarketProductId(departmentId, product.name, product.productId);
+        const existingIndex = nextCart.findIndex((item) => item.id === itemId);
+        const existing = existingIndex >= 0 ? nextCart[existingIndex] : null;
+        const quantity = product.quantity + (existing?.quantity ?? 0);
+
+        if (quantity > MARKET_CART_MAX_QUANTITY) {
+          throw new Error(
+            `${product.name} dépasserait la quantité maximale de ${MARKET_CART_MAX_QUANTITY} dans le panier.`,
+          );
+        }
+
+        const cartItem: MarketCartItem = {
+          id: itemId,
+          odooProductId: product.productId,
+          departmentId,
+          departmentName,
+          name: product.name,
+          image: product.imageUrl ?? undefined,
+          priceLabel: new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(product.unitPrice),
+          unitPrice: product.unitPrice,
+          priceUnit,
+          quantity,
+        };
+
+        if (existingIndex >= 0) {
+          nextCart[existingIndex] = cartItem;
+        } else {
+          nextCart.push(cartItem);
+        }
+      }
+
+      writeMarketCart(nextCart);
+      await router.push("/market/commande");
+    } catch (reorderError) {
+      console.error("[Dashboard] Could not add the previous quotation to the Market cart:", reorderError);
+      setMarketReorderError(
+        reorderError instanceof Error
+          ? reorderError.message
+          : "Impossible de recommander ce devis.",
+      );
+    } finally {
+      setReorderingQuotationId(null);
+    }
+  };
 
   const resendMarketEmailVerification = async () => {
     setResendingVerification(true);
@@ -1573,6 +1667,11 @@ export default function DashboardPage() {
                     {marketQuotationError}
                   </div>
                 )}
+                {marketReorderError && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                    {marketReorderError}
+                  </div>
+                )}
                 <div className="market-refresh-row">
                   <button
                     className="market-action-button market-refresh-button"
@@ -1678,6 +1777,21 @@ export default function DashboardPage() {
                             </div>
                           )}
                         </div>
+                        {quotation.items.length > 0 && (
+                          <div className="dashboard-market-reorder">
+                            <button
+                              className="market-action-button"
+                              type="button"
+                              onClick={() => void reorderMarketQuotation(quotation)}
+                              disabled={reorderingQuotationId !== null}
+                            >
+                              {reorderingQuotationId === quotation.id
+                                ? "Préparation du panier…"
+                                : "Recommander"}
+                            </button>
+                            <span>Prix et stock revérifiés à l’envoi.</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
