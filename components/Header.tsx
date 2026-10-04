@@ -67,6 +67,10 @@ const IconInstagram = () => (
 );
 
 /* ─── Constants ──────────────────────────────────────────── */
+const MARKET_HEADER_HIDE_THRESHOLD = 18;
+const MARKET_HEADER_REVEAL_THRESHOLD = 10;
+const MARKET_HEADER_HIDE_AFTER = 96;
+
 type NavItem = {
   label: string;
   href: string;
@@ -152,6 +156,7 @@ export default function Header({
   const rafIdRef         = useRef<number | null>(null);
   const lastScrolledRef  = useRef(false);
   const lastScrollTopRef = useRef(0);
+  const marketScrollIntentRef = useRef(0);
   const navMenuCloseRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearNavMenuClose = () => {
@@ -217,14 +222,43 @@ export default function Header({
         const scrollDelta = scrollTop - lastScrollTopRef.current;
 
         if (headerRef.current) {
-          if (scrollTop <= 10 || scrollDelta < -2) {
-            headerRef.current.classList.remove("is-hidden");
-          } else if (scrollDelta > 2) {
-            headerRef.current.classList.add("is-hidden");
+          const isMarketHeader = headerRef.current.classList.contains("has-market-actions");
+
+          if (isMarketHeader) {
+            if (scrollDelta !== 0) {
+              const currentIntent = marketScrollIntentRef.current;
+              marketScrollIntentRef.current =
+                currentIntent === 0 || Math.sign(currentIntent) === Math.sign(scrollDelta)
+                  ? currentIntent + scrollDelta
+                  : scrollDelta;
+            }
+
+            if (
+              scrollTop <= 10 ||
+              marketScrollIntentRef.current <= -MARKET_HEADER_REVEAL_THRESHOLD
+            ) {
+              headerRef.current.classList.remove("is-hidden");
+              marketScrollIntentRef.current = 0;
+            } else if (
+              scrollTop > MARKET_HEADER_HIDE_AFTER &&
+              marketScrollIntentRef.current >= MARKET_HEADER_HIDE_THRESHOLD
+            ) {
+              headerRef.current.classList.add("is-hidden");
+              marketScrollIntentRef.current = 0;
+            }
+
+            lastScrollTopRef.current = scrollTop;
+          } else {
+            if (scrollTop <= 10 || scrollDelta < -2) {
+              headerRef.current.classList.remove("is-hidden");
+            } else if (scrollDelta > 2) {
+              headerRef.current.classList.add("is-hidden");
+            }
+
+            if (Math.abs(scrollDelta) > 2) {
+              lastScrollTopRef.current = scrollTop;
+            }
           }
-        }
-        if (Math.abs(scrollDelta) > 2) {
-          lastScrollTopRef.current = scrollTop;
         }
 
         if (progressFillRef.current) {
@@ -530,14 +564,6 @@ export default function Header({
 
           {marketActions && (
             <div className="header-market-actions" aria-label="Commandes FiSAFi Market">
-              <button
-                className="header-icon-btn market-search-button"
-                onClick={() => setShowSearch(true)}
-                aria-label="Rechercher"
-                title="Rechercher (⌘K)"
-              >
-                <IconSearch />
-              </button>
               {marketActions}
             </div>
           )}

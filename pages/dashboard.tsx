@@ -82,7 +82,7 @@ interface MarketQuotation {
   }>;
 }
 
-type TabId = "inscriptions" | "formations" | "market-orders" | "security" | "inscriptions-manage" | "users" | "articles";
+type TabId = "home" | "inscriptions" | "formations" | "market-orders" | "security" | "inscriptions-manage" | "users" | "articles";
 
 interface TabType {
   id: TabId;
@@ -92,9 +92,10 @@ interface TabType {
 }
 
 const ALL_TABS: TabType[] = [
+  { id: "home",                 label: "Accueil",                icon: "⌂" },
   { id: "inscriptions",        label: "Mes inscriptions",       icon: "◈" },
   { id: "formations",          label: "Formations",             icon: "◉" },
-  { id: "market-orders",       label: "Mes devis Market",       icon: "▱" },
+  { id: "market-orders",       label: "Devis & commandes",      icon: "▱" },
   { id: "security",            label: "Sécurité du compte",      icon: "◇" },
   { id: "inscriptions-manage", label: "Gérer inscriptions",     icon: "◎", admin: true },
   { id: "users",               label: "Utilisateurs",           icon: "◇", admin: true },
@@ -137,7 +138,7 @@ export default function DashboardPage() {
   };
   
   const [user, setUser]         = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("inscriptions");
+  const [activeTab, setActiveTab] = useState<TabId>("home");
   const [loading, setLoading]   = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -146,6 +147,7 @@ export default function DashboardPage() {
   const [loadingFormations, setLoadingFormations] = useState(false);
   const [userInscriptions, setUserInscriptions] = useState<InscriptionFormation[]>([]);
   const [loadingInscriptions, setLoadingInscriptions] = useState(false);
+  const [inscriptionFetchError, setInscriptionFetchError] = useState("");
   const [marketQuotations, setMarketQuotations] = useState<MarketQuotation[]>([]);
   const [loadingMarketQuotations, setLoadingMarketQuotations] = useState(false);
   const [marketQuotationError, setMarketQuotationError] = useState("");
@@ -384,6 +386,7 @@ export default function DashboardPage() {
             }
             const freshUser = payload.data as User;
             setUser(freshUser);
+            setActiveTab(freshUser.role === "admin" ? "inscriptions" : "home");
             localStorage.setItem("user", JSON.stringify(freshUser));
             if (freshUser.role === "admin") {
               await router.replace("/admin-dashboard");
@@ -392,10 +395,12 @@ export default function DashboardPage() {
           } else {
             console.error("[Dashboard] Could not validate session:", response.status);
             setUser(cachedAccount);
+            setActiveTab(cachedAccount.role === "admin" ? "inscriptions" : "home");
           }
         } catch (sessionError) {
           console.error("[Dashboard] Session validation request failed:", sessionError);
           setUser(cachedAccount);
+          setActiveTab(cachedAccount.role === "admin" ? "inscriptions" : "home");
         } finally {
           setLoading(false);
         }
@@ -409,7 +414,10 @@ export default function DashboardPage() {
 
   // Charger les articles au changement d'onglet
   useEffect(() => {
-    if (activeTab === "articles" && user?.role === "admin") {
+    if (activeTab === "home" && user) {
+      void fetchMarketQuotations();
+      void fetchUserInscriptions();
+    } else if (activeTab === "articles" && user?.role === "admin") {
       fetchArticles();
     } else if (activeTab === "inscriptions-manage" && user?.role === "admin") {
       fetchAdminInscriptions();
@@ -423,7 +431,7 @@ export default function DashboardPage() {
   }, [activeTab, user]);
 
   useEffect(() => {
-    if (activeTab !== "market-orders" || !user) return;
+    if (!["home", "market-orders"].includes(activeTab) || !user) return;
     const interval = window.setInterval(() => {
       void fetchMarketQuotations();
     }, 60_000);
@@ -517,6 +525,7 @@ export default function DashboardPage() {
 
   const fetchUserInscriptions = async () => {
     setLoadingInscriptions(true);
+    setInscriptionFetchError("");
     try {
       const token = localStorage.getItem("token");
       if (!user?.email) {
@@ -539,10 +548,12 @@ export default function DashboardPage() {
       } else {
         console.error('Error fetching inscriptions:', res.status);
         setUserInscriptions([]);
+        setInscriptionFetchError("Impossible de charger vos inscriptions.");
       }
     } catch (err) {
       console.error("Error fetching user inscriptions:", err);
       setUserInscriptions([]);
+      setInscriptionFetchError("Impossible de contacter le service des inscriptions.");
     } finally {
       setLoadingInscriptions(false);
     }
@@ -763,13 +774,26 @@ export default function DashboardPage() {
   );
   if (!user) return null;
 
-  const tabs = ALL_TABS.filter(t => !t.admin || user.role === "admin");
+  const availableTabs = ALL_TABS.filter(t => !t.admin || user.role === "admin");
+  const tabs = user.role === "admin"
+    ? availableTabs
+    : [
+        ...availableTabs.filter((tab) => tab.id === "home"),
+        ...availableTabs.filter((tab) => tab.id === "market-orders"),
+        ...availableTabs.filter((tab) => tab.id !== "home" && tab.id !== "market-orders"),
+      ];
   const firstInitial = user.firstName?.[0] ?? "";
   const lastInitial = user.lastName?.[0] ?? "";
   const initials = (firstInitial + lastInitial).toUpperCase() || (user.email?.[0] ?? "U").toUpperCase();
 
   // Sessions the current user is already registered to (by sessionId)
   const registeredSessionIds = new Set<number>(userInscriptions.filter(i => i.status !== 'annule').map(i => i.sessionId));
+  const pendingQuotationCount = marketQuotations.filter((quotation) =>
+    quotation.state === "draft" || quotation.state === "sent",
+  ).length;
+  const confirmedOrderCount = marketQuotations.filter((quotation) =>
+    quotation.state === "sale" || quotation.state === "done",
+  ).length;
 
   return (
     <>
@@ -1193,7 +1217,7 @@ export default function DashboardPage() {
       {/* Overlay mobile */}
       <div className={`dash-overlay${sidebarOpen ? " open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
-      <div className="dash-layout">
+      <div className="dash-layout user-dashboard employee-portal-page">
 
         {/* ── SIDEBAR ── */}
         <aside className={`dash-sidebar${sidebarOpen ? " open" : ""}`}>
@@ -1269,6 +1293,93 @@ export default function DashboardPage() {
 
           {/* Content */}
           <div className="dash-content">
+            {activeTab === "home" && (
+              <section className="dashboard-home" aria-labelledby="dashboard-home-title">
+                <div className="page-eyebrow">Espace personnel</div>
+                <h1 className="page-title" id="dashboard-home-title">
+                  Bonjour{user.firstName ? ` ${user.firstName}` : ""} !
+                </h1>
+                <p className="page-sub">
+                  Retrouvez ici vos devis, commandes et inscriptions FiSAFi.
+                </p>
+
+                {(marketQuotationError || inscriptionFetchError) && (
+                  <div className="alert alert-error dashboard-home-error" role="alert">
+                    {marketQuotationError || inscriptionFetchError}
+                  </div>
+                )}
+
+                <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
+                  <button
+                    className="dashboard-home-summary-card"
+                    type="button"
+                    onClick={() => handleTab("market-orders")}
+                  >
+                    <span className="dashboard-home-summary-label">Devis en cours</span>
+                    <strong className="dashboard-home-summary-value">
+                      {loadingMarketQuotations ? "…" : pendingQuotationCount}
+                    </strong>
+                    <span className="dashboard-home-summary-link">Consulter mes devis <span aria-hidden="true">→</span></span>
+                  </button>
+                  <button
+                    className="dashboard-home-summary-card dashboard-home-summary-card--teal"
+                    type="button"
+                    onClick={() => handleTab("market-orders")}
+                  >
+                    <span className="dashboard-home-summary-label">Commandes confirmées</span>
+                    <strong className="dashboard-home-summary-value">
+                      {loadingMarketQuotations ? "…" : confirmedOrderCount}
+                    </strong>
+                    <span className="dashboard-home-summary-link">Suivre mes commandes <span aria-hidden="true">→</span></span>
+                  </button>
+                  <button
+                    className="dashboard-home-summary-card dashboard-home-summary-card--green"
+                    type="button"
+                    onClick={() => handleTab("inscriptions")}
+                  >
+                    <span className="dashboard-home-summary-label">Mes inscriptions</span>
+                    <strong className="dashboard-home-summary-value">
+                      {loadingInscriptions ? "…" : userInscriptions.length}
+                    </strong>
+                    <span className="dashboard-home-summary-link">Voir mes inscriptions <span aria-hidden="true">→</span></span>
+                  </button>
+                </div>
+
+                <div className="dashboard-home-section-heading">
+                  <div>
+                    <p className="dashboard-home-section-kicker">Accès rapide</p>
+                    <h2>Que souhaitez-vous faire ?</h2>
+                  </div>
+                </div>
+                <div className="dashboard-home-shortcuts">
+                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("market-orders")}>
+                    <span className="dashboard-home-shortcut-icon" aria-hidden="true">▱</span>
+                    <span>
+                      <strong>Devis & commandes</strong>
+                      <span>Consultez vos demandes et leur statut.</span>
+                    </span>
+                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
+                  </button>
+                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("formations")}>
+                    <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--teal" aria-hidden="true">◉</span>
+                    <span>
+                      <strong>Formations</strong>
+                      <span>Découvrez les formations et leurs sessions.</span>
+                    </span>
+                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
+                  </button>
+                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("security")}>
+                    <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--green" aria-hidden="true">◇</span>
+                    <span>
+                      <strong>Sécurité du compte</strong>
+                      <span>Gérez votre mot de passe et vos accès.</span>
+                    </span>
+                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* ── Mes inscriptions ── */}
             {activeTab === "inscriptions" && (
               <>
@@ -1334,7 +1445,7 @@ export default function DashboardPage() {
             {activeTab === "market-orders" && (
               <>
                 <div className="page-eyebrow">FiSAFi Market</div>
-                <h1 className="page-title">Mes devis Market</h1>
+                <h1 className="page-title">Mes devis et commandes Market</h1>
                 <p className="page-sub">
                   Consultez le statut de vos demandes. Le devis devient une commande confirmée
                   seulement après validation du vendeur dans Odoo.

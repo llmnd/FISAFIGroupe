@@ -18,6 +18,7 @@ import '../styles/market-store.css';
 import '../styles/market-store-scene.css';
 import '../styles/market-checkout.css';
 import '../styles/admin-dashboard.css';
+import '../styles/user-dashboard.css';
 
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;
