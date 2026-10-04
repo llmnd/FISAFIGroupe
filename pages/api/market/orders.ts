@@ -248,17 +248,23 @@ export default async function handler(
     return res.status(502).json({ error: "Impossible de vérifier votre compte." });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: account.id },
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      emailVerifiedAt: true,
-      odooPartnerId: true,
-    },
-  });
+  let user: MarketAccount | null;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: account.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        emailVerifiedAt: true,
+        odooPartnerId: true,
+      },
+    });
+  } catch (error) {
+    console.error("[Market/DB] Could not load the authenticated account:", error);
+    return res.status(503).json({ error: "Le service de commande est temporairement indisponible." });
+  }
   if (!user || user.email.toLowerCase() !== account.email.toLowerCase()) {
     return res.status(401).json({ error: "Votre compte n’est plus disponible. Connectez-vous à nouveau." });
   }

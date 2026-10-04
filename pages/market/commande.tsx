@@ -285,7 +285,7 @@ export default function MarketOrderPage() {
           })),
         }),
       });
-      const payload: unknown = await response.json();
+      const payload: unknown = await response.json().catch(() => null);
       if (!response.ok) {
         const message =
           payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
