@@ -541,7 +541,10 @@ export default function MarketOrderPage() {
                         checked={fulfillment === "delivery"}
                         onChange={() => setFulfillment("delivery")}
                       />
-                      <span>Livraison</span>
+                      <span>
+                        <strong>Livraison</strong>
+                        <small>À Dakar</small>
+                      </span>
                     </label>
                     <label>
                       <input
@@ -551,9 +554,23 @@ export default function MarketOrderPage() {
                         checked={fulfillment === "pickup"}
                         onChange={() => setFulfillment("pickup")}
                       />
-                      <span>Retrait en magasin</span>
+                      <span>
+                        <strong>Retrait</strong>
+                        <small>En magasin</small>
+                      </span>
                     </label>
                   </fieldset>
+
+                  <div className="market-fulfillment-info" role="status">
+                    <span className="market-fulfillment-info-icon" aria-hidden="true">
+                      {fulfillment === "delivery" ? "↗" : "⌖"}
+                    </span>
+                    <p>
+                      {fulfillment === "delivery"
+                        ? "Le vendeur vous confirmera les frais de livraison et le délai estimatif après vérification de votre adresse, avant de valider le devis."
+                        : "Le vendeur vous communiquera les modalités et le délai de retrait avant de valider le devis."}
+                    </p>
+                  </div>
 
                   <div className="market-field">
                     <label htmlFor="market-name">Votre nom</label>
@@ -630,7 +647,10 @@ export default function MarketOrderPage() {
                   </div>
 
                   <div className="market-order-total">
-                    <span>Estimation du panier</span>
+                    <span>
+                      Estimation des produits
+                      <small>{fulfillment === "delivery" ? "Hors frais de livraison" : "Retrait en magasin"}</small>
+                    </span>
                     <strong>{formatAmount(total)} FCFA</strong>
                   </div>
 
