@@ -60,6 +60,9 @@ type MarketSubcategory = { path: string; name: string; productCount: number };
 
 const DEPARTMENT_COLORS = ["green", "orange", "gold", "blue", "pink", "purple"] as const;
 const MARKET_PAGE_SIZE = 24;
+const marketCheckoutUrl = process.env.NEXT_PUBLIC_FISAFI_MARKET_URL
+  ? `${process.env.NEXT_PUBLIC_FISAFI_MARKET_URL.replace(/\/$/, "")}/commande`
+  : "/market/commande";
 
 function getDepartmentArtwork(name: string): Department["art"] {
   if (/fruit|l[eé]gume/i.test(name)) return "produce";
@@ -1017,7 +1020,7 @@ export default function MarketPage() {
         marketCartAction={
           <Link
             className="market-header-cart"
-            href="/market/commande"
+            href={marketCheckoutUrl}
             aria-label={`Ouvrir le panier, ${cartItems.length} références et une quantité totale de ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(cartCount)}`}
             title="Panier"
           >

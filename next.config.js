@@ -37,6 +37,22 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/',
+          has: [{ type: 'host', value: 'market.fisafigroupe.com' }],
+          destination: '/market',
+        },
+        {
+          source: '/commande',
+          has: [{ type: 'host', value: 'market.fisafigroupe.com' }],
+          destination: '/market/commande',
+        },
+      ],
+    };
+  },
   async headers() {
     return [
       {

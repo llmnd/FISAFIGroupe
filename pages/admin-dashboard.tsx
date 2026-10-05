@@ -145,10 +145,7 @@ function isMarketStats(value: unknown): value is MarketStats {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const buildApiUrl = (ep: string) => {
-    const b = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    return b ? `${b}${ep}` : ep;
-  };
+  const buildApiUrl = (ep: string) => ep;
 
   const getTabLabel = (tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce"): string => {
     const labels: Record<string, string> = {
@@ -315,14 +312,36 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (!token || !userData) { router.push("/login"); return; }
-    const user = JSON.parse(userData);
-    if (user.role !== "admin") { router.push("/dashboard"); return; }
-    setCurrentUser(user);
-    fetchUsers();
-    setLoading(false);
+    void (async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          await router.replace("/login");
+          return;
+        }
+        const payload: unknown = await response.json();
+        if (
+          !payload || typeof payload !== "object" || !("data" in payload) ||
+          !payload.data || typeof payload.data !== "object" ||
+          !("id" in payload.data) || typeof payload.data.id !== "string" ||
+          !("email" in payload.data) || typeof payload.data.email !== "string" ||
+          !("role" in payload.data) || typeof payload.data.role !== "string" ||
+          !("active" in payload.data) || typeof payload.data.active !== "boolean" ||
+          !("createdAt" in payload.data) || typeof payload.data.createdAt !== "string"
+        ) throw new Error("Session validation returned invalid account data.");
+        if (payload.data.role !== "admin") {
+          await router.replace("/dashboard");
+          return;
+        }
+        setCurrentUser(payload.data as User);
+        await fetchUsers();
+      } catch (error) {
+        console.error("[Admin/Auth] Could not validate session:", error);
+        await router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [router]);
 
   useEffect(() => {
@@ -571,7 +590,13 @@ export default function AdminDashboard() {
     } catch { showToast("Erreur réseau", "err"); }
   };
 
-  const handleLogout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); router.push("/"); };
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    void fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+      window.dispatchEvent(new Event("fisafi:session-expired"));
+      router.push("/");
+    });
+  };
 
   const fetchArticles = async () => {
     setLoadingArticles(true);
@@ -647,10 +672,8 @@ export default function AdminDashboard() {
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = (reader.result as string).split(",")[1];
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) { setBrochureError("Backend URL manquant"); setSubmittingBrochure(false); return; }
       try {
-        const r = await fetch(`${backendUrl}/api/brochures/upload`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token") || ""}` }, body: JSON.stringify({ fileBuffer: base64, fileName: brochureFile!.name, ...brochureFormData }) });
+        const r = await fetch("/api/brochures/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileBuffer: base64, fileName: brochureFile!.name, ...brochureFormData }) });
         const d = await r.json();
         if (r.ok) { setBrochureSuccess("Brochure uploadée!"); setBrochureFormData({ name: "", description: "" }); setBrochureFile(null); setShowBrochureForm(false); await fetchBrochures(); setTimeout(() => setBrochureSuccess(""), 3000); }
         else setBrochureError(d.error || "Erreur upload");
@@ -1410,7 +1433,7 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetBrochure.type || "PDF"} · {new Date(actionSheetBrochure.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brochures/${actionSheetBrochure.id}/download`} target="_blank" rel="noopener noreferrer" className="sheet-btn primary" style={{ textDecoration:"none" }}>
+            <a href={`/api/brochures/${actionSheetBrochure.id}/download`} target="_blank" rel="noopener noreferrer" className="sheet-btn primary" style={{ textDecoration:"none" }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Télécharger
             </a>

@@ -144,6 +144,7 @@ export default function Header({
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [scrolled,      setScrolled]      = useState(false);
   const [isLoggedIn,    setIsLoggedIn]    = useState(false);
+  const [isMarketSubdomain, setIsMarketSubdomain] = useState(false);
   const [openNavMenu,   setOpenNavMenu]   = useState<{ href: string; left: number; top: number } | null>(null);
 
   const pathname = usePathname();
@@ -183,18 +184,36 @@ export default function Header({
     }, 140);
   };
 
-  /* ─── Auth (localStorage côté client uniquement) ───────── */
-  useEffect(() => {
-    const syncAuth = () => {
-      setIsLoggedIn(Boolean(localStorage.getItem("token")));
-    };
+  const visibleNavItems: NavItem[] = isMarketSubdomain
+    ? [{ label: "Market", href: "/" }]
+    : NAV_ITEMS;
 
-    syncAuth();
-    window.addEventListener("storage", syncAuth);
-    window.addEventListener("fisafi:session-expired", syncAuth);
+  /* ─── Auth ─────────────────────────────────────────────── */
+  useEffect(() => {
+    let active = true;
+    const syncAuth = async () => {
+      if (window.location.hostname === "market.fisafigroupe.com") {
+        setIsMarketSubdomain(true);
+      }
+      try {
+        const response = await fetch("/api/auth/me");
+        if (active) setIsLoggedIn(response.ok);
+      } catch (error) {
+        console.error("[Header/Auth] Could not check the account session:", error);
+        if (active) setIsLoggedIn(false);
+      }
+    };
+    const handleSyncAuth = () => void syncAuth();
+
+    void syncAuth();
+    window.addEventListener("storage", handleSyncAuth);
+    window.addEventListener("fisafi:session-expired", handleSyncAuth);
+    window.addEventListener("focus", handleSyncAuth);
     return () => {
-      window.removeEventListener("storage", syncAuth);
-      window.removeEventListener("fisafi:session-expired", syncAuth);
+      active = false;
+      window.removeEventListener("storage", handleSyncAuth);
+      window.removeEventListener("fisafi:session-expired", handleSyncAuth);
+      window.removeEventListener("focus", handleSyncAuth);
     };
   }, []);
 
@@ -413,9 +432,14 @@ export default function Header({
 
         {/* Logo */}
         <Link
-          href="/"
+          href={isMarketSubdomain ? "https://www.fisafigroupe.com" : "/"}
           className="header-logo"
-          onClick={(e) => { e.preventDefault(); setShowInfoModal(true); }}
+          onClick={(e) => {
+            if (!isMarketSubdomain) {
+              e.preventDefault();
+              setShowInfoModal(true);
+            }
+          }}
         >
           <Image
             src="/favicon/web-app-manifest-192x192.png"
@@ -430,7 +454,7 @@ export default function Header({
         {/* Desktop Nav */}
         <nav aria-label="Navigation principale">
           <ul className="header-nav">
-            {NAV_ITEMS.map(({ label, href, children }) => (
+            {visibleNavItems.map(({ label, href, children }) => (
               <li
                 key={href}
                 className={`header-nav-item${children ? " has-submenu" : ""}${openNavMenu?.href === href ? " open" : ""}`}
@@ -459,7 +483,7 @@ export default function Header({
         <div className="header-actions">
           {marketCartAction}
 
-          {!marketActions && (
+          {!marketActions && !isMarketSubdomain && (
             <button
               className="header-icon-btn"
               onClick={() => setShowSearch(true)}
@@ -470,7 +494,7 @@ export default function Header({
             </button>
           )}
 
-          {!marketActions && (
+          {!marketActions && !isMarketSubdomain && (
             <button
               className="header-plus-btn"
               aria-label="Informations"
@@ -603,7 +627,7 @@ export default function Header({
       >
         <div className="header-drawer-inner">
           <ul className="header-drawer-nav">
-            {NAV_ITEMS.map(({ label, href, children }) => (
+            {visibleNavItems.map(({ label, href, children }) => (
               <li key={href}>
                 <Link
                   href={href}

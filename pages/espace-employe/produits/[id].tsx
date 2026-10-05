@@ -78,8 +78,8 @@ export default function EmployeeProductDetailsPage() {
   const [notice, setNotice] = useState("");
 
   const expireSession = useCallback(async () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
+    await fetch("/api/auth/logout", { method: "POST" });
     await router.replace("/login?session=expired");
   }, [router]);
 
@@ -90,18 +90,10 @@ export default function EmployeeProductDetailsPage() {
       setLoading(false);
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
-
     setLoading(true);
     setError("");
     try {
-      const profileResponse = await fetch("/api/employee/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const profileResponse = await fetch("/api/employee/me");
       const profilePayload: unknown = await profileResponse.json();
       if (profileResponse.status === 401) {
         await expireSession();
@@ -119,9 +111,7 @@ export default function EmployeeProductDetailsPage() {
       setCanEdit(profile.role === "admin" || ["manager", "stock", "accountant"].includes(profile.employeeRole || ""));
       setCanEditCost(profile.role === "admin" || ["manager", "accountant"].includes(profile.employeeRole || ""));
 
-      const response = await fetch(`/api/employee/products?id=${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`/api/employee/products?id=${productId}`);
       const payload: unknown = await response.json();
       if (response.status === 401) {
         await expireSession();
@@ -170,18 +160,13 @@ export default function EmployeeProductDetailsPage() {
     };
     if (canEditCost) input.costPrice = costPrice;
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     setSaving(true);
     setError("");
     setNotice("");
     try {
       const response = await fetch(`/api/employee/products?id=${product.id}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
       const payload: unknown = await response.json();
@@ -213,12 +198,6 @@ export default function EmployeeProductDetailsPage() {
       setError("L’image doit faire 700 Ko maximum.");
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
-
     setImageBusy(true);
     setError("");
     setNotice("");
@@ -237,7 +216,7 @@ export default function EmployeeProductDetailsPage() {
       });
       const response = await fetch(`/api/employee/products?id=${product.id}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64 }),
       });
       const payload: unknown = await response.json();
@@ -260,18 +239,12 @@ export default function EmployeeProductDetailsPage() {
 
   const removeImage = async () => {
     if (!product) return;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     setImageBusy(true);
     setError("");
     setNotice("");
     try {
       const response = await fetch(`/api/employee/products?id=${product.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const payload: unknown = await response.json();
       if (response.status === 401) {

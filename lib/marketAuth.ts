@@ -1,4 +1,5 @@
 import type { NextApiRequest } from "next";
+import { getRequestAuthorization } from "@/lib/authCookie";
 
 export type MarketUser = {
   id: string;
@@ -13,7 +14,7 @@ export class MarketAuthError extends Error {
 }
 
 export async function authenticateMarketUser(req: NextApiRequest): Promise<MarketUser> {
-  const authorization = req.headers.authorization;
+  const authorization = getRequestAuthorization(req);
   if (!authorization?.startsWith("Bearer ")) {
     throw new MarketAuthError("Connectez-vous à votre compte pour continuer.", 401);
   }

@@ -31,24 +31,19 @@ export default function OpenPOSPage() {
 
   useEffect(() => {
     if (!router.isReady || !Number.isSafeInteger(posId) || posId < 1) return;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      void router.replace("/login");
-      return;
-    }
 
     let cancelled = false;
     void Promise.all([
-      fetch("/api/employee/pos", { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("/api/employee/me", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/employee/pos"),
+      fetch("/api/employee/me"),
     ]).then(async ([posResponse, employeeResponse]) => {
       const [posPayload, employeePayload]: [unknown, unknown] = await Promise.all([
         posResponse.json(),
         employeeResponse.json(),
       ]);
       if (posResponse.status === 401 || employeeResponse.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }
@@ -86,11 +81,6 @@ export default function OpenPOSPage() {
       setError("Saisissez un montant initial entier positif ou nul.");
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     operationId.current ||= crypto.randomUUID();
     setSubmitting(true);
     setError("");
@@ -98,7 +88,6 @@ export default function OpenPOSPage() {
       const response = await fetch(`/api/employee/pos/${point.id}/open`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -108,8 +97,8 @@ export default function OpenPOSPage() {
       });
       const payload: unknown = await response.json();
       if (response.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }

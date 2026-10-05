@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { authorizeAdminRequest } from '@/lib/apiAdminAuth';
 
 const prisma = new PrismaClient();
 
@@ -14,6 +15,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
+  if (!(await authorizeAdminRequest(req, res))) return;
   // GET - Récupérer les inscriptions en attente ou filtrées
   if (req.method === 'GET') {
     try {

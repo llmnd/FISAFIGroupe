@@ -65,8 +65,8 @@ export default function EmployeePOSPage() {
   const sessionOpen = point?.session?.status === "opened";
 
   const handleExpiredSession = useCallback(async () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
+    await fetch("/api/auth/logout", { method: "POST" });
     await router.replace("/login?session=expired");
   }, [router]);
 
@@ -76,11 +76,6 @@ export default function EmployeePOSPage() {
   }, [search]);
 
   const loadPage = useCallback(async (offset: number, append: boolean) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     if (append) setLoadingMore(true);
     else {
       setLoading(true);
@@ -89,9 +84,7 @@ export default function EmployeePOSPage() {
     try {
       const query = new URLSearchParams({ offset: String(offset), configId: String(posId) });
       if (debouncedSearch) query.set("q", debouncedSearch);
-      const response = await fetch(`/api/employee/pos/products?${query}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`/api/employee/pos/products?${query}`);
       const payload: unknown = await response.json();
       if (response.status === 401) {
         await handleExpiredSession();
@@ -122,17 +115,12 @@ export default function EmployeePOSPage() {
 
   useEffect(() => {
     if (!router.isReady || !Number.isSafeInteger(posId) || posId < 1) return;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      void router.replace("/login");
-      return;
-    }
 
     let cancelled = false;
     setLoading(true);
     void Promise.all([
-      fetch("/api/employee/pos", { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("/api/employee/me", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/employee/pos"),
+      fetch("/api/employee/me"),
     ]).then(async ([posResponse, employeeResponse]) => {
       const [posPayload, employeePayload]: [unknown, unknown] = await Promise.all([
         posResponse.json(),
@@ -180,12 +168,8 @@ export default function EmployeePOSPage() {
       setPaymentMethodId("");
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) return;
     let cancelled = false;
-    void fetch(`/api/employee/pos/${point.id}/payment-methods?sessionId=${point.session.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(async (response) => {
+    void fetch(`/api/employee/pos/${point.id}/payment-methods?sessionId=${point.session.id}`).then(async (response) => {
       const payload: unknown = await response.json();
       if (response.status === 401) {
         await handleExpiredSession();
@@ -236,8 +220,6 @@ export default function EmployeePOSPage() {
       return;
     }
     setQuote(null);
-    const token = localStorage.getItem("token");
-    if (!token) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setQuote(null);
@@ -246,7 +228,6 @@ export default function EmployeePOSPage() {
       void fetch(`/api/employee/pos/${point.id}/quote`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -345,11 +326,6 @@ export default function EmployeePOSPage() {
       setCheckoutError("Pour ce moyen de paiement, le montant doit être égal au total.");
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     saleOperationId.current ||= crypto.randomUUID();
     setSubmittingSale(true);
     setCheckoutError("");
@@ -357,7 +333,6 @@ export default function EmployeePOSPage() {
       const response = await fetch(`/api/employee/pos/${point.id}/sales`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import type { NextApiRequest } from "next";
+import { getRequestAuthorization } from "@/lib/authCookie";
 
 export const EMPLOYEE_ROLES = [
   "manager",
@@ -55,7 +56,7 @@ export class EmployeeAuthError extends Error {
 }
 
 export async function authenticateEmployee(req: NextApiRequest): Promise<EmployeeAccount> {
-  const authorization = req.headers.authorization;
+  const authorization = getRequestAuthorization(req);
   if (!authorization?.startsWith("Bearer ")) {
     throw new EmployeeAuthError("Connectez-vous à votre compte FiSAFi.", 401);
   }

@@ -28,18 +28,13 @@ export default function EmployeeHomePage() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      void router.replace("/login");
-      return;
-    }
 
-    void fetch("/api/employee/me", { headers: { Authorization: `Bearer ${token}` } })
+    void fetch("/api/employee/me")
       .then(async (response) => {
         const payload = await response.json();
         if (response.status === 401) {
-          localStorage.removeItem("token");
           localStorage.removeItem("user");
+          void fetch("/api/auth/logout", { method: "POST" });
           await router.replace("/login?session=expired");
           return;
         }
@@ -64,9 +59,8 @@ export default function EmployeeHomePage() {
           <button
             className="employee-portal-header-extra employee-portal-header-logout"
             onClick={() => {
-              localStorage.removeItem("token");
               localStorage.removeItem("user");
-              void router.replace("/login");
+              void fetch("/api/auth/logout", { method: "POST" }).finally(() => router.replace("/login"));
             }}
           >
             Se déconnecter

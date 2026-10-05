@@ -36,19 +36,12 @@ export default function ClosePOSPage() {
     ) {
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      void router.replace("/login");
-      return;
-    }
     let cancelled = false;
-    void fetch(`/api/employee/pos/${configId}/close?sessionId=${sessionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(async (response) => {
+    void fetch(`/api/employee/pos/${configId}/close?sessionId=${sessionId}`).then(async (response) => {
       const payload: unknown = await response.json();
       if (response.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }
@@ -107,11 +100,6 @@ export default function ClosePOSPage() {
       }
       counts[Number(id)] = amount;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
     operationId.current ||= crypto.randomUUID();
     setSubmitting(true);
     setError("");
@@ -119,7 +107,6 @@ export default function ClosePOSPage() {
       const response = await fetch(`/api/employee/pos/${configId}/close`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -130,8 +117,8 @@ export default function ClosePOSPage() {
       });
       const payload: unknown = await response.json();
       if (response.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }

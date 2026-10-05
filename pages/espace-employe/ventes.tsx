@@ -140,23 +140,17 @@ export default function EmployeeSalesPage() {
   const initialLoadStarted = useRef(false);
 
   const request = useCallback(async (path: string, init?: RequestInit): Promise<unknown> => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      throw new Error("Connectez-vous pour accéder aux ventes.");
-    }
     const response = await fetch(path, {
       ...init,
       headers: {
         ...(init?.headers || {}),
-        Authorization: `Bearer ${token}`,
         ...(init?.body ? { "Content-Type": "application/json" } : {}),
       },
     });
     const payload: unknown = await response.json();
     if (response.status === 401) {
-      localStorage.removeItem("token");
       localStorage.removeItem("user");
+      void fetch("/api/auth/logout", { method: "POST" });
       await router.replace("/login?session=expired");
       throw new Error("Votre session a expiré. Reconnectez-vous.");
     }

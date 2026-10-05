@@ -77,12 +77,6 @@ export default function EmployeeProductsPage() {
 
   const requestPage = useCallback(async (pageNumber: number) => {
     const requestId = ++requestSequence.current;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
@@ -95,14 +89,12 @@ export default function EmployeeProductsPage() {
       if (categoryId !== null) params.set("categoryId", String(categoryId));
       if (onlyAvailable) params.set("onlyAvailable", "true");
 
-      const response = await fetch(`/api/employee/products?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`/api/employee/products?${params.toString()}`);
       const payload: unknown = await response.json();
       if (requestId !== requestSequence.current) return;
       if (response.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }

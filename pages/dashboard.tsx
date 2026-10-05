@@ -121,15 +121,13 @@ export default function DashboardPage() {
   const expireSession = () => {
     if (sessionRedirecting.current) return;
     sessionRedirecting.current = true;
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
+    void fetch("/api/auth/logout", { method: "POST" });
     void router.replace("/login?session=expired");
   };
 
   const authenticatedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
-    const token = localStorage.getItem("token");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
     const response = await fetch(input, { ...init, headers });
     if (response.status === 401) expireSession();
     return response;
@@ -145,8 +143,7 @@ export default function DashboardPage() {
   
   // Helper para construir URLs com backend
   const buildApiUrl = (endpoint: string) => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    return backendUrl ? `${backendUrl}${endpoint}` : endpoint;
+    return endpoint;
   };
   
   const [user, setUser]         = useState<User | null>(null);
@@ -429,81 +426,35 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const token    = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    
-    if (!token || !userData) { 
-      router.push("/login"); 
-      return; 
-    }
-    
-    try {
-      const cachedUser: unknown = JSON.parse(userData);
-      if (
-        !cachedUser ||
-        typeof cachedUser !== "object" ||
-        !("id" in cachedUser) ||
-        typeof cachedUser.id !== "string" ||
-        !("email" in cachedUser) ||
-        typeof cachedUser.email !== "string" ||
-        !("role" in cachedUser) ||
-        typeof cachedUser.role !== "string"
-      ) {
-        throw new Error("Stored account data is invalid.");
-      }
-      const cachedAccount = cachedUser as User;
-      void (async () => {
-        try {
-          const response = await fetch("/api/auth/me", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if ([401, 403, 404].includes(response.status)) {
-            expireSession();
-            return;
-          }
-          if (response.ok) {
-            const payload: unknown = await response.json();
-            if (
-              !payload ||
-              typeof payload !== "object" ||
-              !("data" in payload) ||
-              !payload.data ||
-              typeof payload.data !== "object" ||
-              !("id" in payload.data) ||
-              typeof payload.data.id !== "string" ||
-              !("email" in payload.data) ||
-              typeof payload.data.email !== "string" ||
-              !("role" in payload.data) ||
-              typeof payload.data.role !== "string"
-            ) {
-              throw new Error("Session validation returned an invalid account.");
-            }
-            const freshUser = payload.data as User;
-            setUser(freshUser);
-            setActiveTab(freshUser.role === "admin" ? "inscriptions" : "home");
-            localStorage.setItem("user", JSON.stringify(freshUser));
-            if (freshUser.role === "admin") {
-              await router.replace("/admin-dashboard");
-              return;
-            }
-          } else {
-            console.error("[Dashboard] Could not validate session:", response.status);
-            setUser(cachedAccount);
-            setActiveTab(cachedAccount.role === "admin" ? "inscriptions" : "home");
-          }
-        } catch (sessionError) {
-          console.error("[Dashboard] Session validation request failed:", sessionError);
-          setUser(cachedAccount);
-          setActiveTab(cachedAccount.role === "admin" ? "inscriptions" : "home");
-        } finally {
-          setLoading(false);
+    void (async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if ([401, 403, 404].includes(response.status)) {
+          expireSession();
+          return;
         }
-      })();
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      expireSession();
-      setLoading(false);
-    }
+        if (!response.ok) throw new Error(`Session validation returned HTTP ${response.status}.`);
+        const payload: unknown = await response.json();
+        if (
+          !payload || typeof payload !== "object" || !("data" in payload) ||
+          !payload.data || typeof payload.data !== "object" ||
+          !("id" in payload.data) || typeof payload.data.id !== "string" ||
+          !("email" in payload.data) || typeof payload.data.email !== "string" ||
+          !("role" in payload.data) || typeof payload.data.role !== "string"
+        ) throw new Error("Session validation returned invalid account data.");
+
+        const freshUser = payload.data as User;
+        setUser(freshUser);
+        setActiveTab(freshUser.role === "admin" ? "inscriptions" : "home");
+        localStorage.setItem("user", JSON.stringify(freshUser));
+        if (freshUser.role === "admin") await router.replace("/admin-dashboard");
+      } catch (sessionError) {
+        console.error("[Dashboard] Session validation failed:", sessionError);
+        setError("Impossible de vérifier votre session. Réessayez.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [router]);
 
   // Charger les articles au changement d'onglet
@@ -851,9 +802,11 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
-    router.push("/");
+    void fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+      window.dispatchEvent(new Event("fisafi:session-expired"));
+      router.push("/");
+    });
   };
 
   const handleTab = (id: TabId) => {

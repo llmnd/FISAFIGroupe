@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getRequestAuthorization } from '@/lib/authCookie';
 
 type ResponseData = {
   success?: boolean;
@@ -37,7 +38,7 @@ export default async function handler(
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': req.headers.authorization || '',
+          'Authorization': getRequestAuthorization(req) || '',
           'Content-Type': 'application/json',
         },
       });

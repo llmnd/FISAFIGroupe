@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { setAuthCookie } from '@/lib/authCookie';
 
 type ResponseData = {
   success?: boolean;
@@ -17,7 +18,7 @@ export default async function handler(
   const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
   try {
-    const response = await fetch(`${backendUrl}/api/v1/auth/login`, {
+    const response = await fetch(`${backendUrl.replace(/\/$/, '')}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,6 +30,12 @@ export default async function handler(
 
     if (!response.ok) {
       return res.status(response.status).json(data);
+    }
+
+    const token = data?.data?.token;
+    if (typeof token === 'string' && token.length > 0) {
+      setAuthCookie(req, res, token);
+      delete data.data.token;
     }
 
     return res.status(response.status).json(data);

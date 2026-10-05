@@ -73,17 +73,29 @@ export default function App({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     const checkSession = async () => {
-      const token = localStorage.getItem('token');
-      if (!token || router.pathname === '/login') return;
-
       try {
-        const response = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const legacyToken = localStorage.getItem('token');
+        if (legacyToken) {
+          const migrationResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${legacyToken}` },
+          });
+          if (migrationResponse.ok || migrationResponse.status === 409) {
+            localStorage.removeItem('token');
+          } else if ([401, 403, 404].includes(migrationResponse.status)) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          } else {
+            return;
+          }
+        }
+        if (router.pathname === '/login' || !localStorage.getItem('user')) return;
+
+        const response = await fetch('/api/auth/me');
         if (![401, 403, 404].includes(response.status)) return;
 
-        localStorage.removeItem('token');
         localStorage.removeItem('user');
+        await fetch('/api/auth/logout', { method: 'POST' });
         window.dispatchEvent(new Event('fisafi:session-expired'));
         if (
           ['/dashboard', '/admin-dashboard', '/market/commande'].includes(router.pathname) ||

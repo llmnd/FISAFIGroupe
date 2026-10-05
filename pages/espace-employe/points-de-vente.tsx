@@ -23,21 +23,12 @@ export default function EmployeePointsOfSalePage() {
   const loadPointsOfSale = useCallback(async () => {
     setLoading(true);
     setError("");
-    const token = localStorage.getItem("token");
-    if (!token) {
-      await router.replace("/login");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch("/api/employee/points-de-vente", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch("/api/employee/points-de-vente");
       const payload = await response.json();
       if (response.status === 401) {
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+        void fetch("/api/auth/logout", { method: "POST" });
         await router.replace("/login?session=expired");
         return;
       }

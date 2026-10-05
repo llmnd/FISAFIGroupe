@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { authorizeAdminRequest } from '@/lib/apiAdminAuth';
 
 const prisma = new PrismaClient();
 
@@ -44,6 +45,7 @@ export default async function handler(
   }
 
   if (req.method === 'POST') {
+    if (!(await authorizeAdminRequest(req, res))) return;
     try {
       const { formationId, startDate, endDate, location, capacity } = req.body;
 

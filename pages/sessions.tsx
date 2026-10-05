@@ -94,8 +94,12 @@ export default function SessionsPage() {
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    void fetch("/api/auth/me")
+      .then((response) => setIsLoggedIn(response.ok))
+      .catch((error) => {
+        console.error("[Sessions/Auth] Could not check the account session:", error);
+        setIsLoggedIn(false);
+      });
   }, []);
 
   useEffect(() => {

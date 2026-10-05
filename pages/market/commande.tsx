@@ -89,7 +89,7 @@ export default function MarketOrderPage() {
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const [accountChecked, setAccountChecked] = useState(false);
-  const [accountToken, setAccountToken] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accountEmail, setAccountEmail] = useState("");
   const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmation | null>(null);
   const [submitError, setSubmitError] = useState("");
@@ -103,20 +103,29 @@ export default function MarketOrderPage() {
   const hasItems = items.length > 0;
 
   useEffect(() => {
-    const token = window.localStorage.getItem("token") ?? "";
-    const rawUser = window.localStorage.getItem("user");
-    let email = "";
-    try {
-      const parsed: unknown = rawUser ? JSON.parse(rawUser) : null;
-      if (parsed && typeof parsed === "object" && "email" in parsed && typeof parsed.email === "string") {
-        email = parsed.email;
+    void (async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) return;
+        const payload: unknown = await response.json();
+        if (
+          payload &&
+          typeof payload === "object" &&
+          "data" in payload &&
+          payload.data &&
+          typeof payload.data === "object"
+        ) {
+          if ("email" in payload.data && typeof payload.data.email === "string") {
+            setAccountEmail(payload.data.email);
+          }
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error("[Market] Could not verify the customer session:", error);
+      } finally {
+        setAccountChecked(true);
       }
-    } catch (error) {
-      console.warn("[Market] Could not read the signed-in customer profile:", error);
-    }
-    setAccountToken(token);
-    setAccountEmail(email);
-    setAccountChecked(true);
+    })();
   }, []);
 
   /* Thème : préférence enregistrée, sinon thème du système */
@@ -271,7 +280,6 @@ export default function MarketOrderPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accountToken}`,
         },
         body: JSON.stringify({
           customerName,
@@ -371,7 +379,7 @@ export default function MarketOrderPage() {
             <p className="market-checkout-loading" role="status">
               Vérification de votre compte…
             </p>
-          ) : !accountToken ? (
+          ) : !isLoggedIn ? (
             <div className="market-cart-empty">
               <h1>Connectez-vous pour commander.</h1>
               <p>Vos demandes et leur statut seront ensuite disponibles dans votre espace client.</p>

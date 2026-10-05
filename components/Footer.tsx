@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const companyUrl = (path: string) => `https://www.fisafigroupe.com${path}`;
 
   return (
     <footer className="footer-enhanced">
@@ -39,28 +38,28 @@ export default function Footer() {
         <div className="footer-col">
           <h4 className="footer-col-title">Services</h4>
           <ul className="footer-list">
-            <li><Link href="/services#networks">Réseaux &amp; Télécoms</Link></li>
-            <li><Link href="/services#infrastructure">Infrastructure IT</Link></li>
-            <li><Link href="/services#security">Cybersécurité</Link></li>
-            <li><Link href="/services#consulting">Conseil Stratégique</Link></li>
+            <li><a href={companyUrl("/services#networks")}>Réseaux &amp; Télécoms</a></li>
+            <li><a href={companyUrl("/services#infrastructure")}>Infrastructure IT</a></li>
+            <li><a href={companyUrl("/services#security")}>Cybersécurité</a></li>
+            <li><a href={companyUrl("/services#consulting")}>Conseil Stratégique</a></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4 className="footer-col-title">Entreprise</h4>
           <ul className="footer-list">
-            <li><Link href="/#services">À propos</Link></li>
-            <li><Link href="/training">Formations</Link></li>
-            <li><Link href="/news">Actualités</Link></li>
-            <li><Link href="/#contact">Contact</Link></li>
+            <li><a href={companyUrl("/#services")}>À propos</a></li>
+            <li><a href={companyUrl("/training")}>Formations</a></li>
+            <li><a href={companyUrl("/news")}>Actualités</a></li>
+            <li><a href={companyUrl("/#contact")}>Contact</a></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4 className="footer-col-title">Légal</h4>
           <ul className="footer-list">
-            <li><Link href="/privacy">Politique de confidentialité</Link></li>
-            <li><Link href="/terms">Conditions d&apos;utilisation</Link></li>
+            <li><a href={companyUrl("/privacy")}>Politique de confidentialité</a></li>
+            <li><a href={companyUrl("/terms")}>Conditions d&apos;utilisation</a></li>
             <li><a href="mailto:contact@fisafigroupe.com">Support</a></li>
           </ul>
         </div>

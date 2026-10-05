@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getRequestAuthorization } from '@/lib/authCookie';
 
 type ResponseData = {
   success?: boolean;
@@ -64,7 +65,7 @@ export default async function handler(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': req.headers.authorization || '',
+          'Authorization': getRequestAuthorization(req) || '',
         },
         body: JSON.stringify(req.body),
       });

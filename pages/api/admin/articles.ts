@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getRequestAuthorization } from '@/lib/authCookie';
 
 /**
  * GET /api/admin/articles - Get articles for admin (backup endpoint)
@@ -13,7 +14,7 @@ export default async function handler(
   }
 
   try {
-    const token = req.headers.authorization;
+    const token = getRequestAuthorization(req);
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://fisafi-backend.onrender.com';
 
     const response = await fetch(`${backendUrl}/api/articles/manage`, {

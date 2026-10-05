@@ -224,25 +224,21 @@ export default function LoginPage() {
     } else if (router.query.passwordChanged === "1") {
       setSuccess("Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.");
     }
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (!token || !userData) return;
-
     void (async () => {
       try {
-        const cachedUser: unknown = JSON.parse(userData);
-        if (!cachedUser || typeof cachedUser !== "object" || !("role" in cachedUser)) {
-          throw new Error("Stored account data is invalid.");
+        const legacyToken = localStorage.getItem("token");
+        if (legacyToken) {
+          const migrationResponse = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${legacyToken}` },
+          });
+          if (migrationResponse.ok || migrationResponse.status === 409 || [401, 403, 404].includes(migrationResponse.status)) {
+            localStorage.removeItem("token");
+            if ([401, 403, 404].includes(migrationResponse.status)) localStorage.removeItem("user");
+          }
         }
-        const response = await fetch("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if ([401, 403, 404].includes(response.status)) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          setError("Votre session a expiré. Veuillez vous reconnecter.");
-          return;
-        }
+        const response = await fetch("/api/auth/me");
+        if ([401, 403, 404].includes(response.status)) return;
         if (!response.ok) {
           throw new Error(`Session check returned HTTP ${response.status}.`);
         }
@@ -329,17 +325,14 @@ export default function LoginPage() {
         return;
       }
       const endpoint   = isLogin ? "/api/auth/login" : "/api/auth/register";
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) throw new Error("Backend URL not configured. Contact admin.");
       const payload = isLogin ? { email: formData.email, password: formData.password } : formData;
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      const response = await fetch(endpoint, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error || "Une erreur est survenue"); return; }
-      if (data.data?.token) {
-        localStorage.setItem("token", data.data.token);
-        const userData = data.data.user || {};
+      if (data.data?.user) {
+        const userData = data.data.user;
         localStorage.setItem("user", JSON.stringify(userData));
         setSuccess("Connexion réussie !");
         setTimeout(() => router.push(getPostLoginPath(userData.role, userData.employeeRole)), 1200);

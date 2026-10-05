@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getRequestAuthorization } from '@/lib/authCookie';
 
 type ResponseData = {
   success?: boolean;
@@ -10,7 +11,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = getRequestAuthorization(req)?.replace('Bearer ', '');
 
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });

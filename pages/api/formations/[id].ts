@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { authorizeAdminRequest } from '@/lib/apiAdminAuth';
 
 const prisma = new PrismaClient();
 
@@ -40,6 +41,10 @@ export default async function handler(
       console.error('Error fetching formation:', error);
       return res.status(500).json({ error: 'Erreur lors de la récupération de la formation' });
     }
+  }
+
+  if (req.method === 'PUT' || req.method === 'DELETE') {
+    if (!(await authorizeAdminRequest(req, res))) return;
   }
 
   if (req.method === 'PUT') {
