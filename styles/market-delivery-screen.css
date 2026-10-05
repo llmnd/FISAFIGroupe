@@ -412,6 +412,143 @@ body:has(.market-delivery-screen) {
   opacity: 0.7;
 }
 
+.market-delivery-search {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 4.25rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid #e9e5da;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.market-delivery-address-row {
+  display: grid;
+  min-height: 4.2rem;
+  grid-template-columns: minmax(0, 1fr) 2.8rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem;
+}
+
+.market-delivery-address-row .market-delivery-address-field {
+  box-sizing: border-box;
+  display: grid;
+  height: 3.45rem;
+  min-width: 0;
+  min-height: 3.45rem;
+  border: 0;
+}
+
+.market-delivery-search-toggle {
+  display: grid;
+  box-sizing: border-box;
+  width: 2.8rem;
+  height: 2.8rem;
+  min-height: 2.8rem;
+  align-items: center;
+  justify-items: center;
+  padding: 0;
+  border: 1px solid #e9e5da;
+  border-radius: 11px;
+  background: #f8f6f0;
+  color: #ee682c;
+  cursor: pointer;
+  font: 500 1.55rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-delivery-search-toggle:hover {
+  background: #fff0e5;
+}
+
+.market-delivery-search-panel {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0 0.65rem 0.65rem 0.85rem;
+}
+
+.market-delivery-search-controls {
+  display: flex;
+  min-height: 2.75rem;
+  gap: 0.45rem;
+}
+
+.market-delivery-search-controls input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 0.7rem;
+  border: 1px solid #e9e5da;
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  color: #28233c;
+  font: 400 0.82rem/1.3 "Jost", system-ui, sans-serif;
+}
+
+.market-delivery-search-controls input:focus {
+  border-color: #ee682c;
+  box-shadow: 0 0 0 3px #ee682c20;
+}
+
+.market-delivery-search-controls > button {
+  min-width: 3.2rem;
+  padding: 0 0.7rem;
+  border: 0;
+  border-radius: 10px;
+  background: #28233c;
+  color: #fff;
+  cursor: pointer;
+  font: 600 0.8rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-delivery-search-controls > button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.market-delivery-search-message {
+  margin: 0;
+  color: #706b7c;
+  font: 400 0.75rem/1.4 "Jost", system-ui, sans-serif;
+}
+
+.market-delivery-search-results {
+  display: grid;
+  max-height: 9rem;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.market-delivery-search-results button {
+  display: flex;
+  width: 100%;
+  min-height: 2.6rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: 9px;
+  background: #f7f5ef;
+  color: #28233c;
+  cursor: pointer;
+  font: 400 0.75rem/1.35 "Jost", system-ui, sans-serif;
+  text-align: left;
+}
+
+.market-delivery-search-results button:hover {
+  background: #f1e9db;
+}
+
+.market-delivery-search-results button > span {
+  flex: 0 0 auto;
+  color: #ee682c;
+  font-size: 1.05rem;
+}
+
 /* ---------- Bloc instruction ---------- */
 .market-delivery-map-instruction {
   display: flex;
@@ -619,11 +756,33 @@ html[data-market-theme="dark"] .market-delivery-fare-card span {
 
 html[data-market-theme="dark"] .market-delivery-address-field,
 html[data-market-theme="dark"] .market-delivery-gps-button,
+html[data-market-theme="dark"] .market-delivery-search,
 html[data-market-theme="dark"] .market-delivery-fare-card > div,
 html[data-market-theme="dark"] .market-delivery-floating-gps {
   border-color: #ffffff1c;
   background: #292435;
   color: #f2eefb;
+}
+
+html[data-market-theme="dark"] .market-delivery-search-toggle,
+html[data-market-theme="dark"] .market-delivery-search-results button {
+  color: #f2eefb;
+}
+
+html[data-market-theme="dark"] .market-delivery-search-toggle {
+  border-color: #ffffff1c;
+  background: #332d40;
+  color: #f2a079;
+}
+
+html[data-market-theme="dark"] .market-delivery-search-controls input {
+  border-color: #ffffff1c;
+  background: #211d2d;
+  color: #f2eefb;
+}
+
+html[data-market-theme="dark"] .market-delivery-search-results button {
+  background: #332d40;
 }
 
 html[data-market-theme="dark"] .market-delivery-estimate-error button {

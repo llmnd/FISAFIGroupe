@@ -63,6 +63,36 @@ function isReverseGeocodeResult(value: unknown): value is { address: string } {
   );
 }
 
+type LocationSearchResult = {
+  coordinates: DeliveryCoordinates;
+  label: string;
+};
+
+function isLocationSearchResponse(value: unknown): value is { results: LocationSearchResult[] } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "results" in value &&
+    Array.isArray(value.results) &&
+    value.results.every(
+      (result) =>
+        typeof result === "object" &&
+        result !== null &&
+        "label" in result &&
+        typeof result.label === "string" &&
+        "coordinates" in result &&
+        typeof result.coordinates === "object" &&
+        result.coordinates !== null &&
+        "latitude" in result.coordinates &&
+        typeof result.coordinates.latitude === "number" &&
+        Number.isFinite(result.coordinates.latitude) &&
+        "longitude" in result.coordinates &&
+        typeof result.coordinates.longitude === "number" &&
+        Number.isFinite(result.coordinates.longitude),
+    )
+  );
+}
+
 function isGeolocationError(error: unknown): error is GeolocationPositionError {
   return (
     typeof error === "object" &&
@@ -88,7 +118,15 @@ export default function MarketDeliveryPage() {
   const [saveError, setSaveError] = useState("");
   const [addressStatus, setAddressStatus] = useState<"idle" | "loading" | "ready" | "error" | "manual">("idle");
   const [addressError, setAddressError] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
+  const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [searchError, setSearchError] = useState("");
   const reverseGeocodeControllerRef = useRef<AbortController | null>(null);
+  const searchControllerRef = useRef<AbortController | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastSearchAtRef = useRef(0);
 
   const coordinates = selection.coordinates;
   const coordinatesKey = coordinates
@@ -113,9 +151,16 @@ export default function MarketDeliveryPage() {
   }, []);
 
   useEffect(
-    () => () => reverseGeocodeControllerRef.current?.abort(),
+    () => () => {
+      reverseGeocodeControllerRef.current?.abort();
+      searchControllerRef.current?.abort();
+    },
     [],
   );
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
 
   useEffect(() => {
     if (!ready || !coordinates) {
@@ -160,11 +205,11 @@ export default function MarketDeliveryPage() {
     };
   }, [ready, coordinates, coordinatesKey, estimateRefresh]);
 
-  const setDestination = (nextCoordinates: DeliveryCoordinates) => {
+  const setDestination = (nextCoordinates: DeliveryCoordinates, initialAddress = "") => {
     reverseGeocodeControllerRef.current?.abort();
     const controller = new AbortController();
     reverseGeocodeControllerRef.current = controller;
-    setSelection({ coordinates: nextCoordinates, address: "" });
+    setSelection({ coordinates: nextCoordinates, address: initialAddress });
     setEstimate(null);
     setLocationError("");
     setSaveError("");
@@ -204,6 +249,63 @@ export default function MarketDeliveryPage() {
         );
       }
     })();
+  };
+
+  const searchLocation = async () => {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setSearchStatus("error");
+      setSearchError("Saisissez au moins 3 caractères pour rechercher un lieu.");
+      return;
+    }
+    const elapsed = Date.now() - lastSearchAtRef.current;
+    if (elapsed < 1_000) {
+      setSearchStatus("error");
+      setSearchError("Patientez un instant avant de relancer la recherche.");
+      return;
+    }
+
+    searchControllerRef.current?.abort();
+    const controller = new AbortController();
+    searchControllerRef.current = controller;
+    lastSearchAtRef.current = Date.now();
+    setSearchStatus("loading");
+    setSearchError("");
+    setSearchResults([]);
+    try {
+      const response = await fetch(`/api/market/search-location?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal,
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de rechercher ce lieu.";
+        throw new Error(message);
+      }
+      if (!isLocationSearchResponse(payload)) {
+        throw new Error("La réponse de recherche de lieu est invalide.");
+      }
+      setSearchResults(payload.results);
+      setSearchStatus("ready");
+      if (payload.results.length === 0) {
+        setSearchError("Aucun lieu trouvé dans la zone de Dakar. Essayez avec un quartier ou un repère.");
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setSearchStatus("error");
+      setSearchError(error instanceof Error ? error.message : "Impossible de rechercher ce lieu.");
+    }
+  };
+
+  const chooseSearchResult = (result: LocationSearchResult) => {
+    setDestination(result.coordinates, result.label);
+    setSearchOpen(false);
+    setSearchResults([]);
+    setSearchQuery("");
+    setSearchStatus("idle");
+    setSearchError("");
   };
 
   const useMyLocation = async () => {
@@ -324,25 +426,96 @@ export default function MarketDeliveryPage() {
             <p>Déplacez la carte et posez le repère à l’entrée de votre domicile.</p>
           </div>
 
-          <label className="market-delivery-address-field" htmlFor="market-delivery-address">
-            <span aria-hidden="true" />
-            <span className="market-sr">Adresse et repère</span>
-            <input
-              id="market-delivery-address"
-              name="address"
-              autoComplete="street-address"
-              value={selection.address}
-              onChange={(event) => {
-                reverseGeocodeControllerRef.current?.abort();
-                setAddressStatus("manual");
-                setAddressError("");
-                setSelection((current) => ({ ...current, address: event.target.value }));
-              }}
-              placeholder={addressStatus === "loading" ? "Détection du quartier et de la rue…" : "Quartier, rue, repère"}
-              maxLength={500}
-              required
-            />
-          </label>
+          <div className={`market-delivery-search ${searchOpen ? "is-open" : ""}`}>
+            <div className="market-delivery-address-row">
+              <label className="market-delivery-address-field" htmlFor="market-delivery-address">
+                <span aria-hidden="true" />
+                <span className="market-sr">Adresse et repère</span>
+                <input
+                  id="market-delivery-address"
+                  name="address"
+                  autoComplete="street-address"
+                  value={selection.address}
+                  onChange={(event) => {
+                    reverseGeocodeControllerRef.current?.abort();
+                    setAddressStatus("manual");
+                    setAddressError("");
+                    setSelection((current) => ({ ...current, address: event.target.value }));
+                  }}
+                  placeholder={addressStatus === "loading" ? "Détection du quartier et de la rue…" : "Quartier, rue, repère"}
+                  maxLength={500}
+                  required
+                />
+              </label>
+              <button
+                className="market-delivery-search-toggle"
+                type="button"
+                aria-label={searchOpen ? "Fermer la recherche de lieu" : "Rechercher une autre adresse sur la carte"}
+                aria-expanded={searchOpen}
+                aria-controls="market-delivery-search-panel"
+                onClick={() => {
+                  setSearchOpen((current) => !current);
+                  setSearchError("");
+                  setSearchResults([]);
+                }}
+              >
+                <span aria-hidden="true">{searchOpen ? "×" : "⌕"}</span>
+              </button>
+            </div>
+            {searchOpen && (
+              <div className="market-delivery-search-panel" id="market-delivery-search-panel">
+                <div className="market-delivery-search-controls">
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    maxLength={120}
+                    placeholder="Quartier, rue ou lieu à Dakar"
+                    aria-label="Rechercher une adresse ou un lieu"
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value);
+                      setSearchStatus("idle");
+                      setSearchError("");
+                      setSearchResults([]);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void searchLocation();
+                      }
+                    }}
+                  />
+                  <button type="button" onClick={() => void searchLocation()} disabled={searchStatus === "loading"}>
+                    {searchStatus === "loading" ? "…" : "OK"}
+                  </button>
+                </div>
+                {searchStatus === "loading" && (
+                  <p className="market-delivery-search-message" role="status">Recherche à Dakar…</p>
+                )}
+                {searchError && (
+                  <p className="market-delivery-search-message" role={searchStatus === "error" ? "alert" : "status"}>
+                    {searchError}
+                  </p>
+                )}
+                {searchResults.length > 0 && (
+                  <ul className="market-delivery-search-results" aria-label="Résultats de recherche">
+                    {searchResults.map((result) => (
+                      <li key={`${result.coordinates.latitude},${result.coordinates.longitude}`}>
+                        <button
+                          type="button"
+                          onClick={() => chooseSearchResult(result)}
+                          title={result.label}
+                        >
+                          <span aria-hidden="true">⌖</span>
+                          {result.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           {addressStatus === "loading" && (
             <p className="market-delivery-screen-status" role="status">
