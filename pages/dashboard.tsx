@@ -30,13 +30,19 @@ function parseDashboardUser(value: unknown): User | null {
   if (!value || typeof value !== "object") return null;
   if (!("id" in value) || typeof value.id !== "string") return null;
   if (!("email" in value) || typeof value.email !== "string") return null;
-  if (!("role" in value) || (value.role !== "user" && value.role !== "admin" && value.role !== "moderator")) {
+  if (
+    !("role" in value) ||
+    (value.role !== "user" && value.role !== "admin" && value.role !== "moderator")
+  ) {
     return null;
   }
   const profiles = "profiles" in value ? value.profiles : [];
   if (
     !Array.isArray(profiles) ||
-    !profiles.every((profile) => profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT")
+    !profiles.every(
+      (profile) =>
+        profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT"
+    )
   ) {
     return null;
   }
@@ -45,8 +51,14 @@ function parseDashboardUser(value: unknown): User | null {
     id: value.id,
     email: value.email,
     role: value.role,
-    firstName: "firstName" in value && typeof value.firstName === "string" ? value.firstName : undefined,
-    lastName: "lastName" in value && typeof value.lastName === "string" ? value.lastName : undefined,
+    firstName:
+      "firstName" in value && typeof value.firstName === "string"
+        ? value.firstName
+        : undefined,
+    lastName:
+      "lastName" in value && typeof value.lastName === "string"
+        ? value.lastName
+        : undefined,
     profiles,
   };
 }
@@ -59,7 +71,13 @@ interface SessionFormation {
   location: string;
   capacity: number;
   available: number;
-  status: "ouverte" | "complète" | "fermée" | "annulée" | "terminée" | "en_attente";
+  status:
+    | "ouverte"
+    | "complète"
+    | "fermée"
+    | "annulée"
+    | "terminée"
+    | "en_attente";
 }
 
 interface Formation {
@@ -76,6 +94,12 @@ interface Formation {
   sessions?: SessionFormation[];
 }
 
+type InscriptionStatus =
+  | "confirme"
+  | "liste_attente"
+  | "annule"
+  | "demande_en_attente";
+
 interface InscriptionFormation {
   id: number;
   sessionId: number;
@@ -84,7 +108,7 @@ interface InscriptionFormation {
   lastName: string;
   email: string;
   phone: string;
-  status: "confirme" | "liste_attente" | "annule";
+  status: InscriptionStatus;
   createdAt: string;
   formation?: { name: string };
   session?: { startDate: string; location: string };
@@ -135,7 +159,15 @@ interface MarketInvoice {
   referenceNote: string | null;
 }
 
-type TabId = "home" | "inscriptions" | "formations" | "market-orders" | "account" | "inscriptions-manage" | "users" | "articles";
+type TabId =
+  | "home"
+  | "inscriptions"
+  | "formations"
+  | "market-orders"
+  | "account"
+  | "inscriptions-manage"
+  | "users"
+  | "articles";
 
 interface TabType {
   id: TabId;
@@ -145,14 +177,14 @@ interface TabType {
 }
 
 const ALL_TABS: TabType[] = [
-  { id: "home",                 label: "Accueil",                icon: "⌂" },
-  { id: "inscriptions",        label: "Mes inscriptions",       icon: "◈" },
-  { id: "formations",          label: "Formations et sessions",  icon: "◉" },
-  { id: "market-orders",       label: "Achats Market",           icon: "▱" },
-  { id: "account",             label: "Mon compte",              icon: "◇" },
-  { id: "inscriptions-manage", label: "Gérer inscriptions",     icon: "◎", admin: true },
-  { id: "users",               label: "Utilisateurs",           icon: "◇", admin: true },
-  { id: "articles",            label: "Articles",               icon: "◆", admin: true },
+  { id: "home", label: "Accueil", icon: "⌂" },
+  { id: "inscriptions", label: "Mes inscriptions", icon: "◈" },
+  { id: "formations", label: "Formations et sessions", icon: "◉" },
+  { id: "market-orders", label: "Achats Market", icon: "▱" },
+  { id: "account", label: "Mon compte", icon: "◇" },
+  { id: "inscriptions-manage", label: "Gérer inscriptions", icon: "◎", admin: true },
+  { id: "users", label: "Utilisateurs", icon: "◇", admin: true },
+  { id: "articles", label: "Articles", icon: "◆", admin: true },
 ];
 
 function getInvoicePaymentLabel(status: string): string {
@@ -167,6 +199,9 @@ function getInvoicePaymentLabel(status: string): string {
   return labels[status] ?? "Statut indisponible";
 }
 
+const numberFmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+const formatNumber = (value: number) => numberFmt.format(value);
+
 export default function DashboardPage() {
   const router = useRouter();
   const sessionRedirecting = useRef(false);
@@ -175,12 +210,25 @@ export default function DashboardPage() {
   const expireSession = () => {
     if (sessionRedirecting.current) return;
     sessionRedirecting.current = true;
-    localStorage.removeItem("user");
-    void fetch("/api/auth/logout", { method: "POST" });
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch {
+      /* ignore */
+    }
+    // Envoi du logout sans bloquer la redirection
+    try {
+      void fetch("/api/auth/logout", { method: "POST", keepalive: true });
+    } catch {
+      /* ignore */
+    }
     void router.replace("/login?session=expired");
   };
 
-  const authenticatedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+  const authenticatedFetch = async (
+    input: RequestInfo | URL,
+    init: RequestInit = {}
+  ) => {
     const headers = new Headers(init.headers);
     const response = await fetch(input, { ...init, headers });
     if (response.status === 401) expireSession();
@@ -188,31 +236,46 @@ export default function DashboardPage() {
   };
 
   const handleGoBack = () => {
-    if (window.history.length > 1) {
+    if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }
     router.push("/");
   };
-  
-  // Helper para construir URLs com backend
-  const buildApiUrl = (endpoint: string) => {
-    return endpoint;
-  };
-  
-  const [user, setUser]         = useState<User | null>(null);
+
+  const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("home");
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Fermeture du sidebar sur Escape + blocage du scroll
   useEffect(() => {
     if (!sidebarOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSidebarOpen(false);
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [sidebarOpen]);
+
+  // Fermeture du sidebar avant une navigation du Pages Router.
+  useEffect(() => {
+    const closeSidebar = () => setSidebarOpen(false);
+    router.events.on("routeChangeStart", closeSidebar);
+    return () => router.events.off("routeChangeStart", closeSidebar);
+  }, [router.events]);
+
+  // Fermeture du sidebar au retour arrière (bfcache)
+  useEffect(() => {
+    const closeSidebar = () => setSidebarOpen(false);
+    window.addEventListener("pageshow", closeSidebar);
+    return () => window.removeEventListener("pageshow", closeSidebar);
+  }, []);
 
   // Formations & inscriptions
   const [formations, setFormations] = useState<Formation[]>([]);
@@ -242,22 +305,24 @@ export default function DashboardPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
-  const [savingProfile, setSavingProfile] = useState<"MARKET_CUSTOMER" | "TRAINING_PARTICIPANT" | null>(null);
+  const [savingProfile, setSavingProfile] = useState<
+    "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT" | null
+  >(null);
   const [showInscriptionModal, setShowInscriptionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
   const [inscriptionData, setInscriptionData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    company: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    company: "",
   });
   const [submittingInscription, setSubmittingInscription] = useState(false);
-  const [inscriptionError, setInscriptionError] = useState('');
-  const [inscriptionSuccess, setInscriptionSuccess] = useState('');
+  const [inscriptionError, setInscriptionError] = useState("");
+  const [inscriptionSuccess, setInscriptionSuccess] = useState("");
 
-  // Articles
+  // Articles (admin)
   const [showArticleForm, setShowArticleForm] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
@@ -265,16 +330,16 @@ export default function DashboardPage() {
   const [adminInscriptions, setAdminInscriptions] = useState<InscriptionFormation[]>([]);
   const [loadingAdminInscriptions, setLoadingAdminInscriptions] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    category: 'Articles techniques',
-    excerpt: '',
-    content: '',
-    image: '',
-    author: '',
+    title: "",
+    category: "Articles techniques",
+    excerpt: "",
+    content: "",
+    image: "",
+    author: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function fetchMarketQuotations() {
     setLoadingMarketQuotations(true);
@@ -282,12 +347,16 @@ export default function DashboardPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await authenticatedFetch("/api/market/orders", {
+        cache: "no-store",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
             ? payload.error
             : "Impossible de charger vos devis.";
         throw new Error(message);
@@ -304,46 +373,53 @@ export default function DashboardPage() {
         throw new Error("La réponse de suivi des devis est invalide.");
       }
       const orders = payload.orders;
-      if (!orders.every((order) =>
-        Boolean(order) &&
-        typeof order === "object" &&
-        "id" in order &&
-        Number.isSafeInteger(order.id) &&
-        "reference" in order &&
-        typeof order.reference === "string" &&
-        "state" in order &&
-        ["draft", "sent", "sale", "done", "cancel"].includes(String(order.state)) &&
-        "statusLabel" in order &&
-        typeof order.statusLabel === "string" &&
-        "amountTotal" in order &&
-        typeof order.amountTotal === "number" &&
-        "date" in order &&
-        typeof order.date === "string" &&
-        "items" in order &&
-        Array.isArray(order.items) &&
-        order.items.every((item: unknown) =>
-          item !== null &&
-          typeof item === "object" &&
-          "id" in item &&
-          Number.isSafeInteger(item.id) &&
-          "productId" in item &&
-          Number.isSafeInteger(item.productId) &&
-          "name" in item &&
-          typeof item.name === "string" &&
-          "quantity" in item &&
-          typeof item.quantity === "number" &&
-          "unitPrice" in item &&
-          typeof item.unitPrice === "number" &&
-          "subtotal" in item &&
-          typeof item.subtotal === "number" &&
-          "imageUrl" in item &&
-          (typeof item.imageUrl === "string" || item.imageUrl === null) &&
-          "categoryName" in item &&
-          (typeof item.categoryName === "string" || item.categoryName === null) &&
-          "unitName" in item &&
-          typeof item.unitName === "string"
+      if (
+        !orders.every(
+          (order) =>
+            Boolean(order) &&
+            typeof order === "object" &&
+            "id" in order &&
+            Number.isSafeInteger(order.id) &&
+            "reference" in order &&
+            typeof order.reference === "string" &&
+            "state" in order &&
+            ["draft", "sent", "sale", "done", "cancel"].includes(
+              String(order.state)
+            ) &&
+            "statusLabel" in order &&
+            typeof order.statusLabel === "string" &&
+            "amountTotal" in order &&
+            typeof order.amountTotal === "number" &&
+            "date" in order &&
+            typeof order.date === "string" &&
+            "items" in order &&
+            Array.isArray(order.items) &&
+            order.items.every(
+              (item: unknown) =>
+                item !== null &&
+                typeof item === "object" &&
+                "id" in item &&
+                Number.isSafeInteger(item.id) &&
+                "productId" in item &&
+                Number.isSafeInteger(item.productId) &&
+                "name" in item &&
+                typeof item.name === "string" &&
+                "quantity" in item &&
+                typeof item.quantity === "number" &&
+                "unitPrice" in item &&
+                typeof item.unitPrice === "number" &&
+                "subtotal" in item &&
+                typeof item.subtotal === "number" &&
+                "imageUrl" in item &&
+                (typeof item.imageUrl === "string" || item.imageUrl === null) &&
+                "categoryName" in item &&
+                (typeof item.categoryName === "string" ||
+                  item.categoryName === null) &&
+                "unitName" in item &&
+                typeof item.unitName === "string"
+            )
         )
-      )) {
+      ) {
         throw new Error("Les devis reçus ne sont pas valides.");
       }
       setMarketQuotations(orders as MarketQuotation[]);
@@ -351,7 +427,9 @@ export default function DashboardPage() {
     } catch (fetchError) {
       console.error("[Dashboard] Could not load Market quotations:", fetchError);
       setMarketQuotationError(
-        fetchError instanceof Error ? fetchError.message : "Impossible de charger vos devis.",
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Impossible de charger vos devis."
       );
     } finally {
       setLoadingMarketQuotations(false);
@@ -359,17 +437,25 @@ export default function DashboardPage() {
   }
 
   async function fetchAccountInvoices(company: "market" | "groupe") {
-    const setLoading = company === "market" ? setLoadingMarketInvoices : setLoadingGroupInvoices;
-    const setError = company === "market" ? setMarketInvoiceError : setGroupInvoiceError;
+    const setLoading =
+      company === "market" ? setLoadingMarketInvoices : setLoadingGroupInvoices;
+    const setError =
+      company === "market" ? setMarketInvoiceError : setGroupInvoiceError;
     const setInvoices = company === "market" ? setMarketInvoices : setGroupInvoices;
     setLoading(true);
     setError("");
     try {
-      const response = await authenticatedFetch(`/api/account/invoices?company=${company}`);
+      const response = await authenticatedFetch(
+        `/api/account/invoices?company=${company}`,
+        { cache: "no-store" }
+      );
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
             ? payload.error
             : "Impossible de charger vos factures.";
         throw new Error(message);
@@ -379,19 +465,33 @@ export default function DashboardPage() {
         typeof payload !== "object" ||
         !("invoices" in payload) ||
         !Array.isArray(payload.invoices) ||
-        !payload.invoices.every((invoice: unknown) =>
-          !!invoice &&
-          typeof invoice === "object" &&
-          "id" in invoice && Number.isSafeInteger(invoice.id) &&
-          "reference" in invoice && typeof invoice.reference === "string" &&
-          "type" in invoice && (invoice.type === "invoice" || invoice.type === "credit_note") &&
-          "date" in invoice && (typeof invoice.date === "string" || invoice.date === null) &&
-          "dueDate" in invoice && (typeof invoice.dueDate === "string" || invoice.dueDate === null) &&
-          "total" in invoice && typeof invoice.total === "number" && Number.isFinite(invoice.total) &&
-          "remaining" in invoice && typeof invoice.remaining === "number" && Number.isFinite(invoice.remaining) &&
-          "currency" in invoice && (typeof invoice.currency === "string" || invoice.currency === null) &&
-          "paymentStatus" in invoice && typeof invoice.paymentStatus === "string" &&
-          "referenceNote" in invoice && (typeof invoice.referenceNote === "string" || invoice.referenceNote === null)
+        !payload.invoices.every(
+          (invoice: unknown) =>
+            !!invoice &&
+            typeof invoice === "object" &&
+            "id" in invoice &&
+            Number.isSafeInteger(invoice.id) &&
+            "reference" in invoice &&
+            typeof invoice.reference === "string" &&
+            "type" in invoice &&
+            (invoice.type === "invoice" || invoice.type === "credit_note") &&
+            "date" in invoice &&
+            (typeof invoice.date === "string" || invoice.date === null) &&
+            "dueDate" in invoice &&
+            (typeof invoice.dueDate === "string" || invoice.dueDate === null) &&
+            "total" in invoice &&
+            typeof invoice.total === "number" &&
+            Number.isFinite(invoice.total) &&
+            "remaining" in invoice &&
+            typeof invoice.remaining === "number" &&
+            Number.isFinite(invoice.remaining) &&
+            "currency" in invoice &&
+            (typeof invoice.currency === "string" || invoice.currency === null) &&
+            "paymentStatus" in invoice &&
+            typeof invoice.paymentStatus === "string" &&
+            "referenceNote" in invoice &&
+            (typeof invoice.referenceNote === "string" ||
+              invoice.referenceNote === null)
         )
       ) {
         throw new Error("Les factures reçues ne sont pas valides.");
@@ -399,7 +499,11 @@ export default function DashboardPage() {
       setInvoices(payload.invoices as MarketInvoice[]);
     } catch (fetchError) {
       console.error(`[Dashboard] Could not load ${company} invoices:`, fetchError);
-      setError(fetchError instanceof Error ? fetchError.message : "Impossible de charger vos factures.");
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Impossible de charger vos factures."
+      );
     } finally {
       setLoading(false);
     }
@@ -437,14 +541,18 @@ export default function DashboardPage() {
         const departmentName = getMarketDepartmentName(product.categoryName);
         const departmentId = getMarketDepartmentId(departmentName);
         const priceUnit = /kg|kilogram/i.test(product.unitName) ? "kg" : "unité";
-        const itemId = getMarketProductId(departmentId, product.name, product.productId);
+        const itemId = getMarketProductId(
+          departmentId,
+          product.name,
+          product.productId
+        );
         const existingIndex = nextCart.findIndex((item) => item.id === itemId);
         const existing = existingIndex >= 0 ? nextCart[existingIndex] : null;
         const quantity = product.quantity + (existing?.quantity ?? 0);
 
         if (quantity > MARKET_CART_MAX_QUANTITY) {
           throw new Error(
-            `${product.name} dépasserait la quantité maximale de ${MARKET_CART_MAX_QUANTITY} dans le panier.`,
+            `${product.name} dépasserait la quantité maximale de ${MARKET_CART_MAX_QUANTITY} dans le panier.`
           );
         }
 
@@ -455,7 +563,7 @@ export default function DashboardPage() {
           departmentName,
           name: product.name,
           image: product.imageUrl ?? undefined,
-          priceLabel: new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(product.unitPrice),
+          priceLabel: formatNumber(product.unitPrice),
           unitPrice: product.unitPrice,
           priceUnit,
           quantity,
@@ -469,13 +577,16 @@ export default function DashboardPage() {
       }
 
       writeMarketCart(nextCart);
-      await router.push("/market/commande");
+      router.push("/market/commande");
     } catch (reorderError) {
-      console.error("[Dashboard] Could not add the previous quotation to the Market cart:", reorderError);
+      console.error(
+        "[Dashboard] Could not add the previous quotation to the Market cart:",
+        reorderError
+      );
       setMarketReorderError(
         reorderError instanceof Error
           ? reorderError.message
-          : "Impossible de recommander ce devis.",
+          : "Impossible de recommander ce devis."
       );
     } finally {
       setReorderingQuotationId(null);
@@ -494,23 +605,35 @@ export default function DashboardPage() {
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
             ? payload.error
             : "Impossible d’envoyer le lien de vérification.";
         throw new Error(message);
       }
-      setVerificationMessage("Un nouveau lien de vérification a été envoyé à votre adresse email.");
-    } catch (resendError) {
-      console.error("[Dashboard] Could not resend the verification email:", resendError);
       setVerificationMessage(
-        resendError instanceof Error ? resendError.message : "Impossible d’envoyer le lien de vérification.",
+        "Un nouveau lien de vérification a été envoyé à votre adresse email."
+      );
+    } catch (resendError) {
+      console.error(
+        "[Dashboard] Could not resend the verification email:",
+        resendError
+      );
+      setVerificationMessage(
+        resendError instanceof Error
+          ? resendError.message
+          : "Impossible d’envoyer le lien de vérification."
       );
     } finally {
       setResendingVerification(false);
     }
   };
 
-  const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleChangePassword = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
     setPasswordError("");
     setPasswordMessage("");
@@ -534,7 +657,9 @@ export default function DashboardPage() {
         setPasswordError(payload.error || "Impossible de modifier votre mot de passe.");
         return;
       }
-      setPasswordMessage(payload.message || "Mot de passe modifié. Vous allez être déconnecté.");
+      setPasswordMessage(
+        payload.message || "Mot de passe modifié. Vous allez être déconnecté."
+      );
       window.setTimeout(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -542,13 +667,17 @@ export default function DashboardPage() {
       }, 1200);
     } catch (changeError) {
       console.error("[Dashboard] Could not change password:", changeError);
-      setPasswordError("Impossible de contacter le service. Réessayez dans quelques instants.");
+      setPasswordError(
+        "Impossible de contacter le service. Réessayez dans quelques instants."
+      );
     } finally {
       setChangingPassword(false);
     }
   };
 
-  const handleAddProfile = async (profile: "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT") => {
+  const handleAddProfile = async (
+    profile: "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT"
+  ) => {
     if (!user || user.profiles.includes(profile) || savingProfile) return;
     setSavingProfile(profile);
     setProfileError("");
@@ -567,52 +696,71 @@ export default function DashboardPage() {
         !("profiles" in payload) ||
         !Array.isArray(payload.profiles) ||
         !payload.profiles.every(
-          (item) => item === "MARKET_CUSTOMER" || item === "TRAINING_PARTICIPANT",
+          (item) =>
+            item === "MARKET_CUSTOMER" || item === "TRAINING_PARTICIPANT"
         )
       ) {
         const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
             ? payload.error
             : "Impossible d’ajouter ce profil à votre compte.";
         throw new Error(message);
       }
-      const updatedUser = { ...user, profiles: payload.profiles as User["profiles"] };
+      const updatedUser = {
+        ...user,
+        profiles: payload.profiles as User["profiles"],
+      };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setProfileMessage(
         profile === "MARKET_CUSTOMER"
           ? "Votre espace client FiSAFi Market est activé."
-          : "Votre espace participant FiSAFi Groupe est activé.",
+          : "Votre espace participant FiSAFi Groupe est activé."
       );
-    } catch (error) {
-      console.error("[Dashboard/Account] Could not add account profile:", error);
-      setProfileError(error instanceof Error ? error.message : "Impossible de mettre à jour les profils du compte.");
+    } catch (err) {
+      console.error("[Dashboard/Account] Could not add account profile:", err);
+      setProfileError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de mettre à jour les profils du compte."
+      );
     } finally {
       setSavingProfile(null);
     }
   };
 
+  // Validation de session (une seule fois)
   useEffect(() => {
     if (sessionValidationStarted.current) return;
     sessionValidationStarted.current = true;
     void (async () => {
       try {
-        const response = await fetch("/api/auth/me");
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
         if ([401, 403, 404].includes(response.status)) {
           expireSession();
           return;
         }
-        if (!response.ok) throw new Error(`Session validation returned HTTP ${response.status}.`);
+        if (!response.ok) {
+          throw new Error(`Session validation returned HTTP ${response.status}.`);
+        }
         const payload: unknown = await response.json();
         if (!payload || typeof payload !== "object" || !("data" in payload)) {
           throw new Error("Session validation returned invalid account data.");
         }
-        const freshUser = parseDashboardUser(payload.data);
-        if (!freshUser) throw new Error("Session validation returned invalid account data.");
+        const freshUser = parseDashboardUser(
+          (payload as { data: unknown }).data
+        );
+        if (!freshUser) {
+          throw new Error("Session validation returned invalid account data.");
+        }
         setUser(freshUser);
-        setActiveTab(freshUser.role === "admin" ? "inscriptions" : "home");
         localStorage.setItem("user", JSON.stringify(freshUser));
-        if (freshUser.role === "admin") await router.replace("/admin-dashboard");
+        if (freshUser.role === "admin") {
+          router.replace("/admin-dashboard");
+        }
       } catch (sessionError) {
         console.error("[Dashboard] Session validation failed:", sessionError);
         setError("Impossible de vérifier votre session. Réessayez.");
@@ -620,11 +768,14 @@ export default function DashboardPage() {
         setLoading(false);
       }
     })();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Charger les articles au changement d'onglet
+  // Chargement des données au changement d'onglet
+  const profileKey = user?.profiles.join(",") ?? "";
   useEffect(() => {
-    if (activeTab === "home" && user) {
+    if (!user) return;
+    if (activeTab === "home") {
       if (user.profiles.includes("MARKET_CUSTOMER")) {
         void fetchMarketQuotations();
         void fetchMarketInvoices();
@@ -633,39 +784,54 @@ export default function DashboardPage() {
         void fetchUserInscriptions();
         void fetchGroupInvoices();
       }
-    } else if (activeTab === "articles" && user?.role === "admin") {
-      fetchArticles();
-    } else if (activeTab === "inscriptions-manage" && user?.role === "admin") {
-      fetchAdminInscriptions();
-    } else if (activeTab === "formations" && user?.profiles.includes("TRAINING_PARTICIPANT")) {
-      fetchFormations();
-    } else if (activeTab === "inscriptions" && user?.profiles.includes("TRAINING_PARTICIPANT")) {
-      fetchUserInscriptions();
+    } else if (activeTab === "articles" && user.role === "admin") {
+      void fetchArticles();
+    } else if (activeTab === "inscriptions-manage" && user.role === "admin") {
+      void fetchAdminInscriptions();
+    } else if (
+      activeTab === "formations" &&
+      user.profiles.includes("TRAINING_PARTICIPANT")
+    ) {
+      void fetchFormations();
+    } else if (
+      activeTab === "inscriptions" &&
+      user.profiles.includes("TRAINING_PARTICIPANT")
+    ) {
+      void fetchUserInscriptions();
       void fetchGroupInvoices();
-    } else if (activeTab === "market-orders" && user?.profiles.includes("MARKET_CUSTOMER")) {
+    } else if (
+      activeTab === "market-orders" &&
+      user.profiles.includes("MARKET_CUSTOMER")
+    ) {
       void fetchMarketQuotations();
       void fetchMarketInvoices();
     }
-  }, [activeTab, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, user?.id, user?.role, profileKey]);
 
+  // Rafraîchissement automatique (polling) sur l'accueil et les commandes
   useEffect(() => {
     if (
       !["home", "market-orders"].includes(activeTab) ||
       !user?.profiles.includes("MARKET_CUSTOMER")
-    ) return;
+    ) {
+      return;
+    }
     const interval = window.setInterval(() => {
       void fetchMarketQuotations();
       void fetchMarketInvoices();
     }, 60_000);
     return () => window.clearInterval(interval);
-  }, [activeTab, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, user?.id, profileKey]);
 
   const fetchAdminInscriptions = async () => {
     setLoadingAdminInscriptions(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await authenticatedFetch(buildApiUrl('/api/inscriptions-manage'), {
-        headers: { Authorization: `Bearer ${token || ''}` }
+      const token = localStorage.getItem("token");
+      const res = await authenticatedFetch("/api/inscriptions-manage", {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token || ""}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -674,66 +840,76 @@ export default function DashboardPage() {
         setAdminInscriptions([]);
       }
     } catch (err) {
-      console.error('Error fetching admin inscriptions:', err);
+      console.error("Error fetching admin inscriptions:", err);
       setAdminInscriptions([]);
     } finally {
       setLoadingAdminInscriptions(false);
     }
   };
 
-  const handleAdminAction = async (id: number, action: 'accept' | 'reject') => {
-    if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) return;
+  const handleAdminAction = async (
+    id: number,
+    action: "accept" | "reject"
+  ) => {
+    if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) {
+      return;
+    }
     try {
-      const token = localStorage.getItem('token');
-      const res = await authenticatedFetch(buildApiUrl('/api/inscriptions-manage'), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
-        body: JSON.stringify({ id, action })
+      const token = localStorage.getItem("token");
+      const res = await authenticatedFetch("/api/inscriptions-manage", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ id, action }),
       });
       if (res.ok) {
         await fetchAdminInscriptions();
-        setSuccess(action === 'accept' ? 'Inscription acceptée' : 'Inscription rejetée');
-        setTimeout(() => setSuccess(''), 3000);
+        setSuccess(action === "accept" ? "Inscription acceptée" : "Inscription rejetée");
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.error || 'Erreur');
-        setTimeout(() => setError(''), 3000);
+        setError(data?.error || "Erreur");
+        setTimeout(() => setError(""), 3000);
       }
     } catch (err) {
       console.error(err);
-      setError('Erreur lors de la mise à jour');
-      setTimeout(() => setError(''), 3000);
+      setError("Erreur lors de la mise à jour");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const handleAdminDelete = async (id: number) => {
-    if (!confirm('Confirmer la suppression permanente de cette inscription ?')) return;
+    if (!confirm("Confirmer la suppression permanente de cette inscription ?")) {
+      return;
+    }
     try {
-      const token = localStorage.getItem('token');
-      const res = await authenticatedFetch(buildApiUrl(`/api/inscriptions-manage/${id}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token || ''}` }
+      const token = localStorage.getItem("token");
+      const res = await authenticatedFetch(`/api/inscriptions-manage/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token || ""}` },
       });
       if (res.ok) {
-        setSuccess('Inscription supprimée');
+        setSuccess("Inscription supprimée");
         await fetchAdminInscriptions();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.error || 'Erreur lors de la suppression');
-        setTimeout(() => setError(''), 3000);
+        setError(data?.error || "Erreur lors de la suppression");
+        setTimeout(() => setError(""), 3000);
       }
     } catch (err) {
       console.error(err);
-      setError('Erreur lors de la suppression');
-      setTimeout(() => setError(''), 3000);
+      setError("Erreur lors de la suppression");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const fetchFormations = async () => {
     setLoadingFormations(true);
     try {
-      const res = await fetch("/api/formations?limit=100");
+      const res = await fetch("/api/formations?limit=100", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setFormations(data.data?.formations || []);
@@ -757,18 +933,18 @@ export default function DashboardPage() {
       }
 
       const res = await authenticatedFetch("/api/my-inscriptions", {
-        headers: { 
-          'Authorization': `Bearer ${token || ""}`
-        }
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token || ""}` },
       });
-      
+
       if (res.ok) {
         const data = await res.json();
-        // Remove cancelled inscriptions from the user's personal view
-        const list: InscriptionFormation[] = (data.data || []).filter((insc: InscriptionFormation) => insc.status !== 'annule');
+        const list: InscriptionFormation[] = (data.data || []).filter(
+          (insc: InscriptionFormation) => insc.status !== "annule"
+        );
         setUserInscriptions(list);
       } else {
-        console.error('Error fetching inscriptions:', res.status);
+        console.error("Error fetching inscriptions:", res.status);
         setUserInscriptions([]);
         setInscriptionFetchError("Impossible de charger vos inscriptions.");
       }
@@ -786,7 +962,12 @@ export default function DashboardPage() {
     setInscriptionError("");
     setInscriptionSuccess("");
 
-    if (!inscriptionData.firstName || !inscriptionData.lastName || !inscriptionData.email || !inscriptionData.phone) {
+    if (
+      !inscriptionData.firstName ||
+      !inscriptionData.lastName ||
+      !inscriptionData.email ||
+      !inscriptionData.phone
+    ) {
       setInscriptionError("Tous les champs obligatoires doivent être remplis");
       return;
     }
@@ -798,7 +979,7 @@ export default function DashboardPage() {
 
     setSubmittingInscription(true);
     try {
-      const res = await authenticatedFetch(buildApiUrl("/api/inscriptions-formations"), {
+      const res = await authenticatedFetch("/api/inscriptions-formations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -810,17 +991,28 @@ export default function DashboardPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setInscriptionSuccess(`Inscription confirmée! ${data.message}`);
+        setInscriptionSuccess(`Inscription confirmée! ${data.message ?? ""}`);
         setUser((currentUser) => {
-          if (!currentUser || currentUser.profiles.includes("TRAINING_PARTICIPANT")) return currentUser;
+          if (!currentUser || currentUser.profiles.includes("TRAINING_PARTICIPANT")) {
+            return currentUser;
+          }
           const updatedUser = {
             ...currentUser,
-            profiles: [...currentUser.profiles, "TRAINING_PARTICIPANT" as const],
+            profiles: [
+              ...currentUser.profiles,
+              "TRAINING_PARTICIPANT" as const,
+            ],
           };
           localStorage.setItem("user", JSON.stringify(updatedUser));
           return updatedUser;
         });
-        setInscriptionData({ firstName: '', lastName: '', email: '', phone: '', company: '' });
+        setInscriptionData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          company: "",
+        });
         setShowInscriptionModal(false);
         await fetchUserInscriptions();
         setTimeout(() => setInscriptionSuccess(""), 3000);
@@ -836,28 +1028,28 @@ export default function DashboardPage() {
   };
 
   const handleCancelInscription = async (inscriptionId: number) => {
-    if (!confirm('Confirmer l\'annulation de cette inscription ?')) return;
+    if (!confirm("Confirmer l'annulation de cette inscription ?")) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await authenticatedFetch(buildApiUrl(`/api/inscriptions/${inscriptionId}`), {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token || ''}` },
+      const token = localStorage.getItem("token");
+      const res = await authenticatedFetch(`/api/inscriptions/${inscriptionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token || ""}` },
       });
 
       if (res.ok) {
-        setInscriptionSuccess('Inscription annulée');
+        setInscriptionSuccess("Inscription annulée");
         await fetchUserInscriptions();
         await fetchFormations();
-        setTimeout(() => setInscriptionSuccess(''), 3000);
+        setTimeout(() => setInscriptionSuccess(""), 3000);
       } else {
         const data = await res.json().catch(() => null);
         setInscriptionError(data?.error || "Erreur lors de l'annulation");
-        setTimeout(() => setInscriptionError(''), 3000);
+        setTimeout(() => setInscriptionError(""), 3000);
       }
     } catch (err) {
       console.error(err);
       setInscriptionError("Erreur lors de l'annulation");
-      setTimeout(() => setInscriptionError(''), 3000);
+      setTimeout(() => setInscriptionError(""), 3000);
     }
   };
 
@@ -865,11 +1057,11 @@ export default function DashboardPage() {
     setSelectedFormation(formation);
     setSelectedSession(session);
     setInscriptionData({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: '',
-      company: '',
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: "",
+      company: "",
     });
     setInscriptionError("");
     setInscriptionSuccess("");
@@ -879,7 +1071,7 @@ export default function DashboardPage() {
   const fetchArticles = async () => {
     setLoadingArticles(true);
     try {
-      const res = await fetch(buildApiUrl("/api/articles?limit=100"));
+      const res = await fetch("/api/articles?limit=100", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setArticles(data.data?.articles || []);
@@ -891,96 +1083,105 @@ export default function DashboardPage() {
     }
   };
 
-  const handlePublishArticle = async (articleId: number, currentPublished: boolean) => {
+  const handlePublishArticle = async (
+    articleId: number,
+    currentPublished: boolean
+  ) => {
     try {
-      const res = await authenticatedFetch(buildApiUrl(`/api/articles/${articleId}`), {
+      const res = await authenticatedFetch(`/api/articles/${articleId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ published: !currentPublished })
+        body: JSON.stringify({ published: !currentPublished }),
       });
 
       if (res.ok) {
-        setSuccess(!currentPublished ? 'Article publié!' : 'Article dépublié');
+        setSuccess(!currentPublished ? "Article publié!" : "Article dépublié");
         await fetchArticles();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } else {
-        setError('Erreur lors de la publication');
-        setTimeout(() => setError(''), 3000);
+        setError("Erreur lors de la publication");
+        setTimeout(() => setError(""), 3000);
       }
     } catch (err) {
-      setError('Erreur lors de la publication');
+      setError("Erreur lors de la publication");
       console.error(err);
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const handleDeleteArticle = async (articleId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article?')) return;
-    
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet article?")) return;
+
     try {
-      const res = await authenticatedFetch(buildApiUrl(`/api/articles/${articleId}`), {
-        method: "DELETE"
+      const res = await authenticatedFetch(`/api/articles/${articleId}`, {
+        method: "DELETE",
       });
 
       if (res.ok) {
-        setSuccess('Article supprimé');
+        setSuccess("Article supprimé");
         await fetchArticles();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } else {
-        setError('Erreur lors de la suppression');
-        setTimeout(() => setError(''), 3000);
+        setError("Erreur lors de la suppression");
+        setTimeout(() => setError(""), 3000);
       }
     } catch (err) {
-      setError('Erreur lors de la suppression');
+      setError("Erreur lors de la suppression");
       console.error(err);
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(""), 3000);
     }
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmitArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    
+    setError("");
+    setSuccess("");
+
     if (!formData.title || !formData.category || !formData.excerpt || !formData.content) {
-      setError('Tous les champs obligatoires doivent être remplis');
+      setError("Tous les champs obligatoires doivent être remplis");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await authenticatedFetch(buildApiUrl("/api/articles"), {
+      // FIX : priorité d'opérateur sur l'ancien code ("undefined undefined")
+      const authorName =
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Admin";
+
+      const res = await authenticatedFetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          author: user?.firstName + ' ' + user?.lastName || 'Admin'
-        })
+          author: authorName,
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSuccess('Article créé avec succès!');
+        setSuccess("Article créé avec succès!");
         setFormData({
-          title: '',
-          category: 'Articles techniques',
-          excerpt: '',
-          content: '',
-          image: '',
-          author: '',
+          title: "",
+          category: "Articles techniques",
+          excerpt: "",
+          content: "",
+          image: "",
+          author: "",
         });
         setShowArticleForm(false);
-        await fetchArticles(); // Reload articles
+        await fetchArticles();
       } else {
-        setError(data.error || 'Erreur lors de la création');
+        setError(data.error || "Erreur lors de la création");
       }
     } catch (err) {
-      setError('Erreur lors de la création de l\'article');
+      setError("Erreur lors de la création de l'article");
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -988,25 +1189,93 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    void fetch("/api/auth/logout", { method: "POST" }).finally(() => {
-      window.dispatchEvent(new Event("fisafi:session-expired"));
-      router.push("/");
-    });
+    try {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } catch {
+      /* ignore */
+    }
+    void fetch("/api/auth/logout", { method: "POST", keepalive: true }).finally(
+      () => {
+        window.dispatchEvent(new Event("fisafi:session-expired"));
+        router.push("/");
+      }
+    );
   };
 
   const handleTab = (id: TabId) => {
-    if (id === "market-orders" && !user?.profiles.includes("MARKET_CUSTOMER")) return;
+    if (!user) return;
+    const isAdmin = user.role === "admin";
+    if (!isAdmin && id === "market-orders" && !user.profiles.includes("MARKET_CUSTOMER")) {
+      return;
+    }
     if (
+      !isAdmin &&
       (id === "inscriptions" || id === "formations") &&
-      !user?.profiles.includes("TRAINING_PARTICIPANT")
-    ) return;
+      !user.profiles.includes("TRAINING_PARTICIPANT")
+    ) {
+      return;
+    }
     setActiveTab(id);
     setSidebarOpen(false);
+    if (typeof window !== "undefined") {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth";
+      window.scrollTo({ top: 0, left: 0, behavior });
+    }
   };
 
   if (loading) return <UserDashboardSkeleton />;
-  if (!user) return null;
+
+  // FIX : rendu explicite quand la session est indisponible (plus de page blanche)
+  if (!user) {
+    return (
+      <>
+        <Head>
+          <title>Dashboard — FiSAFi Groupe</title>
+          <meta name="robots" content="noindex" />
+        </Head>
+        <div
+          style={{
+            minHeight: "100svh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1rem",
+            padding: "3rem 1.5rem",
+            fontFamily: "var(--od-font, system-ui, sans-serif)",
+            background: "var(--od-bg, #f5f4f0)",
+            color: "var(--od-text, #20252e)",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 32 }} aria-hidden="true">⚠</div>
+          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>
+            Session indisponible
+          </h1>
+          <p style={{ color: "var(--od-text-muted, #64748b)", margin: 0, maxWidth: 420 }}>
+            {error || "Impossible de vérifier votre session. Veuillez vous reconnecter."}
+          </p>
+          <Link
+            href="/login"
+            style={{
+              marginTop: 8,
+              padding: "0.75rem 1.25rem",
+              borderRadius: 10,
+              background: "var(--od-primary, #1e40af)",
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Se reconnecter
+          </Link>
+        </div>
+      </>
+    );
+  }
 
   const hasMarketProfile = user.profiles.includes("MARKET_CUSTOMER");
   const hasTrainingProfile = user.profiles.includes("TRAINING_PARTICIPANT");
@@ -1019,21 +1288,26 @@ export default function DashboardPage() {
   });
   const firstInitial = user.firstName?.[0] ?? "";
   const lastInitial = user.lastName?.[0] ?? "";
-  const initials = (firstInitial + lastInitial).toUpperCase() || (user.email?.[0] ?? "U").toUpperCase();
+  const initials =
+    (firstInitial + lastInitial).toUpperCase() ||
+    (user.email?.[0] ?? "U").toUpperCase();
 
-  // Sessions the current user is already registered to (by sessionId)
-  const registeredSessionIds = new Set<number>(userInscriptions.filter(i => i.status !== 'annule').map(i => i.sessionId));
-  const pendingQuotationCount = marketQuotations.filter((quotation) =>
-    quotation.state === "draft" || quotation.state === "sent",
+  const registeredSessionIds = new Set<number>(
+    userInscriptions
+      .filter((i) => i.status !== "annule")
+      .map((i) => i.sessionId)
+  );
+  const pendingQuotationCount = marketQuotations.filter(
+    (q) => q.state === "draft" || q.state === "sent"
   ).length;
-  const confirmedOrderCount = marketQuotations.filter((quotation) =>
-    quotation.state === "sale" || quotation.state === "done",
+  const confirmedOrderCount = marketQuotations.filter(
+    (q) => q.state === "sale" || q.state === "done"
   ).length;
   const recentMarketQuotations = [...marketQuotations]
-    .sort((left, right) => Date.parse(right.date) - Date.parse(left.date))
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
     .slice(0, 3);
   const recentInscriptions = [...userInscriptions]
-    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, 3);
 
   return (
@@ -1041,8 +1315,11 @@ export default function DashboardPage() {
       <Head>
         <title>Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+
         <style>{`
           *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
           :root {
@@ -1059,14 +1336,11 @@ export default function DashboardPage() {
           }
           body { padding-top:0 !important; font-family:'Outfit',sans-serif; font-weight:400; color:var(--ink); background:var(--mist); -webkit-font-smoothing:auto; }
 
-          /* ── LAYOUT ── */
           .dash-layout { display:flex; min-height:100svh; }
 
-          /* ── OVERLAY (mobile) ── */
           .dash-overlay { display:none; position:fixed; inset:0; padding:0; border:0; background:rgba(11,24,41,0.5); z-index:40; }
           .dash-overlay.open { display:block; }
 
-          /* ── SIDEBAR ── */
           .dash-sidebar {
             position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
             background:var(--blue-deep); color:#fff; z-index:50;
@@ -1118,7 +1392,6 @@ export default function DashboardPage() {
           }
           .sidebar-logout:hover { background:rgba(229,90,0,0.3); color:#fff; }
 
-          /* ══ TOPBAR (mobile) ══ FIX v3.2: @supports guard for backdrop-filter */
           .dash-topbar {
             position:sticky; top:0; z-index:30;
             display:flex; align-items:center; justify-content:space-between;
@@ -1126,7 +1399,11 @@ export default function DashboardPage() {
             background:rgba(245,244,240,0.95);
             border-bottom:0.5px solid var(--line);
           }
-          @supports(backdrop-filter:blur(1px)){@media(min-width:900px){.dash-topbar{backdrop-filter:blur(12px);}}}
+          @supports (backdrop-filter: blur(1px)) {
+            @media (min-width: 900px) {
+              .dash-topbar { backdrop-filter: blur(12px); }
+            }
+          }
           @media(min-width:900px) { .dash-topbar { display:none; } }
           .topbar-logo { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); }
           .topbar-logo span { color:var(--orange); }
@@ -1139,8 +1416,7 @@ export default function DashboardPage() {
           @media(prefers-reduced-motion:reduce) {
             .dash-sidebar, .topbar-hamburger span, .sidebar-tab { transition:none !important; }
           }
-          
-          /* ── Mobile logo ── */
+
           .dash-mobile-logo { display:none; }
           .dash-mobile-logo img { display:block; width:100%; height:100%; object-fit:cover; }
           @media(max-width:768px) {
@@ -1148,7 +1424,6 @@ export default function DashboardPage() {
             .dash-mobile-logo img { width:100%; height:100%; object-fit:cover; }
           }
 
-          /* ── MAIN ── */
           .dash-main { flex:1; min-width:0; display:flex; flex-direction:column; }
           @media(min-width:900px) { .dash-main { margin-left:0; } }
 
@@ -1164,18 +1439,15 @@ export default function DashboardPage() {
           }
           .dashboard-home-link:hover { background:var(--blue); border-color:var(--blue); color:#fff; }
 
-          /* ── PAGE HEADER ── */
           .page-eyebrow { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--orange); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; }
           .page-eyebrow::before { content:''; width:1.25rem; height:0.5px; background:var(--orange); }
           .page-title { font-family:'Cormorant Garamond',serif; font-size:clamp(1.75rem,5vw,2.5rem); font-weight:300; color:var(--ink); line-height:1.1; margin-bottom:0.5rem; }
           .page-sub { font-size:12px; color:var(--steel); margin-bottom:2rem; }
 
-          /* ── EMPTY STATE ── */
           .empty-box { background:var(--white); border:0.5px solid var(--line); padding:3rem 2rem; text-align:center; }
           .empty-icon { font-size:2rem; margin-bottom:0.75rem; opacity:0.3; }
           .empty-text { font-size:13px; color:var(--steel); }
 
-          /* ── CARDS ── */
           .card-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
           @media(min-width:480px) { .card-grid { grid-template-columns:repeat(2,1fr); } }
           @media(min-width:800px) { .card-grid { grid-template-columns:repeat(2,1fr); } }
@@ -1191,9 +1463,9 @@ export default function DashboardPage() {
             padding:0.65rem 1.25rem; font-family:'Outfit',sans-serif; font-weight:400;
             transition:background 0.2s;
           }
-          .formation-btn:hover { background:var(--blue-deep); }
+          .formation-btn:hover:not(:disabled) { background:var(--blue-deep); }
+          .formation-btn:disabled { cursor:not-allowed; }
 
-          /* ── TABLE ── */
           .table-wrap { background:var(--white); border:0.5px solid var(--line); overflow-x:auto; }
           table { width:100%; border-collapse:collapse; min-width:480px; }
           thead tr { border-bottom:0.5px solid var(--line); background:rgba(30,64,175,0.03); }
@@ -1204,7 +1476,6 @@ export default function DashboardPage() {
           .badge-admin { background:rgba(30,64,175,0.1); color:var(--blue); }
           .badge-user { background:rgba(122,142,168,0.15); color:var(--steel); }
 
-          /* ── ARTICLES HEADER ── */
           .section-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; }
           .btn-new {
             font-size:10px; letter-spacing:0.15em; text-transform:uppercase;
@@ -1214,7 +1485,6 @@ export default function DashboardPage() {
           }
           .btn-new:hover { background:var(--orange-light); }
 
-          /* ── ARTICLE FORM ── */
           .article-form { background:var(--white); border:0.5px solid var(--line); padding:2rem; margin-bottom:2rem; }
           .form-group { margin-bottom:1.5rem; }
           .form-label { display:block; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink); margin-bottom:0.5rem; font-weight:500; }
@@ -1244,13 +1514,11 @@ export default function DashboardPage() {
           }
           .btn-cancel:hover { background:rgba(30,64,175,0.2); }
 
-          /* ── ALERTS ── */
           .alert { padding:1rem; margin-bottom:1rem; border-radius:3px; font-size:13px; display:flex; align-items:flex-start; gap:0.75rem; }
           .alert-error { background:rgba(220,38,38,0.1); color:#991b1b; border:0.5px solid rgba(220,38,38,0.3); }
           .alert-success { background:rgba(34,197,94,0.1); color:#166534; border:0.5px solid rgba(34,197,94,0.3); }
           .alert-icon { font-size:14px; flex-shrink:0; }
 
-          /* ── ARTICLE LIST ── */
           .article-item { background:var(--white); border:0.5px solid var(--line); padding:1.5rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; transition:border-color 0.2s; }
           .article-item:hover { border-color:var(--blue); }
           .article-info { flex:1; }
@@ -1329,11 +1597,7 @@ export default function DashboardPage() {
           .article-meta { font-size:13px; }
           .article-excerpt { font-size:15px; }
           .btn-small, .btn-publish, .btn-delete { font-size:12px; }
-          .sheet-sub { font-size:14px; }
-          .sheet-btn { font-size:15px; }
-          .sheet-cancel { font-size:12px; }
 
-          /* ── DASHBOARD VISUAL REFRESH ── */
           body { padding-top:0 !important; font-family:'Outfit',sans-serif; }
           .dash-layout { background:linear-gradient(135deg,#f8f9fc 0%,#f3f5f9 55%,#f7f5f1 100%); }
           .dash-sidebar {
@@ -1387,7 +1651,7 @@ export default function DashboardPage() {
           .table-wrap { overflow:hidden; }
           .article-form { padding:clamp(1.25rem,3vw,2rem); }
           .form-input, .form-textarea, .form-select { border-radius:9px; }
-          .formation-btn, .btn-new, .btn-submit, .btn-cancel, .btn-small, .btn-publish, .btn-delete, .sheet-btn, .sheet-cancel {
+          .formation-btn, .btn-new, .btn-submit, .btn-cancel, .btn-small, .btn-publish, .btn-delete {
             border-radius:8px; letter-spacing:0.06em;
           }
           .alert { border-radius:12px; }
@@ -1459,55 +1723,71 @@ export default function DashboardPage() {
         `}</style>
       </Head>
 
-      {/* Overlay mobile */}
-      <button
-        type="button"
-        className={`dash-overlay${sidebarOpen ? " open" : ""}`}
-        aria-label="Fermer le menu"
-        tabIndex={sidebarOpen ? 0 : -1}
-        onClick={() => setSidebarOpen(false)}
-      />
-
       <div className="dash-layout user-dashboard employee-portal-page">
+        <button
+          type="button"
+          className={`dash-overlay${sidebarOpen ? " open" : ""}`}
+          aria-label="Fermer le menu"
+          aria-hidden={!sidebarOpen}
+          tabIndex={sidebarOpen ? 0 : -1}
+          onClick={() => setSidebarOpen(false)}
+        />
 
         {/* ── SIDEBAR ── */}
-        <aside id="dashboard-sidebar" className={`dash-sidebar${sidebarOpen ? " open" : ""}`}>
+        <aside
+          id="dashboard-sidebar"
+          className={`dash-sidebar${sidebarOpen ? " open" : ""}`}
+        >
           <div className="sidebar-head">
-            <div className="sidebar-logo">Fi<span>SAFI</span> Groupe</div>
-            <div className="sidebar-role">{user.role === "admin" ? "Administrateur" : "Utilisateur"}</div>
+            <div className="sidebar-logo">
+              Fi<span>SAFI</span> Groupe
+            </div>
+            <div className="sidebar-role">
+              {user.role === "admin" ? "Administrateur" : "Utilisateur"}
+            </div>
           </div>
 
           <div className="sidebar-user">
             <div className="sidebar-avatar">{initials}</div>
-            <div style={{ minWidth:0 }}>
-              <div className="sidebar-uname">{user.firstName} {user.lastName}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="sidebar-uname">
+                {user.firstName} {user.lastName}
+              </div>
               <div className="sidebar-uemail">{user.email}</div>
             </div>
           </div>
 
           <nav className="sidebar-nav">
-            {tabs.filter(t => !t.admin).map(tab => (
-              <button
-                key={tab.id}
-                className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
-                onClick={() => handleTab(tab.id)}
-              >
-                <span className="sidebar-tab-icon">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+            {tabs
+              .filter((t) => !t.admin)
+              .map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
+                  onClick={() => handleTab(tab.id)}
+                >
+                  <span className="sidebar-tab-icon" aria-hidden="true">
+                    {tab.icon}
+                  </span>
+                  {tab.label}
+                </button>
+              ))}
             {user.role === "admin" && (
               <div className="sidebar-tab-admin">
-                {tabs.filter(t => t.admin).map(tab => (
-                  <button
-                    key={tab.id}
-                    className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
-                    onClick={() => handleTab(tab.id)}
-                  >
-                    <span className="sidebar-tab-icon">{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                ))}
+                {tabs
+                  .filter((t) => t.admin)
+                  .map((tab) => (
+                    <button
+                      key={tab.id}
+                      className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
+                      onClick={() => handleTab(tab.id)}
+                    >
+                      <span className="sidebar-tab-icon" aria-hidden="true">
+                        {tab.icon}
+                      </span>
+                      {tab.label}
+                    </button>
+                  ))}
               </div>
             )}
           </nav>
@@ -1515,22 +1795,33 @@ export default function DashboardPage() {
           <div className="sidebar-foot">
             <PortalThemeToggle />
             <button className="sidebar-logout" onClick={handleLogout}>
-              ⊗ &nbsp;Déconnexion
+              <span aria-hidden="true">⊗</span> &nbsp;Déconnexion
             </button>
           </div>
         </aside>
 
         {/* ── MAIN ── */}
         <div className="dash-main">
-
-          {/* Dashboard header */}
           <div className="dash-topbar">
-            {/* Mobile circular logo */}
-            <div className="dash-mobile-logo" aria-hidden="true">
-              <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
+            <div className="dash-brand" aria-label="FiSAFi Groupe">
+              <div className="dash-mobile-logo" aria-hidden="true">
+                <Image
+                  src="/favicon/web-app-manifest-192x192.png"
+                  alt=""
+                  width={72}
+                  height={72}
+                  priority
+                />
+              </div>
+              <div className="topbar-logo">
+                Fi<span>SAFI</span>
+              </div>
             </div>
-            <div className="topbar-logo">Fi<span>SAFI</span></div>
-            <button type="button" className="topbar-back-link" onClick={handleGoBack}>
+            <button
+              type="button"
+              className="topbar-back-link"
+              onClick={handleGoBack}
+            >
               <span aria-hidden="true">←</span>
               <span>Retour</span>
             </button>
@@ -1540,13 +1831,14 @@ export default function DashboardPage() {
               aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
               aria-expanded={sidebarOpen}
               aria-controls="dashboard-sidebar"
-              onClick={() => setSidebarOpen(v => !v)}
+              onClick={() => setSidebarOpen((v) => !v)}
             >
-              <span /><span /><span />
+              <span />
+              <span />
+              <span />
             </button>
           </div>
 
-          {/* Content */}
           <div className="dash-content">
             {activeTab === "home" && (
               <section className="dashboard-home" aria-labelledby="dashboard-home-title">
@@ -1558,46 +1850,62 @@ export default function DashboardPage() {
                   {hasMarketProfile && hasTrainingProfile
                     ? "Retrouvez vos activités FiSAFi Market et FiSAFi Groupe dans des espaces distincts."
                     : hasMarketProfile
-                      ? "Retrouvez vos devis, commandes et factures FiSAFi Market."
-                      : hasTrainingProfile
-                        ? "Retrouvez vos inscriptions et les formations FiSAFi Groupe."
-                        : "Consultez votre compte et activez les espaces FiSAFi qui vous concernent."}
+                    ? "Retrouvez vos devis, commandes et factures FiSAFi Market."
+                    : hasTrainingProfile
+                    ? "Retrouvez vos inscriptions et les formations FiSAFi Groupe."
+                    : "Consultez votre compte et activez les espaces FiSAFi qui vous concernent."}
                 </p>
 
                 <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
-                  {hasMarketProfile && <button
-                    className="dashboard-home-summary-card"
-                    type="button"
-                    onClick={() => handleTab("market-orders")}
-                  >
-                    <span className="dashboard-home-summary-label">Devis en cours</span>
-                    <strong className="dashboard-home-summary-value">
-                      {loadingMarketQuotations ? "…" : pendingQuotationCount}
-                    </strong>
-                    <span className="dashboard-home-summary-link">Consulter mes devis <span aria-hidden="true">→</span></span>
-                  </button>}
-                  {hasMarketProfile && <button
-                    className="dashboard-home-summary-card dashboard-home-summary-card--teal"
-                    type="button"
-                    onClick={() => handleTab("market-orders")}
-                  >
-                    <span className="dashboard-home-summary-label">Commandes confirmées</span>
-                    <strong className="dashboard-home-summary-value">
-                      {loadingMarketQuotations ? "…" : confirmedOrderCount}
-                    </strong>
-                    <span className="dashboard-home-summary-link">Suivre mes commandes <span aria-hidden="true">→</span></span>
-                  </button>}
-                  {hasTrainingProfile && <button
-                    className="dashboard-home-summary-card dashboard-home-summary-card--green"
-                    type="button"
-                    onClick={() => handleTab("inscriptions")}
-                  >
-                    <span className="dashboard-home-summary-label">Mes inscriptions</span>
-                    <strong className="dashboard-home-summary-value">
-                      {loadingInscriptions ? "…" : userInscriptions.length}
-                    </strong>
-                    <span className="dashboard-home-summary-link">Voir mes inscriptions <span aria-hidden="true">→</span></span>
-                  </button>}
+                  {hasMarketProfile && (
+                    <button
+                      className="dashboard-home-summary-card"
+                      type="button"
+                      onClick={() => handleTab("market-orders")}
+                    >
+                      <span className="dashboard-home-summary-label">Devis en cours</span>
+                      <strong className="dashboard-home-summary-value">
+                        {loadingMarketQuotations ? "…" : pendingQuotationCount}
+                      </strong>
+                      <span className="dashboard-home-summary-link">
+                        Consulter mes devis <span aria-hidden="true">→</span>
+                      </span>
+                    </button>
+                  )}
+                  {hasMarketProfile && (
+                    <button
+                      className="dashboard-home-summary-card dashboard-home-summary-card--teal"
+                      type="button"
+                      onClick={() => handleTab("market-orders")}
+                    >
+                      <span className="dashboard-home-summary-label">
+                        Commandes confirmées
+                      </span>
+                      <strong className="dashboard-home-summary-value">
+                        {loadingMarketQuotations ? "…" : confirmedOrderCount}
+                      </strong>
+                      <span className="dashboard-home-summary-link">
+                        Suivre mes commandes <span aria-hidden="true">→</span>
+                      </span>
+                    </button>
+                  )}
+                  {hasTrainingProfile && (
+                    <button
+                      className="dashboard-home-summary-card dashboard-home-summary-card--green"
+                      type="button"
+                      onClick={() => handleTab("inscriptions")}
+                    >
+                      <span className="dashboard-home-summary-label">
+                        Mes inscriptions
+                      </span>
+                      <strong className="dashboard-home-summary-value">
+                        {loadingInscriptions ? "…" : userInscriptions.length}
+                      </strong>
+                      <span className="dashboard-home-summary-link">
+                        Voir mes inscriptions <span aria-hidden="true">→</span>
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="dashboard-home-section-heading">
@@ -1607,29 +1915,67 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="dashboard-home-shortcuts">
-                  {hasMarketProfile && <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("market-orders")}>
-                    <span className="dashboard-home-shortcut-icon" aria-hidden="true">▱</span>
-                    <span>
-                      <strong>Achats FiSAFi Market</strong>
-                      <span>Consultez vos devis, commandes et factures.</span>
+                  {hasMarketProfile && (
+                    <button
+                      type="button"
+                      className="dashboard-home-shortcut"
+                      onClick={() => handleTab("market-orders")}
+                    >
+                      <span className="dashboard-home-shortcut-icon" aria-hidden="true">
+                        ▱
+                      </span>
+                      <span>
+                        <strong>Achats FiSAFi Market</strong>
+                        <span>Consultez vos devis, commandes et factures.</span>
+                      </span>
+                      <span className="dashboard-home-shortcut-arrow" aria-hidden="true">
+                        →
+                      </span>
+                    </button>
+                  )}
+                  {hasTrainingProfile && (
+                    <button
+                      type="button"
+                      className="dashboard-home-shortcut"
+                      onClick={() => handleTab("formations")}
+                    >
+                      <span
+                        className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--teal"
+                        aria-hidden="true"
+                      >
+                        ◉
+                      </span>
+                      <span>
+                        <strong>Formations et sessions</strong>
+                        <span>
+                          Découvrez les formations FiSAFi Groupe et les sessions disponibles.
+                        </span>
+                      </span>
+                      <span className="dashboard-home-shortcut-arrow" aria-hidden="true">
+                        →
+                      </span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="dashboard-home-shortcut"
+                    onClick={() => handleTab("account")}
+                  >
+                    <span
+                      className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--green"
+                      aria-hidden="true"
+                    >
+                      ◇
                     </span>
-                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
-                  </button>}
-                  {hasTrainingProfile && <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("formations")}>
-                    <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--teal" aria-hidden="true">◉</span>
-                    <span>
-                      <strong>Formations et sessions</strong>
-                      <span>Découvrez les formations FiSAFi Groupe et les sessions disponibles.</span>
-                    </span>
-                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
-                  </button>}
-                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("account")}>
-                    <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--green" aria-hidden="true">◇</span>
                     <span>
                       <strong>Mon compte</strong>
-                      <span>Consultez vos informations et choisissez vos espaces FiSAFi.</span>
+                      <span>
+                        Consultez vos informations et choisissez vos espaces FiSAFi.
+                      </span>
                     </span>
-                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
+                    <span className="dashboard-home-shortcut-arrow" aria-hidden="true">
+                      →
+                    </span>
                   </button>
                 </div>
 
@@ -1638,148 +1984,230 @@ export default function DashboardPage() {
                     <p className="dashboard-home-section-kicker">Votre activité</p>
                     <h2>Les dernières mises à jour</h2>
                   </div>
-                  {(hasMarketProfile || hasTrainingProfile) && <button
-                    type="button"
-                    className="dashboard-home-refresh"
-                    onClick={() => {
-                      if (hasMarketProfile) {
-                        void fetchMarketQuotations();
-                        void fetchMarketInvoices();
+                  {(hasMarketProfile || hasTrainingProfile) && (
+                    <button
+                      type="button"
+                      className="dashboard-home-refresh"
+                      onClick={() => {
+                        if (hasMarketProfile) {
+                          void fetchMarketQuotations();
+                          void fetchMarketInvoices();
+                        }
+                        if (hasTrainingProfile) {
+                          void fetchUserInscriptions();
+                          void fetchGroupInvoices();
+                        }
+                      }}
+                      disabled={
+                        (hasMarketProfile &&
+                          (loadingMarketQuotations || loadingMarketInvoices)) ||
+                        (hasTrainingProfile &&
+                          (loadingInscriptions || loadingGroupInvoices))
                       }
-                      if (hasTrainingProfile) {
-                        void fetchUserInscriptions();
-                        void fetchGroupInvoices();
-                      }
-                    }}
-                    disabled={
-                      (hasMarketProfile && (loadingMarketQuotations || loadingMarketInvoices)) ||
-                      (hasTrainingProfile && (loadingInscriptions || loadingGroupInvoices))
-                    }
-                  >
-                    Actualiser
-                  </button>}
+                    >
+                      Actualiser
+                    </button>
+                  )}
                 </div>
 
                 <div className="dashboard-home-activity">
-                  {hasMarketProfile && <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-quotes-title">
-                    <div className="dashboard-home-activity-title-row">
-                      <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
-                      <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("market-orders")}>
-                        Tout voir <span aria-hidden="true">→</span>
-                      </button>
-                    </div>
-                    {loadingMarketQuotations ? (
-                      <p className="dashboard-home-activity-message" role="status">Chargement de vos devis…</p>
-                    ) : marketQuotationError ? (
-                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
-                        {marketQuotationError}
-                      </p>
-                    ) : marketInvoiceError ? (
-                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
-                        {marketInvoiceError}
-                      </p>
-                    ) : recentMarketQuotations.length === 0 ? (
-                      <p className="dashboard-home-activity-message">Aucun devis ou commande pour le moment.</p>
-                    ) : (
-                      <ul className="dashboard-home-activity-list">
-                        {recentMarketQuotations.map((quotation) => (
-                          <li key={quotation.id} className="dashboard-home-activity-item">
-                            <span className="dashboard-home-activity-mark" aria-hidden="true">▱</span>
-                            <span className="dashboard-home-activity-copy">
-                              <strong>{quotation.reference}</strong>
-                              <span>{new Date(quotation.date).toLocaleDateString("fr-FR")}</span>
-                            </span>
-                            <span className="dashboard-home-activity-status">{quotation.statusLabel}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>}
+                  {hasMarketProfile && (
+                    <section
+                      className="dashboard-home-activity-card"
+                      aria-labelledby="dashboard-home-quotes-title"
+                    >
+                      <div className="dashboard-home-activity-title-row">
+                        <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
+                        <button
+                          type="button"
+                          className="dashboard-home-view-all"
+                          onClick={() => handleTab("market-orders")}
+                        >
+                          Tout voir <span aria-hidden="true">→</span>
+                        </button>
+                      </div>
+                      {loadingMarketQuotations ? (
+                        <p className="dashboard-home-activity-message" role="status">
+                          Chargement de vos devis…
+                        </p>
+                      ) : marketQuotationError ? (
+                        <p
+                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                          role="alert"
+                        >
+                          {marketQuotationError}
+                        </p>
+                      ) : marketInvoiceError ? (
+                        <p
+                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                          role="alert"
+                        >
+                          {marketInvoiceError}
+                        </p>
+                      ) : recentMarketQuotations.length === 0 ? (
+                        <p className="dashboard-home-activity-message">
+                          Aucun devis ou commande pour le moment.
+                        </p>
+                      ) : (
+                        <ul className="dashboard-home-activity-list">
+                          {recentMarketQuotations.map((quotation) => (
+                            <li
+                              key={quotation.id}
+                              className="dashboard-home-activity-item"
+                            >
+                              <span
+                                className="dashboard-home-activity-mark"
+                                aria-hidden="true"
+                              >
+                                ▱
+                              </span>
+                              <span className="dashboard-home-activity-copy">
+                                <strong>{quotation.reference}</strong>
+                                <span>
+                                  {new Date(quotation.date).toLocaleDateString("fr-FR")}
+                                </span>
+                              </span>
+                              <span className="dashboard-home-activity-status">
+                                {quotation.statusLabel}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  )}
 
-                  {hasTrainingProfile && <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-inscriptions-title">
-                    <div className="dashboard-home-activity-title-row">
-                      <h3 id="dashboard-home-inscriptions-title">Formations</h3>
-                      <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("inscriptions")}>
-                        Tout voir <span aria-hidden="true">→</span>
-                      </button>
-                    </div>
-                    {loadingInscriptions ? (
-                      <p className="dashboard-home-activity-message" role="status">Chargement de vos inscriptions…</p>
-                    ) : inscriptionFetchError ? (
-                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
-                        {inscriptionFetchError}
-                      </p>
-                    ) : recentInscriptions.length === 0 ? (
-                      <p className="dashboard-home-activity-message">Aucune inscription récente.</p>
-                    ) : (
-                      <ul className="dashboard-home-activity-list">
-                        {recentInscriptions.map((inscription) => (
-                          <li key={inscription.id} className="dashboard-home-activity-item">
-                            <span className="dashboard-home-activity-mark dashboard-home-activity-mark--teal" aria-hidden="true">◉</span>
-                            <span className="dashboard-home-activity-copy">
-                              <strong>{inscription.formation?.name || "Formation"}</strong>
-                              <span>{inscription.session?.location || "Lieu à confirmer"}</span>
-                            </span>
-                            <span className="dashboard-home-activity-status">{inscription.status}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>}
+                  {hasTrainingProfile && (
+                    <section
+                      className="dashboard-home-activity-card"
+                      aria-labelledby="dashboard-home-inscriptions-title"
+                    >
+                      <div className="dashboard-home-activity-title-row">
+                        <h3 id="dashboard-home-inscriptions-title">Formations</h3>
+                        <button
+                          type="button"
+                          className="dashboard-home-view-all"
+                          onClick={() => handleTab("inscriptions")}
+                        >
+                          Tout voir <span aria-hidden="true">→</span>
+                        </button>
+                      </div>
+                      {loadingInscriptions ? (
+                        <p className="dashboard-home-activity-message" role="status">
+                          Chargement de vos inscriptions…
+                        </p>
+                      ) : inscriptionFetchError ? (
+                        <p
+                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                          role="alert"
+                        >
+                          {inscriptionFetchError}
+                        </p>
+                      ) : recentInscriptions.length === 0 ? (
+                        <p className="dashboard-home-activity-message">
+                          Aucune inscription récente.
+                        </p>
+                      ) : (
+                        <ul className="dashboard-home-activity-list">
+                          {recentInscriptions.map((inscription) => (
+                            <li
+                              key={inscription.id}
+                              className="dashboard-home-activity-item"
+                            >
+                              <span
+                                className="dashboard-home-activity-mark dashboard-home-activity-mark--teal"
+                                aria-hidden="true"
+                              >
+                                ◉
+                              </span>
+                              <span className="dashboard-home-activity-copy">
+                                <strong>
+                                  {inscription.formation?.name || "Formation"}
+                                </strong>
+                                <span>
+                                  {inscription.session?.location || "Lieu à confirmer"}
+                                </span>
+                              </span>
+                              <span className="dashboard-home-activity-status">
+                                {inscription.status}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  )}
                 </div>
               </section>
             )}
 
-            {/* ── Mes inscriptions ── */}
             {activeTab === "inscriptions" && (
               <>
                 <div className="page-eyebrow">Espace personnel</div>
                 <h1 className="page-title">Mes inscriptions</h1>
-                <p className="page-sub">Retrouvez toutes vos inscriptions aux formations FISAFI</p>
+                <p className="page-sub">
+                  Retrouvez toutes vos inscriptions aux formations FISAFI
+                </p>
                 {inscriptionError && (
-                  <div className="alert alert-error" style={{ marginTop: '1rem' }}>
-                    <span className="alert-icon">⚠</span>
+                  <div className="alert alert-error" style={{ marginTop: "1rem" }}>
+                    <span className="alert-icon" aria-hidden="true">⚠</span>
                     <span>{inscriptionError}</span>
                   </div>
                 )}
                 {inscriptionSuccess && (
-                  <div className="alert alert-success" style={{ marginTop: '1rem' }}>
-                    <span className="alert-icon">✓</span>
+                  <div className="alert alert-success" style={{ marginTop: "1rem" }}>
+                    <span className="alert-icon" aria-hidden="true">✓</span>
                     <span>{inscriptionSuccess}</span>
                   </div>
                 )}
-                
+
                 {loadingInscriptions ? (
                   <div className="empty-box">
-                    <div className="empty-icon">⟳</div>
+                    <div className="empty-icon" aria-hidden="true">⟳</div>
                     <div className="empty-text">Chargement de vos inscriptions...</div>
                   </div>
                 ) : userInscriptions.length === 0 ? (
                   <div className="empty-box">
-                    <div className="empty-icon">◈</div>
+                    <div className="empty-icon" aria-hidden="true">◈</div>
                     <div className="empty-text">Aucune inscription pour le moment</div>
                   </div>
                 ) : (
                   <div>
-                    {userInscriptions.map(inscription => (
+                    {userInscriptions.map((inscription) => (
                       <div key={inscription.id} className="article-item">
                         <div className="article-info">
-                          <div className="article-title">{inscription.formation?.name || 'Formation'}</div>
+                          <div className="article-title">
+                            {inscription.formation?.name || "Formation"}
+                          </div>
                           <div className="article-meta">
                             <span className="article-badge">{inscription.status}</span>
-                            <span>📍 {inscription.session?.location || 'Lieu non spécifié'}</span>
-                            <span>📅 {new Date(inscription.session?.startDate || inscription.createdAt).toLocaleDateString('fr-FR')}</span>
+                            <span>
+                              <span aria-hidden="true">📍</span>{" "}
+                              {inscription.session?.location || "Lieu non spécifié"}
+                            </span>
+                            <span>
+                              <span aria-hidden="true">📅</span>{" "}
+                              {new Date(
+                                inscription.session?.startDate || inscription.createdAt
+                              ).toLocaleDateString("fr-FR")}
+                            </span>
                           </div>
                           <div className="article-excerpt">
-                            Inscrit le {new Date(inscription.createdAt).toLocaleDateString('fr-FR')} • {inscription.email}
+                            Inscrit le{" "}
+                            {new Date(inscription.createdAt).toLocaleDateString("fr-FR")}{" "}
+                            • {inscription.email}
                           </div>
                         </div>
                         <div className="article-actions">
-                          {inscription.status !== 'annule' && (
+                          {inscription.status !== "annule" && (
                             <button
                               className="btn-small"
                               onClick={() => handleCancelInscription(inscription.id)}
-                              style={{ background: 'transparent', border: '0.5px solid rgba(220,38,38,0.12)', color: '#991b1b' }}
+                              style={{
+                                background: "transparent",
+                                border: "0.5px solid rgba(220,38,38,0.12)",
+                                color: "#991b1b",
+                              }}
                             >
                               Annuler
                             </button>
@@ -1790,39 +2218,65 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {groupInvoiceError && (
-                  <div className="alert alert-error" role="alert" style={{ marginTop: "1.5rem" }}>
+                  <div
+                    className="alert alert-error"
+                    role="alert"
+                    style={{ marginTop: "1.5rem" }}
+                  >
                     {groupInvoiceError}
                   </div>
                 )}
-                <section className="dashboard-home-activity-card" aria-labelledby="group-invoices-title" style={{ marginTop: "2rem" }}>
+                <section
+                  className="dashboard-home-activity-card"
+                  aria-labelledby="group-invoices-title"
+                  style={{ marginTop: "2rem" }}
+                >
                   <div className="dashboard-home-activity-title-row">
                     <h2 id="group-invoices-title">Factures FiSAFi Groupe</h2>
                   </div>
                   {loadingGroupInvoices ? (
-                    <p className="dashboard-home-activity-message" role="status">Chargement de vos factures…</p>
+                    <p className="dashboard-home-activity-message" role="status">
+                      Chargement de vos factures…
+                    </p>
                   ) : groupInvoices.length === 0 ? (
                     <p className="dashboard-home-activity-message">
-                      Aucune facture ou note de crédit publiée n’est associée à votre compte Groupe.
+                      Aucune facture ou note de crédit publiée n’est associée à votre
+                      compte Groupe.
                     </p>
                   ) : (
                     <ul className="dashboard-home-activity-list">
                       {groupInvoices.map((invoice) => (
                         <li key={invoice.id} className="dashboard-home-activity-item">
-                          <span className="dashboard-home-activity-mark dashboard-home-activity-mark--teal" aria-hidden="true">
+                          <span
+                            className="dashboard-home-activity-mark dashboard-home-activity-mark--teal"
+                            aria-hidden="true"
+                          >
                             {invoice.type === "credit_note" ? "↩" : "▤"}
                           </span>
                           <span className="dashboard-home-activity-copy">
-                            <strong>{invoice.type === "credit_note" ? "Avoir" : "Facture"} {invoice.reference}</strong>
-                            <span>{invoice.date ? new Date(invoice.date).toLocaleDateString("fr-FR") : "Date non renseignée"}</span>
-                            {invoice.dueDate && <span>Échéance : {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}</span>}
+                            <strong>
+                              {invoice.type === "credit_note" ? "Avoir" : "Facture"}{" "}
+                              {invoice.reference}
+                            </strong>
+                            <span>
+                              {invoice.date
+                                ? new Date(invoice.date).toLocaleDateString("fr-FR")
+                                : "Date non renseignée"}
+                            </span>
+                            {invoice.dueDate && (
+                              <span>
+                                Échéance :{" "}
+                                {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}
+                              </span>
+                            )}
                             {invoice.referenceNote && <span>{invoice.referenceNote}</span>}
                           </span>
                           <span className="dashboard-home-activity-status">
                             {getInvoicePaymentLabel(invoice.paymentStatus)} ·{" "}
-                            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.total)}
+                            {formatNumber(invoice.total)}
                             {invoice.currency ? ` ${invoice.currency}` : ""}
                             {invoice.remaining > 0
-                              ? ` · Solde ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.remaining)}`
+                              ? ` · Solde ${formatNumber(invoice.remaining)}`
                               : ""}
                           </span>
                         </li>
@@ -1838,23 +2292,42 @@ export default function DashboardPage() {
                 <div className="page-eyebrow">FiSAFi Market</div>
                 <h1 className="page-title">Mes achats FiSAFi Market</h1>
                 <p className="page-sub">
-                  Consultez les statuts de vos devis et commandes, ainsi que vos factures publiées.
-                  Le devis devient une commande confirmée après validation du vendeur dans Odoo.
+                  Consultez les statuts de vos devis et commandes, ainsi que vos
+                  factures publiées. Le devis devient une commande confirmée après
+                  validation du vendeur dans Odoo.
                 </p>
 
                 {!marketEmailVerified && (
                   <div className="market-verification-notice">
                     <div className="market-verification-copy">
                       <span className="market-verification-icon" aria-hidden="true">
-                        <svg className="market-action-icon" viewBox="0 0 24 24" fill="none">
-                          <path d="M3.75 6.75h16.5v10.5H3.75z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-                          <path d="m4.5 7.5 7.5 6 7.5-6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg
+                          className="market-action-icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M3.75 6.75h16.5v10.5H3.75z"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="m4.5 7.5 7.5 6 7.5-6"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
                         </svg>
                       </span>
                       <div>
-                        <div className="market-verification-title">Confirmez votre adresse email</div>
+                        <div className="market-verification-title">
+                          Confirmez votre adresse email
+                        </div>
                         <div className="market-verification-text">
-                          Vérifiez votre adresse pour recevoir les changements de statut de vos devis.
+                          Vérifiez votre adresse pour recevoir les changements de
+                          statut de vos devis.
                         </div>
                       </div>
                     </div>
@@ -1864,31 +2337,59 @@ export default function DashboardPage() {
                       disabled={resendingVerification}
                       onClick={resendMarketEmailVerification}
                     >
-                      <svg className="market-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M4 12a8 8 0 0 1 13.66-5.66L20 8.7M20 4.5v4.2h-4.2M20 12a8 8 0 0 1-13.66 5.66L4 15.3m0 4.2v-4.2h4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg
+                        className="market-action-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M4 12a8 8 0 0 1 13.66-5.66L20 8.7M20 4.5v4.2h-4.2M20 12a8 8 0 0 1-13.66 5.66L4 15.3m0 4.2v-4.2h4.2"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                       {resendingVerification ? "Envoi en cours…" : "Renvoyer le lien"}
                     </button>
                   </div>
                 )}
                 {verificationMessage && (
-                  <p className="page-sub" role="status" aria-live="polite" style={{ marginTop: "0.75rem" }}>
+                  <p
+                    className="page-sub"
+                    role="status"
+                    aria-live="polite"
+                    style={{ marginTop: "0.75rem" }}
+                  >
                     {verificationMessage}
                   </p>
                 )}
 
                 {marketQuotationError && (
-                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                  <div
+                    className="alert alert-error"
+                    role="alert"
+                    style={{ marginTop: "1rem" }}
+                  >
                     {marketQuotationError}
                   </div>
                 )}
                 {marketReorderError && (
-                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                  <div
+                    className="alert alert-error"
+                    role="alert"
+                    style={{ marginTop: "1rem" }}
+                  >
                     {marketReorderError}
                   </div>
                 )}
                 {marketInvoiceError && (
-                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                  <div
+                    className="alert alert-error"
+                    role="alert"
+                    style={{ marginTop: "1rem" }}
+                  >
                     {marketInvoiceError}
                   </div>
                 )}
@@ -1901,30 +2402,58 @@ export default function DashboardPage() {
                       void fetchMarketInvoices();
                     }}
                     disabled={loadingMarketQuotations || loadingMarketInvoices}
-                    aria-label={loadingMarketQuotations || loadingMarketInvoices ? "Actualisation en cours" : "Actualiser les devis et factures"}
+                    aria-label={
+                      loadingMarketQuotations || loadingMarketInvoices
+                        ? "Actualisation en cours"
+                        : "Actualiser les devis et factures"
+                    }
                   >
                     <svg
-                      className={`market-action-icon${loadingMarketQuotations || loadingMarketInvoices ? " spinning" : ""}`}
+                      className={`market-action-icon${
+                        loadingMarketQuotations || loadingMarketInvoices
+                          ? " spinning"
+                          : ""
+                      }`}
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden="true"
                     >
-                      <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M5.6 9a7 7 0 0 1 11.7-2L20 9M4 15l2.7 2a7 7 0 0 0 11.7-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M20 7v5h-5M4 17v-5h5"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M5.6 9a7 7 0 0 1 11.7-2L20 9M4 15l2.7 2a7 7 0 0 0 11.7-2"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
-                    {loadingMarketQuotations || loadingMarketInvoices ? "Actualisation…" : "Actualiser devis et factures"}
+                    {loadingMarketQuotations || loadingMarketInvoices
+                      ? "Actualisation…"
+                      : "Actualiser devis et factures"}
                   </button>
                 </div>
                 {loadingMarketQuotations ? (
                   <div className="empty-box">
-                    <div className="empty-icon">⟳</div>
+                    <div className="empty-icon" aria-hidden="true">⟳</div>
                     <div className="empty-text">Actualisation de vos devis…</div>
                   </div>
                 ) : marketQuotations.length === 0 ? (
                   <div className="empty-box">
-                    <div className="empty-icon">▱</div>
-                    <div className="empty-text">Vous n’avez pas encore de demande Market.</div>
-                    <Link href="/market#rayons" className="btn-small" style={{ marginTop: "1rem" }}>
+                    <div className="empty-icon" aria-hidden="true">▱</div>
+                    <div className="empty-text">
+                      Vous n’avez pas encore de demande Market.
+                    </div>
+                    <Link
+                      href="/market#rayons"
+                      className="btn-small"
+                      style={{ marginTop: "1rem" }}
+                    >
                       Découvrir FiSAFi Market
                     </Link>
                   </div>
@@ -1933,30 +2462,40 @@ export default function DashboardPage() {
                     {marketQuotations.map((quotation) => (
                       <div key={quotation.id} className="article-item">
                         <div className="article-info">
-                          <div className="article-title">Devis {quotation.reference}</div>
+                          <div className="article-title">
+                            Devis {quotation.reference}
+                          </div>
                           <div className="article-meta">
-                            <span className="article-badge">{quotation.statusLabel}</span>
-                            <span>
-                              {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
-                                quotation.amountTotal,
-                              )} FCFA
+                            <span className="article-badge">
+                              {quotation.statusLabel}
                             </span>
-                            <span>{new Date(quotation.date).toLocaleDateString("fr-FR")}</span>
+                            <span>{formatNumber(quotation.amountTotal)} FCFA</span>
+                            <span>
+                              {new Date(quotation.date).toLocaleDateString("fr-FR")}
+                            </span>
                           </div>
                           <div className="article-excerpt">
                             {quotation.state === "draft"
                               ? "En attente de vérification et de confirmation par le vendeur."
                               : quotation.state === "sent"
-                                ? "Le vendeur vous a envoyé un devis à examiner."
-                                : quotation.state === "sale"
-                                  ? "Votre demande a été confirmée dans Odoo."
-                                  : quotation.state === "done"
-                                    ? "Cette commande est terminée."
-                                    : "Cette demande a été annulée."}
+                              ? "Le vendeur vous a envoyé un devis à examiner."
+                              : quotation.state === "sale"
+                              ? "Votre demande a été confirmée dans Odoo."
+                              : quotation.state === "done"
+                              ? "Cette commande est terminée."
+                              : "Cette demande a été annulée."}
                           </div>
                           {quotation.items.length > 0 && (
-                            <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-                              <strong style={{ color: "var(--ink)" }}>Produits commandés</strong>
+                            <div
+                              style={{
+                                display: "grid",
+                                gap: "0.75rem",
+                                marginTop: "1rem",
+                              }}
+                            >
+                              <strong style={{ color: "var(--ink)" }}>
+                                Produits commandés
+                              </strong>
                               {quotation.items.map((item) => (
                                 <div
                                   key={item.id}
@@ -1976,23 +2515,57 @@ export default function DashboardPage() {
                                       width={64}
                                       height={64}
                                       unoptimized
-                                      style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, background: "#fff" }}
+                                      style={{
+                                        width: 64,
+                                        height: 64,
+                                        objectFit: "cover",
+                                        borderRadius: 6,
+                                        background: "#fff",
+                                      }}
                                     />
                                   ) : (
                                     <div
                                       aria-hidden="true"
-                                      style={{ width: 64, height: 64, display: "grid", placeItems: "center", background: "#fff", color: "var(--steel)", borderRadius: 6 }}
+                                      style={{
+                                        width: 64,
+                                        height: 64,
+                                        display: "grid",
+                                        placeItems: "center",
+                                        background: "#fff",
+                                        color: "var(--steel)",
+                                        borderRadius: 6,
+                                      }}
                                     >
                                       ◇
                                     </div>
                                   )}
                                   <div style={{ minWidth: 0 }}>
-                                    <div style={{ color: "var(--ink)", fontWeight: 500 }}>{item.name}</div>
-                                    <div style={{ color: "var(--steel)", fontSize: "0.85rem", marginTop: "0.2rem" }}>
-                                      {item.quantity} × {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(item.unitPrice)} FCFA
+                                    <div
+                                      style={{
+                                        color: "var(--ink)",
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      {item.name}
                                     </div>
-                                    <div style={{ color: "var(--ink)", fontSize: "0.85rem", marginTop: "0.2rem" }}>
-                                      Sous-total : {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(item.subtotal)} FCFA
+                                    <div
+                                      style={{
+                                        color: "var(--steel)",
+                                        fontSize: "0.85rem",
+                                        marginTop: "0.2rem",
+                                      }}
+                                    >
+                                      {item.quantity} × {formatNumber(item.unitPrice)}{" "}
+                                      FCFA
+                                    </div>
+                                    <div
+                                      style={{
+                                        color: "var(--ink)",
+                                        fontSize: "0.85rem",
+                                        marginTop: "0.2rem",
+                                      }}
+                                    >
+                                      Sous-total : {formatNumber(item.subtotal)} FCFA
                                     </div>
                                   </div>
                                 </div>
@@ -2020,34 +2593,60 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                <section className="dashboard-home-activity-card" aria-labelledby="market-invoices-title" style={{ marginTop: "2rem" }}>
+                <section
+                  className="dashboard-home-activity-card"
+                  aria-labelledby="market-invoices-title"
+                  style={{ marginTop: "2rem" }}
+                >
                   <div className="dashboard-home-activity-title-row">
                     <h2 id="market-invoices-title">Factures FiSAFi Market</h2>
                   </div>
                   {loadingMarketInvoices ? (
-                    <p className="dashboard-home-activity-message" role="status">Chargement de vos factures…</p>
+                    <p className="dashboard-home-activity-message" role="status">
+                      Chargement de vos factures…
+                    </p>
                   ) : marketInvoices.length === 0 ? (
                     <p className="dashboard-home-activity-message">
-                      Aucune facture ou note de crédit publiée n’est associée à votre compte Market.
+                      Aucune facture ou note de crédit publiée n’est associée à votre
+                      compte Market.
                     </p>
                   ) : (
                     <ul className="dashboard-home-activity-list">
                       {marketInvoices.map((invoice) => (
                         <li key={invoice.id} className="dashboard-home-activity-item">
-                          <span className="dashboard-home-activity-mark" aria-hidden="true">
+                          <span
+                            className="dashboard-home-activity-mark"
+                            aria-hidden="true"
+                          >
                             {invoice.type === "credit_note" ? "↩" : "▤"}
                           </span>
                           <span className="dashboard-home-activity-copy">
-                            <strong>{invoice.type === "credit_note" ? "Avoir" : "Facture"} {invoice.reference}</strong>
-                            <span>{invoice.date ? new Date(invoice.date).toLocaleDateString("fr-FR") : "Date non renseignée"}</span>
-                            {invoice.dueDate && <span>Échéance : {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}</span>}
-                            {invoice.referenceNote && <span>{invoice.referenceNote}</span>}
+                            <strong>
+                              {invoice.type === "credit_note" ? "Avoir" : "Facture"}{" "}
+                              {invoice.reference}
+                            </strong>
+                            <span>
+                              {invoice.date
+                                ? new Date(invoice.date).toLocaleDateString("fr-FR")
+                                : "Date non renseignée"}
+                            </span>
+                            {invoice.dueDate && (
+                              <span>
+                                Échéance :{" "}
+                                {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}
+                              </span>
+                            )}
+                            {invoice.referenceNote && (
+                              <span>{invoice.referenceNote}</span>
+                            )}
                           </span>
                           <span className="dashboard-home-activity-status">
                             {getInvoicePaymentLabel(invoice.paymentStatus)} ·{" "}
-                            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.total)}
+                            {formatNumber(invoice.total)}
                             {invoice.currency ? ` ${invoice.currency}` : ""}
-                            {invoice.remaining > 0 ? ` · Solde ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.remaining)}` : ""}
+                            {invoice.remaining > 0
+                              ? ` · Solde ${formatNumber(invoice.remaining)}`
+                              : ""}
                           </span>
                         </li>
                       ))}
@@ -2061,24 +2660,47 @@ export default function DashboardPage() {
               <>
                 <div className="page-eyebrow">Compte personnel</div>
                 <h1 className="page-title">Mon compte</h1>
-                <p className="page-sub">Vos informations, votre type de compte et les espaces FiSAFi activés.</p>
+                <p className="page-sub">
+                  Vos informations, votre type de compte et les espaces FiSAFi activés.
+                </p>
                 <section
                   aria-label="Informations personnelles"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
                     gap: "1rem",
                     maxWidth: 900,
                     marginTop: "1.5rem",
                   }}
                 >
                   {[
-                    ["Nom", [user.firstName, user.lastName].filter(Boolean).join(" ") || "Non renseigné"],
+                    [
+                      "Nom",
+                      [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+                        "Non renseigné",
+                    ],
                     ["Adresse email", user.email],
-                    ["Type de compte", user.role === "admin" ? "Administrateur" : user.role === "moderator" ? "Modérateur" : "Utilisateur"],
-                    ["Espaces activés", user.profiles.length
-                      ? user.profiles.map((profile) => profile === "MARKET_CUSTOMER" ? "Client Market" : "Participant FiSAFi Groupe").join(" · ")
-                      : "Aucun espace activé"],
+                    [
+                      "Type de compte",
+                      user.role === "admin"
+                        ? "Administrateur"
+                        : user.role === "moderator"
+                        ? "Modérateur"
+                        : "Utilisateur",
+                    ],
+                    [
+                      "Espaces activés",
+                      user.profiles.length
+                        ? user.profiles
+                            .map((profile) =>
+                              profile === "MARKET_CUSTOMER"
+                                ? "Client Market"
+                                : "Participant FiSAFi Groupe"
+                            )
+                            .join(" · ")
+                        : "Aucun espace activé",
+                    ],
                   ].map(([label, value]) => (
                     <div
                       key={label}
@@ -2089,30 +2711,102 @@ export default function DashboardPage() {
                         background: "var(--white)",
                       }}
                     >
-                      <div style={{ color: "var(--steel)", fontSize: 12, marginBottom: 6 }}>{label}</div>
-                      <strong style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>{value}</strong>
+                      <div
+                        style={{
+                          color: "var(--steel)",
+                          fontSize: 12,
+                          marginBottom: 6,
+                        }}
+                      >
+                        {label}
+                      </div>
+                      <strong
+                        style={{
+                          color: "var(--ink)",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {value}
+                      </strong>
                     </div>
                   ))}
                 </section>
-                <section style={{ maxWidth: 900, marginTop: "2rem" }} aria-labelledby="account-profiles-title">
-                  <h2 id="account-profiles-title" style={{ color: "var(--ink)", fontSize: 18, marginBottom: 8 }}>
+                <section
+                  style={{ maxWidth: 900, marginTop: "2rem" }}
+                  aria-labelledby="account-profiles-title"
+                >
+                  <h2
+                    id="account-profiles-title"
+                    style={{ color: "var(--ink)", fontSize: 18, marginBottom: 8 }}
+                  >
                     Choisissez vos espaces
                   </h2>
                   <p className="page-sub" style={{ marginBottom: "1rem" }}>
-                    Vous pourrez activer les deux espaces. Les menus et les données correspondants apparaîtront ensuite dans votre tableau de bord.
+                    Vous pourrez activer les deux espaces. Les menus et les données
+                    correspondants apparaîtront ensuite dans votre tableau de bord.
                   </p>
-                  {profileError && <div className="alert alert-error" role="alert">{profileError}</div>}
-                  {profileMessage && <div className="alert alert-success" role="status">{profileMessage}</div>}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "1rem" }}>
-                    {([
-                      ["MARKET_CUSTOMER", "Client FiSAFi Market", "Accédez à vos devis, commandes et factures Market."],
-                      ["TRAINING_PARTICIPANT", "Participant FiSAFi Groupe", "Accédez aux formations, sessions, inscriptions et factures Groupe."],
-                    ] as const).map(([profile, title, description]) => {
+                  {profileError && (
+                    <div className="alert alert-error" role="alert">
+                      {profileError}
+                    </div>
+                  )}
+                  {profileMessage && (
+                    <div className="alert alert-success" role="status">
+                      {profileMessage}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+                      gap: "1rem",
+                    }}
+                  >
+                    {(
+                      [
+                        [
+                          "MARKET_CUSTOMER",
+                          "Client FiSAFi Market",
+                          "Accédez à vos devis, commandes et factures Market.",
+                        ],
+                        [
+                          "TRAINING_PARTICIPANT",
+                          "Participant FiSAFi Groupe",
+                          "Accédez aux formations, sessions, inscriptions et factures Groupe.",
+                        ],
+                      ] as const
+                    ).map(([profile, title, description]) => {
                       const enabled = user.profiles.includes(profile);
                       return (
-                        <div key={profile} style={{ padding: "1rem", border: "1px solid var(--line)", borderRadius: 8, background: "var(--white)" }}>
-                          <strong style={{ display: "block", color: "var(--ink)", marginBottom: 6 }}>{title}</strong>
-                          <p style={{ color: "var(--steel)", fontSize: 13, lineHeight: 1.5, marginBottom: 14 }}>{description}</p>
+                        <div
+                          key={profile}
+                          style={{
+                            padding: "1rem",
+                            border: "1px solid var(--line)",
+                            borderRadius: 8,
+                            background: "var(--white)",
+                          }}
+                        >
+                          <strong
+                            style={{
+                              display: "block",
+                              color: "var(--ink)",
+                              marginBottom: 6,
+                            }}
+                          >
+                            {title}
+                          </strong>
+                          <p
+                            style={{
+                              color: "var(--steel)",
+                              fontSize: 13,
+                              lineHeight: 1.5,
+                              marginBottom: 14,
+                            }}
+                          >
+                            {description}
+                          </p>
                           <button
                             type="button"
                             className="btn-submit"
@@ -2122,95 +2816,166 @@ export default function DashboardPage() {
                             {enabled
                               ? "Espace activé"
                               : savingProfile === profile
-                                ? "Activation…"
-                                : "Activer cet espace"}
+                              ? "Activation…"
+                              : "Activer cet espace"}
                           </button>
                         </div>
                       );
                     })}
                   </div>
                 </section>
-                <section style={{ maxWidth: 520, marginTop: "2rem" }} aria-labelledby="account-password-title">
-                  <h2 id="account-password-title" style={{ color: "var(--ink)", fontSize: 18 }}>Mot de passe</h2>
-                  <p className="page-sub" style={{ marginTop: 6 }}>Après modification, toutes les sessions ouvertes seront déconnectées.</p>
-                {passwordError && <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>{passwordError}</div>}
-                {passwordMessage && <div className="alert alert-success" role="status" style={{ marginTop: "1rem" }}>{passwordMessage}</div>}
-                <form onSubmit={handleChangePassword} style={{ display: "grid", gap: "1rem", marginTop: "1.5rem" }}>
-                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
-                    Mot de passe actuel
-                    <input
-                      className="form-input"
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
-                    Nouveau mot de passe
-                    <input
-                      className="form-input"
-                      type="password"
-                      autoComplete="new-password"
-                      minLength={8}
-                      maxLength={128}
-                      required
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
-                    Confirmer le nouveau mot de passe
-                    <input
-                      className="form-input"
-                      type="password"
-                      autoComplete="new-password"
-                      minLength={8}
-                      maxLength={128}
-                      required
-                      value={confirmNewPassword}
-                      onChange={(event) => setConfirmNewPassword(event.target.value)}
-                    />
-                  </label>
-                  <button type="submit" className="btn-submit" disabled={changingPassword}>
-                    {changingPassword ? "Modification…" : "Modifier mon mot de passe"}
-                  </button>
-                </form>
+                <section
+                  style={{ maxWidth: 520, marginTop: "2rem" }}
+                  aria-labelledby="account-password-title"
+                >
+                  <h2
+                    id="account-password-title"
+                    style={{ color: "var(--ink)", fontSize: 18 }}
+                  >
+                    Mot de passe
+                  </h2>
+                  <p className="page-sub" style={{ marginTop: 6 }}>
+                    Après modification, toutes les sessions ouvertes seront déconnectées.
+                  </p>
+                  {passwordError && (
+                    <div
+                      className="alert alert-error"
+                      role="alert"
+                      style={{ marginTop: "1rem" }}
+                    >
+                      {passwordError}
+                    </div>
+                  )}
+                  {passwordMessage && (
+                    <div
+                      className="alert alert-success"
+                      role="status"
+                      style={{ marginTop: "1rem" }}
+                    >
+                      {passwordMessage}
+                    </div>
+                  )}
+                  <form
+                    onSubmit={handleChangePassword}
+                    style={{ display: "grid", gap: "1rem", marginTop: "1.5rem" }}
+                  >
+                    <label
+                      style={{
+                        display: "grid",
+                        gap: "0.45rem",
+                        color: "var(--ink)",
+                      }}
+                    >
+                      Mot de passe actuel
+                      <input
+                        className="form-input"
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        value={currentPassword}
+                        onChange={(event) => setCurrentPassword(event.target.value)}
+                      />
+                    </label>
+                    <label
+                      style={{
+                        display: "grid",
+                        gap: "0.45rem",
+                        color: "var(--ink)",
+                      }}
+                    >
+                      Nouveau mot de passe
+                      <input
+                        className="form-input"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={128}
+                        required
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                      />
+                    </label>
+                    <label
+                      style={{
+                        display: "grid",
+                        gap: "0.45rem",
+                        color: "var(--ink)",
+                      }}
+                    >
+                      Confirmer le nouveau mot de passe
+                      <input
+                        className="form-input"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={128}
+                        required
+                        value={confirmNewPassword}
+                        onChange={(event) =>
+                          setConfirmNewPassword(event.target.value)
+                        }
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="btn-submit"
+                      disabled={changingPassword}
+                    >
+                      {changingPassword
+                        ? "Modification…"
+                        : "Modifier mon mot de passe"}
+                    </button>
+                  </form>
                 </section>
               </>
             )}
 
-            {/* ── Formations ── */}
             {activeTab === "formations" && (
               <>
                 <div className="page-eyebrow">Catalogue</div>
                 <h1 className="page-title">Formations disponibles</h1>
                 <p className="page-sub">Choisissez votre parcours de formation</p>
-                
+
                 {loadingFormations ? (
                   <div className="empty-box">
-                    <div className="empty-icon">⟳</div>
+                    <div className="empty-icon" aria-hidden="true">⟳</div>
                     <div className="empty-text">Chargement des formations...</div>
                   </div>
                 ) : formations.length === 0 ? (
                   <div className="empty-box">
-                    <div className="empty-icon">◉</div>
+                    <div className="empty-icon" aria-hidden="true">◉</div>
                     <div className="empty-text">Aucune formation disponible</div>
                   </div>
                 ) : (
                   <div className="card-grid">
                     {formations.map((formation, idx) => (
                       <div key={formation.id} className="formation-card">
-                        <div className="formation-num">{String(idx + 1).padStart(2, '0')}</div>
+                        <div className="formation-num">
+                          {String(idx + 1).padStart(2, "0")}
+                        </div>
                         <div className="formation-name">{formation.name}</div>
                         <div className="formation-desc">{formation.description}</div>
-                        
-                        {/* Sessions disponibles */}
+
                         {formation.sessions && formation.sessions.length > 0 ? (
-                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>
-                            <div style={{ marginBottom: '0.75rem', fontWeight: 500, color: 'var(--ink)' }}>Sessions:</div>
-                            {formation.sessions.map(session => {
+                          <div
+                            style={{
+                              marginTop: "1rem",
+                              paddingTop: "1rem",
+                              borderTop: "0.5px solid var(--line)",
+                              fontSize: "12px",
+                              color: "var(--steel)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                marginBottom: "0.75rem",
+                                fontWeight: 500,
+                                color: "var(--ink)",
+                              }}
+                            >
+                              Sessions:
+                            </div>
+                            {formation.sessions.map((session) => {
                               const isRegistrationOpen =
                                 session.status === "ouverte" &&
                                 Date.parse(session.startDate) > Date.now();
@@ -2219,32 +2984,77 @@ export default function DashboardPage() {
                                 session.available <= 0 ||
                                 registeredSessionIds.has(session.id);
                               return (
-                              <div key={session.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(30,64,175,0.02)', borderRadius: '3px' }}>
-                                <div>{new Date(session.startDate).toLocaleDateString('fr-FR')}</div>
-                                <div style={{ fontSize: '11px', marginTop: '2px' }}>{session.location}</div>
-                                <div style={{ fontSize: '11px', marginTop: '2px', color: session.available > 0 ? 'var(--steel)' : '#991b1b' }}>
-                                  {session.available > 0 ? `${session.available}/${session.capacity} places` : 'Complète'}
-                                </div>
-                                <button 
-                                  className="formation-btn" 
-                                  onClick={() => openInscriptionModal(formation, session)}
-                                  disabled={registrationDisabled}
-                                  style={{ marginTop: '0.5rem', width: '100%', opacity: registrationDisabled ? 0.5 : 1, cursor: registrationDisabled ? 'not-allowed' : 'pointer' }}
+                                <div
+                                  key={session.id}
+                                  style={{
+                                    marginBottom: "0.75rem",
+                                    padding: "0.75rem",
+                                    background: "rgba(30,64,175,0.02)",
+                                    borderRadius: "3px",
+                                  }}
                                 >
-                                  {registeredSessionIds.has(session.id)
-                                    ? 'Déjà inscrit'
-                                    : session.available <= 0 || session.status === "complète"
-                                      ? 'Complète'
+                                  <div>
+                                    {new Date(session.startDate).toLocaleDateString(
+                                      "fr-FR"
+                                    )}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      marginTop: "2px",
+                                    }}
+                                  >
+                                    {session.location}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      marginTop: "2px",
+                                      color:
+                                        session.available > 0
+                                          ? "var(--steel)"
+                                          : "#991b1b",
+                                    }}
+                                  >
+                                    {session.available > 0
+                                      ? `${session.available}/${session.capacity} places`
+                                      : "Complète"}
+                                  </div>
+                                  <button
+                                    className="formation-btn"
+                                    onClick={() =>
+                                      openInscriptionModal(formation, session)
+                                    }
+                                    disabled={registrationDisabled}
+                                    style={{
+                                      marginTop: "0.5rem",
+                                      width: "100%",
+                                      opacity: registrationDisabled ? 0.5 : 1,
+                                    }}
+                                  >
+                                    {registeredSessionIds.has(session.id)
+                                      ? "Déjà inscrit"
+                                      : session.available <= 0 ||
+                                        session.status === "complète"
+                                      ? "Complète"
                                       : !isRegistrationOpen
-                                        ? 'Inscriptions fermées'
-                                        : "S'inscrire"}
-                                </button>
-                              </div>
+                                      ? "Inscriptions fermées"
+                                      : "S'inscrire"}
+                                  </button>
+                                </div>
                               );
                             })}
                           </div>
                         ) : (
-                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>
+                          <div
+                            style={{
+                              marginTop: "1rem",
+                              paddingTop: "1rem",
+                              borderTop: "0.5px solid var(--line)",
+                              fontSize: "12px",
+                              color: "var(--steel)",
+                            }}
+                          >
                             Aucune session disponible
                           </div>
                         )}
@@ -2255,12 +3065,23 @@ export default function DashboardPage() {
               </>
             )}
 
-            {/* ── Gérer inscriptions (Admin) ── */}
             {activeTab === "inscriptions-manage" && (
               <>
                 <div className="page-eyebrow">Administration</div>
                 <h1 className="page-title">Gérer les inscriptions</h1>
-                <p className="page-sub">Vue d'ensemble de toutes les inscriptions</p>
+                <p className="page-sub">
+                  Vue d&apos;ensemble de toutes les inscriptions
+                </p>
+                {error && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="alert alert-success" role="status" style={{ marginTop: "1rem" }}>
+                    {success}
+                  </div>
+                )}
                 <div className="table-wrap">
                   <table>
                     <thead>
@@ -2275,29 +3096,84 @@ export default function DashboardPage() {
                     <tbody>
                       {loadingAdminInscriptions ? (
                         <tr>
-                          <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>Chargement...</td>
+                          <td
+                            colSpan={5}
+                            style={{
+                              textAlign: "center",
+                              padding: "3rem",
+                              color: "var(--steel)",
+                            }}
+                          >
+                            Chargement...
+                          </td>
                         </tr>
                       ) : adminInscriptions.length === 0 ? (
                         <tr>
-                          <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--steel)' }}>Aucune inscription</td>
+                          <td
+                            colSpan={5}
+                            style={{
+                              textAlign: "center",
+                              padding: "3rem",
+                              color: "var(--steel)",
+                            }}
+                          >
+                            Aucune inscription
+                          </td>
                         </tr>
                       ) : (
-                        adminInscriptions.map(insc => (
+                        adminInscriptions.map((insc) => (
                           <tr key={insc.id}>
-                            <td>{insc.firstName} {insc.lastName}</td>
-                            <td>{insc.email}</td>
-                            <td>{insc.formation?.name || '-'}</td>
-                            <td><span className={`badge ${insc.status === 'confirme' ? 'badge-admin' : 'badge-user'}`}>{insc.status}</span></td>
                             <td>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {(['liste_attente', 'demande_en_attente'] as string[]).includes(insc.status) && (
-                                  <button className="btn-small" onClick={() => handleAdminAction(insc.id, 'accept')}>Accepter</button>
+                              {insc.firstName} {insc.lastName}
+                            </td>
+                            <td>{insc.email}</td>
+                            <td>{insc.formation?.name || "-"}</td>
+                            <td>
+                              <span
+                                className={`badge ${
+                                  insc.status === "confirme"
+                                    ? "badge-admin"
+                                    : "badge-user"
+                                }`}
+                              >
+                                {insc.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: "0.5rem" }}>
+                                {(
+                                  ["liste_attente", "demande_en_attente"] as string[]
+                                ).includes(insc.status) && (
+                                  <button
+                                    className="btn-small"
+                                    onClick={() => handleAdminAction(insc.id, "accept")}
+                                  >
+                                    Accepter
+                                  </button>
                                 )}
-                                {(['confirme','liste_attente','demande_en_attente'] as string[]).includes(insc.status) && (
-                                  <button className="btn-small" onClick={() => handleAdminAction(insc.id, 'reject')}>Rejeter</button>
+                                {(
+                                  [
+                                    "confirme",
+                                    "liste_attente",
+                                    "demande_en_attente",
+                                  ] as string[]
+                                ).includes(insc.status) && (
+                                  <button
+                                    className="btn-small"
+                                    onClick={() => handleAdminAction(insc.id, "reject")}
+                                  >
+                                    Rejeter
+                                  </button>
                                 )}
-                                {( ['annule','liste_attente','demande_en_attente'].includes(insc.status) ) && (
-                                  <button className="btn-delete" onClick={() => handleAdminDelete(insc.id)}>Supprimer</button>
+                                {(
+                                  ["annule", "liste_attente", "demande_en_attente"]
+                                ).includes(insc.status) && (
+                                  <button
+                                    className="btn-delete"
+                                    onClick={() => handleAdminDelete(insc.id)}
+                                  >
+                                    Supprimer
+                                  </button>
                                 )}
                               </div>
                             </td>
@@ -2310,7 +3186,6 @@ export default function DashboardPage() {
               </>
             )}
 
-            {/* ── Utilisateurs (Admin) ── */}
             {activeTab === "users" && (
               <>
                 <div className="page-eyebrow">Administration</div>
@@ -2328,14 +3203,20 @@ export default function DashboardPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>{user.firstName} {user.lastName}</td>
+                        <td>
+                          {user.firstName} {user.lastName}
+                        </td>
                         <td>{user.email}</td>
                         <td>
-                          <span className={`badge ${user.role === "admin" ? "badge-admin" : "badge-user"}`}>
+                          <span
+                            className={`badge ${
+                              user.role === "admin" ? "badge-admin" : "badge-user"
+                            }`}
+                          >
                             {user.role}
                           </span>
                         </td>
-                        <td style={{ color:"var(--steel)" }}>—</td>
+                        <td style={{ color: "var(--steel)" }}>—</td>
                       </tr>
                     </tbody>
                   </table>
@@ -2343,7 +3224,6 @@ export default function DashboardPage() {
               </>
             )}
 
-            {/* ── Articles (Admin) ── */}
             {activeTab === "articles" && (
               <>
                 <div className="section-bar">
@@ -2352,24 +3232,30 @@ export default function DashboardPage() {
                     <h1 className="page-title">Articles & Actualités</h1>
                   </div>
                   {!showArticleForm && (
-                    <button className="btn-new" onClick={() => { setShowArticleForm(true); setError(''); setSuccess(''); }}>
+                    <button
+                      className="btn-new"
+                      onClick={() => {
+                        setShowArticleForm(true);
+                        setError("");
+                        setSuccess("");
+                      }}
+                    >
                       + Nouvel article
                     </button>
                   )}
                 </div>
 
-                {/* Formulaire de création */}
                 {showArticleForm && (
                   <form className="article-form" onSubmit={handleSubmitArticle}>
                     {error && (
                       <div className="alert alert-error">
-                        <span className="alert-icon">⚠</span>
+                        <span className="alert-icon" aria-hidden="true">⚠</span>
                         <span>{error}</span>
                       </div>
                     )}
                     {success && (
                       <div className="alert alert-success">
-                        <span className="alert-icon">✓</span>
+                        <span className="alert-icon" aria-hidden="true">✓</span>
                         <span>{success}</span>
                       </div>
                     )}
@@ -2425,7 +3311,7 @@ export default function DashboardPage() {
                         onChange={handleFormChange}
                         placeholder="Contenu complet de l'article"
                         required
-                        style={{ minHeight: '200px' }}
+                        style={{ minHeight: "200px" }}
                       />
                     </div>
 
@@ -2474,53 +3360,61 @@ export default function DashboardPage() {
                   </form>
                 )}
 
-                {/* Liste des articles */}
                 {loadingArticles ? (
                   <div className="empty-box">
-                    <div className="empty-icon">⟳</div>
+                    <div className="empty-icon" aria-hidden="true">⟳</div>
                     <div className="empty-text">Chargement des articles...</div>
                   </div>
                 ) : articles.length === 0 ? (
                   <div className="empty-box">
-                    <div className="empty-icon">◆</div>
+                    <div className="empty-icon" aria-hidden="true">◆</div>
                     <div className="empty-text">Aucun article pour le moment</div>
                   </div>
                 ) : (
                   <div>
-                    <p className="page-sub" style={{ marginBottom: '1.5rem' }}>
-                      {articles.length} article{articles.length > 1 ? 's' : ''} créé{articles.length > 1 ? 's' : ''}
+                    <p className="page-sub" style={{ marginBottom: "1.5rem" }}>
+                      {articles.length} article{articles.length > 1 ? "s" : ""} créé
+                      {articles.length > 1 ? "s" : ""}
                     </p>
-                    {articles.map(article => (
+                    {articles.map((article) => (
                       <div key={article.id} className="article-item">
                         <div className="article-info">
                           <div className="article-title">{article.title}</div>
                           <div className="article-meta">
                             <span className="article-badge">{article.category}</span>
-                            <span>{new Date(article.createdAt).toLocaleDateString('fr-FR')}</span>
-                            <span>{article.published ? '✓ Publié' : 'Non publié'}</span>
+                            <span>
+                              {new Date(article.createdAt).toLocaleDateString("fr-FR")}
+                            </span>
+                            <span>
+                              {article.published ? "✓ Publié" : "Non publié"}
+                            </span>
                           </div>
                           <div className="article-excerpt">{article.excerpt}</div>
                         </div>
                         <div className="article-actions">
                           {!article.published && (
-                            <button 
+                            <button
                               className="btn-publish"
-                              onClick={() => handlePublishArticle(article.id, article.published)}
+                              onClick={() =>
+                                handlePublishArticle(article.id, article.published)
+                              }
                             >
                               Publier
                             </button>
                           )}
                           {article.published && (
-                            <button 
+                            <button
                               className="btn-publish"
-                              onClick={() => handlePublishArticle(article.id, article.published)}
-                              style={{ background: 'var(--steel)' }}
+                              onClick={() =>
+                                handlePublishArticle(article.id, article.published)
+                              }
+                              style={{ background: "var(--steel)" }}
                             >
                               Dépublier
                             </button>
                           )}
                           <button className="btn-small">Éditer</button>
-                          <button 
+                          <button
                             className="btn-delete"
                             onClick={() => handleDeleteArticle(article.id)}
                           >
@@ -2533,25 +3427,75 @@ export default function DashboardPage() {
                 )}
               </>
             )}
-
           </div>
         </div>
       </div>
 
-      {/* Modal d'inscription */}
       {showInscriptionModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(11, 24, 41, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }} onClick={() => setShowInscriptionModal(false)}>
-          <div style={{ backgroundColor: 'var(--white)', borderRadius: '6px', padding: '2rem', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', fontWeight: 300, marginBottom: '0.5rem' }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Inscription à une formation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(11, 24, 41, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setShowInscriptionModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--white)",
+              borderRadius: "6px",
+              padding: "2rem",
+              maxWidth: "500px",
+              width: "90%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontSize: "1.5rem",
+                fontWeight: 300,
+                marginBottom: "0.5rem",
+              }}
+            >
               Inscription • {selectedFormation?.name}
             </h2>
-            <p style={{ fontSize: '12px', color: 'var(--steel)', marginBottom: '1.5rem' }}>
-              {selectedSession && `${new Date(selectedSession.startDate).toLocaleDateString('fr-FR')} • ${selectedSession.location}`}
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--steel)",
+                marginBottom: "1.5rem",
+              }}
+            >
+              {selectedSession &&
+                `${new Date(selectedSession.startDate).toLocaleDateString(
+                  "fr-FR"
+                )} • ${selectedSession.location}`}
             </p>
 
             {inscriptionError && (
-              <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(220,38,38,0.1)', color: '#991b1b', borderRadius: '3px', fontSize: '13px', border: '0.5px solid rgba(220,38,38,0.3)' }}>
-                ⚠ {inscriptionError}
+              <div
+                style={{
+                  padding: "1rem",
+                  marginBottom: "1rem",
+                  backgroundColor: "rgba(220,38,38,0.1)",
+                  color: "#991b1b",
+                  borderRadius: "3px",
+                  fontSize: "13px",
+                  border: "0.5px solid rgba(220,38,38,0.3)",
+                }}
+              >
+                <span aria-hidden="true">⚠</span> {inscriptionError}
               </div>
             )}
 
@@ -2562,7 +3506,9 @@ export default function DashboardPage() {
                   type="text"
                   className="form-input"
                   value={inscriptionData.firstName}
-                  onChange={e => setInscriptionData({ ...inscriptionData, firstName: e.target.value })}
+                  onChange={(e) =>
+                    setInscriptionData({ ...inscriptionData, firstName: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -2573,7 +3519,9 @@ export default function DashboardPage() {
                   type="text"
                   className="form-input"
                   value={inscriptionData.lastName}
-                  onChange={e => setInscriptionData({ ...inscriptionData, lastName: e.target.value })}
+                  onChange={(e) =>
+                    setInscriptionData({ ...inscriptionData, lastName: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -2584,7 +3532,9 @@ export default function DashboardPage() {
                   type="email"
                   className="form-input"
                   value={inscriptionData.email}
-                  onChange={e => setInscriptionData({ ...inscriptionData, email: e.target.value })}
+                  onChange={(e) =>
+                    setInscriptionData({ ...inscriptionData, email: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -2595,7 +3545,9 @@ export default function DashboardPage() {
                   type="tel"
                   className="form-input"
                   value={inscriptionData.phone}
-                  onChange={e => setInscriptionData({ ...inscriptionData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setInscriptionData({ ...inscriptionData, phone: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -2606,17 +3558,21 @@ export default function DashboardPage() {
                   type="text"
                   className="form-input"
                   value={inscriptionData.company}
-                  onChange={e => setInscriptionData({ ...inscriptionData, company: e.target.value })}
+                  onChange={(e) =>
+                    setInscriptionData({ ...inscriptionData, company: e.target.value })
+                  }
                 />
               </div>
 
-              <div className="form-buttons" style={{ marginTop: '1.5rem' }}>
+              <div className="form-buttons" style={{ marginTop: "1.5rem" }}>
                 <button
                   type="submit"
                   className="btn-submit"
                   disabled={submittingInscription}
                 >
-                  {submittingInscription ? "Inscription..." : "Confirmer l'inscription"}
+                  {submittingInscription
+                    ? "Inscription..."
+                    : "Confirmer l'inscription"}
                 </button>
                 <button
                   type="button"

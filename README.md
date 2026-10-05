@@ -14,6 +14,8 @@ npm install
 npm run dev:all
 ```
 
+`dev:all` génère d'abord le client Prisma et compile le backend avant de démarrer Next.js et le backend ensemble. Cela évite que `prisma generate` remplace le moteur Windows pendant que Next.js le charge. Si `EPERM` persiste, arrêtez proprement les anciens processus du projet, puis relancez cette commande.
+
 **Frontend:** `http://localhost:3000`  
 **Backend:** `http://localhost:3001`
 
