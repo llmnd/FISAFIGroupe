@@ -621,7 +621,7 @@ export default function Header({
 
       {/* ── Mobile Drawer ────────────────────────────────── */}
       <nav
-        className={`header-drawer${mobileOpen ? " open" : ""}`}
+        className={`header-drawer${marketActions ? " has-market-actions" : ""}${mobileOpen ? " open" : ""}`}
         aria-label="Menu mobile"
         aria-hidden={!mobileOpen}
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment

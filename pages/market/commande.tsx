@@ -18,6 +18,7 @@ type Field = "name" | "phone" | "address";
 const WHATSAPP_NUMBER = "221787812297";
 const THEME_KEY = "fisafi-market-theme";
 const CUSTOMER_KEY = "fisafi-market-customer";
+const CHECKOUT_STEP_KEY = "fisafi-market-checkout-step";
 const MAX_QUANTITY = 99;
 const CUSTOMER_SAVE_DELAY = 400;
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -118,8 +119,8 @@ function CartProductImage({ src }: { src: string }) {
     <img
       src={src}
       alt=""
-      width={72}
-      height={72}
+      width={80}
+      height={80}
       loading="lazy"
       decoding="async"
       onError={() => setFailed(true)}
@@ -152,10 +153,10 @@ export default function MarketOrderPage() {
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [panelVisible, setPanelVisible] = useState(false);
+  const [mobileStep, setMobileStep] = useState(1);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
+  const checkoutRef = useRef<HTMLElement>(null);
 
   const hasItems = items.length > 0;
   const deliveryCoordinatesKey = deliveryCoordinates
@@ -216,6 +217,7 @@ export default function MarketOrderPage() {
         MARKET_DELIVERY_SELECTION_KEY,
         JSON.stringify({ address, coordinates: deliveryCoordinates }),
       );
+      window.sessionStorage.setItem(CHECKOUT_STEP_KEY, "2");
       const deliveryPath = window.location.hostname === "market.fisafigroupe.com"
         ? "/livraison"
         : "/market/livraison";
@@ -317,6 +319,10 @@ export default function MarketOrderPage() {
           setDeliveryCoordinatesAddress(parsed.address);
         }
       }
+      if (window.sessionStorage.getItem(CHECKOUT_STEP_KEY) === "2") {
+        setMobileStep(2);
+        window.sessionStorage.removeItem(CHECKOUT_STEP_KEY);
+      }
     } catch {
       /* données illisibles : on repart de zéro */
     }
@@ -338,18 +344,6 @@ export default function MarketOrderPage() {
     }, CUSTOMER_SAVE_DELAY);
     return () => window.clearTimeout(timer);
   }, [detailsLoaded, customerName, phone, address, fulfillment]);
-
-  /* La barre mobile n'apparaît que lorsque le formulaire n'est pas à l'écran */
-  useEffect(() => {
-    const node = panelRef.current;
-    if (!node || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setPanelVisible(entry.isIntersecting),
-      { threshold: 0.15 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [ready, hasItems]);
 
   /* Confirmation « Vider le panier » : se referme seule */
   useEffect(() => {
@@ -387,17 +381,45 @@ export default function MarketOrderPage() {
     setQuantity(item.id, next);
   };
 
-  const scrollToOrder = () => {
+  const scrollToCheckoutTop = () => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    panelRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    window.setTimeout(
-      () => {
-        (formRef.current?.elements.namedItem("name") as HTMLElement | null)?.focus({
-          preventScroll: true,
+    checkoutRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
+
+  const goToMobileStep = (nextStep: number) => {
+    setMobileStep(Math.max(1, Math.min(4, nextStep)));
+    setSubmitError("");
+    window.requestAnimationFrame(scrollToCheckoutTop);
+  };
+
+  const continueMobileStep = () => {
+    setSubmitError("");
+    if (mobileStep === 2 && fulfillment === "delivery") {
+      markTouched("address");
+      if (address.trim().length < 6) {
+        setSubmitError("Saisissez une adresse de livraison ou choisissez-la sur la carte.");
+        return;
+      }
+      if (!deliveryCoordinates || !isEstimateCurrent || !deliveryEstimate) {
+        setSubmitError("Choisissez votre position sur la carte et attendez le calcul des frais.");
+        return;
+      }
+      if (!deliveryEstimate.serviceable) {
+        setSubmitError("Cette adresse dépasse la zone de livraison en ligne.");
+        return;
+      }
+    }
+    if (mobileStep === 3) {
+      setTouched((current) => ({ ...current, name: true, phone: true }));
+      if (errors.name || errors.phone) {
+        const firstInvalid = errors.name ? "name" : "phone";
+        window.requestAnimationFrame(() => {
+          (formRef.current?.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
         });
-      },
-      reduce ? 0 : 450,
-    );
+        return;
+      }
+    }
+    goToMobileStep(mobileStep + 1);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -533,9 +555,32 @@ export default function MarketOrderPage() {
           <Link href="/market" className="market-wordmark">
             FiSAFi <strong>Market</strong>
           </Link>
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/login"}
+            className="market-checkout-account"
+            aria-label={isLoggedIn ? "Mon compte" : "Connexion"}
+            title={isLoggedIn ? "Mon compte" : "Connexion"}
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
+          </Link>
         </nav>
 
-        <section className="market-checkout">
+        <section className="market-checkout" ref={checkoutRef}>
           {storageError && (
             <p className="market-checkout-alert" role="alert">
               {storageError}
@@ -593,20 +638,47 @@ export default function MarketOrderPage() {
               <Link href="/market#rayons">Voir les rayons</Link>
             </div>
           ) : (
-            <div className="market-checkout-layout">
-              <div className="market-cart-column">
+            <>
+            <div className="market-mobile-progress" aria-label={`Étape ${mobileStep} sur 4`}>
+              <div className="market-mobile-progress-label">
+                <span>ÉTAPE {mobileStep} SUR 4</span>
+                <strong>{["Panier", "Livraison", "Vos coordonnées", "Récapitulatif"][mobileStep - 1]}</strong>
+              </div>
+              <ol>
+                {["Panier", "Livraison", "Coordonnées", "Confirmation"].map((label, index) => (
+                  <li
+                    key={label}
+                    className={index + 1 < mobileStep ? "is-complete" : index + 1 === mobileStep ? "is-current" : ""}
+                    aria-current={index + 1 === mobileStep ? "step" : undefined}
+                    aria-label={`Étape ${index + 1} : ${label}`}
+                  >
+                    <span>{index + 1 < mobileStep ? "✓" : index + 1}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="market-mobile-step-heading">
+              <span>ÉTAPE {mobileStep} · 4</span>
+              <h1>{["Votre panier", "Livraison ou retrait", "Vos coordonnées", "Vérifiez votre demande"][mobileStep - 1]}</h1>
+              <p>
+                {[
+                  "Vérifiez les articles avant de poursuivre.",
+                  "Choisissez comment recevoir votre commande.",
+                  "Indiquez comment le vendeur peut vous joindre.",
+                  "Relisez les détails avant d’envoyer votre demande.",
+                ][mobileStep - 1]}
+              </p>
+            </div>
+            <div className="market-checkout-layout" data-mobile-step={mobileStep}>
+              <div className="market-cart-column" data-checkout-step="1">
                 <header className="market-checkout-heading">
                   <h1>Votre panier</h1>
-                  <p>
-                    Le stock sera vérifié dans Odoo. Votre demande deviendra un devis que le vendeur
-                    vérifiera et validera avant la commande définitive.
-                  </p>
                 </header>
 
                 <section className="market-cart-panel" aria-labelledby="market-cart-title">
                   <div className="market-cart-panel-heading">
                     <h2 id="market-cart-title">
-                      Vos produits <span>{items.length}</span>
+                      Vos produits <span>· {items.length}</span>
                     </h2>
                     {confirmClear ? (
                       <span
@@ -702,17 +774,12 @@ export default function MarketOrderPage() {
                       );
                     })}
                   </ul>
-                  <p className="market-cart-price-note">
-                    Les prix affichés sont indicatifs. Le stock et le montant final sont confirmés
-                    par FiSAFi.
-                  </p>
                 </section>
               </div>
 
               <section
                 className="market-order-panel"
                 aria-labelledby="market-order-title"
-                ref={panelRef}
               >
                 <h2 id="market-order-title">Votre commande</h2>
                 {accountEmail && (
@@ -720,7 +787,8 @@ export default function MarketOrderPage() {
                     Connecté en tant que <strong>{accountEmail}</strong>
                   </p>
                 )}
-                <form ref={formRef} onSubmit={handleSubmit} noValidate>
+                <form id="market-order-form" ref={formRef} onSubmit={handleSubmit} noValidate>
+                  <div className="market-checkout-form-step" data-checkout-step="2">
                   <fieldset className="market-fulfillment">
                     <legend className="market-sr">Mode de récupération</legend>
                     <label>
@@ -762,6 +830,8 @@ export default function MarketOrderPage() {
                     </p>
                   </div>
 
+                  </div>
+                  <div className="market-checkout-form-step" data-checkout-step="3">
                   <div className="market-field">
                     <label htmlFor="market-name">Votre nom</label>
                     <input
@@ -799,11 +869,15 @@ export default function MarketOrderPage() {
                     />
                     <FieldError id="market-phone-error" message={showError("phone")} />
                   </div>
+                  </div>
 
+                  <div className="market-checkout-form-step" data-checkout-step="2">
                   {fulfillment === "delivery" && (
                     <>
                       <div className="market-field">
-                        <label htmlFor="market-address">Adresse de livraison à Dakar</label>
+                        <label htmlFor="market-address">
+                          Adresse de livraison <span>Dakar</span>
+                        </label>
                         <textarea
                           id="market-address"
                           name="address"
@@ -864,7 +938,9 @@ export default function MarketOrderPage() {
                       )}
                     </>
                   )}
+                  </div>
 
+                  <div className="market-checkout-form-step" data-checkout-step="3">
                   <div className="market-field">
                     <label htmlFor="market-note">
                       Une précision ? <span>facultatif</span>
@@ -879,7 +955,27 @@ export default function MarketOrderPage() {
                       placeholder="Créneau souhaité, détail utile…"
                     />
                   </div>
+                  </div>
 
+                  <div className="market-checkout-form-step" data-checkout-step="4">
+                  <section className="market-checkout-review" aria-labelledby="market-review-title">
+                    <h3 id="market-review-title">Votre demande</h3>
+                    <ul>
+                      {items.map((item) => (
+                        <li key={item.id}>
+                          <span>{formatAmount(item.quantity)} × {item.name}</span>
+                          <strong>{formatAmount(lineAmount(item))} FCFA</strong>
+                        </li>
+                      ))}
+                    </ul>
+                    <dl>
+                      <div><dt>Réception</dt><dd>{fulfillment === "delivery" ? "Livraison à Dakar" : "Retrait en magasin"}</dd></div>
+                      {fulfillment === "delivery" && <div><dt>Adresse</dt><dd>{address.trim() || "À compléter"}</dd></div>}
+                      <div><dt>Client</dt><dd>{customerName.trim() || "À compléter"}</dd></div>
+                      <div><dt>Téléphone</dt><dd>{phone.trim() || "À compléter"}</dd></div>
+                      {note.trim() && <div><dt>Précision</dt><dd>{note.trim()}</dd></div>}
+                    </dl>
+                  </section>
                   <div className="market-order-total">
                     <span>
                       Estimation des produits
@@ -920,11 +1016,11 @@ export default function MarketOrderPage() {
                     }
                   >
                     {submitting
-                      ? "Vérification du stock et création du devis…"
+                      ? "Envoi en cours…"
                       : fulfillment === "delivery" && !deliveryCoordinates
-                        ? "Choisissez votre adresse sur la carte"
+                        ? "Choisir une adresse sur la carte"
                         : fulfillment === "delivery" && estimateStatus === "loading"
-                          ? "Calcul des frais de livraison…"
+                          ? "Calcul des frais…"
                           : "Envoyer ma demande au vendeur"}
                   </button>
                   <p className="market-order-disclaimer">
@@ -938,27 +1034,46 @@ export default function MarketOrderPage() {
                       {submitError}
                     </p>
                   )}
+                  </div>
                 </form>
               </section>
+              <div className="market-mobile-checkout-nav">
+                <button
+                  type="button"
+                  className="market-mobile-previous"
+                  onClick={() => goToMobileStep(mobileStep - 1)}
+                  disabled={mobileStep === 1 || submitting}
+                >
+                  Retour
+                </button>
+                <div>
+                  <span>{mobileStep === 4 ? "Total estimé" : `Étape ${mobileStep} / 4`}</span>
+                  <strong>{formatAmount(estimatedTotal)} FCFA</strong>
+                </div>
+                {mobileStep < 4 ? (
+                  <button
+                    type="button"
+                    className="market-mobile-next"
+                    onClick={continueMobileStep}
+                  >
+                    Continuer <span aria-hidden="true">→</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    form="market-order-form"
+                    className="market-mobile-next"
+                    disabled={submitting || (fulfillment === "delivery" && (!isEstimateCurrent || !deliveryEstimate?.serviceable))}
+                  >
+                    {submitting ? "Envoi…" : "Envoyer la demande"}
+                  </button>
+                )}
+              </div>
             </div>
+            </>
           )}
         </section>
 
-        {ready && hasItems && !panelVisible && (
-          <div className="market-mobile-bar">
-            <div>
-              <span>
-                {fulfillment === "delivery" && isEstimateCurrent
-                  ? "Estimation avec livraison"
-                  : "Estimation produits"}
-              </span>
-              <strong>{formatAmount(estimatedTotal)} FCFA</strong>
-            </div>
-            <button type="button" onClick={scrollToOrder}>
-              Commander
-            </button>
-          </div>
-        )}
       </main>
       <Footer />
     </>

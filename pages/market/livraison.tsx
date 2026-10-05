@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -53,6 +53,16 @@ function isDeliveryEstimate(value: unknown): value is DeliveryEstimate {
   );
 }
 
+function isReverseGeocodeResult(value: unknown): value is { address: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "address" in value &&
+    typeof value.address === "string" &&
+    value.address.trim().length >= 3
+  );
+}
+
 export default function MarketDeliveryPage() {
   const router = useRouter();
   const [selection, setSelection] = useState<MarketDeliverySelection>({
@@ -67,6 +77,9 @@ export default function MarketDeliveryPage() {
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [addressStatus, setAddressStatus] = useState<"idle" | "loading" | "ready" | "error" | "manual">("idle");
+  const [addressError, setAddressError] = useState("");
+  const reverseGeocodeControllerRef = useRef<AbortController | null>(null);
 
   const coordinates = selection.coordinates;
   const coordinatesKey = coordinates
@@ -89,6 +102,11 @@ export default function MarketDeliveryPage() {
     }
     setReady(true);
   }, []);
+
+  useEffect(
+    () => () => reverseGeocodeControllerRef.current?.abort(),
+    [],
+  );
 
   useEffect(() => {
     if (!ready || !coordinates) {
@@ -134,10 +152,49 @@ export default function MarketDeliveryPage() {
   }, [ready, coordinates, coordinatesKey, estimateRefresh]);
 
   const setDestination = (nextCoordinates: DeliveryCoordinates) => {
-    setSelection((current) => ({ ...current, coordinates: nextCoordinates }));
+    reverseGeocodeControllerRef.current?.abort();
+    const controller = new AbortController();
+    reverseGeocodeControllerRef.current = controller;
+    setSelection({ coordinates: nextCoordinates, address: "" });
     setEstimate(null);
     setLocationError("");
     setSaveError("");
+    setAddressError("");
+    setAddressStatus("loading");
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/market/reverse-geocode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ coordinates: nextCoordinates }),
+          signal: controller.signal,
+        });
+        const payload: unknown = await response.json().catch(() => null);
+        if (!response.ok) {
+          const message =
+            payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+              ? payload.error
+              : "L’adresse ne peut pas être détectée pour le moment.";
+          throw new Error(message);
+        }
+        if (!isReverseGeocodeResult(payload)) {
+          throw new Error("Aucune adresse détaillée n’a été trouvée à cet endroit.");
+        }
+        if (controller.signal.aborted) return;
+        setSelection((current) => ({
+          ...current,
+          address: payload.address.trim(),
+        }));
+        setAddressStatus("ready");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setAddressStatus("error");
+        setAddressError(
+          error instanceof Error ? error.message : "L’adresse ne peut pas être détectée pour le moment.",
+        );
+      }
+    })();
   };
 
   const useMyLocation = () => {
@@ -243,14 +300,33 @@ export default function MarketDeliveryPage() {
               name="address"
               autoComplete="street-address"
               value={selection.address}
-              onChange={(event) =>
-                setSelection((current) => ({ ...current, address: event.target.value }))
-              }
-              placeholder="Quartier, rue, repère"
+              onChange={(event) => {
+                reverseGeocodeControllerRef.current?.abort();
+                setAddressStatus("manual");
+                setAddressError("");
+                setSelection((current) => ({ ...current, address: event.target.value }));
+              }}
+              placeholder={addressStatus === "loading" ? "Détection du quartier et de la rue…" : "Quartier, rue, repère"}
               maxLength={500}
               required
             />
           </label>
+
+          {addressStatus === "loading" && (
+            <p className="market-delivery-screen-status" role="status">
+              Recherche automatique de votre rue et de votre quartier…
+            </p>
+          )}
+          {addressStatus === "ready" && (
+            <p className="market-delivery-screen-status" role="status">
+              Adresse détectée automatiquement. Vérifiez-la et ajoutez un repère si nécessaire.
+            </p>
+          )}
+          {addressStatus === "error" && (
+            <p className="market-delivery-screen-error" role="alert">
+              {addressError} Vous pouvez saisir votre quartier manuellement.
+            </p>
+          )}
 
           <button
             className="market-delivery-gps-button"

@@ -648,7 +648,7 @@ export default async function handler(
 
     const createdOrders: unknown = await callOdoo("sale.order", "search_read", {
       domain: [["id", "=", orderId]],
-      fields: ["id", "name", "amount_total", "state", "date_order"],
+      fields: ["id", "name", "amount_total", "state", "date_order", "order_line"],
       limit: 1,
     });
     if (!Array.isArray(createdOrders) || !createdOrders.every(isOdooOrder) || !createdOrders[0]) {
