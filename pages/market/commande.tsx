@@ -819,17 +819,6 @@ export default function MarketOrderPage() {
                     </label>
                   </fieldset>
 
-                  <div className="market-fulfillment-info" role="status">
-                    <span className="market-fulfillment-info-icon" aria-hidden="true">
-                      {fulfillment === "delivery" ? "↗" : "⌖"}
-                    </span>
-                    <p>
-                      {fulfillment === "delivery"
-                        ? "Le vendeur vous confirmera les frais de livraison et le délai estimatif après vérification de votre adresse, avant de valider le devis."
-                        : "Le vendeur vous communiquera les modalités et le délai de retrait avant de valider le devis."}
-                    </p>
-                  </div>
-
                   </div>
                   <div className="market-checkout-form-step" data-checkout-step="3">
                   <div className="market-field">
