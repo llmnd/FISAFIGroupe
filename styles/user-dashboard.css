@@ -514,6 +514,13 @@ body:has(.dash-layout.user-dashboard) {
   }
 
   .dash-layout.user-dashboard .dash-topbar {
+    display: grid;
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-inline: 1.5rem;
+  }
+
+  .dash-layout.user-dashboard .topbar-hamburger {
     display: none;
   }
 }
