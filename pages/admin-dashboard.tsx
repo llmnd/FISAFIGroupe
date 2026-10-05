@@ -182,10 +182,11 @@ export default function AdminDashboard() {
     return labels[tab] || "";
   };
 
-  const getSessionStatusColor = (status: string | undefined): string => {
-    if (status === "ouverte") return "#16a34a";
-    if (status === "complète") return "#dc2626";
-    return "#7a8ea8";
+  // CORRECTIF : utilise des variables CSS pour s'adapter au dark mode
+  const getSessionStatusClass = (status: string | undefined): string => {
+    if (status === "ouverte") return "session-status is-ouverte";
+    if (status === "complète") return "session-status is-complete";
+    return "session-status is-neutre";
   };
 
   const getPublishedStatus = (published: boolean): { className: string; text: string } => ({
@@ -321,11 +322,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const closeMenu = () => setNavOpen(false);
+    const closeMenuWhenHidden = () => {
+      if (document.visibilityState === "hidden") setNavOpen(false);
+    };
     router.events.on("routeChangeStart", closeMenu);
     window.addEventListener("pageshow", closeMenu);
+    document.addEventListener("visibilitychange", closeMenuWhenHidden);
     return () => {
       router.events.off("routeChangeStart", closeMenu);
       window.removeEventListener("pageshow", closeMenu);
+      document.removeEventListener("visibilitychange", closeMenuWhenHidden);
     };
   }, [router.events]);
 
@@ -1006,7 +1012,6 @@ export default function AdminDashboard() {
         <title>Admin Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        
       </Head>
 
       {/* Toast */}
@@ -1455,8 +1460,9 @@ export default function AdminDashboard() {
                 <p className="admin-sub">Acceptez ou rejetez les demandes d'inscription</p>
               </div>
 
+              {/* CORRECTIF : classe alert-warn au lieu des styles inline figés */}
               {inscriptionsPending > 0 && (
-                <div className="alert" style={{ background:"rgba(245,158,11,0.06)",border:"0.5px solid rgba(245,158,11,0.2)",color:"#92400e",marginBottom:"1.25rem" }}>
+                <div className="alert alert-warn">
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink:0,marginTop:1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                   {inscriptionsPending} demande{inscriptionsPending > 1 ? "s" : ""} en attente de traitement
                 </div>
@@ -1473,12 +1479,19 @@ export default function AdminDashboard() {
 
               {renderContentList(loadingInscriptions, inscriptions, "◎", "Aucune inscription", (inscription) => {
                 const accentClass = inscription.status === "confirme" ? "insc-confirme" : inscription.status === "annule" ? "insc-annule" : "insc-attente";
+                // CORRECTIF : classe pub-wait pour le badge "En attente"
+                const statusClass =
+                  inscription.status === "confirme"
+                    ? "pub-on"
+                    : inscription.status === "liste_attente" || inscription.status === "demande_en_attente"
+                      ? "pub-wait"
+                      : "pub-off";
                 return (
                   <div key={inscription.id} className={`content-card ${accentClass}`} onClick={() => setActionSheetInscription(inscription)}>
                     <div className="content-card-title">{inscription.firstName} {inscription.lastName}</div>
                     <div className="content-card-meta">
                       <span className="cat-badge">{inscription.formation?.name || "Formation"}</span>
-                      <span className={inscription.status === "confirme" ? "pub-on" : "pub-off"} style={inscription.status === "liste_attente" || inscription.status === "demande_en_attente" ? { background:"rgba(245,158,11,0.08)",color:"#92400e" } : {}}>
+                      <span className={statusClass}>
                         {inscription.status === "confirme" ? "Confirmé" : inscription.status === "annule" ? "Annulé" : "En attente"}
                       </span>
                       <span className="content-date">{inscription.session?.location || "Lieu"}</span>
@@ -1571,8 +1584,9 @@ export default function AdminDashboard() {
                               <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                               {new Date(session.startDate).toLocaleDateString('fr-FR')} — {new Date(session.endDate).toLocaleDateString('fr-FR')}
                             </div>
+                            {/* CORRECTIF : classe session-status adaptative */}
                             {session.status && (
-                              <div style={{ fontSize:"10px",color:getSessionStatusColor(session.status),marginTop:"0.5rem",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:500 }}>
+                              <div className={getSessionStatusClass(session.status)}>
                                 {session.status}
                               </div>
                             )}
@@ -1853,11 +1867,12 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetInscription.formation?.name} · {new Date(actionSheetInscription.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            <div style={{ padding:"0.75rem 0.625rem",fontSize:"12px",color:"var(--steel)",lineHeight:"1.7",background:"rgba(245,244,240,0.6)",margin:"0 0 0.25rem" }}>
-              <div style={{ marginBottom:"0.25rem" }}><strong style={{ color:"var(--ink)",fontWeight:400 }}>Email</strong> — {actionSheetInscription.email}</div>
-              <div style={{ marginBottom:"0.25rem" }}><strong style={{ color:"var(--ink)",fontWeight:400 }}>Tél.</strong> — {actionSheetInscription.phone}</div>
-              <div style={{ marginBottom:"0.25rem" }}><strong style={{ color:"var(--ink)",fontWeight:400 }}>Statut</strong> — <span style={{ textTransform:"capitalize" }}>{actionSheetInscription.status}</span></div>
-              <div><strong style={{ color:"var(--ink)",fontWeight:400 }}>Session</strong> — {actionSheetInscription.session?.location} · {new Date(actionSheetInscription.session?.startDate || "").toLocaleDateString("fr-FR")}</div>
+            {/* CORRECTIF : classe sheet-info adaptative au thème */}
+            <div className="sheet-info">
+              <div style={{ marginBottom:"0.25rem" }}><strong>Email</strong> — {actionSheetInscription.email}</div>
+              <div style={{ marginBottom:"0.25rem" }}><strong>Tél.</strong> — {actionSheetInscription.phone}</div>
+              <div style={{ marginBottom:"0.25rem" }}><strong>Statut</strong> — <span style={{ textTransform:"capitalize" }}>{actionSheetInscription.status}</span></div>
+              <div><strong>Session</strong> — {actionSheetInscription.session?.location} · {new Date(actionSheetInscription.session?.startDate || "").toLocaleDateString("fr-FR")}</div>
             </div>
             <div className="sheet-divider"/>
             {actionSheetInscription.status !== "annule" && renderInscriptionActions(actionSheetInscription)}
@@ -1883,10 +1898,11 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{new Date(actionSheetSession.startDate).toLocaleDateString('fr-FR')} · {actionSheetSession.location}</div>
           </div>
           <div className="sheet-actions">
-            <div style={{ padding:"0.75rem 0.625rem",fontSize:"12px",color:"var(--steel)",lineHeight:"1.7",background:"rgba(245,244,240,0.6)",margin:"0 0 0.25rem" }}>
-              <div style={{ marginBottom:"0.25rem" }}><strong style={{ color:"var(--ink)",fontWeight:400 }}>Lieu</strong> — {actionSheetSession.location}</div>
-              <div style={{ marginBottom:"0.25rem" }}><strong style={{ color:"var(--ink)",fontWeight:400 }}>Capacité</strong> — {actionSheetSession.capacity} places</div>
-              <div><strong style={{ color:"var(--ink)",fontWeight:400 }}>Disponibles</strong> — {actionSheetSession.available} places</div>
+            {/* CORRECTIF : classe sheet-info adaptative au thème */}
+            <div className="sheet-info">
+              <div style={{ marginBottom:"0.25rem" }}><strong>Lieu</strong> — {actionSheetSession.location}</div>
+              <div style={{ marginBottom:"0.25rem" }}><strong>Capacité</strong> — {actionSheetSession.capacity} places</div>
+              <div><strong>Disponibles</strong> — {actionSheetSession.available} places</div>
             </div>
             <div className="sheet-divider"/>
             <button className="sheet-btn danger" onClick={() => { if (confirm('Supprimer cette session ?')) handleDeleteSession(actionSheetSession.id); }}>

@@ -1634,4 +1634,56 @@ html.dark .admin-layout .company-picker-option.selected{background:var(--blue-so
   .market-chart-label{font-size:10px;}
   .market-chart-count{font-size:9px;}
   .market-chart-value{font-size:9px;}
+  /* ══════════════════════════════════════════
+   CONTRASTE — correctifs dark / light
+   ══════════════════════════════════════════ */
+
+/* Alerte warning (remplace les styles inline figés) */
+.alert-warn{
+  background:var(--warning-soft);
+  border:1px solid rgba(168,103,0,.22);
+  color:var(--warning);
+}
+html.dark .admin-layout .alert-warn{
+  border-color:rgba(241,189,98,.28);
+}
+
+/* Badge « En attente » */
+.pub-wait{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;
+  font-size:11px;font-weight:600;line-height:1.5;
+  letter-spacing:.02em;
+  border-radius:999px;
+  background:var(--warning-soft);
+  color:var(--warning);
+  border:1px solid rgba(168,103,0,.22);
+}
+html.dark .admin-layout .pub-wait{
+  border-color:rgba(241,189,98,.28);
+}
+
+/* Statuts session */
+.session-status{
+  font-size:10px;
+  margin-top:.5rem;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  font-weight:500;
+}
+.session-status.is-ouverte{color:var(--success);}
+.session-status.is-complete{color:var(--danger);}
+.session-status.is-neutre{color:var(--steel);}
+
+/* Bloc info dans les sheets */
+.sheet-info{
+  padding:.75rem .625rem;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--steel);
+  background:var(--surface-soft);
+  border-radius:5px;
+  margin:0 0 .25rem;
+}
+.sheet-info strong{color:var(--ink);font-weight:400;}
 }
