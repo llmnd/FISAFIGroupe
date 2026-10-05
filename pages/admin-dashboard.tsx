@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import PortalThemeToggle from "@/components/PortalThemeToggle";
+import { ensureAuthSession } from "@/lib/clientAuthSession";
 
 interface User {
   id: string;
@@ -383,6 +384,10 @@ export default function AdminDashboard() {
     authCheckStarted.current = true;
     void (async () => {
       try {
+        if (!(await ensureAuthSession())) {
+          await router.replace("/login?session=expired");
+          return;
+        }
         const response = await fetch("/api/auth/me");
         if (!response.ok) {
           await router.replace("/login");

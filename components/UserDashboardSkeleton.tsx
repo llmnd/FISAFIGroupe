@@ -1,7 +1,13 @@
 export default function UserDashboardSkeleton() {
   return (
-    <div className="user-dashboard-skeleton" role="status" aria-label="Chargement de votre tableau de bord">
-      <span className="user-dashboard-skeleton-sr">Chargement de votre tableau de bord…</span>
+    <div
+      className="dash-layout user-dashboard user-dashboard-skeleton"
+      role="status"
+      aria-label="Chargement de votre tableau de bord"
+    >
+      <span className="user-dashboard-skeleton-sr">
+        Chargement de votre tableau de bord…
+      </span>
       <aside className="user-dashboard-skeleton-sidebar" aria-hidden="true">
         <div className="user-dashboard-skeleton-brand">
           <span className="user-dashboard-skeleton-mark" />
@@ -18,7 +24,9 @@ export default function UserDashboardSkeleton() {
           {Array.from({ length: 5 }, (_, index) => (
             <span
               key={index}
-              className={`user-dashboard-skeleton-line user-dashboard-skeleton-nav-item${index === 0 ? " is-active" : ""}`}
+              className={`user-dashboard-skeleton-line user-dashboard-skeleton-nav-item${
+                index === 0 ? " is-active" : ""
+              }`}
             />
           ))}
         </div>

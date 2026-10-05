@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image"; // ← ajouté pour le logo image
+import { ensureAuthSession } from "@/lib/clientAuthSession";
 
 const LOGIN_CSS = `
   .lw, .lw *, .lw *::before, .lw *::after, .l-top-back {
@@ -269,17 +270,7 @@ export default function LoginPage() {
     }
     void (async () => {
       try {
-        const legacyToken = localStorage.getItem("token");
-        if (legacyToken) {
-          const migrationResponse = await fetch("/api/auth/session", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${legacyToken}` },
-          });
-          if (migrationResponse.ok || migrationResponse.status === 409 || [401, 403, 404].includes(migrationResponse.status)) {
-            localStorage.removeItem("token");
-            if ([401, 403, 404].includes(migrationResponse.status)) localStorage.removeItem("user");
-          }
-        }
+        if (!(await ensureAuthSession())) return;
         const response = await fetch("/api/auth/me");
         if ([401, 403, 404].includes(response.status)) return;
         if (!response.ok) {

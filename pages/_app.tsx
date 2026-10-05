@@ -1,9 +1,10 @@
 import type { AppProps } from 'next/app';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import React, { useEffect, useState, useRef } from 'react';
+import { useRouter, type NextRouter } from 'next/router';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import AdminNavigationSkeleton from '@/components/AdminNavigationSkeleton';
+import { ensureAuthSession } from '@/lib/clientAuthSession';
 import '../styles/globals.css';
 import '../styles/competences.css';
 import '../styles/header.css';
@@ -22,60 +23,126 @@ import 'leaflet/dist/leaflet.css';
 import '../styles/admin-dashboard.css';
 import '../styles/user-dashboard.css';
 
+/* ══════════════════════════════════════════════════════════════
+   CONSTANTES
+   ══════════════════════════════════════════════════════════════ */
+const PROTECTED_ROUTES = ['/dashboard', '/admin-dashboard', '/market/commande'] as const;
+const EMPLOYEE_PREFIX = '/espace-employe';
+
+const BODY_CLASS_MAP: Record<string, string[]> = {
+  '/dashboard': ['portal-has-user-dashboard'],
+  '/admin-dashboard': ['admin-dashboard-active'],
+};
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════ */
 function isBlinkEngine(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent || '';
-  // Edge (Chromium) and Chrome use Blink. Opera also uses Blink but behaves similarly.
   return /Chrome|Chromium|Edg\//.test(ua) && !/OPR\//.test(ua);
 }
 
-export default function App({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const [adminNavigationLoading, setAdminNavigationLoading] = useState(false);
+function getBodyClassesForPath(pathname: string): string[] {
+  for (const [route, classes] of Object.entries(BODY_CLASS_MAP)) {
+    if (pathname === route || pathname.startsWith(`${route}/`)) return classes;
+  }
+  return [];
+}
 
+function shouldRedirectOnSessionExpired(pathname: string): boolean {
+  if ((PROTECTED_ROUTES as readonly string[]).includes(pathname)) return true;
+  return pathname.startsWith(EMPLOYEE_PREFIX);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOOKS
+   ══════════════════════════════════════════════════════════════ */
+
+/** Applique / retire les classes sur <body> selon la route courante. */
+function useBodyClasses(pathname: string) {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const desired = getBodyClassesForPath(pathname);
+    const allPossible = Object.values(BODY_CLASS_MAP).flat();
+
+    allPossible.forEach((cls) => {
+      if (desired.includes(cls)) {
+        document.body.classList.add(cls);
+      } else {
+        document.body.classList.remove(cls);
+      }
+    });
+
+    // Forcer padding-top: 0 quand une classe fullscreen est active
+    if (desired.length > 0) {
+      document.body.style.paddingTop = '0';
+      document.body.style.marginTop = '0';
+    } else {
+      document.body.style.removeProperty('padding-top');
+      document.body.style.removeProperty('margin-top');
+    }
+
+    return () => {
+      allPossible.forEach((cls) => document.body.classList.remove(cls));
+      document.body.style.removeProperty('padding-top');
+      document.body.style.removeProperty('margin-top');
+    };
+  }, [pathname]);
+}
+
+/** Affiche le skeleton admin si la navigation vers /admin-dashboard est lente. */
+function useAdminNavigationLoading(
+  router: NextRouter,
+  setLoading: (value: boolean) => void,
+) {
   useEffect(() => {
     let showTimer: number | undefined;
+
     const clearPendingTimer = () => {
       if (showTimer !== undefined) {
         window.clearTimeout(showTimer);
         showTimer = undefined;
       }
     };
-    const handleRouteStart = (url: string) => {
+
+    const handleStart = (url: string) => {
       clearPendingTimer();
-      setAdminNavigationLoading(false);
-      if (url.split(/[?#]/, 1)[0] !== '/admin-dashboard') return;
-      showTimer = window.setTimeout(() => setAdminNavigationLoading(true), 120);
-    };
-    const handleRouteEnd = () => {
-      clearPendingTimer();
-      setAdminNavigationLoading(false);
+      setLoading(false);
+      const cleanUrl = url.split(/[?#]/, 1)[0];
+      if (cleanUrl !== '/admin-dashboard') return;
+      showTimer = window.setTimeout(() => setLoading(true), 120);
     };
 
-    router.events.on('routeChangeStart', handleRouteStart);
-    router.events.on('routeChangeComplete', handleRouteEnd);
-    router.events.on('routeChangeError', handleRouteEnd);
+    const handleEnd = () => {
+      clearPendingTimer();
+      setLoading(false);
+    };
+
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleEnd);
+    router.events.on('routeChangeError', handleEnd);
+
     return () => {
       clearPendingTimer();
-      router.events.off('routeChangeStart', handleRouteStart);
-      router.events.off('routeChangeComplete', handleRouteEnd);
-      router.events.off('routeChangeError', handleRouteEnd);
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleEnd);
+      router.events.off('routeChangeError', handleEnd);
     };
-  }, [router.events]);
+  }, [router.events, setLoading]);
+}
 
-  useEffect(() => {
-    try {
-      if (isBlinkEngine()) {
-        document.documentElement.classList.add('blink-no-smooth');
-      }
-    } catch (e) {
-      // defensive - do nothing if DOM not available
-    }
-  }, []);
+/** Vérifie périodiquement la session côté serveur. */
+function useSessionHeartbeat(router: NextRouter) {
+  const pathnameRef = useRef(router.pathname);
+  pathnameRef.current = router.pathname;
 
   useEffect(() => {
     const checkSession = async () => {
       try {
+        if (!(await ensureAuthSession())) return;
+
+        // Migre le token legacy une seule fois
         const legacyToken = localStorage.getItem('token');
         if (legacyToken) {
           const migrationResponse = await fetch('/api/auth/session', {
@@ -91,7 +158,9 @@ export default function App({ Component, pageProps }: AppProps) {
             return;
           }
         }
-        if (router.pathname === '/login' || !localStorage.getItem('user')) return;
+
+        const currentPath = pathnameRef.current;
+        if (currentPath === '/login' || !localStorage.getItem('user')) return;
 
         const response = await fetch('/api/auth/me');
         if (![401, 403, 404].includes(response.status)) return;
@@ -99,10 +168,8 @@ export default function App({ Component, pageProps }: AppProps) {
         localStorage.removeItem('user');
         await fetch('/api/auth/logout', { method: 'POST' });
         window.dispatchEvent(new Event('fisafi:session-expired'));
-        if (
-          ['/dashboard', '/admin-dashboard', '/market/commande'].includes(router.pathname) ||
-          router.pathname.startsWith('/espace-employe')
-        ) {
+
+        if (shouldRedirectOnSessionExpired(currentPath)) {
           void router.replace('/login?session=expired');
         }
       } catch (error) {
@@ -114,69 +181,23 @@ export default function App({ Component, pageProps }: AppProps) {
     const interval = window.setInterval(() => void checkSession(), 60_000);
     return () => window.clearInterval(interval);
   }, [router]);
+}
 
-  // ─── GLOBAL SCROLL ANIMATIONS (Optimized avec MutationObserver) ──────────────────────────────────────
+/** Corrige la hauteur de viewport (barre d'adresse mobile qui bouge). */
+function useViewportHeightFix() {
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { 
-        threshold: 0.05,
-        rootMargin: '0px 0px -40px 0px'
-      }
-    );
-
-    // Observer les éléments existants ET futurs avec MutationObserver
-    const observeElements = () => {
-      document.querySelectorAll('[data-observe], .services-grid, .services-grid-new').forEach((el) => {
-        if (!el.classList.contains('is-visible')) {
-          observer.observe(el);
-        }
-      });
-    };
-
-    // Première observation
-    observeElements();
-
-    // MutationObserver pour capturer les nouveaux éléments
-    const mutationObserver = new MutationObserver(() => {
-      observeElements();
-    });
-
-    mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    return () => {
-      observer.disconnect();
-      mutationObserver.disconnect();
-    };
-  }, []);
-
-  // Fix for mobile/Chrome/Edge UI chrome (address bar) causing viewport height jumps.
-  // Sets a dynamic `--vh` CSS variable based on the real inner height (uses visualViewport when available).
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
     const setVh = () => {
-      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
-      const vh = h * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      const h =
+        window.visualViewport && window.visualViewport.height
+          ? window.visualViewport.height
+          : window.innerHeight;
+      document.documentElement.style.setProperty('--vh', `${h * 0.01}px`);
     };
 
-    // initial
     setVh();
 
-    // throttle via rAF
     let rafId: number | null = null;
     const onResize = () => {
       if (rafId) cancelAnimationFrame(rafId);
@@ -188,23 +209,75 @@ export default function App({ Component, pageProps }: AppProps) {
 
     window.addEventListener('resize', onResize, { passive: true });
     window.addEventListener('orientationchange', onResize, { passive: true });
-    if (window.visualViewport && window.visualViewport.addEventListener) {
-      window.visualViewport.addEventListener('resize', onResize);
-    }
+    window.visualViewport?.addEventListener?.('resize', onResize);
 
-    // also update when page becomes visible again
     const onVisibility = () => setVh();
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
-      if (window.visualViewport && window.visualViewport.removeEventListener) {
-        window.visualViewport.removeEventListener('resize', onResize);
-      }
+      window.visualViewport?.removeEventListener?.('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
       if (rafId) cancelAnimationFrame(rafId);
     };
+  }, []);
+}
+
+/** Anime les éléments au scroll (services, cards, etc.). */
+function useScrollAnimations() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -40px 0px' },
+    );
+
+    const observeElements = () => {
+      document
+        .querySelectorAll('[data-observe], .services-grid, .services-grid-new')
+        .forEach((el) => {
+          if (!el.classList.contains('is-visible')) observer.observe(el);
+        });
+    };
+
+    observeElements();
+
+    const mutationObserver = new MutationObserver(observeElements);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, []);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   APP
+   ══════════════════════════════════════════════════════════════ */
+export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const [adminNavigationLoading, setAdminNavigationLoading] = useState(false);
+
+  useBodyClasses(router.pathname);
+  useAdminNavigationLoading(router, setAdminNavigationLoading);
+  useSessionHeartbeat(router);
+  useViewportHeightFix();
+  useScrollAnimations();
+
+  useEffect(() => {
+    if (isBlinkEngine()) {
+      document.documentElement.classList.add('blink-no-smooth');
+    }
   }, []);
 
   return (
