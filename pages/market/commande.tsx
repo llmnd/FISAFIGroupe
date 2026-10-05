@@ -552,32 +552,6 @@ export default function MarketOrderPage() {
             <span aria-hidden="true">←</span>
             <span className="market-checkout-back-label">Continuer mes achats</span>
           </Link>
-          <Link href="/market" className="market-wordmark">
-            FiSAFi <strong>Market</strong>
-          </Link>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/login"}
-            className="market-checkout-account"
-            aria-label={isLoggedIn ? "Mon compte" : "Connexion"}
-            title={isLoggedIn ? "Mon compte" : "Connexion"}
-          >
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle
-                cx="12"
-                cy="7"
-                r="4"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-            </svg>
-          </Link>
         </nav>
 
         <section className="market-checkout" ref={checkoutRef}>
