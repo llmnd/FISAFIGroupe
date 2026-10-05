@@ -50,6 +50,11 @@ const nextConfig = {
           has: [{ type: 'host', value: 'market.fisafigroupe.com' }],
           destination: '/market/commande',
         },
+        {
+          source: '/livraison',
+          has: [{ type: 'host', value: 'market.fisafigroupe.com' }],
+          destination: '/market/livraison',
+        },
       ],
     };
   },

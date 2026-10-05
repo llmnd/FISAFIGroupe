@@ -365,6 +365,110 @@ body:has(.market-checkout) {
   font: 400 0.81rem/1.5 "Jost", system-ui, sans-serif;
 }
 
+.market-delivery-summary {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--market-line);
+  border-radius: 15px;
+  background: var(--market-surface);
+}
+.market-delivery-summary-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--market-orange) 12%, var(--market-surface));
+  color: var(--market-orange);
+  font-size: 1.3rem;
+}
+.market-delivery-summary-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+.market-delivery-summary-copy .market-delivery-eyebrow {
+  font-size: 0.63rem;
+}
+.market-delivery-summary-copy h3 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--market-ink);
+  font: 500 1.2rem/1.1 "Cormorant Garamond", Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.market-delivery-summary-copy p {
+  overflow: hidden;
+  margin: 0;
+  color: var(--market-muted);
+  font: 400 0.75rem/1.35 "Jost", system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.market-delivery-summary-button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--market-ink);
+  color: var(--market-surface);
+  cursor: pointer;
+  font: 500 0.8rem/1.2 "Jost", system-ui, sans-serif;
+}
+.market-delivery-summary-button:hover {
+  opacity: 0.86;
+}
+
+/* Marqueurs cartographiques */
+.market-delivery-eyebrow {
+  color: var(--market-orange);
+  font: 600 0.68rem/1.2 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.market-map-pin-icon {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+.market-map-pin-icon > span {
+  position: relative;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #3d3854;
+  box-shadow: 0 3px 9px #17142455;
+  color: #fff;
+  font: 700 0.9rem/1 "Jost", system-ui, sans-serif;
+  transform: rotate(-45deg);
+}
+.market-map-pin-origin > span {
+  border-radius: 50%;
+  background: #3d3854;
+  transform: none;
+}
+.market-map-pin-destination > span {
+  width: 1.65rem;
+  height: 1.65rem;
+  background: var(--market-orange);
+}
+.market-delivery-feedback {
+  margin: 0;
+  color: var(--market-ink);
+  font: 500 0.8rem/1.45 "Jost", system-ui, sans-serif;
+}
+.market-delivery-error {
+  color: #b3261e;
+}
+
 /* Champs */
 .market-field {
   display: grid;
@@ -441,6 +545,19 @@ body:has(.market-checkout) {
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
+.market-order-delivery-total {
+  margin-top: -0.7rem;
+  padding-top: 0.7rem;
+  border-top: 0;
+}
+.market-order-delivery-total strong {
+  font: 600 1.35rem/1 "Jost", system-ui, sans-serif;
+}
+.market-order-grand-total {
+  margin-top: 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--market-line);
+}
 .market-order-submit,
 .market-cart-empty a,
 .market-mobile-bar button {
@@ -463,7 +580,7 @@ body:has(.market-checkout) {
   width: 100%;
 }
 .market-order-submit:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.65;
 }
 .market-order-submit:hover,
@@ -583,6 +700,9 @@ body:has(.market-checkout) {
 .market-page[data-theme="dark"] .market-field input[aria-invalid="true"],
 .market-page[data-theme="dark"] .market-field textarea[aria-invalid="true"] {
   box-shadow: inset 0 0 0 1.5px #ff9b9b;
+}
+.market-page[data-theme="dark"] .market-delivery-error {
+  color: #ff9b9b;
 }
 
 /* ——— Tablette & mobile ——— */

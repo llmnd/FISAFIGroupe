@@ -2,9 +2,15 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import Footer from "@/components/Footer";
 import useMarketCart from "@/hooks/useMarketCart";
 import { getMarketImageSource } from "@/lib/marketCart";
+import type { DeliveryCoordinates, DeliveryEstimate } from "@/lib/marketDelivery";
+import {
+  isMarketDeliverySelection,
+  MARKET_DELIVERY_SELECTION_KEY,
+} from "@/lib/marketDeliverySelection";
 
 type Fulfillment = "delivery" | "pickup";
 type Field = "name" | "phone" | "address";
@@ -19,12 +25,16 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
 type OrderConfirmation = {
   reference: string;
   total: number;
+  deliveryFee: number;
+  deliveryDistanceKm: number;
   whatsappUrl: string;
 };
 
 type CreateOrderResponse = {
   orderReference: string;
   total: number;
+  deliveryFee: number;
+  deliveryDistanceKm: number;
 };
 
 const formatAmount = (amount: number) =>
@@ -42,7 +52,47 @@ function isCreateOrderResponse(value: unknown): value is CreateOrderResponse {
     value.orderReference.length > 0 &&
     "total" in value &&
     typeof value.total === "number" &&
-    Number.isFinite(value.total)
+    Number.isFinite(value.total) &&
+    "deliveryFee" in value &&
+    typeof value.deliveryFee === "number" &&
+    Number.isFinite(value.deliveryFee) &&
+    "deliveryDistanceKm" in value &&
+    typeof value.deliveryDistanceKm === "number" &&
+    Number.isFinite(value.deliveryDistanceKm)
+  );
+}
+
+function isDeliveryEstimate(value: unknown): value is DeliveryEstimate {
+  if (!value || typeof value !== "object") return false;
+  return (
+    "origin" in value &&
+    !!value.origin &&
+    typeof value.origin === "object" &&
+    "latitude" in value.origin &&
+    typeof value.origin.latitude === "number" &&
+    Number.isFinite(value.origin.latitude) &&
+    "longitude" in value.origin &&
+    typeof value.origin.longitude === "number" &&
+    Number.isFinite(value.origin.longitude) &&
+    "distanceKm" in value &&
+    typeof value.distanceKm === "number" &&
+    Number.isFinite(value.distanceKm) &&
+    "fee" in value &&
+    typeof value.fee === "number" &&
+    Number.isFinite(value.fee) &&
+    "serviceable" in value &&
+    typeof value.serviceable === "boolean" &&
+    "route" in value &&
+    Array.isArray(value.route) &&
+    value.route.every(
+      (point) =>
+        Array.isArray(point) &&
+        point.length === 2 &&
+        typeof point[0] === "number" &&
+        Number.isFinite(point[0]) &&
+        typeof point[1] === "number" &&
+        Number.isFinite(point[1]),
+    )
   );
 }
 
@@ -78,6 +128,7 @@ function CartProductImage({ src }: { src: string }) {
 }
 
 export default function MarketOrderPage() {
+  const router = useRouter();
   const { items, ready, storageError, setQuantity, removeItem, clearCart } = useMarketCart();
 
   const [isDark, setIsDark] = useState(false);
@@ -85,6 +136,12 @@ export default function MarketOrderPage() {
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [deliveryCoordinates, setDeliveryCoordinates] = useState<DeliveryCoordinates | null>(null);
+  const [deliveryCoordinatesAddress, setDeliveryCoordinatesAddress] = useState("");
+  const [deliveryEstimate, setDeliveryEstimate] = useState<DeliveryEstimate | null>(null);
+  const [estimateFor, setEstimateFor] = useState("");
+  const [estimateStatus, setEstimateStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [estimateError, setEstimateError] = useState("");
   const [note, setNote] = useState("");
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [detailsLoaded, setDetailsLoaded] = useState(false);
@@ -101,6 +158,83 @@ export default function MarketOrderPage() {
   const panelRef = useRef<HTMLElement>(null);
 
   const hasItems = items.length > 0;
+  const deliveryCoordinatesKey = deliveryCoordinates
+    ? `${deliveryCoordinates.latitude.toFixed(6)},${deliveryCoordinates.longitude.toFixed(6)}`
+    : "";
+  const isEstimateCurrent =
+    Boolean(deliveryEstimate) &&
+    estimateFor === deliveryCoordinatesKey &&
+    estimateStatus === "ready";
+
+  useEffect(() => {
+    if (fulfillment !== "delivery" || !deliveryCoordinates) {
+      setEstimateStatus("idle");
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setEstimateStatus("loading");
+      setEstimateError("");
+      try {
+        const response = await fetch("/api/market/delivery-estimate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ coordinates: deliveryCoordinates }),
+          signal: controller.signal,
+        });
+        const payload: unknown = await response.json().catch(() => null);
+        if (!response.ok) {
+          const message =
+            payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+              ? payload.error
+              : "Impossible de calculer le trajet pour cette adresse.";
+          throw new Error(message);
+        }
+        if (!isDeliveryEstimate(payload)) {
+          throw new Error("La réponse du calcul de trajet est invalide.");
+        }
+        setDeliveryEstimate(payload);
+        setEstimateFor(deliveryCoordinatesKey);
+        setEstimateStatus("ready");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setDeliveryEstimate(null);
+        setEstimateFor("");
+        setEstimateStatus("error");
+        setEstimateError(error instanceof Error ? error.message : "Impossible de calculer le trajet.");
+      }
+    }, 350);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [fulfillment, deliveryCoordinates, deliveryCoordinatesKey]);
+
+  const openDeliverySelection = () => {
+    try {
+      window.sessionStorage.setItem(
+        MARKET_DELIVERY_SELECTION_KEY,
+        JSON.stringify({ address, coordinates: deliveryCoordinates }),
+      );
+      const deliveryPath = window.location.hostname === "market.fisafigroupe.com"
+        ? "/livraison"
+        : "/market/livraison";
+      void router.push(deliveryPath);
+    } catch (error) {
+      console.error("[Market/Delivery] Could not open the delivery selection:", error);
+      setSubmitError("Impossible d’ouvrir la sélection d’adresse. Vérifiez le stockage du navigateur puis réessayez.");
+    }
+  };
+
+  const updateDeliveryAddress = (value: string) => {
+    setAddress(value);
+    if (deliveryCoordinates && value.trim() !== deliveryCoordinatesAddress.trim()) {
+      setDeliveryCoordinates(null);
+      setDeliveryEstimate(null);
+      setEstimateFor("");
+      setDeliveryCoordinatesAddress("");
+    }
+  };
 
   useEffect(() => {
     void (async () => {
@@ -174,6 +308,15 @@ export default function MarketOrderPage() {
           setFulfillment(saved.fulfillment);
         }
       }
+      const savedSelection = window.sessionStorage.getItem(MARKET_DELIVERY_SELECTION_KEY);
+      if (savedSelection) {
+        const parsed: unknown = JSON.parse(savedSelection);
+        if (isMarketDeliverySelection(parsed)) {
+          setAddress(parsed.address);
+          setDeliveryCoordinates(parsed.coordinates);
+          setDeliveryCoordinatesAddress(parsed.address);
+        }
+      }
     } catch {
       /* données illisibles : on repart de zéro */
     }
@@ -220,6 +363,10 @@ export default function MarketOrderPage() {
     0,
   );
   const total = totalCents / 100;
+  const deliveryFee = fulfillment === "delivery" && isEstimateCurrent
+    ? deliveryEstimate?.fee ?? 0
+    : 0;
+  const estimatedTotal = total + deliveryFee;
   const lineAmount = (item: (typeof items)[number]) =>
     (toCents(item.unitPrice) * item.quantity) / 100;
 
@@ -262,6 +409,16 @@ export default function MarketOrderPage() {
       (formRef.current?.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
       return;
     }
+    if (fulfillment === "delivery") {
+      if (!deliveryCoordinates || !isEstimateCurrent || !deliveryEstimate) {
+        setSubmitError("Choisissez votre position sur la carte et attendez le calcul des frais de livraison.");
+        return;
+      }
+      if (!deliveryEstimate.serviceable) {
+        setSubmitError("Cette adresse dépasse la zone de livraison en ligne. Contactez le vendeur pour vérifier une livraison spéciale.");
+        return;
+      }
+    }
     const linkedItems = items.filter(
       (item): item is typeof item & { odooProductId: number } =>
         Number.isSafeInteger(item.odooProductId) && Boolean(item.odooProductId),
@@ -286,6 +443,9 @@ export default function MarketOrderPage() {
           phone,
           address,
           fulfillment,
+          ...(fulfillment === "delivery" && deliveryCoordinates
+            ? { coordinates: deliveryCoordinates }
+            : {}),
           note,
           items: linkedItems.map((item) => ({
             productId: item.odooProductId,
@@ -311,7 +471,13 @@ export default function MarketOrderPage() {
         `Nom du client : ${customerName.trim()}`,
         `Téléphone du client : ${phone.trim()}`,
         `Mode : ${fulfillment === "delivery" ? "Livraison" : "Retrait en magasin"}`,
-        ...(fulfillment === "delivery" ? [`Adresse : ${address.trim()}`] : []),
+        ...(fulfillment === "delivery"
+          ? [
+              `Adresse : ${address.trim()}`,
+              `Trajet routier estimé : ${formatAmount(payload.deliveryDistanceKm)} km`,
+              `Frais de livraison estimés : ${formatAmount(payload.deliveryFee)} FCFA (à confirmer par le vendeur)`,
+            ]
+          : []),
         "",
         "Produits :",
         ...items.map((item) => {
@@ -319,12 +485,17 @@ export default function MarketOrderPage() {
           return `- ${item.name} x${formatAmount(item.quantity)}${isKg ? " kg" : ""}`;
         }),
         `Total du devis Odoo : ${formatAmount(payload.total)} FCFA`,
+        ...(fulfillment === "delivery"
+          ? [`Estimation produits + livraison : ${formatAmount(payload.total + payload.deliveryFee)} FCFA (hors confirmation vendeur)`]
+          : []),
         ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
         "Merci de vérifier le stock et de confirmer le devis dans Odoo.",
       ].join("\n");
       setOrderConfirmation({
         reference: payload.orderReference,
         total: payload.total,
+        deliveryFee: payload.deliveryFee,
+        deliveryDistanceKm: payload.deliveryDistanceKm,
         whatsappUrl: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`,
       });
       clearCart();
@@ -393,6 +564,17 @@ export default function MarketOrderPage() {
                 Référence <strong>{orderConfirmation.reference}</strong> · Total du devis{" "}
                 <strong>{formatAmount(orderConfirmation.total)} FCFA</strong>.
               </p>
+              {orderConfirmation.deliveryDistanceKm > 0 && (
+                <p>
+                  Livraison estimée à {formatAmount(orderConfirmation.deliveryDistanceKm)} km :{" "}
+                  <strong>{formatAmount(orderConfirmation.deliveryFee)} FCFA</strong>. Le total
+                  produits + livraison estimé est de{" "}
+                  <strong>
+                    {formatAmount(orderConfirmation.total + orderConfirmation.deliveryFee)} FCFA
+                  </strong>
+                  ; le vendeur confirmera les frais.
+                </p>
+              )}
               <p>
                 Le vendeur doit vérifier le stock et confirmer le devis dans Odoo. Prévenez-le sur
                 WhatsApp pour qu’il puisse traiter votre demande.
@@ -619,24 +801,68 @@ export default function MarketOrderPage() {
                   </div>
 
                   {fulfillment === "delivery" && (
-                    <div className="market-field">
-                      <label htmlFor="market-address">Adresse de livraison à Dakar</label>
-                      <textarea
-                        id="market-address"
-                        name="address"
-                        autoComplete="street-address"
-                        rows={3}
-                        required
-                        aria-required="true"
-                        value={address}
-                        onChange={(event) => setAddress(event.target.value)}
-                        onBlur={() => markTouched("address")}
-                        aria-invalid={Boolean(showError("address"))}
-                        aria-describedby={showError("address") ? "market-address-error" : undefined}
-                        placeholder="Quartier, rue, repère pour vous trouver"
-                      />
-                      <FieldError id="market-address-error" message={showError("address")} />
-                    </div>
+                    <>
+                      <div className="market-field">
+                        <label htmlFor="market-address">Adresse de livraison à Dakar</label>
+                        <textarea
+                          id="market-address"
+                          name="address"
+                          autoComplete="street-address"
+                          rows={3}
+                          required
+                          aria-required="true"
+                          value={address}
+                          onChange={(event) => updateDeliveryAddress(event.target.value)}
+                          onBlur={() => markTouched("address")}
+                          aria-invalid={Boolean(showError("address"))}
+                          aria-describedby={showError("address") ? "market-address-error" : undefined}
+                          placeholder="Quartier, rue, repère pour vous trouver"
+                        />
+                        <FieldError id="market-address-error" message={showError("address")} />
+                      </div>
+
+                      <section className="market-delivery-summary" aria-labelledby="market-delivery-summary-title">
+                        <div className="market-delivery-summary-icon" aria-hidden="true">⌖</div>
+                        <div className="market-delivery-summary-copy">
+                          <span className="market-delivery-eyebrow">Livraison à Dakar</span>
+                          <h3 id="market-delivery-summary-title">
+                            {isEstimateCurrent && deliveryEstimate?.serviceable
+                              ? "Adresse sélectionnée"
+                              : "Choisir sur la carte"}
+                          </h3>
+                          {isEstimateCurrent && deliveryEstimate?.serviceable ? (
+                            <p>
+                              {formatAmount(deliveryEstimate.distanceKm)} km ·{" "}
+                              {formatAmount(deliveryEstimate.fee)} FCFA estimés
+                            </p>
+                          ) : (
+                            <p>Positionner le repère et estimer les frais</p>
+                          )}
+                        </div>
+                        <button
+                          className="market-delivery-summary-button"
+                          type="button"
+                          onClick={openDeliverySelection}
+                        >
+                          {deliveryCoordinates ? "Modifier" : "Choisir"}
+                        </button>
+                      </section>
+                      {estimateStatus === "loading" && (
+                        <p className="market-delivery-feedback" role="status">
+                          Actualisation de l’itinéraire et des frais…
+                        </p>
+                      )}
+                      {estimateStatus === "error" && (
+                        <p className="market-delivery-feedback market-delivery-error" role="alert">
+                          {estimateError}
+                        </p>
+                      )}
+                      {isEstimateCurrent && deliveryEstimate && !deliveryEstimate.serviceable && (
+                        <p className="market-delivery-feedback market-delivery-error" role="alert">
+                          Cette adresse dépasse 15 km. Contactez le vendeur pour vérifier une livraison spéciale.
+                        </p>
+                      )}
+                    </>
                   )}
 
                   <div className="market-field">
@@ -661,13 +887,50 @@ export default function MarketOrderPage() {
                     </span>
                     <strong>{formatAmount(total)} FCFA</strong>
                   </div>
+                  {fulfillment === "delivery" && (
+                    <>
+                      <div className="market-order-total market-order-delivery-total">
+                        <span>
+                          Livraison estimée
+                          <small>
+                            {isEstimateCurrent && deliveryEstimate
+                              ? `${formatAmount(deliveryEstimate.distanceKm)} km · à confirmer par le vendeur`
+                              : "Choisissez un point sur la carte"}
+                          </small>
+                        </span>
+                        <strong>{isEstimateCurrent ? `${formatAmount(deliveryFee)} FCFA` : "—"}</strong>
+                      </div>
+                      <div className="market-order-total market-order-grand-total">
+                        <span>
+                          Total estimé
+                          <small>Produits + livraison estimée</small>
+                        </span>
+                        <strong>{formatAmount(estimatedTotal)} FCFA</strong>
+                      </div>
+                    </>
+                  )}
 
-                  <button className="market-order-submit" type="submit" disabled={submitting}>
-                    {submitting ? "Vérification du stock et création du devis…" : "Envoyer ma demande au vendeur"}
+                  <button
+                    className="market-order-submit"
+                    type="submit"
+                    disabled={
+                      submitting ||
+                      (fulfillment === "delivery" &&
+                        (!isEstimateCurrent || !deliveryEstimate?.serviceable))
+                    }
+                  >
+                    {submitting
+                      ? "Vérification du stock et création du devis…"
+                      : fulfillment === "delivery" && !deliveryCoordinates
+                        ? "Choisissez votre adresse sur la carte"
+                        : fulfillment === "delivery" && estimateStatus === "loading"
+                          ? "Calcul des frais de livraison…"
+                          : "Envoyer ma demande au vendeur"}
                   </button>
                   <p className="market-order-disclaimer">
                     Le stock est vérifié dans Odoo avant l’enregistrement d’un devis à valider par
-                    le vendeur. Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
+                    le vendeur. Les frais de livraison sont estimatifs, calculés hors devis Odoo et
+                    confirmés par le vendeur. Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
                   </p>
 
                   {submitError && (
@@ -684,8 +947,12 @@ export default function MarketOrderPage() {
         {ready && hasItems && !panelVisible && (
           <div className="market-mobile-bar">
             <div>
-              <span>Estimation</span>
-              <strong>{formatAmount(total)} FCFA</strong>
+              <span>
+                {fulfillment === "delivery" && isEstimateCurrent
+                  ? "Estimation avec livraison"
+                  : "Estimation produits"}
+              </span>
+              <strong>{formatAmount(estimatedTotal)} FCFA</strong>
             </div>
             <button type="button" onClick={scrollToOrder}>
               Commander

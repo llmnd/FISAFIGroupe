@@ -130,6 +130,12 @@ Les employés autorisés peuvent ouvrir une session, préparer une vente, encais
 
 Les ventes sont recalculées côté serveur à partir des articles, du stock de l'emplacement source POS et des données Odoo. Les clés d'opération rendent les reprises après une interruption idempotentes. Les configurations qui ne peuvent pas être calculées sans approximation sont refusées explicitement : règles de liste de prix, position fiscale par défaut, arrondi de caisse, devise avec décimales, taxes autres qu'une taxe simple en pourcentage, articles suivis par lot/série, et moyens de paiement terminaux intégrés. Valider les droits JSON-2 et les paramètres POS sur une base Odoo de test avant toute utilisation en production ; aucune vente de test ne doit être faite sur la base réelle.
 
+## FiSAFi Market — estimation de livraison
+
+À la commande, un écran carte dédié (`/market/livraison`, et `/livraison` sur le sous-domaine Market) permet au client d'autoriser la géolocalisation ou de placer le repère à la main. Le trajet routier et le barème par zones (jusqu'à 3 km : 1 000 FCFA ; jusqu'à 7 km : 1 500 FCFA ; jusqu'à 12 km : 2 500 FCFA ; jusqu'à 15 km : 3 500 FCFA) sont recalculés côté serveur. Cette estimation est affichée séparément et n'est pas ajoutée au devis Odoo ; le vendeur confirme les frais. La position choisie est transmise au service de routage configuré.
+
+`MARKET_ORIGIN_LATITUDE` et `MARKET_ORIGIN_LONGITUDE` définissent le point de départ et doivent être réglés sur l'emplacement exact de la boutique avant la mise en production ; les coordonnées fournies dans `.env.example` sont uniquement un repère approximatif de Liberté 6 Extension. `OSRM_ROUTING_URL` permet d'utiliser une instance OSRM dédiée. À défaut, l'application utilise le serveur public de démonstration OSRM, qui ne doit pas être considéré comme une infrastructure de production garantie.
+
 ## Espace administrateur — ventes Odoo
 
 Les administrateurs FiSAFi disposent du module `/espace-employe/ventes` depuis le dashboard et l'espace employé. Il permet de consulter les devis et commandes, de créer un devis brouillon avec un client et des produits Odoo, de modifier les brouillons et de confirmer un devis. L'API Odoo doit autoriser le compte associé à `ODOO_API_KEY` à lire `sale.order`, `sale.order.line`, `res.partner`, `product.template` et `product.product`, à créer/modifier `sale.order` et à appeler `sale.order.action_confirm`.

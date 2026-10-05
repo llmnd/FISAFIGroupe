@@ -3,12 +3,19 @@ import { callOdoo, getTemplateStock, OdooApiError } from "@/lib/marketOdoo";
 import { authenticateMarketUser, MarketAuthError } from "@/lib/marketAuth";
 import { prisma } from "@/backend/lib/db";
 import { emailService } from "@/backend/services/emailService";
+import {
+  getMarketDeliveryEstimate,
+  isDeliveryCoordinates,
+  type DeliveryCoordinates,
+  type DeliveryEstimate,
+} from "@/lib/marketDelivery";
 
 type OrderRequest = {
   customerName: string;
   phone: string;
   address: string;
   fulfillment: "delivery" | "pickup";
+  coordinates?: DeliveryCoordinates;
   note: string;
   items: Array<{ productId: number; quantity: number }>;
 };
@@ -64,6 +71,8 @@ type QuotationItem = {
 type ApiResponse = {
   orderReference?: string;
   total?: number;
+  deliveryFee?: number;
+  deliveryDistanceKm?: number;
   orders?: Array<{
     id: number;
     reference: string;
@@ -118,7 +127,8 @@ function isOrderRequest(value: unknown): value is OrderRequest {
         item.quantity > 0 &&
         item.quantity <= MAX_QUANTITY,
     ) &&
-    (order.fulfillment !== "delivery" || order.address.trim().length >= 6)
+    (order.fulfillment !== "delivery" ||
+      (order.address.trim().length >= 6 && isDeliveryCoordinates(order.coordinates)))
   );
 }
 
@@ -455,6 +465,28 @@ export default async function handler(
     return res.status(400).json({ error: "La quantité demandée dépasse la limite autorisée." });
   }
 
+  let deliveryEstimate: DeliveryEstimate | null = null;
+  let deliveryCoordinates: DeliveryCoordinates | null = null;
+  if (req.body.fulfillment === "delivery") {
+    if (!isDeliveryCoordinates(req.body.coordinates)) {
+      return res.status(400).json({ error: "Choisissez une position valide dans la zone de Dakar." });
+    }
+    deliveryCoordinates = req.body.coordinates;
+    try {
+      deliveryEstimate = await getMarketDeliveryEstimate(deliveryCoordinates);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Le calcul de trajet est momentanément indisponible.";
+      return res.status(503).json({ error: message });
+    }
+    if (!deliveryEstimate.serviceable) {
+      return res.status(422).json({
+        error: "Cette adresse dépasse la zone de livraison en ligne. Contactez le vendeur pour vérifier une livraison spéciale.",
+      });
+    }
+  }
+
   try {
     const productIds = [...requestedItems.keys()];
     const templates: unknown = await callOdoo("product.template", "search_read", {
@@ -544,7 +576,12 @@ export default async function handler(
     const customerPartnerId = partnerId;
 
     const fulfillmentNote = req.body.fulfillment === "delivery"
-      ? `Livraison demandée à Dakar. Adresse : ${req.body.address.trim()}`
+      ? [
+          `Livraison demandée à Dakar. Adresse : ${req.body.address.trim()}`,
+          `Position de livraison : ${deliveryCoordinates?.latitude.toFixed(6)}, ${deliveryCoordinates?.longitude.toFixed(6)}`,
+          `Trajet routier estimé : ${deliveryEstimate?.distanceKm} km.`,
+          `Frais de livraison estimés : ${deliveryEstimate?.fee} FCFA, hors devis et à confirmer par le vendeur.`,
+        ].join("\n")
       : "Retrait en magasin demandé.";
     const orderNote = [
       "Demande reçue depuis FiSAFi Market. À vérifier et confirmer par le vendeur.",
@@ -637,6 +674,8 @@ export default async function handler(
     return res.status(201).json({
       orderReference: createdOrders[0].name,
       total: createdOrders[0].amount_total,
+      deliveryFee: deliveryEstimate?.fee ?? 0,
+      deliveryDistanceKm: deliveryEstimate?.distanceKm ?? 0,
     });
   } catch (error) {
     if (error instanceof OdooApiError) {
