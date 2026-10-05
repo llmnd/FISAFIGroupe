@@ -153,6 +153,14 @@ function writeMarketCatalogCache(products: OdooCatalogProduct[]) {
 const fmt = (value: number) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(value);
 
+/* Script inline : pose le thème avant le premier paint (zéro FOUC). */
+const MARKET_THEME_BOOTSTRAP = `(function(){try{
+  var t=localStorage.getItem("fisafi-market-theme");
+  var d=window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var v=(t==="dark"||t==="light")?t:(d?"dark":"light");
+  document.documentElement.setAttribute("data-market-theme",v);
+}catch(e){}})();`;
+
 /* ═══════════════ HOOK : statut ouvert/fermé ═══════════════ */
 
 function useOpenStatus() {
@@ -909,7 +917,9 @@ export default function MarketPage() {
     return () => controller.abort();
   }, [catalogRetry]);
 
-  /* Thème */
+  /* Thème : synchronisation React ↔ <html>. Le 1er paint est géré
+     par MARKET_THEME_BOOTSTRAP (script bloquant dans <Head>), donc
+     ici on ne fait que refléter l'état et écouter le système. */
   useIsomorphicLayoutEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     let savedTheme: string | null = null;
@@ -918,15 +928,21 @@ export default function MarketPage() {
     } catch (error) {
       console.warn("[Market] Theme preference could not be read:", error);
     }
-    const initialChoice = savedTheme === "dark" || savedTheme === "light" ? savedTheme : "system";
+    const initialChoice =
+      savedTheme === "dark" || savedTheme === "light" ? savedTheme : "system";
     setThemeChoice(initialChoice);
     setSystemPrefersDark(media.matches);
-    document.documentElement.setAttribute(
-      "data-market-theme",
+
+    // Synchronisation défensive : si le script bloquant n'a pas tourné
+    // (ex. rendu client pur après hydratation), on rattrape le coup.
+    const current = document.documentElement.getAttribute("data-market-theme");
+    const expected =
       initialChoice === "dark" || (initialChoice === "system" && media.matches)
         ? "dark"
-        : "light",
-    );
+        : "light";
+    if (current !== expected) {
+      document.documentElement.setAttribute("data-market-theme", expected);
+    }
 
     const updateSystemTheme = (event: MediaQueryListEvent) => {
       setSystemPrefersDark(event.matches);
@@ -947,9 +963,17 @@ export default function MarketPage() {
 
   const toggleTheme = () => {
     const nextTheme = isDark ? "light" : "dark";
-    window.localStorage.setItem("fisafi-market-theme", nextTheme);
-    document.documentElement.setAttribute("data-market-theme", nextTheme);
+    const root = document.documentElement;
+    // Transition douce uniquement lors d'un toggle utilisateur.
+    root.classList.add("theme-transitioning");
+    try {
+      window.localStorage.setItem("fisafi-market-theme", nextTheme);
+    } catch (error) {
+      console.warn("[Market] Theme preference could not be saved:", error);
+    }
+    root.setAttribute("data-market-theme", nextTheme);
     setThemeChoice(nextTheme);
+    window.setTimeout(() => root.classList.remove("theme-transitioning"), 320);
   };
 
   /* Ouvrir automatiquement les outils si une recherche est en cours */
@@ -958,7 +982,6 @@ export default function MarketPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  /* Condition calculée en dehors du JSX pour éviter les ternaires imbriqués */
   const showCatalogResults = !catalogLoading && (!catalogError || catalog.length > 0);
 
   /* ─────── Rendu : modal rayons ─────── */
@@ -1181,6 +1204,7 @@ export default function MarketPage() {
           name="description"
           content="Explorez les rayons FiSAFi Market : produits frais, épicerie, boulangerie, boissons et essentiels de la maison."
         />
+        <script dangerouslySetInnerHTML={{ __html: MARKET_THEME_BOOTSTRAP }} />
       </Head>
 
       <Header
@@ -1256,11 +1280,7 @@ export default function MarketPage() {
         }
       />
 
-      <main
-        className="market-page"
-        data-theme={isDark ? "dark" : "light"}
-        suppressHydrationWarning
-      >
+      <main className="market-page" suppressHydrationWarning>
         {storageError && (
           <p className="market-cart-storage-error" role="alert">
             {storageError}

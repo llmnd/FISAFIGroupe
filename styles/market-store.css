@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    FiSAFi Market storefront — consolidated & refined
+   v2 — Dark mode sans FOUC + transitions douces
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────── 1. Variables & thème ─────────── */
@@ -26,6 +27,9 @@
   color: var(--market-ink);
 }
 
+/* Le thème est porté par <html data-market-theme="dark|light">.
+   Le script bloquant dans <Head> le pose avant le premier paint,
+   ce qui évite tout flash blanc au refresh. */
 html[data-market-theme="dark"] {
   color-scheme: dark;
   background: #15121f;
@@ -35,7 +39,7 @@ html[data-market-theme="dark"] body {
   background: #15121f;
 }
 
-.market-page[data-theme="dark"] {
+html[data-market-theme="dark"] .market-page {
   color-scheme: dark;
   --market-ink: #f2eefb;
   --market-muted: #b5aec6;
@@ -382,7 +386,6 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   font: 700 0.6rem/1 "Jost", system-ui, sans-serif;
 }
 
-/* Burger mobile */
 .market-mobile-menu-toggle {
   display: none;
 }
@@ -754,7 +757,7 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   cursor: pointer;
 }
 
-.market-page[data-theme="dark"] .market-product-card .market-product-visual {
+html[data-market-theme="dark"] .market-page .market-product-card .market-product-visual {
   background: linear-gradient(145deg, #302642, #252030);
 }
 
@@ -917,13 +920,13 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   opacity: 0.5;
 }
 
-.market-page[data-theme="dark"] .market-product-add {
+html[data-market-theme="dark"] .market-page .market-product-add {
   border-color: #b9a4ff;
   background: #b9a4ff;
   color: #211638;
 }
 
-.market-page[data-theme="dark"] .market-product-add:hover:not(:disabled) {
+html[data-market-theme="dark"] .market-page .market-product-add:hover:not(:disabled) {
   border-color: #d0c1ff;
   background: #d0c1ff;
   color: #211638;
@@ -968,17 +971,17 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   opacity: 0.4;
 }
 
-.market-page[data-theme="dark"] .market-product-cart-controls {
+html[data-market-theme="dark"] .market-page .market-product-cart-controls {
   border-color: rgba(185, 164, 255, 0.45);
   background: rgba(185, 164, 255, 0.14);
   color: #d0c1ff;
 }
 
-.market-page[data-theme="dark"] .market-product-cart-controls button {
+html[data-market-theme="dark"] .market-page .market-product-cart-controls button {
   background: rgba(185, 164, 255, 0.2);
 }
 
-.market-page[data-theme="dark"] .market-product-cart-controls button:hover:not(:disabled) {
+html[data-market-theme="dark"] .market-page .market-product-cart-controls button:hover:not(:disabled) {
   background: #b9a4ff;
   color: #211638;
 }
@@ -1803,6 +1806,483 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   font: 600 0.85rem/1.4 "Jost", system-ui, sans-serif;
 }
 
+/* ─────────── 14. Transition douce lors du toggle thème ───────────
+   Appliquée UNIQUEMENT quand la classe .theme-transitioning est posée
+   sur <html> par toggleTheme(). Jamais au premier paint → zéro FOUC. */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    color 250ms ease,
+    fill 250ms ease,
+    stroke 250ms ease,
+    box-shadow 250ms ease !important;
+}
+
+/* ─────────── 15. Responsive ─────────── */
+@media (max-width: 980px) {
+  .market-page .market-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .header.has-market-actions {
+    padding-inline: 0.75rem;
+  }
+
+  .header.has-market-actions .header-logo {
+    margin-right: 0.5rem;
+  }
+
+  .header.has-market-actions .header-logo-image {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .header.has-market-actions .header-actions {
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .header.has-market-actions .market-header-cart {
+    width: 2.55rem;
+    height: 2.55rem;
+    border-radius: 0.9rem;
+    box-shadow: 0 5px 14px rgba(72, 43, 158, 0.2);
+  }
+
+  .header.has-market-actions .header-login-btn,
+  .header.has-market-actions .header-avatar-btn {
+    display: grid;
+    width: 2.45rem;
+    height: 2.45rem;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--market-header-line);
+    border-radius: 50%;
+    background: var(--market-header-surface-soft);
+    color: var(--market-header-ink);
+  }
+
+  .header.has-market-actions .header-login-btn svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .header.has-market-actions .header-burger {
+    width: 2.55rem;
+    height: 2.55rem;
+    margin-left: 0.35rem;
+    border: 1px solid var(--market-header-line);
+    background: var(--market-header-surface-soft);
+  }
+
+  .header.has-market-actions .header-burger.open {
+    background: var(--market-purple);
+    color: #fff;
+  }
+
+  .header-social-flags-bar.has-market-actions {
+    height: auto;
+    min-height: 3.6rem;
+    border-bottom: 1px solid var(--market-header-line);
+    box-shadow: 0 5px 18px rgba(45, 32, 78, 0.08);
+  }
+
+  .header-social-flags-bar.has-market-actions::after {
+    display: none;
+  }
+
+  .header-social-flags-bar.has-market-actions .bar-content {
+    justify-content: center;
+    max-width: none;
+    padding: 0.45rem 0.75rem;
+  }
+
+  .header-social-flags-bar.has-market-actions .bar-socials,
+  .header-social-flags-bar.has-market-actions .bar-flags {
+    display: none;
+  }
+
+  .header-market-actions {
+    display: grid;
+    width: 100%;
+    max-width: 32rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-market-actions .market-rayons-link {
+    width: 100%;
+    min-height: 2.65rem;
+    padding-inline: 0.7rem;
+    border: 1px solid rgba(112, 71, 245, 0.18);
+    border-radius: 0.85rem;
+  }
+
+  .header-market-actions .market-status {
+    min-width: 0;
+    justify-content: center;
+    padding: 0.5rem 0.55rem;
+    overflow: hidden;
+    border-color: var(--market-header-line);
+    background: var(--market-header-surface-soft);
+    color: var(--market-header-ink);
+    font-size: 0.73rem;
+    text-overflow: ellipsis;
+  }
+
+  .header-market-actions .market-status em {
+    display: none;
+  }
+
+  .header-market-actions .market-theme-toggle {
+    width: 2.65rem;
+    min-height: 2.65rem;
+    padding: 0;
+    border-color: var(--market-header-line);
+    background: var(--market-header-surface-soft);
+    color: var(--market-header-ink);
+  }
+
+  .header-market-actions .market-theme-toggle > span:first-child {
+    font-size: 1.2rem;
+  }
+
+  .header-market-actions .market-theme-toggle-label {
+    display: none;
+  }
+
+  .market-page {
+    --market-page-gutter: clamp(0.75rem, 4vw, 1.1rem);
+    padding-bottom: 1.5rem;
+  }
+
+  .market-announcement {
+    min-height: 2.5rem;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .market-announcement-note { display: none; }
+
+  .market-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .market-section-heading h2,
+  .market-pantry-copy h2 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .market-section-heading > p { font-size: 1rem; }
+
+  .market-departments,
+  .market-featured,
+  .market-services,
+  .market-testimonials {
+    padding-top: 3rem;
+  }
+
+  .market-catalog-tools {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .market-catalog-tool-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .market-catalog-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-catalog-control { min-width: 0; }
+
+  .market-page .market-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .market-page .market-product-card {
+    padding: 0 0.7rem 0.9rem;
+  }
+
+  .market-page .market-product-card .market-product-visual {
+    width: calc(100% + 1.4rem);
+    margin: 0 -0.7rem 0.75rem;
+  }
+
+  .market-page .market-product-card h4 {
+    font-size: 0.92rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .market-info-card--address {
+    grid-template-columns: 1fr;
+  }
+
+  .market-location-map,
+  .market-location-map iframe {
+    min-height: 15rem;
+  }
+
+  .market-infos {
+    grid-template-columns: 1fr;
+  }
+
+  .market-departments-drawer { width: 100%; }
+  .market-departments-submenu {
+    inset: 0;
+    z-index: 3;
+    width: auto;
+    border: 0;
+    box-shadow: none;
+  }
+  .market-departments-submenu-back { display: grid; }
+}
+
+@media (max-width: 600px) {
+  .market-product-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+  .market-product-dialog {
+  position: relative;
+  display: grid;
+  width: min(48rem, 100%);
+  max-height: min(90dvh, 48rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  overflow: auto;
+  border: 1px solid var(--market-line);
+  border-radius: var(--market-radius-md);
+  background: var(--market-surface);
+  color: var(--market-ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  animation: market-product-dialog-enter 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.market-product-dialog-visual {
+  position: relative;
+  display: grid;
+  min-height: 23rem;
+  place-items: center;
+  overflow: hidden;
+  padding: 2.5rem;
+  background: linear-gradient(145deg, #f2eaff, #fffdfd);
+}
+
+.market-product-dialog-visual > .market-product-image,
+.market-product-dialog-visual > .market-product-art {
+  width: min(100%, 20rem);
+  height: min(20rem, 55vw);
+  object-fit: contain;
+}
+
+.market-product-dialog-badge {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 1;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  background: #d84a3b;
+  color: #fff;
+  font: 700 0.68rem/1 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.market-product-dialog-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.market-product-dialog-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--market-line);
+  border-radius: 50%;
+  background: var(--market-surface);
+  color: var(--market-ink);
+  cursor: pointer;
+}
+
+.market-product-dialog-close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.market-product-dialog-close:focus-visible,
+.market-product-dialog-add:focus-visible,
+.market-product-dialog-quantity button:focus-visible {
+  outline: 3px solid var(--market-orange);
+  outline-offset: 3px;
+}
+
+.market-product-dialog-department {
+  color: var(--market-purple);
+  font: 700 0.7rem/1.2 "Jost", system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.market-product-dialog-content h2 {
+  margin: 0.7rem 0 0;
+  color: var(--market-ink);
+  font: 600 clamp(1.6rem, 3vw, 2.3rem)/1.08 "Jost", system-ui, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.market-product-dialog-category {
+  margin: 0.65rem 0 0;
+  color: var(--market-muted);
+  font: 400 0.85rem/1.45 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 1.5rem 0 0;
+}
+
+.market-product-dialog-price strong {
+  color: var(--market-purple);
+  font: 700 1.9rem/1 "Jost", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-product-dialog-price span {
+  color: var(--market-muted);
+  font: 600 0.78rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-note {
+  margin: 0.65rem 0 1.5rem;
+  color: var(--market-muted);
+  font: 400 0.78rem/1.45 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-add,
+.market-product-dialog-quantity {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--market-purple);
+  border-radius: 999px;
+  background: var(--market-purple);
+  color: #fff;
+  font: 700 0.88rem/1 "Jost", system-ui, sans-serif;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.market-product-dialog-add { cursor: pointer; }
+
+.market-product-dialog-add:hover:not(:disabled) {
+  background: #5630d0;
+  transform: translateY(-1px);
+}
+
+.market-product-dialog-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.market-product-dialog-quantity {
+  justify-content: space-between;
+  min-width: 11rem;
+}
+
+.market-product-dialog-quantity button {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  cursor: pointer;
+  font: 700 1.1rem/1 "Jost", system-ui, sans-serif;
+}
+
+.market-product-dialog-quantity span {
+  font: 600 0.83rem/1.2 "Jost", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog {
+  --market-ink: #f2eefb;
+  --market-muted: #b5aec6;
+  --market-line: rgba(226, 218, 255, 0.16);
+  --market-purple: #c7b7ff;
+  --market-surface: #211d2d;
+  background: #211d2d;
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog-visual {
+  background: linear-gradient(145deg, #35294a, #282333);
+}
+
+.market-product-dialog-backdrop.is-dark .market-product-dialog-visual .market-product-image {
+  mix-blend-mode: normal;
+}
+
+@keyframes market-product-dialog-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes market-product-dialog-enter {
+  from { opacity: 0; transform: translateY(0.6rem) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ─────────── 13. États ─────────── */
+.market-cart-storage-error {
+  max-width: 1240px;
+  margin: 0.75rem auto 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--market-radius-sm);
+  background: var(--market-surface);
+  color: #a02222;
+  font: 600 0.85rem/1.4 "Jost", system-ui, sans-serif;
+}
+
 /* ─────────── 14. Responsive ─────────── */
 @media (max-width: 980px) {
   .market-page .market-product-grid {
@@ -2179,4 +2659,5 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
   .market-page .market-product-card:hover .market-product-art {
     transform: none;
   }
+}
 }
