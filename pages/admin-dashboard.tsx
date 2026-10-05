@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
 import { ensureAuthSession } from "@/lib/clientAuthSession";
 
 interface User {
@@ -63,6 +62,7 @@ interface InscriptionFormation {
   session?: SessionFormation;
 }
 
+type AdminTab = "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce";
 type MarketOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
 type OdooCompanyType = "groupe" | "market";
 type OdooCompany = { id: number; name: string; type: OdooCompanyType };
@@ -97,6 +97,8 @@ interface MarketStats {
   }>;
   generatedAt: string;
 }
+
+const VALID_TABS: readonly AdminTab[] = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -162,16 +164,30 @@ function isMarketStats(value: unknown): value is MarketStats {
   );
 }
 
+/**
+ * En-têtes d'authentification : la session passe par cookie, donc le Bearer
+ * n'est ajouté que si un token existe dans localStorage (jamais bloquant).
+ */
+function authHeaders(json = true): HeadersInit {
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {
+    token = null;
+  }
+  return {
+    ...(json ? { "Content-Type": "application/json" } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const buildApiUrl = (ep: string) => ep;
   const routeTab = Array.isArray(router.query.tab) ? router.query.tab[0] : router.query.tab;
 
-  const getTabLabel = (
-    tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce",
-    companyType?: OdooCompanyType,
-  ): string => {
-    const labels: Record<string, string> = {
+  const getTabLabel = (tab: AdminTab, companyType?: OdooCompanyType): string => {
+    const labels: Record<AdminTab, string> = {
       users: "Utilisateurs",
       articles: "Articles",
       brochures: "Brochures",
@@ -182,7 +198,6 @@ export default function AdminDashboard() {
     return labels[tab] || "";
   };
 
-  // CORRECTIF : utilise des variables CSS pour s'adapter au dark mode
   const getSessionStatusClass = (status: string | undefined): string => {
     if (status === "ouverte") return "session-status is-ouverte";
     if (status === "complète") return "session-status is-complete";
@@ -191,12 +206,12 @@ export default function AdminDashboard() {
 
   const getPublishedStatus = (published: boolean): { className: string; text: string } => ({
     className: published ? "pub-on" : "pub-off",
-    text: published ? "Publié" : "Brouillon"
+    text: published ? "Publié" : "Brouillon",
   });
 
   const getBrochureStatus = (published: boolean): { className: string; text: string } => ({
     className: published ? "pub-on" : "pub-off",
-    text: published ? "Publiée" : "Non publiée"
+    text: published ? "Publiée" : "Non publiée",
   });
 
   const renderPublishButton = (articleId: number, isPublished: boolean) => {
@@ -243,15 +258,16 @@ export default function AdminDashboard() {
     return items.map(renderItem);
   };
 
-  const renderInscriptionActions = (inscription: any) => {
+  // Les handlers ferment déjà la feuille et rechargent la liste : pas de doublon ici.
+  const renderInscriptionActions = (inscription: InscriptionFormation) => {
     if (inscription.status === "liste_attente" || inscription.status === "demande_en_attente") {
       return (
         <>
-          <button className="sheet-btn primary" onClick={() => { handleAcceptInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+          <button className="sheet-btn primary" onClick={() => handleAcceptInscription(inscription.id)}>
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>
             Accepter la demande
           </button>
-          <button className="sheet-btn orange-btn" onClick={() => { handleRejectInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+          <button className="sheet-btn orange-btn" onClick={() => handleRejectInscription(inscription.id)}>
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
             Rejeter la demande
           </button>
@@ -260,7 +276,7 @@ export default function AdminDashboard() {
     }
     if (inscription.status === "confirme") {
       return (
-        <button className="sheet-btn danger" onClick={() => { handleRejectInscription(inscription.id); setActionSheetInscription(null); fetchInscriptions(); }}>
+        <button className="sheet-btn danger" onClick={() => handleRejectInscription(inscription.id)}>
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
           Annuler l'inscription
         </button>
@@ -274,7 +290,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce">("users");
+  const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [tabStateReady, setTabStateReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
@@ -433,14 +449,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!router.isReady || tabStateReady) return;
-    const VALID_TABS = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const;
     try {
       const q = routeTab ?? null;
-      if (q && VALID_TABS.includes(q as any)) {
-        handleSetActiveTab(q as any);
+      if (q && (VALID_TABS as readonly string[]).includes(q)) {
+        handleSetActiveTab(q as AdminTab);
       } else {
         const stored = localStorage.getItem("adminActiveTab");
-        if (stored && VALID_TABS.includes(stored as any)) handleSetActiveTab(stored as any);
+        if (stored && (VALID_TABS as readonly string[]).includes(stored)) handleSetActiveTab(stored as AdminTab);
       }
     } catch (error) {
       console.error("[Admin/Navigation] Could not restore the active tab:", error);
@@ -475,7 +490,7 @@ export default function AdminDashboard() {
       if (v !== null) window.requestAnimationFrame(() => window.scrollTo(0, parseInt(v) || 0));
     } catch (e) {}
   };
-  const handleSetActiveTab = (tab: typeof activeTab) => {
+  const handleSetActiveTab = (tab: AdminTab) => {
     try { saveScrollForTab(currentTabRef.current); } catch {}
     currentTabRef.current = tab;
     setActiveTab(tab);
@@ -499,15 +514,15 @@ export default function AdminDashboard() {
   }, [activeTab, tabStateReady]);
   useEffect(() => {
     const onBeforeUnload = () => saveScrollForTab(currentTabRef.current);
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);
   useEffect(() => {
     const onRouteChangeStart = (url: string) => {
       try { if (!url.includes(router.pathname)) saveScrollForTab(currentTabRef.current); } catch (e) {}
     };
-    router.events.on('routeChangeStart', onRouteChangeStart);
-    return () => router.events.off('routeChangeStart', onRouteChangeStart);
+    router.events.on("routeChangeStart", onRouteChangeStart);
+    return () => router.events.off("routeChangeStart", onRouteChangeStart);
   }, [router.events]);
 
   useEffect(() => {
@@ -672,9 +687,7 @@ export default function AdminDashboard() {
 
   const handleAcceptInscription = async (id: number) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { showToast("Non authentifié", "err"); return; }
-      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ id, action: "accept" }) });
+      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ id, action: "accept" }) });
       if (r.ok) { showToast("Inscription acceptée"); setActionSheetInscription(null); await fetchInscriptions(); }
       else showToast(`Erreur ${r.status}`, "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -682,9 +695,7 @@ export default function AdminDashboard() {
 
   const handleRejectInscription = async (id: number) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { showToast("Non authentifié", "err"); return; }
-      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ id, action: "reject" }) });
+      const r = await fetch(buildApiUrl("/api/inscriptions-manage"), { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ id, action: "reject" }) });
       if (r.ok) { showToast("Inscription rejetée"); setActionSheetInscription(null); await fetchInscriptions(); }
       else showToast(`Erreur ${r.status}`, "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -692,9 +703,7 @@ export default function AdminDashboard() {
 
   const handleDeleteInscription = async (id: number) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { showToast("Non authentifié", "err"); return; }
-      const r = await fetch(buildApiUrl(`/api/inscriptions-manage/${id}`), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(buildApiUrl(`/api/inscriptions-manage/${id}`), { method: "DELETE", headers: authHeaders(false) });
       if (r.ok) { showToast("Inscription supprimée"); setActionSheetInscription(null); await fetchInscriptions(); }
       else showToast(`Erreur ${r.status}`, "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -722,9 +731,7 @@ export default function AdminDashboard() {
 
   const handleDeleteSession = async (id: number) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { showToast("Non authentifié", "err"); return; }
-      const r = await fetch(buildApiUrl(`/api/sessions/${id}`), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(buildApiUrl(`/api/sessions/${id}`), { method: "DELETE", headers: authHeaders(false) });
       if (r.ok) { showToast("Session supprimée"); setActionSheetSession(null); await fetchSessions(); }
       else showToast(`Erreur ${r.status}`, "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -738,10 +745,9 @@ export default function AdminDashboard() {
     }
     setSubmittingSession(true);
     try {
-      const token = localStorage.getItem("token");
       const r = await fetch(buildApiUrl("/api/sessions"), {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
         body: JSON.stringify({ formationId: parseInt(sessionFormData.formationId), startDate: new Date(sessionFormData.startDate).toISOString(), endDate: new Date(sessionFormData.endDate).toISOString(), location: sessionFormData.location, capacity: parseInt(sessionFormData.capacity) })
       });
       if (r.ok) {
@@ -756,7 +762,7 @@ export default function AdminDashboard() {
   };
 
   const selectedCompany = odooCompanies.find((company) => company.id === selectedCompanyId) ?? null;
-  const adminTabs = selectedCompany?.type === "market"
+  const adminTabs: readonly AdminTab[] = selectedCompany?.type === "market"
     ? (["users", "articles", "brochures", "ecommerce"] as const)
     : (["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const);
   const activeProfile: UserProfile | null =
@@ -765,8 +771,18 @@ export default function AdminDashboard() {
       : selectedCompany?.type === "groupe"
         ? "TRAINING_PARTICIPANT"
         : null;
+
+  // Garde-fou : si l'onglet actif n'existe pas pour la société choisie (ex. Inscriptions en mode Market),
+  // on retombe sur « Utilisateurs » au lieu d'afficher une page sans onglet.
+  useEffect(() => {
+    if (!tabStateReady || !selectedCompany) return;
+    if (!adminTabs.includes(activeTab)) handleSetActiveTab("users");
+  }, [selectedCompany?.type, activeTab, tabStateReady]);
+
   const filteredUsers = users.filter(u => {
-    const ms = u.email.toLowerCase().includes(searchQuery.toLowerCase()) || `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const fullName = `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim().toLowerCase();
+    const ms = u.email.toLowerCase().includes(q) || fullName.includes(q);
     const mr = filterRole === "all" || u.role === filterRole;
     const ma = filterActive === "all" || (filterActive === "active" ? u.active : !u.active);
     const mp =
@@ -860,14 +876,14 @@ export default function AdminDashboard() {
     if (!articleFormData.title || !articleFormData.excerpt || !articleFormData.content) { setArticleError("Champs obligatoires manquants"); return; }
     setSubmittingArticle(true);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch("/api/articles", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token || ""}` }, body: JSON.stringify({ ...articleFormData, author: `${currentUser?.firstName} ${currentUser?.lastName}` }) });
+      const authorName = `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim() || currentUser?.email || "";
+      const r = await fetch("/api/articles", { method: "POST", headers: authHeaders(), body: JSON.stringify({ ...articleFormData, author: articleFormData.author || authorName }) });
       const d = await r.json();
       if (r.ok) {
         setArticleSuccess("Article créé!");
         setArticleFormData({ title: "", category: "Articles techniques", excerpt: "", content: "", image: "", author: "" });
         setShowArticleForm(false);
-        const newArticle: Article = { id: d.data?.id || Date.now(), title: articleFormData.title, category: articleFormData.category, excerpt: articleFormData.excerpt, content: articleFormData.content, image: articleFormData.image, author: `${currentUser?.firstName} ${currentUser?.lastName}`, published: false, createdAt: new Date().toISOString() };
+        const newArticle: Article = { id: d.data?.id || Date.now(), title: articleFormData.title, category: articleFormData.category, excerpt: articleFormData.excerpt, content: articleFormData.content, image: articleFormData.image, author: articleFormData.author || authorName, published: false, createdAt: new Date().toISOString() };
         setArticles([newArticle, ...articles]);
         setTimeout(() => fetchArticles(), 1000);
         setTimeout(() => setArticleSuccess(""), 3000);
@@ -879,8 +895,7 @@ export default function AdminDashboard() {
   const handlePublishArticle = async (id: number, current: boolean) => {
     setActionSheetArticle(null);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl(`/api/articles/${id}`), { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token || ""}` }, body: JSON.stringify({ published: !current }) });
+      const r = await fetch(buildApiUrl(`/api/articles/${id}`), { method: "PUT", headers: authHeaders(), body: JSON.stringify({ published: !current }) });
       if (r.ok) { showToast(!current ? "Article publié" : "Article dépublié"); await fetchArticles(); }
       else showToast("Erreur", "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -889,8 +904,7 @@ export default function AdminDashboard() {
   const handleDeleteArticle = async (id: number) => {
     setActionSheetArticle(null);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl(`/api/articles/${id}`), { method: "DELETE", headers: { Authorization: `Bearer ${token || ""}` } });
+      const r = await fetch(buildApiUrl(`/api/articles/${id}`), { method: "DELETE", headers: authHeaders(false) });
       if (r.ok) { showToast("Article supprimé"); await fetchArticles(); }
       else showToast("Erreur", "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -921,6 +935,7 @@ export default function AdminDashboard() {
       } catch (err) { setBrochureError("Erreur: " + (err as Error).message); }
       finally { setSubmittingBrochure(false); }
     };
+    reader.onerror = () => { setBrochureError("Impossible de lire le fichier"); setSubmittingBrochure(false); };
     reader.readAsDataURL(brochureFile);
   };
 
@@ -943,8 +958,8 @@ export default function AdminDashboard() {
   };
 
   if (loading || !currentUser) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "#f5f4f0" }}>
-      <div style={{ width: 28, height: 28, border: "2px solid rgba(30,64,175,0.12)", borderTopColor: "#1e40af", borderRadius: "50%", animation: "admin-spin 0.7s linear infinite" }} />
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "#f6f5f7" }}>
+      <div className="spinner" />
     </div>
   );
 
@@ -970,7 +985,7 @@ export default function AdminDashboard() {
     setMarketStats(null);
     setMarketStatsError("");
     if (company.type === "market" && (activeTab === "inscriptions" || activeTab === "sessions")) {
-      setActiveTab("users");
+      handleSetActiveTab("users");
     }
     setCompanyPickerSource(null);
   };
@@ -1011,7 +1026,11 @@ export default function AdminDashboard() {
       <Head>
         <title>Admin Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
+        <meta name="color-scheme" content="light" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Toast */}
@@ -1035,7 +1054,6 @@ export default function AdminDashboard() {
         className={`mob-menu${navOpen ? " open" : ""}`}
         aria-label="Navigation mobile"
         aria-hidden={!navOpen}
-        inert={!navOpen}
       >
         <div className="mob-menu-user">
           <div className="mob-menu-avatar">{initials}</div>
@@ -1131,14 +1149,14 @@ export default function AdminDashboard() {
 
           <div className="sidebar-footer">
             <button className="btn-logout-new" onClick={handleLogout}>
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               Déconnexion
             </button>
           </div>
         </aside>
 
         <div className="admin-main">
-          {/* Mobile topbar */}
+          {/* Topbar */}
           <header className="mob-topbar">
             <div className="company-logo-anchor">
               <button
@@ -1159,7 +1177,6 @@ export default function AdminDashboard() {
               {renderCompanyPicker("topbar")}
             </div>
             <div className="mob-topbar-right">
-              <PortalThemeToggle />
               <a href="/" className="admin-topbar-back admin-topbar-home" aria-label="Accueil du site">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg>
                 <span>Accueil</span>
@@ -1214,7 +1231,7 @@ export default function AdminDashboard() {
               <div className="search-box">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input placeholder="Chercher par email ou nom…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                {searchQuery && <button onClick={() => setSearchQuery("")} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--steel)",fontSize:16,lineHeight:1,padding:"0 2px" }}>✕</button>}
+                {searchQuery && <button onClick={() => setSearchQuery("")} aria-label="Effacer la recherche" style={{ background:"none",border:"none",cursor:"pointer",color:"var(--steel)",fontSize:18,lineHeight:1,padding:"0 2px" }}>✕</button>}
               </div>
 
               <div className="filter-row">
@@ -1265,7 +1282,7 @@ export default function AdminDashboard() {
                         <tbody>
                           {filteredUsers.map(u => (
                             <tr key={u.id}>
-                              <td style={{ fontWeight:400 }}>{u.firstName} {u.lastName}</td>
+                              <td style={{ fontWeight:600 }}>{u.firstName} {u.lastName}</td>
                               <td>{u.email}</td>
                               <td>
                                 <span className={`badge badge-${u.role}`}>{u.role}</span>
@@ -1279,7 +1296,7 @@ export default function AdminDashboard() {
                                   : <span className="badge">À classer</span>}
                               </td>
                               <td>
-                                <span style={{ display:"inline-flex",alignItems:"center",gap:"0.4rem",fontSize:12,color:u.active ? "var(--success)" : "var(--danger)" }}>
+                                <span style={{ display:"inline-flex",alignItems:"center",gap:"0.4rem",fontSize:"0.9rem",fontWeight:600,color:u.active ? "var(--success)" : "var(--danger)" }}>
                                   <span className={`status-dot ${u.active ? "active" : "inactive"}`}/>
                                   {u.active ? "Actif" : "Inactif"}
                                 </span>
@@ -1299,7 +1316,7 @@ export default function AdminDashboard() {
                     </div>}
               </div>
 
-              <button className="fab" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",password:"",employeeRole:"",profiles:[] }); setSelectedUser(null); setShowModal(true); }}>
+              <button className="fab" aria-label="Ajouter un utilisateur" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",password:"",employeeRole:"",profiles:[] }); setSelectedUser(null); setShowModal(true); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </>)}
@@ -1318,7 +1335,7 @@ export default function AdminDashboard() {
                 <div className="form-panel">
                   <div className="form-panel-header">
                     <span className="form-panel-title">Nouvel article</span>
-                    <button className="form-panel-close" onClick={() => setShowArticleForm(false)}>✕</button>
+                    <button className="form-panel-close" aria-label="Fermer" onClick={() => setShowArticleForm(false)}>✕</button>
                   </div>
                   {articleError && <div className="alert alert-err">⚠ {articleError}</div>}
                   <form onSubmit={handleSubmitArticle}>
@@ -1382,7 +1399,7 @@ export default function AdminDashboard() {
               ))}
 
               {!showArticleForm && (
-                <button className="fab" onClick={() => { setShowArticleForm(true); setArticleError(""); setArticleSuccess(""); }}>
+                <button className="fab" aria-label="Nouvel article" onClick={() => { setShowArticleForm(true); setArticleError(""); setArticleSuccess(""); }}>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
               )}
@@ -1402,7 +1419,7 @@ export default function AdminDashboard() {
                 <div className="form-panel">
                   <div className="form-panel-header">
                     <span className="form-panel-title">Uploader une brochure</span>
-                    <button className="form-panel-close" onClick={() => setShowBrochureForm(false)}>✕</button>
+                    <button className="form-panel-close" aria-label="Fermer" onClick={() => setShowBrochureForm(false)}>✕</button>
                   </div>
                   {brochureError && <div className="alert alert-err">⚠ {brochureError}</div>}
                   <form onSubmit={handleSubmitBrochure}>
@@ -1417,7 +1434,7 @@ export default function AdminDashboard() {
                     <div className="form-group">
                       <label className="form-label">Fichier PDF ou Image *</label>
                       <input type="file" className="form-input" accept=".pdf,.png,.jpg,.jpeg,.gif" onChange={e => setBrochureFile(e.target.files?.[0] || null)} required />
-                      {brochureFile && <p style={{ fontSize:11,color:"var(--steel)",marginTop:6 }}>{brochureFile.name} — {(brochureFile.size/1024/1024).toFixed(2)} MB</p>}
+                      {brochureFile && <p style={{ fontSize:"0.85rem",color:"var(--steel)",marginTop:6 }}>{brochureFile.name} — {(brochureFile.size/1024/1024).toFixed(2)} MB</p>}
                     </div>
                     <div className="modal-actions">
                       <button type="button" className="btn-cancel-fill" onClick={() => setShowBrochureForm(false)}>Annuler</button>
@@ -1446,7 +1463,7 @@ export default function AdminDashboard() {
               ))}
 
               {!showBrochureForm && (
-                <button className="fab" onClick={() => { setShowBrochureForm(true); setBrochureError(""); setBrochureSuccess(""); }}>
+                <button className="fab" aria-label="Uploader une brochure" onClick={() => { setShowBrochureForm(true); setBrochureError(""); setBrochureSuccess(""); }}>
                   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
               )}
@@ -1460,10 +1477,9 @@ export default function AdminDashboard() {
                 <p className="admin-sub">Acceptez ou rejetez les demandes d'inscription</p>
               </div>
 
-              {/* CORRECTIF : classe alert-warn au lieu des styles inline figés */}
               {inscriptionsPending > 0 && (
                 <div className="alert alert-warn">
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink:0,marginTop:1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink:0,marginTop:2 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                   {inscriptionsPending} demande{inscriptionsPending > 1 ? "s" : ""} en attente de traitement
                 </div>
               )}
@@ -1479,7 +1495,6 @@ export default function AdminDashboard() {
 
               {renderContentList(loadingInscriptions, inscriptions, "◎", "Aucune inscription", (inscription) => {
                 const accentClass = inscription.status === "confirme" ? "insc-confirme" : inscription.status === "annule" ? "insc-annule" : "insc-attente";
-                // CORRECTIF : classe pub-wait pour le badge "En attente"
                 const statusClass =
                   inscription.status === "confirme"
                     ? "pub-on"
@@ -1497,7 +1512,7 @@ export default function AdminDashboard() {
                       <span className="content-date">{inscription.session?.location || "Lieu"}</span>
                       <span className="content-date">{new Date(inscription.session?.startDate || inscription.createdAt).toLocaleDateString("fr-FR")}</span>
                     </div>
-                    <div style={{ fontSize:11,color:"var(--steel)" }}>{inscription.email}</div>
+                    <div style={{ fontSize:"0.9rem",color:"var(--steel)" }}>{inscription.email}</div>
                   </div>
                 );
               })}
@@ -1523,9 +1538,9 @@ export default function AdminDashboard() {
 
               {showSessionForm && (
                 <div className="section-form">
-                  <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.375rem" }}>
+                  <div className="form-panel-header">
                     <span className="section-form-title">Nouvelle session</span>
-                    <button className="form-panel-close" onClick={() => setShowSessionForm(false)}>✕</button>
+                    <button className="form-panel-close" aria-label="Fermer" onClick={() => setShowSessionForm(false)}>✕</button>
                   </div>
                   <form onSubmit={handleCreateSession}>
                     <div className="form-row-grid">
@@ -1569,7 +1584,7 @@ export default function AdminDashboard() {
                 ? <div className="empty"><div className="spinner"/></div>
                 : sessions.length === 0
                   ? <div className="empty"><div className="empty-icon">📅</div><p className="empty-text">Aucune session créée</p></div>
-                  : <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"0.875rem" }}>
+                  : <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,19rem),1fr))",gap:"0.9rem" }}>
                       {sessions.map(session => {
                         const formation = formations.find(f => f.id === session.formationId);
                         const fillPct = session.capacity > 0 ? Math.round(((session.capacity - session.available) / session.capacity) * 100) : 0;
@@ -1577,14 +1592,13 @@ export default function AdminDashboard() {
                           <div key={session.id} className="session-card" onClick={() => setActionSheetSession(session)}>
                             <div className="session-card-name">{formation?.name || "Formation"}</div>
                             <div className="session-card-row">
-                              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                               {session.location}
                             </div>
                             <div className="session-card-row">
-                              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                              {new Date(session.startDate).toLocaleDateString('fr-FR')} — {new Date(session.endDate).toLocaleDateString('fr-FR')}
+                              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                              {new Date(session.startDate).toLocaleDateString("fr-FR")} — {new Date(session.endDate).toLocaleDateString("fr-FR")}
                             </div>
-                            {/* CORRECTIF : classe session-status adaptative */}
                             {session.status && (
                               <div className={getSessionStatusClass(session.status)}>
                                 {session.status}
@@ -1592,7 +1606,7 @@ export default function AdminDashboard() {
                             )}
                             <div className="session-capacity">
                               <div className="capacity-bar"><div className="capacity-fill" style={{ width:`${fillPct}%` }}/></div>
-                              <span style={{ fontSize:10,color:"var(--steel)",flexShrink:0 }}>{session.available}/{session.capacity}</span>
+                              <span style={{ fontSize:"0.8rem",fontWeight:600,color:"var(--steel)",flexShrink:0 }}>{session.available}/{session.capacity}</span>
                             </div>
                           </div>
                         );
@@ -1760,10 +1774,7 @@ export default function AdminDashboard() {
           { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: 0 },
           { id:"ecommerce", label:selectedCompany?.type === "groupe" ? "Ventes" : "Market", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>, badge: 0 },
         ] as const)
-          .filter((tab) =>
-            selectedCompany?.type !== "market" ||
-            (tab.id !== "inscriptions" && tab.id !== "sessions")
-          )
+          .filter((tab) => (adminTabs as readonly string[]).includes(tab.id))
           .map(t => (
           <button
             type="button"
@@ -1802,7 +1813,7 @@ export default function AdminDashboard() {
                 : <><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>Activer le compte</>}
             </button>
             <div className="sheet-divider"/>
-            <button className="sheet-btn danger" onClick={() => { if (confirm(`Supprimer ${actionSheetUser.firstName} ${actionSheetUser.lastName} ?`)) handleDeleteUser(actionSheetUser.id); }}>
+            <button className="sheet-btn danger" onClick={() => { if (confirm(`Supprimer ${actionSheetUser.firstName ?? ""} ${actionSheetUser.lastName ?? ""} ?`)) handleDeleteUser(actionSheetUser.id); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               Supprimer l'utilisateur
             </button>
@@ -1867,18 +1878,17 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetInscription.formation?.name} · {new Date(actionSheetInscription.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            {/* CORRECTIF : classe sheet-info adaptative au thème */}
             <div className="sheet-info">
               <div style={{ marginBottom:"0.25rem" }}><strong>Email</strong> — {actionSheetInscription.email}</div>
               <div style={{ marginBottom:"0.25rem" }}><strong>Tél.</strong> — {actionSheetInscription.phone}</div>
-              <div style={{ marginBottom:"0.25rem" }}><strong>Statut</strong> — <span style={{ textTransform:"capitalize" }}>{actionSheetInscription.status}</span></div>
-              <div><strong>Session</strong> — {actionSheetInscription.session?.location} · {new Date(actionSheetInscription.session?.startDate || "").toLocaleDateString("fr-FR")}</div>
+              <div style={{ marginBottom:"0.25rem" }}><strong>Statut</strong> — <span style={{ textTransform:"capitalize" }}>{actionSheetInscription.status.replace(/_/g, " ")}</span></div>
+              <div><strong>Session</strong> — {actionSheetInscription.session?.location} · {actionSheetInscription.session?.startDate ? new Date(actionSheetInscription.session.startDate).toLocaleDateString("fr-FR") : "—"}</div>
             </div>
             <div className="sheet-divider"/>
             {actionSheetInscription.status !== "annule" && renderInscriptionActions(actionSheetInscription)}
             {(actionSheetInscription.status === "annule" || actionSheetInscription.status === "liste_attente" || actionSheetInscription.status === "demande_en_attente") && (<>
               <div className="sheet-divider"/>
-              <button className="sheet-btn danger" onClick={() => { if (confirm('Supprimer cette inscription ?')) handleDeleteInscription(actionSheetInscription.id); }}>
+              <button className="sheet-btn danger" onClick={() => { if (confirm("Supprimer cette inscription ?")) handleDeleteInscription(actionSheetInscription.id); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 Supprimer
               </button>
@@ -1894,18 +1904,17 @@ export default function AdminDashboard() {
         <div className="sheet">
           <div className="sheet-handle"/>
           <div className="sheet-head">
-            <div className="sheet-title">{formations.find(f => f.id === actionSheetSession.formationId)?.name || 'Session'}</div>
-            <div className="sheet-sub">{new Date(actionSheetSession.startDate).toLocaleDateString('fr-FR')} · {actionSheetSession.location}</div>
+            <div className="sheet-title">{formations.find(f => f.id === actionSheetSession.formationId)?.name || "Session"}</div>
+            <div className="sheet-sub">{new Date(actionSheetSession.startDate).toLocaleDateString("fr-FR")} · {actionSheetSession.location}</div>
           </div>
           <div className="sheet-actions">
-            {/* CORRECTIF : classe sheet-info adaptative au thème */}
             <div className="sheet-info">
               <div style={{ marginBottom:"0.25rem" }}><strong>Lieu</strong> — {actionSheetSession.location}</div>
               <div style={{ marginBottom:"0.25rem" }}><strong>Capacité</strong> — {actionSheetSession.capacity} places</div>
               <div><strong>Disponibles</strong> — {actionSheetSession.available} places</div>
             </div>
             <div className="sheet-divider"/>
-            <button className="sheet-btn danger" onClick={() => { if (confirm('Supprimer cette session ?')) handleDeleteSession(actionSheetSession.id); }}>
+            <button className="sheet-btn danger" onClick={() => { if (confirm("Supprimer cette session ?")) handleDeleteSession(actionSheetSession.id); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               Supprimer la session
             </button>
@@ -1938,7 +1947,7 @@ export default function AdminDashboard() {
               <label className="form-label" htmlFor="employee-role">Accès employé</label>
               <select
                 id="employee-role"
-                className="form-input"
+                className="form-select"
                 value={formData.employeeRole}
                 onChange={e => setFormData({
                   ...formData,
