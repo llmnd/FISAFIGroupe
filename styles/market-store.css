@@ -52,7 +52,7 @@ body:has(.market-page) { padding-top: var(--header-h); }
 
 /* ─────────── 2. Accessibilité ─────────── */
 .market-sr {
-  position: absolute;
+  position: fixed;
   width: 1px;
   height: 1px;
   padding: 0;
