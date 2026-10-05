@@ -26,6 +26,31 @@ interface User {
   profiles: Array<"MARKET_CUSTOMER" | "TRAINING_PARTICIPANT">;
 }
 
+function parseDashboardUser(value: unknown): User | null {
+  if (!value || typeof value !== "object") return null;
+  if (!("id" in value) || typeof value.id !== "string") return null;
+  if (!("email" in value) || typeof value.email !== "string") return null;
+  if (!("role" in value) || (value.role !== "user" && value.role !== "admin" && value.role !== "moderator")) {
+    return null;
+  }
+  const profiles = "profiles" in value ? value.profiles : [];
+  if (
+    !Array.isArray(profiles) ||
+    !profiles.every((profile) => profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT")
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    email: value.email,
+    role: value.role,
+    firstName: "firstName" in value && typeof value.firstName === "string" ? value.firstName : undefined,
+    lastName: "lastName" in value && typeof value.lastName === "string" ? value.lastName : undefined,
+    profiles,
+  };
+}
+
 interface SessionFormation {
   id: number;
   formationId: number;
@@ -570,17 +595,11 @@ export default function DashboardPage() {
         }
         if (!response.ok) throw new Error(`Session validation returned HTTP ${response.status}.`);
         const payload: unknown = await response.json();
-        if (
-          !payload || typeof payload !== "object" || !("data" in payload) ||
-          !payload.data || typeof payload.data !== "object" ||
-          !("id" in payload.data) || typeof payload.data.id !== "string" ||
-          !("email" in payload.data) || typeof payload.data.email !== "string" ||
-          !("role" in payload.data) || typeof payload.data.role !== "string"
-          || !("profiles" in payload.data) || !Array.isArray(payload.data.profiles)
-          || !payload.data.profiles.every((profile) => profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT")
-        ) throw new Error("Session validation returned invalid account data.");
-
-        const freshUser = payload.data as User;
+        if (!payload || typeof payload !== "object" || !("data" in payload)) {
+          throw new Error("Session validation returned invalid account data.");
+        }
+        const freshUser = parseDashboardUser(payload.data);
+        if (!freshUser) throw new Error("Session validation returned invalid account data.");
         setUser(freshUser);
         setActiveTab(freshUser.role === "admin" ? "inscriptions" : "home");
         localStorage.setItem("user", JSON.stringify(freshUser));
