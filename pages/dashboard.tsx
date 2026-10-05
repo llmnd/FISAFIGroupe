@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
 import UserDashboardSkeleton from "@/components/UserDashboardSkeleton";
 import {
   getMarketDepartmentId,
@@ -198,6 +197,40 @@ function getInvoicePaymentLabel(status: string): string {
   return labels[status] ?? "Statut indisponible";
 }
 
+function getInscriptionStatusLabel(status: InscriptionStatus): string {
+  const labels: Record<InscriptionStatus, string> = {
+    confirme: "Confirmée",
+    liste_attente: "Liste d’attente",
+    demande_en_attente: "En attente",
+    annule: "Annulée",
+  };
+  return labels[status] ?? status;
+}
+
+function getInscriptionBadgeModifier(status: InscriptionStatus): string {
+  if (status === "confirme") return "article-badge--ok";
+  if (status === "annule") return "article-badge--off";
+  return "article-badge--wait";
+}
+
+/**
+ * En-têtes d'authentification : la session passe par cookie, le Bearer n'est
+ * ajouté que si un token existe. Un « Bearer » vide pouvait être refusé (401)
+ * et déconnecter l'utilisateur.
+ */
+function authHeaders(json = true): HeadersInit {
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {
+    token = null;
+  }
+  return {
+    ...(json ? { "Content-Type": "application/json" } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 const numberFmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 const formatNumber = (value: number) => numberFmt.format(value);
 
@@ -252,11 +285,16 @@ export default function DashboardPage() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSidebarOpen(false);
     };
+    const closeOnDesktopResize = () => {
+      if (window.matchMedia("(min-width: 900px)").matches) setSidebarOpen(false);
+    };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", closeOnDesktopResize, { passive: true });
     return () => {
       window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", closeOnDesktopResize);
       document.body.style.overflow = previousOverflow;
     };
   }, [sidebarOpen]);
@@ -336,10 +374,9 @@ export default function DashboardPage() {
     setLoadingMarketQuotations(true);
     setMarketQuotationError("");
     try {
-      const token = localStorage.getItem("token");
       const response = await authenticatedFetch("/api/market/orders", {
         cache: "no-store",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: authHeaders(false),
       });
       const payload: unknown = await response.json();
       if (!response.ok) {
@@ -587,10 +624,9 @@ export default function DashboardPage() {
     setResendingVerification(true);
     setVerificationMessage("");
     try {
-      const token = localStorage.getItem("token");
       const response = await authenticatedFetch("/api/auth/resend-verification", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: authHeaders(false),
       });
       const payload: unknown = await response.json();
       if (!response.ok) {
@@ -812,10 +848,9 @@ export default function DashboardPage() {
   const fetchAdminInscriptions = async () => {
     setLoadingAdminInscriptions(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await authenticatedFetch("/api/inscriptions-manage", {
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token || ""}` },
+        headers: authHeaders(false),
       });
       if (res.ok) {
         const data = await res.json();
@@ -835,17 +870,14 @@ export default function DashboardPage() {
     id: number,
     action: "accept" | "reject"
   ) => {
-    if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) {
+    const verb = action === "accept" ? "accepter" : "rejeter";
+    if (!confirm(`Confirmer : ${verb} l'inscription n°${id} ?`)) {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
       const res = await authenticatedFetch("/api/inscriptions-manage", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
-        },
+        headers: authHeaders(),
         body: JSON.stringify({ id, action }),
       });
       if (res.ok) {
@@ -869,10 +901,9 @@ export default function DashboardPage() {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
       const res = await authenticatedFetch(`/api/inscriptions-manage/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token || ""}` },
+        headers: authHeaders(false),
       });
       if (res.ok) {
         setSuccess("Inscription supprimée");
@@ -909,7 +940,6 @@ export default function DashboardPage() {
     setLoadingInscriptions(true);
     setInscriptionFetchError("");
     try {
-      const token = localStorage.getItem("token");
       if (!user?.email) {
         setUserInscriptions([]);
         setLoadingInscriptions(false);
@@ -918,7 +948,7 @@ export default function DashboardPage() {
 
       const res = await authenticatedFetch("/api/my-inscriptions", {
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token || ""}` },
+        headers: authHeaders(false),
       });
 
       if (res.ok) {
@@ -975,7 +1005,7 @@ export default function DashboardPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setInscriptionSuccess(`Inscription confirmée! ${data.message ?? ""}`);
+        setInscriptionSuccess(`Inscription confirmée ! ${data.message ?? ""}`.trim());
         setUser((currentUser) => {
           if (!currentUser || currentUser.profiles.includes("TRAINING_PARTICIPANT")) {
             return currentUser;
@@ -1014,10 +1044,9 @@ export default function DashboardPage() {
   const handleCancelInscription = async (inscriptionId: number) => {
     if (!confirm("Confirmer l'annulation de cette inscription ?")) return;
     try {
-      const token = localStorage.getItem("token");
       const res = await authenticatedFetch(`/api/inscriptions/${inscriptionId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token || ""}` },
+        headers: authHeaders(false),
       });
 
       if (res.ok) {
@@ -1079,7 +1108,7 @@ export default function DashboardPage() {
       });
 
       if (res.ok) {
-        setSuccess(!currentPublished ? "Article publié!" : "Article dépublié");
+        setSuccess(!currentPublished ? "Article publié !" : "Article dépublié");
         await fetchArticles();
         setTimeout(() => setSuccess(""), 3000);
       } else {
@@ -1094,7 +1123,7 @@ export default function DashboardPage() {
   };
 
   const handleDeleteArticle = async (articleId: number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet article?")) return;
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
 
     try {
       const res = await authenticatedFetch(`/api/articles/${articleId}`, {
@@ -1143,13 +1172,13 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          author: authorName,
+          author: formData.author || authorName,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSuccess("Article créé avec succès!");
+        setSuccess("Article créé avec succès !");
         setFormData({
           title: "",
           category: "Articles techniques",
@@ -1272,6 +1301,7 @@ export default function DashboardPage() {
       <Head>
         <title>Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
+        <meta name="color-scheme" content="light" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -1311,13 +1341,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <nav className="sidebar-nav">
+          <nav className="sidebar-nav" aria-label="Navigation du compte">
             {tabs
               .filter((t) => !t.admin)
               .map((tab) => (
                 <button
                   key={tab.id}
                   className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
                   onClick={() => handleTab(tab.id)}
                 >
                   <span className="sidebar-tab-icon" aria-hidden="true">
@@ -1334,6 +1365,7 @@ export default function DashboardPage() {
                     <button
                       key={tab.id}
                       className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
+                      aria-current={activeTab === tab.id ? "page" : undefined}
                       onClick={() => handleTab(tab.id)}
                     >
                       <span className="sidebar-tab-icon" aria-hidden="true">
@@ -1347,9 +1379,8 @@ export default function DashboardPage() {
           </nav>
 
           <div className="sidebar-foot">
-            <PortalThemeToggle />
             <button className="sidebar-logout" onClick={handleLogout}>
-              <span aria-hidden="true">⊗</span> &nbsp;Déconnexion
+              <span aria-hidden="true">⊗</span> Déconnexion
             </button>
           </div>
         </aside>
@@ -1409,57 +1440,76 @@ export default function DashboardPage() {
                     : "Consultez votre compte et activez les espaces FiSAFi qui vous concernent."}
                 </p>
 
-                <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
-                  {hasMarketProfile && (
+                {!hasMarketProfile && !hasTrainingProfile && (
+                  <div className="dashboard-home-empty">
+                    <strong>Aucun espace activé</strong>
+                    <p>
+                      Activez FiSAFi Market ou FiSAFi Groupe pour voir vos devis,
+                      commandes, factures et inscriptions ici.
+                    </p>
                     <button
-                      className="dashboard-home-summary-card"
                       type="button"
-                      onClick={() => handleTab("market-orders")}
+                      className="btn-submit"
+                      onClick={() => handleTab("account")}
                     >
-                      <span className="dashboard-home-summary-label">Devis en cours</span>
-                      <strong className="dashboard-home-summary-value">
-                        {loadingMarketQuotations ? "…" : pendingQuotationCount}
-                      </strong>
-                      <span className="dashboard-home-summary-link">
-                        Consulter mes devis <span aria-hidden="true">→</span>
-                      </span>
+                      Choisir mes espaces
                     </button>
-                  )}
-                  {hasMarketProfile && (
-                    <button
-                      className="dashboard-home-summary-card dashboard-home-summary-card--teal"
-                      type="button"
-                      onClick={() => handleTab("market-orders")}
-                    >
-                      <span className="dashboard-home-summary-label">
-                        Commandes confirmées
-                      </span>
-                      <strong className="dashboard-home-summary-value">
-                        {loadingMarketQuotations ? "…" : confirmedOrderCount}
-                      </strong>
-                      <span className="dashboard-home-summary-link">
-                        Suivre mes commandes <span aria-hidden="true">→</span>
-                      </span>
-                    </button>
-                  )}
-                  {hasTrainingProfile && (
-                    <button
-                      className="dashboard-home-summary-card dashboard-home-summary-card--green"
-                      type="button"
-                      onClick={() => handleTab("inscriptions")}
-                    >
-                      <span className="dashboard-home-summary-label">
-                        Mes inscriptions
-                      </span>
-                      <strong className="dashboard-home-summary-value">
-                        {loadingInscriptions ? "…" : userInscriptions.length}
-                      </strong>
-                      <span className="dashboard-home-summary-link">
-                        Voir mes inscriptions <span aria-hidden="true">→</span>
-                      </span>
-                    </button>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {(hasMarketProfile || hasTrainingProfile) && (
+                  <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
+                    {hasMarketProfile && (
+                      <button
+                        className="dashboard-home-summary-card"
+                        type="button"
+                        onClick={() => handleTab("market-orders")}
+                      >
+                        <span className="dashboard-home-summary-label">Devis en cours</span>
+                        <strong className="dashboard-home-summary-value">
+                          {loadingMarketQuotations ? "…" : pendingQuotationCount}
+                        </strong>
+                        <span className="dashboard-home-summary-link">
+                          Consulter mes devis <span aria-hidden="true">→</span>
+                        </span>
+                      </button>
+                    )}
+                    {hasMarketProfile && (
+                      <button
+                        className="dashboard-home-summary-card dashboard-home-summary-card--teal"
+                        type="button"
+                        onClick={() => handleTab("market-orders")}
+                      >
+                        <span className="dashboard-home-summary-label">
+                          Commandes confirmées
+                        </span>
+                        <strong className="dashboard-home-summary-value">
+                          {loadingMarketQuotations ? "…" : confirmedOrderCount}
+                        </strong>
+                        <span className="dashboard-home-summary-link">
+                          Suivre mes commandes <span aria-hidden="true">→</span>
+                        </span>
+                      </button>
+                    )}
+                    {hasTrainingProfile && (
+                      <button
+                        className="dashboard-home-summary-card dashboard-home-summary-card--green"
+                        type="button"
+                        onClick={() => handleTab("inscriptions")}
+                      >
+                        <span className="dashboard-home-summary-label">
+                          Mes inscriptions
+                        </span>
+                        <strong className="dashboard-home-summary-value">
+                          {loadingInscriptions ? "…" : userInscriptions.length}
+                        </strong>
+                        <span className="dashboard-home-summary-link">
+                          Voir mes inscriptions <span aria-hidden="true">→</span>
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="dashboard-home-section-heading">
                   <div>
@@ -1532,167 +1582,169 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                <div className="dashboard-home-activity-heading">
-                  <div>
-                    <p className="dashboard-home-section-kicker">Votre activité</p>
-                    <h2>Les dernières mises à jour</h2>
-                  </div>
-                  {(hasMarketProfile || hasTrainingProfile) && (
-                    <button
-                      type="button"
-                      className="dashboard-home-refresh"
-                      onClick={() => {
-                        if (hasMarketProfile) {
-                          void fetchMarketQuotations();
-                          void fetchMarketInvoices();
-                        }
-                        if (hasTrainingProfile) {
-                          void fetchUserInscriptions();
-                          void fetchGroupInvoices();
-                        }
-                      }}
-                      disabled={
-                        (hasMarketProfile &&
-                          (loadingMarketQuotations || loadingMarketInvoices)) ||
-                        (hasTrainingProfile &&
-                          (loadingInscriptions || loadingGroupInvoices))
-                      }
-                    >
-                      Actualiser
-                    </button>
-                  )}
-                </div>
-
-                <div className="dashboard-home-activity">
-                  {hasMarketProfile && (
-                    <section
-                      className="dashboard-home-activity-card"
-                      aria-labelledby="dashboard-home-quotes-title"
-                    >
-                      <div className="dashboard-home-activity-title-row">
-                        <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
-                        <button
-                          type="button"
-                          className="dashboard-home-view-all"
-                          onClick={() => handleTab("market-orders")}
-                        >
-                          Tout voir <span aria-hidden="true">→</span>
-                        </button>
+                {(hasMarketProfile || hasTrainingProfile) && (
+                  <>
+                    <div className="dashboard-home-activity-heading">
+                      <div>
+                        <p className="dashboard-home-section-kicker">Votre activité</p>
+                        <h2>Les dernières mises à jour</h2>
                       </div>
-                      {loadingMarketQuotations ? (
-                        <p className="dashboard-home-activity-message" role="status">
-                          Chargement de vos devis…
-                        </p>
-                      ) : marketQuotationError ? (
-                        <p
-                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
-                          role="alert"
-                        >
-                          {marketQuotationError}
-                        </p>
-                      ) : marketInvoiceError ? (
-                        <p
-                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
-                          role="alert"
-                        >
-                          {marketInvoiceError}
-                        </p>
-                      ) : recentMarketQuotations.length === 0 ? (
-                        <p className="dashboard-home-activity-message">
-                          Aucun devis ou commande pour le moment.
-                        </p>
-                      ) : (
-                        <ul className="dashboard-home-activity-list">
-                          {recentMarketQuotations.map((quotation, idx) => (
-                            <li
-                              key={quotation.id}
-                              className="dashboard-home-activity-item"
-                              style={{ animationDelay: `${idx * 40}ms` }}
-                            >
-                              <span
-                                className="dashboard-home-activity-mark"
-                                aria-hidden="true"
-                              >
-                                ▱
-                              </span>
-                              <span className="dashboard-home-activity-copy">
-                                <strong>{quotation.reference}</strong>
-                                <span>
-                                  {new Date(quotation.date).toLocaleDateString("fr-FR")}
-                                </span>
-                              </span>
-                              <span className="dashboard-home-activity-status">
-                                {quotation.statusLabel}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </section>
-                  )}
+                      <button
+                        type="button"
+                        className="dashboard-home-refresh"
+                        onClick={() => {
+                          if (hasMarketProfile) {
+                            void fetchMarketQuotations();
+                            void fetchMarketInvoices();
+                          }
+                          if (hasTrainingProfile) {
+                            void fetchUserInscriptions();
+                            void fetchGroupInvoices();
+                          }
+                        }}
+                        disabled={
+                          (hasMarketProfile &&
+                            (loadingMarketQuotations || loadingMarketInvoices)) ||
+                          (hasTrainingProfile &&
+                            (loadingInscriptions || loadingGroupInvoices))
+                        }
+                      >
+                        Actualiser
+                      </button>
+                    </div>
 
-                  {hasTrainingProfile && (
-                    <section
-                      className="dashboard-home-activity-card"
-                      aria-labelledby="dashboard-home-inscriptions-title"
-                    >
-                      <div className="dashboard-home-activity-title-row">
-                        <h3 id="dashboard-home-inscriptions-title">Formations</h3>
-                        <button
-                          type="button"
-                          className="dashboard-home-view-all"
-                          onClick={() => handleTab("inscriptions")}
+                    <div className="dashboard-home-activity">
+                      {hasMarketProfile && (
+                        <section
+                          className="dashboard-home-activity-card"
+                          aria-labelledby="dashboard-home-quotes-title"
                         >
-                          Tout voir <span aria-hidden="true">→</span>
-                        </button>
-                      </div>
-                      {loadingInscriptions ? (
-                        <p className="dashboard-home-activity-message" role="status">
-                          Chargement de vos inscriptions…
-                        </p>
-                      ) : inscriptionFetchError ? (
-                        <p
-                          className="dashboard-home-activity-message dashboard-home-activity-message--error"
-                          role="alert"
-                        >
-                          {inscriptionFetchError}
-                        </p>
-                      ) : recentInscriptions.length === 0 ? (
-                        <p className="dashboard-home-activity-message">
-                          Aucune inscription récente.
-                        </p>
-                      ) : (
-                        <ul className="dashboard-home-activity-list">
-                          {recentInscriptions.map((inscription, idx) => (
-                            <li
-                              key={inscription.id}
-                              className="dashboard-home-activity-item"
-                              style={{ animationDelay: `${idx * 40}ms` }}
+                          <div className="dashboard-home-activity-title-row">
+                            <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
+                            <button
+                              type="button"
+                              className="dashboard-home-view-all"
+                              onClick={() => handleTab("market-orders")}
                             >
-                              <span
-                                className="dashboard-home-activity-mark dashboard-home-activity-mark--teal"
-                                aria-hidden="true"
-                              >
-                                ◉
-                              </span>
-                              <span className="dashboard-home-activity-copy">
-                                <strong>
-                                  {inscription.formation?.name || "Formation"}
-                                </strong>
-                                <span>
-                                  {inscription.session?.location || "Lieu à confirmer"}
-                                </span>
-                              </span>
-                              <span className="dashboard-home-activity-status">
-                                {inscription.status}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
+                              Tout voir <span aria-hidden="true">→</span>
+                            </button>
+                          </div>
+                          {loadingMarketQuotations ? (
+                            <p className="dashboard-home-activity-message" role="status">
+                              Chargement de vos devis…
+                            </p>
+                          ) : marketQuotationError ? (
+                            <p
+                              className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                              role="alert"
+                            >
+                              {marketQuotationError}
+                            </p>
+                          ) : marketInvoiceError ? (
+                            <p
+                              className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                              role="alert"
+                            >
+                              {marketInvoiceError}
+                            </p>
+                          ) : recentMarketQuotations.length === 0 ? (
+                            <p className="dashboard-home-activity-message">
+                              Aucun devis ou commande pour le moment.
+                            </p>
+                          ) : (
+                            <ul className="dashboard-home-activity-list">
+                              {recentMarketQuotations.map((quotation, idx) => (
+                                <li
+                                  key={quotation.id}
+                                  className="dashboard-home-activity-item"
+                                  style={{ animationDelay: `${idx * 40}ms` }}
+                                >
+                                  <span
+                                    className="dashboard-home-activity-mark"
+                                    aria-hidden="true"
+                                  >
+                                    ▱
+                                  </span>
+                                  <span className="dashboard-home-activity-copy">
+                                    <strong>{quotation.reference}</strong>
+                                    <span>
+                                      {new Date(quotation.date).toLocaleDateString("fr-FR")}
+                                    </span>
+                                  </span>
+                                  <span className="dashboard-home-activity-status">
+                                    {quotation.statusLabel}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </section>
                       )}
-                    </section>
-                  )}
-                </div>
+
+                      {hasTrainingProfile && (
+                        <section
+                          className="dashboard-home-activity-card"
+                          aria-labelledby="dashboard-home-inscriptions-title"
+                        >
+                          <div className="dashboard-home-activity-title-row">
+                            <h3 id="dashboard-home-inscriptions-title">Formations</h3>
+                            <button
+                              type="button"
+                              className="dashboard-home-view-all"
+                              onClick={() => handleTab("inscriptions")}
+                            >
+                              Tout voir <span aria-hidden="true">→</span>
+                            </button>
+                          </div>
+                          {loadingInscriptions ? (
+                            <p className="dashboard-home-activity-message" role="status">
+                              Chargement de vos inscriptions…
+                            </p>
+                          ) : inscriptionFetchError ? (
+                            <p
+                              className="dashboard-home-activity-message dashboard-home-activity-message--error"
+                              role="alert"
+                            >
+                              {inscriptionFetchError}
+                            </p>
+                          ) : recentInscriptions.length === 0 ? (
+                            <p className="dashboard-home-activity-message">
+                              Aucune inscription récente.
+                            </p>
+                          ) : (
+                            <ul className="dashboard-home-activity-list">
+                              {recentInscriptions.map((inscription, idx) => (
+                                <li
+                                  key={inscription.id}
+                                  className="dashboard-home-activity-item"
+                                  style={{ animationDelay: `${idx * 40}ms` }}
+                                >
+                                  <span
+                                    className="dashboard-home-activity-mark dashboard-home-activity-mark--teal"
+                                    aria-hidden="true"
+                                  >
+                                    ◉
+                                  </span>
+                                  <span className="dashboard-home-activity-copy">
+                                    <strong>
+                                      {inscription.formation?.name || "Formation"}
+                                    </strong>
+                                    <span>
+                                      {inscription.session?.location || "Lieu à confirmer"}
+                                    </span>
+                                  </span>
+                                  <span className="dashboard-home-activity-status">
+                                    {getInscriptionStatusLabel(inscription.status)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </section>
+                      )}
+                    </div>
+                  </>
+                )}
               </section>
             )}
 
@@ -1701,7 +1753,7 @@ export default function DashboardPage() {
                 <div className="page-eyebrow">Espace personnel</div>
                 <h1 className="page-title">Mes inscriptions</h1>
                 <p className="page-sub">
-                  Retrouvez toutes vos inscriptions aux formations FISAFI
+                  Retrouvez toutes vos inscriptions aux formations FiSAFi
                 </p>
                 {inscriptionError && (
                   <div className="alert alert-error" style={{ marginTop: "1rem" }}>
@@ -1713,6 +1765,12 @@ export default function DashboardPage() {
                   <div className="alert alert-success" style={{ marginTop: "1rem" }}>
                     <span className="alert-icon" aria-hidden="true">✓</span>
                     <span>{inscriptionSuccess}</span>
+                  </div>
+                )}
+                {inscriptionFetchError && !loadingInscriptions && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                    <span className="alert-icon" aria-hidden="true">⚠</span>
+                    <span>{inscriptionFetchError}</span>
                   </div>
                 )}
 
@@ -1739,7 +1797,13 @@ export default function DashboardPage() {
                             {inscription.formation?.name || "Formation"}
                           </div>
                           <div className="article-meta">
-                            <span className="article-badge">{inscription.status}</span>
+                            <span
+                              className={`article-badge ${getInscriptionBadgeModifier(
+                                inscription.status
+                              )}`}
+                            >
+                              {getInscriptionStatusLabel(inscription.status)}
+                            </span>
                             <span>
                               <span aria-hidden="true">📍</span>{" "}
                               {inscription.session?.location || "Lieu non spécifié"}
@@ -2294,7 +2358,7 @@ export default function DashboardPage() {
                             onClick={() => void handleAddProfile(profile)}
                           >
                             {enabled
-                              ? "Espace activé"
+                              ? "Espace activé ✓"
                               : savingProfile === profile
                               ? "Activation…"
                               : "Activer cet espace"}
@@ -2383,6 +2447,19 @@ export default function DashboardPage() {
                 <div className="page-eyebrow">Catalogue</div>
                 <h1 className="page-title">Formations disponibles</h1>
                 <p className="page-sub">Choisissez votre parcours de formation</p>
+
+                {inscriptionSuccess && (
+                  <div className="alert alert-success" role="status">
+                    <span className="alert-icon" aria-hidden="true">✓</span>
+                    <span>{inscriptionSuccess}</span>
+                  </div>
+                )}
+                {inscriptionError && !showInscriptionModal && (
+                  <div className="alert alert-error" role="alert">
+                    <span className="alert-icon" aria-hidden="true">⚠</span>
+                    <span>{inscriptionError}</span>
+                  </div>
+                )}
 
                 {loadingFormations ? (
                   <div className="empty-box">
@@ -2534,10 +2611,12 @@ export default function DashboardPage() {
                                 className={`badge ${
                                   insc.status === "confirme"
                                     ? "badge-admin"
-                                    : "badge-user"
+                                    : insc.status === "annule"
+                                    ? "badge-user"
+                                    : "badge-wait"
                                 }`}
                               >
-                                {insc.status}
+                                {getInscriptionStatusLabel(insc.status)}
                               </span>
                             </td>
                             <td>
@@ -2617,7 +2696,7 @@ export default function DashboardPage() {
                             {user.role}
                           </span>
                         </td>
-                        <td style={{ color: "var(--steel)" }}>—</td>
+                        <td style={{ color: "var(--od-text-muted)" }}>—</td>
                       </tr>
                     </tbody>
                   </table>
@@ -2646,6 +2725,19 @@ export default function DashboardPage() {
                   )}
                 </div>
 
+                {!showArticleForm && success && (
+                  <div className="alert alert-success" role="status">
+                    <span className="alert-icon" aria-hidden="true">✓</span>
+                    <span>{success}</span>
+                  </div>
+                )}
+                {!showArticleForm && error && (
+                  <div className="alert alert-error" role="alert">
+                    <span className="alert-icon" aria-hidden="true">⚠</span>
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 {showArticleForm && (
                   <form className="article-form" onSubmit={handleSubmitArticle}>
                     {error && (
@@ -2670,7 +2762,7 @@ export default function DashboardPage() {
                           className="form-input"
                           value={formData.title}
                           onChange={handleFormChange}
-                          placeholder="Ex: Les tendances 2025 de l'IT"
+                          placeholder="Ex: Les tendances 2026 de l'IT"
                           required
                         />
                       </div>
@@ -2773,7 +2865,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="stack-list">
-                    <p className="page-sub" style={{ marginBottom: "1.5rem" }}>
+                    <p className="page-sub" style={{ marginBottom: "0.5rem" }}>
                       {articles.length} article{articles.length > 1 ? "s" : ""} créé
                       {articles.length > 1 ? "s" : ""}
                     </p>
@@ -2817,7 +2909,6 @@ export default function DashboardPage() {
                               Dépublier
                             </button>
                           )}
-                          <button className="btn-small">Éditer</button>
                           <button
                             className="btn-delete"
                             onClick={() => handleDeleteArticle(article.id)}
@@ -2833,127 +2924,125 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
 
-      {showInscriptionModal && (
-        <div
-          className="modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Inscription à une formation"
-          onClick={() => setShowInscriptionModal(false)}
-        >
+        {/* Modale d'inscription : dans .dash-layout pour hériter des styles et variables */}
+        {showInscriptionModal && (
           <div
-            className="modal-sheet"
-            onClick={(e) => e.stopPropagation()}
+            className="modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Inscription à une formation"
+            onClick={() => setShowInscriptionModal(false)}
           >
-            <header className="modal-header">
-              <h2 className="modal-title">
-                Inscription • {selectedFormation?.name}
-              </h2>
-              <p className="modal-sub">
-                {selectedSession &&
-                  `${new Date(selectedSession.startDate).toLocaleDateString(
-                    "fr-FR"
-                  )} • ${selectedSession.location}`}
-              </p>
-            </header>
+            <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+              <header className="modal-header">
+                <h2 className="modal-title">
+                  Inscription • {selectedFormation?.name}
+                </h2>
+                <p className="modal-sub">
+                  {selectedSession &&
+                    `${new Date(selectedSession.startDate).toLocaleDateString(
+                      "fr-FR"
+                    )} • ${selectedSession.location}`}
+                </p>
+              </header>
 
-            {inscriptionError && (
-              <div className="alert alert-error" role="alert">
-                <span className="alert-icon" aria-hidden="true">⚠</span>
-                <span>{inscriptionError}</span>
-              </div>
-            )}
+              {inscriptionError && (
+                <div className="alert alert-error" role="alert">
+                  <span className="alert-icon" aria-hidden="true">⚠</span>
+                  <span>{inscriptionError}</span>
+                </div>
+              )}
 
-            <form onSubmit={handleInscriptionSubmit} className="modal-form">
-              <div className="form-group">
-                <label className="form-label">Prénom *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={inscriptionData.firstName}
-                  onChange={(e) =>
-                    setInscriptionData({ ...inscriptionData, firstName: e.target.value })
-                  }
-                  required
-                />
-              </div>
+              <form onSubmit={handleInscriptionSubmit} className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Prénom *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={inscriptionData.firstName}
+                    onChange={(e) =>
+                      setInscriptionData({ ...inscriptionData, firstName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Nom *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={inscriptionData.lastName}
-                  onChange={(e) =>
-                    setInscriptionData({ ...inscriptionData, lastName: e.target.value })
-                  }
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label className="form-label">Nom *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={inscriptionData.lastName}
+                    onChange={(e) =>
+                      setInscriptionData({ ...inscriptionData, lastName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Email *</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  value={inscriptionData.email}
-                  onChange={(e) =>
-                    setInscriptionData({ ...inscriptionData, email: e.target.value })
-                  }
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label className="form-label">Email *</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={inscriptionData.email}
+                    onChange={(e) =>
+                      setInscriptionData({ ...inscriptionData, email: e.target.value })
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Téléphone *</label>
-                <input
-                  type="tel"
-                  className="form-input"
-                  value={inscriptionData.phone}
-                  onChange={(e) =>
-                    setInscriptionData({ ...inscriptionData, phone: e.target.value })
-                  }
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label className="form-label">Téléphone *</label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={inscriptionData.phone}
+                    onChange={(e) =>
+                      setInscriptionData({ ...inscriptionData, phone: e.target.value })
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Entreprise (optionnel)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={inscriptionData.company}
-                  onChange={(e) =>
-                    setInscriptionData({ ...inscriptionData, company: e.target.value })
-                  }
-                />
-              </div>
+                <div className="form-group">
+                  <label className="form-label">Entreprise (optionnel)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={inscriptionData.company}
+                    onChange={(e) =>
+                      setInscriptionData({ ...inscriptionData, company: e.target.value })
+                    }
+                  />
+                </div>
 
-              <div className="form-buttons">
-                <button
-                  type="submit"
-                  className="btn-submit"
-                  disabled={submittingInscription}
-                >
-                  {submittingInscription
-                    ? "Inscription..."
-                    : "Confirmer l'inscription"}
-                </button>
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => setShowInscriptionModal(false)}
-                  disabled={submittingInscription}
-                >
-                  Annuler
-                </button>
-              </div>
-            </form>
+                <div className="form-buttons">
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={submittingInscription}
+                  >
+                    {submittingInscription
+                      ? "Inscription..."
+                      : "Confirmer l'inscription"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => setShowInscriptionModal(false)}
+                    disabled={submittingInscription}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
