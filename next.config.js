@@ -61,6 +61,15 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: 'geolocation=(self)',
+          },
+        ],
+      },
+      {
         source: '/abdel2.png',
         headers: [
           {

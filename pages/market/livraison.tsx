@@ -341,9 +341,17 @@ export default function MarketDeliveryPage() {
       setDestination({ latitude: position.coords.latitude, longitude: position.coords.longitude });
     } catch (error) {
       if (isGeolocationError(error) && error.code === error.PERMISSION_DENIED) {
-        setLocationError(
-          "Autorisation de localisation refusée. Dans les réglages de votre téléphone, autorisez la localisation pour Safari ou Chrome et pour ce site, puis réessayez. Vous pouvez aussi choisir le point sur la carte.",
-        );
+        let permissionState: PermissionState | null = null;
+        if (navigator.permissions) {
+          try {
+            permissionState = (await navigator.permissions.query({ name: "geolocation" })).state;
+          } catch {
+            permissionState = null;
+          }
+        }
+        setLocationError(permissionState === "denied"
+          ? "Le navigateur bloque encore la localisation pour ce site. Vérifiez l’autorisation du site dans Safari/Chrome et la localisation activée pour le navigateur dans les réglages du téléphone. Si la page est ouverte depuis WhatsApp, Facebook ou une autre application, ouvrez-la directement dans Safari ou Chrome."
+          : "Le téléphone ou le navigateur n’a pas transmis votre position. Vérifiez que le service de localisation et l’autorisation de position précise sont activés. Si la page est ouverte depuis une autre application, ouvrez-la directement dans Safari ou Chrome.");
       } else if (isGeolocationError(error) && error.code === error.TIMEOUT) {
         setLocationError(
           "Votre position n’a pas pu être obtenue à temps. Activez la localisation de l’appareil, réessayez près d’une fenêtre ou choisissez le point sur la carte.",
