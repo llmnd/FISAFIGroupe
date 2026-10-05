@@ -241,17 +241,34 @@ function useScrollAnimations() {
       { threshold: 0.05, rootMargin: '0px 0px -40px 0px' },
     );
 
-    const observeElements = () => {
-      document
-        .querySelectorAll('[data-observe], .services-grid, .services-grid-new')
+    const observedElements = new WeakSet<Element>();
+    const observeElements = (root: ParentNode) => {
+      if (root instanceof Element && root.matches('[data-observe], .services-grid, .services-grid-new')) {
+        if (!root.classList.contains('is-visible') && !observedElements.has(root)) {
+          observedElements.add(root);
+          observer.observe(root);
+        }
+      }
+
+      root
+        .querySelectorAll?.('[data-observe], .services-grid, .services-grid-new')
         .forEach((el) => {
-          if (!el.classList.contains('is-visible')) observer.observe(el);
+          if (!el.classList.contains('is-visible') && !observedElements.has(el)) {
+            observedElements.add(el);
+            observer.observe(el);
+          }
         });
     };
 
-    observeElements();
+    observeElements(document);
 
-    const mutationObserver = new MutationObserver(observeElements);
+    const mutationObserver = new MutationObserver((records) => {
+      records.forEach((record) => {
+        record.addedNodes.forEach((node) => {
+          if (node instanceof Element) observeElements(node);
+        });
+      });
+    });
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     return () => {

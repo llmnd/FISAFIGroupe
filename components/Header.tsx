@@ -303,7 +303,7 @@ export default function Header({
         }
 
         if (progressFillRef.current) {
-          progressFillRef.current.style.width = `${pct}%`;
+          progressFillRef.current.style.transform = `scaleX(${pct / 100})`;
         }
         if (socialBarRef.current) {
           const isMarketBar = socialBarRef.current.classList.contains("has-market-actions");

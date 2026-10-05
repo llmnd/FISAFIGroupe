@@ -29,7 +29,7 @@
   /* Remove persistent will-change (use only during animations) */
   .header-progress-fill,
   .header-social-popup.open {
-    will-change: width, transform, opacity;
+    will-change: transform, opacity;
   }
 
   /* Static elements: no will-change */

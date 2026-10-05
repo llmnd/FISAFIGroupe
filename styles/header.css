@@ -123,10 +123,12 @@ body {
 
 .header-progress-fill {
   height: 100%;
-  width: 0%;
+  width: 100%;
   background: linear-gradient(90deg, var(--orange), var(--orange-2));
   border-radius: 0 2px 2px 0;
-  will-change: width;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
 }
 
 /* ════════════════════════════════════════════════════════════

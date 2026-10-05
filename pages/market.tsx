@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Head from "next/head";
 import Link from "next/link";
@@ -167,18 +167,26 @@ function useOpenStatus() {
   const [status, setStatus] = useState({ open: true, label: "Ouvert", detail: "ferme à minuit" });
 
   useEffect(() => {
+    let timeout: number;
     const compute = () => {
       const now = new Date();
       const total = now.getHours() * 60 + now.getMinutes();
-      if (total >= 7 * 60 && total < 24 * 60) {
-        setStatus({ open: true, label: "Ouvert", detail: "ferme à minuit" });
-      } else {
-        setStatus({ open: false, label: "Fermé", detail: "ouvre à 7h" });
-      }
+      const open = total >= 7 * 60;
+      setStatus((current) =>
+        current.open === open
+          ? current
+          : open
+            ? { open: true, label: "Ouvert", detail: "ferme à minuit" }
+            : { open: false, label: "Fermé", detail: "ouvre à 7h" },
+      );
+
+      const nextChange = new Date(now);
+      if (open) nextChange.setHours(24, 0, 0, 0);
+      else nextChange.setHours(7, 0, 0, 0);
+      timeout = window.setTimeout(compute, Math.max(1, nextChange.getTime() - now.getTime()));
     };
     compute();
-    const t = setInterval(compute, 60_000);
-    return () => clearInterval(t);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   return status;
@@ -595,76 +603,86 @@ export default function MarketPage() {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("fr");
 
-  const marketProducts: MarketProduct[] = catalog.map((product) => {
-    const departmentName = getMarketDepartmentName(product.categoryName);
-    const price = fmt(product.price);
-    const pricePerKilogram = /kg|kilogram/i.test(product.unitName);
+  const { marketProducts, productsByDepartment, departments } = useMemo(() => {
+    const products: MarketProduct[] = catalog.map((product) => {
+      const departmentName = getMarketDepartmentName(product.categoryName);
+      const price = fmt(product.price);
+      const pricePerKilogram = /kg|kilogram/i.test(product.unitName);
+      return {
+        id: product.id,
+        name: product.name,
+        price: pricePerKilogram ? `${price} / kg` : price,
+        badge: product.isPromotion ? "PROMO" : undefined,
+        artwork: getProductArtwork(departmentName),
+        hasImage: product.hasImage,
+        imageUrl: product.imageUrl,
+        categoryPath: product.categoryName,
+        departmentId: getMarketDepartmentId(departmentName),
+        departmentName,
+        availableQuantity: product.availableQuantity,
+        variantChoiceRequired: product.variantChoiceRequired,
+      };
+    });
+
+    const byDepartment = new Map<string, MarketProduct[]>();
+    for (const product of products) {
+      const departmentProducts = byDepartment.get(product.departmentId) || [];
+      departmentProducts.push(product);
+      byDepartment.set(product.departmentId, departmentProducts);
+    }
+
+    const departmentList = [...byDepartment.entries()]
+      .map(([id, departmentProducts]) => ({
+        id,
+        name: departmentProducts[0].departmentName,
+        description: `${departmentProducts.length} produit${departmentProducts.length > 1 ? "s" : ""} disponible${
+          departmentProducts.length > 1 ? "s" : ""
+        }.`,
+        color: "green",
+        art: getDepartmentArtwork(departmentProducts[0].departmentName),
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name, "fr"))
+      .map((department, index) => ({
+        ...department,
+        color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length],
+      }));
+
     return {
-      id: product.id,
-      name: product.name,
-      price: pricePerKilogram ? `${price} / kg` : price,
-      badge: product.isPromotion ? "PROMO" : undefined,
-      artwork: getProductArtwork(departmentName),
-      hasImage: product.hasImage,
-      imageUrl: product.imageUrl,
-      categoryPath: product.categoryName,
-      departmentId: getMarketDepartmentId(departmentName),
-      departmentName,
-      availableQuantity: product.availableQuantity,
-      variantChoiceRequired: product.variantChoiceRequired,
+      marketProducts: products,
+      productsByDepartment: byDepartment,
+      departments: departmentList,
     };
-  });
+  }, [catalog]);
 
-  const productsByDepartment = new Map<string, MarketProduct[]>();
-  for (const product of marketProducts) {
-    const products = productsByDepartment.get(product.departmentId) || [];
-    products.push(product);
-    productsByDepartment.set(product.departmentId, products);
-  }
+  const sortedProducts = useMemo(() => {
+    const filteredProducts = marketProducts.filter((product) => {
+      if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
+      if (
+        selectedSubcategory &&
+        !product.categoryPath?.startsWith(`${selectedSubcategory} /`) &&
+        product.categoryPath !== selectedSubcategory
+      ) {
+        return false;
+      }
+      if (!normalizedQuery) return true;
+      const searchableText = `${product.name} ${product.departmentName}`
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase("fr");
+      return searchableText.includes(normalizedQuery);
+    });
 
-  const departments = [...productsByDepartment.entries()]
-    .map(([id, products]) => ({
-      id,
-      name: products[0].departmentName,
-      description: `${products.length} produit${products.length > 1 ? "s" : ""} disponible${
-        products.length > 1 ? "s" : ""
-      }.`,
-      color: "green",
-      art: getDepartmentArtwork(products[0].departmentName),
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name, "fr"))
-    .map((department, index) => ({
-      ...department,
-      color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length],
-    }));
-
-  const filteredProducts = marketProducts.filter((product) => {
-    if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
-    if (
-      selectedSubcategory &&
-      !product.categoryPath?.startsWith(`${selectedSubcategory} /`) &&
-      product.categoryPath !== selectedSubcategory
-    ) {
-      return false;
-    }
-    if (!normalizedQuery) return true;
-    const searchableText = `${product.name} ${product.departmentName}`
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLocaleLowerCase("fr");
-    return searchableText.includes(normalizedQuery);
-  });
-
-  const sortedProducts = [...filteredProducts].sort((left, right) => {
-    if (left.hasImage !== right.hasImage) return left.hasImage ? -1 : 1;
-    if (productSort === "price-asc" || productSort === "price-desc") {
-      const priceDifference =
-        (getMarketPriceAmount(left.price) ?? 0) - (getMarketPriceAmount(right.price) ?? 0);
-      if (priceDifference !== 0)
-        return productSort === "price-asc" ? priceDifference : -priceDifference;
-    }
-    return left.name.localeCompare(right.name, "fr", { sensitivity: "base" });
-  });
+    return filteredProducts.sort((left, right) => {
+      if (left.hasImage !== right.hasImage) return left.hasImage ? -1 : 1;
+      if (productSort === "price-asc" || productSort === "price-desc") {
+        const priceDifference =
+          (getMarketPriceAmount(left.price) ?? 0) - (getMarketPriceAmount(right.price) ?? 0);
+        if (priceDifference !== 0)
+          return productSort === "price-asc" ? priceDifference : -priceDifference;
+      }
+      return left.name.localeCompare(right.name, "fr", { sensitivity: "base" });
+    });
+  }, [marketProducts, normalizedQuery, productSort, selectedDepartment, selectedSubcategory]);
 
   const totalPages = Math.ceil(sortedProducts.length / MARKET_PAGE_SIZE);
   const page = Math.min(currentPage, Math.max(totalPages, 1));
