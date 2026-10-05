@@ -271,6 +271,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce">("users");
   const [tabStateReady, setTabStateReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -293,6 +294,39 @@ export default function AdminDashboard() {
   const authCheckStarted = useRef(false);
   const initialTabScrollHandled = useRef(false);
   const currentTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    if (!navOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setNavOpen(false);
+      mobileMenuButtonRef.current?.focus();
+    };
+    const closeOnDesktopResize = () => {
+      if (window.matchMedia("(min-width: 900px)").matches) setNavOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", closeOnDesktopResize, { passive: true });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", closeOnDesktopResize);
+    };
+  }, [navOpen]);
+
+  useEffect(() => {
+    const closeMenu = () => setNavOpen(false);
+    router.events.on("routeChangeStart", closeMenu);
+    window.addEventListener("pageshow", closeMenu);
+    return () => {
+      router.events.off("routeChangeStart", closeMenu);
+      window.removeEventListener("pageshow", closeMenu);
+    };
+  }, [router.events]);
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -434,6 +468,7 @@ export default function AdminDashboard() {
     try { saveScrollForTab(currentTabRef.current); } catch {}
     currentTabRef.current = tab;
     setActiveTab(tab);
+    setNavOpen(false);
   };
   const handleGoBack = () => {
     if (window.history.length > 1) {
@@ -972,8 +1007,26 @@ export default function AdminDashboard() {
       {/* Toast */}
       {toast && <div className={`toast${toast.type === "err" ? " err" : ""}`}>{toast.msg}</div>}
 
+      {navOpen && (
+        <button
+          type="button"
+          className="mob-menu-backdrop"
+          aria-label="Fermer le menu de navigation"
+          onClick={() => {
+            setNavOpen(false);
+            mobileMenuButtonRef.current?.focus();
+          }}
+        />
+      )}
+
       {/* Mobile menu */}
-      <nav className={`mob-menu${navOpen ? " open" : ""}`}>
+      <nav
+        id="admin-mobile-navigation"
+        className={`mob-menu${navOpen ? " open" : ""}`}
+        aria-label="Navigation mobile"
+        aria-hidden={!navOpen}
+        inert={!navOpen}
+      >
         <div className="mob-menu-user">
           <div className="mob-menu-avatar">{initials}</div>
           <div>
@@ -988,7 +1041,16 @@ export default function AdminDashboard() {
             <span aria-hidden="true">↗</span>
           </a>
           {adminTabs.map(tab => (
-            <button key={tab} className={`mob-nav-link${activeTab === tab ? " active" : ""}`} onClick={() => { handleSetActiveTab(tab); setNavOpen(false); }}>
+            <button
+              type="button"
+              key={tab}
+              className={`mob-nav-link${activeTab === tab ? " active" : ""}`}
+              aria-current={activeTab === tab ? "page" : undefined}
+              onClick={() => {
+                handleSetActiveTab(tab);
+                mobileMenuButtonRef.current?.focus();
+              }}
+            >
               <span>{getTabLabel(tab, selectedCompany?.type)}</span>
               {tab === "users" && users.length > 0 && <span className="mob-nav-badge">{users.length}</span>}
               {tab === "inscriptions" && inscriptionsPending > 0 && <span className="mob-nav-badge">{inscriptionsPending}</span>}
@@ -1097,7 +1159,15 @@ export default function AdminDashboard() {
                 <span>Retour</span>
               </button>
               <div className="mob-avatar">{initials}</div>
-              <button className={`mob-menu-btn${navOpen ? " open" : ""}`} onClick={() => setNavOpen(!navOpen)}>
+              <button
+                ref={mobileMenuButtonRef}
+                type="button"
+                className={`mob-menu-btn${navOpen ? " open" : ""}`}
+                onClick={() => setNavOpen(!navOpen)}
+                aria-label={navOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                aria-expanded={navOpen}
+                aria-controls="admin-mobile-navigation"
+              >
                 <span/><span/><span/>
               </button>
             </div>
@@ -1662,7 +1732,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Bottom tab bar */}
-      <nav className="tab-bar">
+      <nav className="tab-bar" aria-label="Navigation principale">
         {([
           { id:"users", label:"Utilisateurs", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, badge: users.length > 0 ? users.length : 0 },
           { id:"articles", label:"Articles", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, badge: 0 },
@@ -1676,8 +1746,14 @@ export default function AdminDashboard() {
             (tab.id !== "inscriptions" && tab.id !== "sessions")
           )
           .map(t => (
-          <button key={t.id} className={`tab-btn${activeTab === t.id ? " active" : ""}`} onClick={() => handleSetActiveTab(t.id)}>
-            <div className="tab-active-dot"/>
+          <button
+            type="button"
+            key={t.id}
+            className={`tab-btn${activeTab === t.id ? " active" : ""}`}
+            onClick={() => handleSetActiveTab(t.id)}
+            aria-current={activeTab === t.id ? "page" : undefined}
+          >
+            <span className="tab-active-dot" aria-hidden="true"/>
             {t.icon}
             {t.label}
             {t.badge > 0 && <div className="tab-badge">{t.badge > 9 ? "9+" : t.badge}</div>}

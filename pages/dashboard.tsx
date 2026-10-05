@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import PortalThemeToggle from "@/components/PortalThemeToggle";
+import DashboardShell from "@/components/dashboard/DashboardShell";
 import UserDashboardSkeleton from "@/components/UserDashboardSkeleton";
 import {
   getMarketDepartmentId,
@@ -114,18 +114,6 @@ interface InscriptionFormation {
   session?: { startDate: string; location: string };
 }
 
-interface Article {
-  id: number;
-  title: string;
-  category: string;
-  excerpt: string;
-  content: string;
-  published: boolean;
-  createdAt: string;
-  image?: string;
-  author?: string;
-}
-
 interface MarketQuotation {
   id: number;
   reference: string;
@@ -164,16 +152,12 @@ type TabId =
   | "inscriptions"
   | "formations"
   | "market-orders"
-  | "account"
-  | "inscriptions-manage"
-  | "users"
-  | "articles";
+  | "account";
 
 interface TabType {
   id: TabId;
   label: string;
   icon: string;
-  admin?: boolean;
 }
 
 const ALL_TABS: TabType[] = [
@@ -182,9 +166,6 @@ const ALL_TABS: TabType[] = [
   { id: "formations", label: "Formations et sessions", icon: "◉" },
   { id: "market-orders", label: "Achats Market", icon: "▱" },
   { id: "account", label: "Mon compte", icon: "◇" },
-  { id: "inscriptions-manage", label: "Gérer inscriptions", icon: "◎", admin: true },
-  { id: "users", label: "Utilisateurs", icon: "◇", admin: true },
-  { id: "articles", label: "Articles", icon: "◆", admin: true },
 ];
 
 function getInvoicePaymentLabel(status: string): string {
@@ -246,36 +227,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Fermeture du sidebar sur Escape + blocage du scroll
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSidebarOpen(false);
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      window.removeEventListener("keydown", closeOnEscape);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [sidebarOpen]);
-
-  // Fermeture du sidebar avant une navigation du Pages Router.
-  useEffect(() => {
-    const closeSidebar = () => setSidebarOpen(false);
-    router.events.on("routeChangeStart", closeSidebar);
-    return () => router.events.off("routeChangeStart", closeSidebar);
-  }, [router.events]);
-
-  // Fermeture du sidebar au retour arrière (bfcache)
-  useEffect(() => {
-    const closeSidebar = () => setSidebarOpen(false);
-    window.addEventListener("pageshow", closeSidebar);
-    return () => window.removeEventListener("pageshow", closeSidebar);
-  }, []);
 
   // Formations & inscriptions
   const [formations, setFormations] = useState<Formation[]>([]);
@@ -322,24 +273,7 @@ export default function DashboardPage() {
   const [inscriptionError, setInscriptionError] = useState("");
   const [inscriptionSuccess, setInscriptionSuccess] = useState("");
 
-  // Articles (admin)
-  const [showArticleForm, setShowArticleForm] = useState(false);
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loadingArticles, setLoadingArticles] = useState(false);
-  // Admin inscriptions
-  const [adminInscriptions, setAdminInscriptions] = useState<InscriptionFormation[]>([]);
-  const [loadingAdminInscriptions, setLoadingAdminInscriptions] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    category: "Articles techniques",
-    excerpt: "",
-    content: "",
-    image: "",
-    author: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function fetchMarketQuotations() {
     setLoadingMarketQuotations(true);
@@ -784,10 +718,6 @@ export default function DashboardPage() {
         void fetchUserInscriptions();
         void fetchGroupInvoices();
       }
-    } else if (activeTab === "articles" && user.role === "admin") {
-      void fetchArticles();
-    } else if (activeTab === "inscriptions-manage" && user.role === "admin") {
-      void fetchAdminInscriptions();
     } else if (
       activeTab === "formations" &&
       user.profiles.includes("TRAINING_PARTICIPANT")
@@ -824,87 +754,6 @@ export default function DashboardPage() {
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user?.id, profileKey]);
-
-  const fetchAdminInscriptions = async () => {
-    setLoadingAdminInscriptions(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await authenticatedFetch("/api/inscriptions-manage", {
-        cache: "no-store",
-        headers: { Authorization: `Bearer ${token || ""}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAdminInscriptions(data.data || []);
-      } else {
-        setAdminInscriptions([]);
-      }
-    } catch (err) {
-      console.error("Error fetching admin inscriptions:", err);
-      setAdminInscriptions([]);
-    } finally {
-      setLoadingAdminInscriptions(false);
-    }
-  };
-
-  const handleAdminAction = async (
-    id: number,
-    action: "accept" | "reject"
-  ) => {
-    if (!confirm(`Confirmer l'action '${action}' pour l'inscription ${id} ?`)) {
-      return;
-    }
-    try {
-      const token = localStorage.getItem("token");
-      const res = await authenticatedFetch("/api/inscriptions-manage", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
-        },
-        body: JSON.stringify({ id, action }),
-      });
-      if (res.ok) {
-        await fetchAdminInscriptions();
-        setSuccess(action === "accept" ? "Inscription acceptée" : "Inscription rejetée");
-        setTimeout(() => setSuccess(""), 3000);
-      } else {
-        const data = await res.json().catch(() => null);
-        setError(data?.error || "Erreur");
-        setTimeout(() => setError(""), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Erreur lors de la mise à jour");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
-
-  const handleAdminDelete = async (id: number) => {
-    if (!confirm("Confirmer la suppression permanente de cette inscription ?")) {
-      return;
-    }
-    try {
-      const token = localStorage.getItem("token");
-      const res = await authenticatedFetch(`/api/inscriptions-manage/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token || ""}` },
-      });
-      if (res.ok) {
-        setSuccess("Inscription supprimée");
-        await fetchAdminInscriptions();
-        setTimeout(() => setSuccess(""), 3000);
-      } else {
-        const data = await res.json().catch(() => null);
-        setError(data?.error || "Erreur lors de la suppression");
-        setTimeout(() => setError(""), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Erreur lors de la suppression");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
 
   const fetchFormations = async () => {
     setLoadingFormations(true);
@@ -1068,126 +917,6 @@ export default function DashboardPage() {
     setShowInscriptionModal(true);
   };
 
-  const fetchArticles = async () => {
-    setLoadingArticles(true);
-    try {
-      const res = await fetch("/api/articles?limit=100", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setArticles(data.data?.articles || []);
-      }
-    } catch (err) {
-      console.error("Error fetching articles:", err);
-    } finally {
-      setLoadingArticles(false);
-    }
-  };
-
-  const handlePublishArticle = async (
-    articleId: number,
-    currentPublished: boolean
-  ) => {
-    try {
-      const res = await authenticatedFetch(`/api/articles/${articleId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ published: !currentPublished }),
-      });
-
-      if (res.ok) {
-        setSuccess(!currentPublished ? "Article publié!" : "Article dépublié");
-        await fetchArticles();
-        setTimeout(() => setSuccess(""), 3000);
-      } else {
-        setError("Erreur lors de la publication");
-        setTimeout(() => setError(""), 3000);
-      }
-    } catch (err) {
-      setError("Erreur lors de la publication");
-      console.error(err);
-      setTimeout(() => setError(""), 3000);
-    }
-  };
-
-  const handleDeleteArticle = async (articleId: number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet article?")) return;
-
-    try {
-      const res = await authenticatedFetch(`/api/articles/${articleId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setSuccess("Article supprimé");
-        await fetchArticles();
-        setTimeout(() => setSuccess(""), 3000);
-      } else {
-        setError("Erreur lors de la suppression");
-        setTimeout(() => setError(""), 3000);
-      }
-    } catch (err) {
-      setError("Erreur lors de la suppression");
-      console.error(err);
-      setTimeout(() => setError(""), 3000);
-    }
-  };
-
-  const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmitArticle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!formData.title || !formData.category || !formData.excerpt || !formData.content) {
-      setError("Tous les champs obligatoires doivent être remplis");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      // FIX : priorité d'opérateur sur l'ancien code ("undefined undefined")
-      const authorName =
-        [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Admin";
-
-      const res = await authenticatedFetch("/api/articles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          author: authorName,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setSuccess("Article créé avec succès!");
-        setFormData({
-          title: "",
-          category: "Articles techniques",
-          excerpt: "",
-          content: "",
-          image: "",
-          author: "",
-        });
-        setShowArticleForm(false);
-        await fetchArticles();
-      } else {
-        setError(data.error || "Erreur lors de la création");
-      }
-    } catch (err) {
-      setError("Erreur lors de la création de l'article");
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleLogout = () => {
     try {
       localStorage.removeItem("user");
@@ -1205,19 +934,16 @@ export default function DashboardPage() {
 
   const handleTab = (id: TabId) => {
     if (!user) return;
-    const isAdmin = user.role === "admin";
-    if (!isAdmin && id === "market-orders" && !user.profiles.includes("MARKET_CUSTOMER")) {
+    if (id === "market-orders" && !user.profiles.includes("MARKET_CUSTOMER")) {
       return;
     }
     if (
-      !isAdmin &&
       (id === "inscriptions" || id === "formations") &&
       !user.profiles.includes("TRAINING_PARTICIPANT")
     ) {
       return;
     }
     setActiveTab(id);
-    setSidebarOpen(false);
     if (typeof window !== "undefined") {
       const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
@@ -1280,18 +1006,10 @@ export default function DashboardPage() {
   const hasMarketProfile = user.profiles.includes("MARKET_CUSTOMER");
   const hasTrainingProfile = user.profiles.includes("TRAINING_PARTICIPANT");
   const tabs = ALL_TABS.filter((tab) => {
-    if (tab.admin) return user.role === "admin";
-    if (user.role === "admin") return true;
     if (tab.id === "market-orders") return hasMarketProfile;
     if (tab.id === "inscriptions" || tab.id === "formations") return hasTrainingProfile;
     return true;
   });
-  const firstInitial = user.firstName?.[0] ?? "";
-  const lastInitial = user.lastName?.[0] ?? "";
-  const initials =
-    (firstInitial + lastInitial).toUpperCase() ||
-    (user.email?.[0] ?? "U").toUpperCase();
-
   const registeredSessionIds = new Set<number>(
     userInscriptions
       .filter((i) => i.status !== "annule")
@@ -1723,123 +1441,14 @@ export default function DashboardPage() {
         `}</style>
       </Head>
 
-      <div className="dash-layout user-dashboard employee-portal-page">
-        <button
-          type="button"
-          className={`dash-overlay${sidebarOpen ? " open" : ""}`}
-          aria-label="Fermer le menu"
-          aria-hidden={!sidebarOpen}
-          tabIndex={sidebarOpen ? 0 : -1}
-          onClick={() => setSidebarOpen(false)}
-        />
-
-        {/* ── SIDEBAR ── */}
-        <aside
-          id="dashboard-sidebar"
-          className={`dash-sidebar${sidebarOpen ? " open" : ""}`}
-        >
-          <div className="sidebar-head">
-            <div className="sidebar-logo">
-              Fi<span>SAFI</span> Groupe
-            </div>
-            <div className="sidebar-role">
-              {user.role === "admin" ? "Administrateur" : "Utilisateur"}
-            </div>
-          </div>
-
-          <div className="sidebar-user">
-            <div className="sidebar-avatar">{initials}</div>
-            <div style={{ minWidth: 0 }}>
-              <div className="sidebar-uname">
-                {user.firstName} {user.lastName}
-              </div>
-              <div className="sidebar-uemail">{user.email}</div>
-            </div>
-          </div>
-
-          <nav className="sidebar-nav">
-            {tabs
-              .filter((t) => !t.admin)
-              .map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
-                  onClick={() => handleTab(tab.id)}
-                >
-                  <span className="sidebar-tab-icon" aria-hidden="true">
-                    {tab.icon}
-                  </span>
-                  {tab.label}
-                </button>
-              ))}
-            {user.role === "admin" && (
-              <div className="sidebar-tab-admin">
-                {tabs
-                  .filter((t) => t.admin)
-                  .map((tab) => (
-                    <button
-                      key={tab.id}
-                      className={`sidebar-tab${activeTab === tab.id ? " active" : ""}`}
-                      onClick={() => handleTab(tab.id)}
-                    >
-                      <span className="sidebar-tab-icon" aria-hidden="true">
-                        {tab.icon}
-                      </span>
-                      {tab.label}
-                    </button>
-                  ))}
-              </div>
-            )}
-          </nav>
-
-          <div className="sidebar-foot">
-            <PortalThemeToggle />
-            <button className="sidebar-logout" onClick={handleLogout}>
-              <span aria-hidden="true">⊗</span> &nbsp;Déconnexion
-            </button>
-          </div>
-        </aside>
-
-        {/* ── MAIN ── */}
-        <div className="dash-main">
-          <div className="dash-topbar">
-            <div className="dash-brand" aria-label="FiSAFi Groupe">
-              <div className="dash-mobile-logo" aria-hidden="true">
-                <Image
-                  src="/favicon/web-app-manifest-192x192.png"
-                  alt=""
-                  width={72}
-                  height={72}
-                  priority
-                />
-              </div>
-              <div className="topbar-logo">
-                Fi<span>SAFI</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="topbar-back-link"
-              onClick={handleGoBack}
-            >
-              <span aria-hidden="true">←</span>
-              <span>Retour</span>
-            </button>
-            <button
-              type="button"
-              className={`topbar-hamburger${sidebarOpen ? " open" : ""}`}
-              aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              aria-expanded={sidebarOpen}
-              aria-controls="dashboard-sidebar"
-              onClick={() => setSidebarOpen((v) => !v)}
-            >
-              <span />
-              <span />
-              <span />
-            </button>
-          </div>
-
-          <div className="dash-content">
+      <DashboardShell
+        user={user}
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelectTab={handleTab}
+        onLogout={handleLogout}
+        onGoBack={handleGoBack}
+      >
             {activeTab === "home" && (
               <section className="dashboard-home" aria-labelledby="dashboard-home-title">
                 <div className="page-eyebrow">Espace personnel</div>
@@ -3065,371 +2674,7 @@ export default function DashboardPage() {
               </>
             )}
 
-            {activeTab === "inscriptions-manage" && (
-              <>
-                <div className="page-eyebrow">Administration</div>
-                <h1 className="page-title">Gérer les inscriptions</h1>
-                <p className="page-sub">
-                  Vue d&apos;ensemble de toutes les inscriptions
-                </p>
-                {error && (
-                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="alert alert-success" role="status" style={{ marginTop: "1rem" }}>
-                    {success}
-                  </div>
-                )}
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Formation</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loadingAdminInscriptions ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            style={{
-                              textAlign: "center",
-                              padding: "3rem",
-                              color: "var(--steel)",
-                            }}
-                          >
-                            Chargement...
-                          </td>
-                        </tr>
-                      ) : adminInscriptions.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            style={{
-                              textAlign: "center",
-                              padding: "3rem",
-                              color: "var(--steel)",
-                            }}
-                          >
-                            Aucune inscription
-                          </td>
-                        </tr>
-                      ) : (
-                        adminInscriptions.map((insc) => (
-                          <tr key={insc.id}>
-                            <td>
-                              {insc.firstName} {insc.lastName}
-                            </td>
-                            <td>{insc.email}</td>
-                            <td>{insc.formation?.name || "-"}</td>
-                            <td>
-                              <span
-                                className={`badge ${
-                                  insc.status === "confirme"
-                                    ? "badge-admin"
-                                    : "badge-user"
-                                }`}
-                              >
-                                {insc.status}
-                              </span>
-                            </td>
-                            <td>
-                              <div style={{ display: "flex", gap: "0.5rem" }}>
-                                {(
-                                  ["liste_attente", "demande_en_attente"] as string[]
-                                ).includes(insc.status) && (
-                                  <button
-                                    className="btn-small"
-                                    onClick={() => handleAdminAction(insc.id, "accept")}
-                                  >
-                                    Accepter
-                                  </button>
-                                )}
-                                {(
-                                  [
-                                    "confirme",
-                                    "liste_attente",
-                                    "demande_en_attente",
-                                  ] as string[]
-                                ).includes(insc.status) && (
-                                  <button
-                                    className="btn-small"
-                                    onClick={() => handleAdminAction(insc.id, "reject")}
-                                  >
-                                    Rejeter
-                                  </button>
-                                )}
-                                {(
-                                  ["annule", "liste_attente", "demande_en_attente"]
-                                ).includes(insc.status) && (
-                                  <button
-                                    className="btn-delete"
-                                    onClick={() => handleAdminDelete(insc.id)}
-                                  >
-                                    Supprimer
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-
-            {activeTab === "users" && (
-              <>
-                <div className="page-eyebrow">Administration</div>
-                <h1 className="page-title">Utilisateurs</h1>
-                <p className="page-sub">Gestion des comptes et des rôles</p>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>
-                          {user.firstName} {user.lastName}
-                        </td>
-                        <td>{user.email}</td>
-                        <td>
-                          <span
-                            className={`badge ${
-                              user.role === "admin" ? "badge-admin" : "badge-user"
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-                        </td>
-                        <td style={{ color: "var(--steel)" }}>—</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-
-            {activeTab === "articles" && (
-              <>
-                <div className="section-bar">
-                  <div>
-                    <div className="page-eyebrow">Administration</div>
-                    <h1 className="page-title">Articles & Actualités</h1>
-                  </div>
-                  {!showArticleForm && (
-                    <button
-                      className="btn-new"
-                      onClick={() => {
-                        setShowArticleForm(true);
-                        setError("");
-                        setSuccess("");
-                      }}
-                    >
-                      + Nouvel article
-                    </button>
-                  )}
-                </div>
-
-                {showArticleForm && (
-                  <form className="article-form" onSubmit={handleSubmitArticle}>
-                    {error && (
-                      <div className="alert alert-error">
-                        <span className="alert-icon" aria-hidden="true">⚠</span>
-                        <span>{error}</span>
-                      </div>
-                    )}
-                    {success && (
-                      <div className="alert alert-success">
-                        <span className="alert-icon" aria-hidden="true">✓</span>
-                        <span>{success}</span>
-                      </div>
-                    )}
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Titre *</label>
-                        <input
-                          type="text"
-                          name="title"
-                          className="form-input"
-                          value={formData.title}
-                          onChange={handleFormChange}
-                          placeholder="Ex: Les tendances 2025 de l'IT"
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Catégorie *</label>
-                        <select
-                          name="category"
-                          className="form-select"
-                          value={formData.category}
-                          onChange={handleFormChange}
-                          required
-                        >
-                          <option>Articles techniques</option>
-                          <option>Innovations</option>
-                          <option>Événements</option>
-                          <option>Veille sectorielle</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Résumé (Excerpt) *</label>
-                      <textarea
-                        name="excerpt"
-                        className="form-textarea"
-                        value={formData.excerpt}
-                        onChange={handleFormChange}
-                        placeholder="Courte description qui apparaîtra en aperçu"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Contenu *</label>
-                      <textarea
-                        name="content"
-                        className="form-textarea"
-                        value={formData.content}
-                        onChange={handleFormChange}
-                        placeholder="Contenu complet de l'article"
-                        required
-                        style={{ minHeight: "200px" }}
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">URL Image (optionnel)</label>
-                        <input
-                          type="text"
-                          name="image"
-                          className="form-input"
-                          value={formData.image}
-                          onChange={handleFormChange}
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Auteur (optionnel)</label>
-                        <input
-                          type="text"
-                          name="author"
-                          className="form-input"
-                          value={formData.author}
-                          onChange={handleFormChange}
-                          placeholder="Votre nom"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-buttons">
-                      <button
-                        type="submit"
-                        className="btn-submit"
-                        disabled={submitting}
-                      >
-                        {submitting ? "Création..." : "Créer l'article"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => setShowArticleForm(false)}
-                        disabled={submitting}
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {loadingArticles ? (
-                  <div className="empty-box">
-                    <div className="empty-icon" aria-hidden="true">⟳</div>
-                    <div className="empty-text">Chargement des articles...</div>
-                  </div>
-                ) : articles.length === 0 ? (
-                  <div className="empty-box">
-                    <div className="empty-icon" aria-hidden="true">◆</div>
-                    <div className="empty-text">Aucun article pour le moment</div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="page-sub" style={{ marginBottom: "1.5rem" }}>
-                      {articles.length} article{articles.length > 1 ? "s" : ""} créé
-                      {articles.length > 1 ? "s" : ""}
-                    </p>
-                    {articles.map((article) => (
-                      <div key={article.id} className="article-item">
-                        <div className="article-info">
-                          <div className="article-title">{article.title}</div>
-                          <div className="article-meta">
-                            <span className="article-badge">{article.category}</span>
-                            <span>
-                              {new Date(article.createdAt).toLocaleDateString("fr-FR")}
-                            </span>
-                            <span>
-                              {article.published ? "✓ Publié" : "Non publié"}
-                            </span>
-                          </div>
-                          <div className="article-excerpt">{article.excerpt}</div>
-                        </div>
-                        <div className="article-actions">
-                          {!article.published && (
-                            <button
-                              className="btn-publish"
-                              onClick={() =>
-                                handlePublishArticle(article.id, article.published)
-                              }
-                            >
-                              Publier
-                            </button>
-                          )}
-                          {article.published && (
-                            <button
-                              className="btn-publish"
-                              onClick={() =>
-                                handlePublishArticle(article.id, article.published)
-                              }
-                              style={{ background: "var(--steel)" }}
-                            >
-                              Dépublier
-                            </button>
-                          )}
-                          <button className="btn-small">Éditer</button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDeleteArticle(article.id)}
-                          >
-                            Supprimer
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      </DashboardShell>
 
       {showInscriptionModal && (
         <div
