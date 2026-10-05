@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -248,7 +248,13 @@ export default function AdminDashboard() {
     );
   };
 
-  const renderContentList = (loading: boolean, items: any[], emptyIcon: string, emptyText: string, renderItem: (item: any) => React.ReactNode) => {
+  const renderContentList = <T,>(
+    loading: boolean,
+    items: T[],
+    emptyIcon: string,
+    emptyText: string,
+    renderItem: (item: T) => ReactNode,
+  ) => {
     if (loading) {
       return <div className="empty"><div className="spinner"/></div>;
     }
@@ -482,16 +488,16 @@ export default function AdminDashboard() {
   }, [activeTab, routeTab, router.isReady, router.pathname, tabStateReady]);
 
   const saveScrollForTab = (tab: string) => {
-    try { sessionStorage.setItem(`adminScroll_${tab}`, String(window.scrollY || 0)); } catch (e) {}
+    try { sessionStorage.setItem(`adminScroll_${tab}`, String(window.scrollY || 0)); } catch { /* noop */ }
   };
   const restoreScrollForTab = (tab: string) => {
     try {
       const v = sessionStorage.getItem(`adminScroll_${tab}`);
-      if (v !== null) window.requestAnimationFrame(() => window.scrollTo(0, parseInt(v) || 0));
-    } catch (e) {}
+      if (v !== null) window.requestAnimationFrame(() => window.scrollTo(0, parseInt(v, 10) || 0));
+    } catch { /* noop */ }
   };
   const handleSetActiveTab = (tab: AdminTab) => {
-    try { saveScrollForTab(currentTabRef.current); } catch {}
+    try { saveScrollForTab(currentTabRef.current); } catch { /* noop */ }
     currentTabRef.current = tab;
     setActiveTab(tab);
     setNavOpen(false);
@@ -519,7 +525,7 @@ export default function AdminDashboard() {
   }, []);
   useEffect(() => {
     const onRouteChangeStart = (url: string) => {
-      try { if (!url.includes(router.pathname)) saveScrollForTab(currentTabRef.current); } catch (e) {}
+      try { if (!url.includes(router.pathname)) saveScrollForTab(currentTabRef.current); } catch { /* noop */ }
     };
     router.events.on("routeChangeStart", onRouteChangeStart);
     return () => router.events.off("routeChangeStart", onRouteChangeStart);
@@ -613,7 +619,8 @@ export default function AdminDashboard() {
           (company): company is OdooCompany =>
             isRecord(company) &&
             Number.isSafeInteger(company.id) &&
-            typeof company.name === "string",
+            typeof company.name === "string" &&
+            (company.type === "groupe" || company.type === "market"),
         )
       ) {
         throw new Error("Odoo a renvoyé une liste de sociétés invalide.");
@@ -737,7 +744,7 @@ export default function AdminDashboard() {
     } catch { showToast("Erreur réseau", "err"); }
   };
 
-  const handleCreateSession = async (e: React.FormEvent) => {
+  const handleCreateSession = async (e: FormEvent) => {
     e.preventDefault();
     setSessionError(""); setSessionSuccess("");
     if (!sessionFormData.formationId || !sessionFormData.startDate || !sessionFormData.endDate || !sessionFormData.location) {
@@ -748,7 +755,7 @@ export default function AdminDashboard() {
       const r = await fetch(buildApiUrl("/api/sessions"), {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ formationId: parseInt(sessionFormData.formationId), startDate: new Date(sessionFormData.startDate).toISOString(), endDate: new Date(sessionFormData.endDate).toISOString(), location: sessionFormData.location, capacity: parseInt(sessionFormData.capacity) })
+        body: JSON.stringify({ formationId: parseInt(sessionFormData.formationId, 10), startDate: new Date(sessionFormData.startDate).toISOString(), endDate: new Date(sessionFormData.endDate).toISOString(), location: sessionFormData.location, capacity: parseInt(sessionFormData.capacity, 10) })
       });
       if (r.ok) {
         setSessionSuccess("Session créée avec succès!");
@@ -866,12 +873,12 @@ export default function AdminDashboard() {
           const articleList = Array.isArray(d.data) ? d.data : (d.data?.data || []);
           setArticles(articleList); setLoadingArticles(false); return;
         }
-      } catch (err) {}
+      } catch { /* essaie l'endpoint suivant */ }
     }
     setArticles([]); setLoadingArticles(false);
   };
 
-  const handleSubmitArticle = async (e: React.FormEvent) => {
+  const handleSubmitArticle = async (e: FormEvent) => {
     e.preventDefault(); setArticleError(""); setArticleSuccess("");
     if (!articleFormData.title || !articleFormData.excerpt || !articleFormData.content) { setArticleError("Champs obligatoires manquants"); return; }
     setSubmittingArticle(true);
@@ -920,7 +927,7 @@ export default function AdminDashboard() {
     finally { setLoadingBrochures(false); }
   };
 
-  const handleSubmitBrochure = async (e: React.FormEvent) => {
+  const handleSubmitBrochure = async (e: FormEvent) => {
     e.preventDefault(); setBrochureError(""); setBrochureSuccess("");
     if (!brochureFormData.name || !brochureFile) { setBrochureError("Fichier et nom requis"); return; }
     setSubmittingBrochure(true);
@@ -1235,12 +1242,12 @@ export default function AdminDashboard() {
               </div>
 
               <div className="filter-row">
-                <select value={filterRole} onChange={e => setFilterRole(e.target.value as any)}>
+                <select value={filterRole} onChange={e => setFilterRole(e.target.value as "all" | "admin" | "user")}>
                   <option value="all">Tous les rôles</option>
                   <option value="user">Utilisateur</option>
                   <option value="admin">Admin</option>
                 </select>
-                <select value={filterActive} onChange={e => setFilterActive(e.target.value as any)}>
+                <select value={filterActive} onChange={e => setFilterActive(e.target.value as "all" | "active" | "inactive")}>
                   <option value="all">Tous les statuts</option>
                   <option value="active">Actif</option>
                   <option value="inactive">Inactif</option>
@@ -1485,7 +1492,7 @@ export default function AdminDashboard() {
               )}
 
               <div className="filter-row">
-                <select value={filterInscriptionStatus} onChange={e => setFilterInscriptionStatus(e.target.value as any)}>
+                <select value={filterInscriptionStatus} onChange={e => setFilterInscriptionStatus(e.target.value as "all" | "liste_attente" | "confirme" | "annule")}>
                   <option value="all">Tous les statuts</option>
                   <option value="liste_attente">En attente</option>
                   <option value="confirme">Confirmés</option>
