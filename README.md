@@ -159,6 +159,8 @@ npx prisma migrate status
 
 `migrate deploy` applique uniquement les migrations en attente ; ne lancez pas `prisma migrate reset` pour corriger une colonne manquante. Pour créer un compte de test, définissez `LOCAL_ADMIN_EMAIL` et `LOCAL_ADMIN_PASSWORD` dans le terminal, puis exécutez `npm run create:admin`. Le script refuse les bases distantes et les bases locales dont le nom n'est pas `fisafi_local`, exige un mot de passe d'au moins 14 caractères, n'affiche pas le mot de passe, et ne modifie pas un compte existant.
 
+Avant de déployer l'activation des espaces du compte, appliquez aussi les migrations en attente sur la base de production avec `npm run prisma:deploy`, depuis un environnement dont `DATABASE_URL` pointe vers cette base, puis vérifiez avec `npx prisma migrate status`. La migration `20261005100000_user_profiles` ajoute le type et la colonne nécessaires ; sans elle, l'activation des espaces échoue.
+
 Sous Windows, arrêtez temporairement les serveurs Node du projet avant `npm run build:backend` ou `npm run prisma:generate` si Prisma signale `EPERM` en remplaçant `query_engine-windows.dll.node`. Un backend déjà lancé peut continuer à servir les requêtes après une migration additive, mais arrêtez-le puis reconstruisez-le avant de tester une nouvelle compilation.
 
 ## 🤝 Contribution

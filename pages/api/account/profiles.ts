@@ -51,6 +51,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error("[Account/Profiles] Could not update account profiles:", error);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2022"
+    ) {
+      return res.status(503).json({
+        error: "La configuration des espaces du compte n’est pas encore appliquée sur le serveur. Réessayez plus tard ou contactez le support.",
+      });
+    }
     return res.status(503).json({ error: "Impossible de mettre à jour les profils du compte." });
   }
 }

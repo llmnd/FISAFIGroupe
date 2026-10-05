@@ -205,6 +205,15 @@ export default function DashboardPage() {
   const [loading, setLoading]   = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [sidebarOpen]);
+
   // Formations & inscriptions
   const [formations, setFormations] = useState<Formation[]>([]);
   const [loadingFormations, setLoadingFormations] = useState(false);
@@ -1032,6 +1041,7 @@ export default function DashboardPage() {
       <Head>
         <title>Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         
         <style>{`
           *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -1053,7 +1063,7 @@ export default function DashboardPage() {
           .dash-layout { display:flex; min-height:100svh; }
 
           /* ── OVERLAY (mobile) ── */
-          .dash-overlay { display:none; position:fixed; inset:0; background:rgba(11,24,41,0.5); z-index:40; }
+          .dash-overlay { display:none; position:fixed; inset:0; padding:0; border:0; background:rgba(11,24,41,0.5); z-index:40; }
           .dash-overlay.open { display:block; }
 
           /* ── SIDEBAR ── */
@@ -1064,8 +1074,12 @@ export default function DashboardPage() {
             transform:translateX(-100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1);
           }
           .dash-sidebar.open { transform:translateX(0); }
+          @media(max-width:899px) {
+            .dash-sidebar { visibility:hidden; transition:transform 0.28s cubic-bezier(.4,0,.2,1), visibility 0s linear 0.28s; }
+            .dash-sidebar.open { visibility:visible; transition:transform 0.28s cubic-bezier(.4,0,.2,1), visibility 0s; }
+          }
           @media(min-width:900px) {
-            .dash-sidebar { transform:translateX(0); position:sticky; top:0; height:100svh; flex-shrink:0; }
+            .dash-sidebar { visibility:visible; transform:translateX(0); position:sticky; top:0; height:100svh; flex-shrink:0; }
             .dash-overlay { display:none !important; }
           }
 
@@ -1117,10 +1131,14 @@ export default function DashboardPage() {
           .topbar-logo { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); }
           .topbar-logo span { color:var(--orange); }
           .topbar-hamburger { background:none; border:none; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:4px; }
+          @media(max-width:899px) { .topbar-hamburger { width:44px; height:44px; align-items:center; justify-content:center; } }
           .topbar-hamburger span { display:block; width:20px; height:1px; background:var(--ink); transition:transform 0.2s, opacity 0.2s; }
           .topbar-hamburger.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
           .topbar-hamburger.open span:nth-child(2) { opacity:0; }
           .topbar-hamburger.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+          @media(prefers-reduced-motion:reduce) {
+            .dash-sidebar, .topbar-hamburger span, .sidebar-tab { transition:none !important; }
+          }
           
           /* ── Mobile logo ── */
           .dash-mobile-logo { display:none; }
@@ -1442,12 +1460,18 @@ export default function DashboardPage() {
       </Head>
 
       {/* Overlay mobile */}
-      <div className={`dash-overlay${sidebarOpen ? " open" : ""}`} onClick={() => setSidebarOpen(false)} />
+      <button
+        type="button"
+        className={`dash-overlay${sidebarOpen ? " open" : ""}`}
+        aria-label="Fermer le menu"
+        tabIndex={sidebarOpen ? 0 : -1}
+        onClick={() => setSidebarOpen(false)}
+      />
 
       <div className="dash-layout user-dashboard employee-portal-page">
 
         {/* ── SIDEBAR ── */}
-        <aside className={`dash-sidebar${sidebarOpen ? " open" : ""}`}>
+        <aside id="dashboard-sidebar" className={`dash-sidebar${sidebarOpen ? " open" : ""}`}>
           <div className="sidebar-head">
             <div className="sidebar-logo">Fi<span>SAFI</span> Groupe</div>
             <div className="sidebar-role">{user.role === "admin" ? "Administrateur" : "Utilisateur"}</div>
@@ -1511,8 +1535,11 @@ export default function DashboardPage() {
               <span>Retour</span>
             </button>
             <button
+              type="button"
               className={`topbar-hamburger${sidebarOpen ? " open" : ""}`}
-              aria-label="Menu"
+              aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={sidebarOpen}
+              aria-controls="dashboard-sidebar"
               onClick={() => setSidebarOpen(v => !v)}
             >
               <span /><span /><span />
