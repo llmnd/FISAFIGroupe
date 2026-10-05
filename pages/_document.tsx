@@ -7,8 +7,14 @@ export default function Document() {
         <script
           dangerouslySetInnerHTML={{
             __html: `(function () {
-              if (window.location.pathname !== "/market" &&
-                  window.location.pathname !== "/market/commande") return;
+              var isMarketSubdomain = window.location.hostname === "market.fisafigroupe.com";
+              var isMarketPage = isMarketSubdomain ||
+                window.location.pathname === "/market" ||
+                window.location.pathname === "/market/commande";
+              if (!isMarketPage) return;
+              if (isMarketSubdomain) {
+                document.documentElement.setAttribute("data-market-subdomain", "true");
+              }
               var preference = null;
               try {
                 preference = window.localStorage.getItem("fisafi-market-theme");
@@ -35,6 +41,14 @@ export default function Document() {
       </Head>
       <body>
         <Main />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (document.documentElement.getAttribute("data-market-theme") === "dark") {
+              var marketPage = document.querySelector(".market-page");
+              if (marketPage) marketPage.setAttribute("data-theme", "dark");
+            }`,
+          }}
+        />
         <NextScript />
       </body>
     </Html>

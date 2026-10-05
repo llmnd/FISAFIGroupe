@@ -1,6 +1,6 @@
 "use client";
 
-import React, { type ReactNode, useEffect, useRef, useState, useCallback } from "react";
+import React, { type ReactNode, useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -188,13 +188,16 @@ export default function Header({
     ? [{ label: "Market", href: "/" }]
     : NAV_ITEMS;
 
+  useLayoutEffect(() => {
+    if (window.location.hostname !== "market.fisafigroupe.com") return;
+    document.documentElement.setAttribute("data-market-header-ready", "true");
+    setIsMarketSubdomain(true);
+  }, []);
+
   /* ─── Auth ─────────────────────────────────────────────── */
   useEffect(() => {
     let active = true;
     const syncAuth = async () => {
-      if (window.location.hostname === "market.fisafigroupe.com") {
-        setIsMarketSubdomain(true);
-      }
       try {
         const response = await fetch("/api/auth/me");
         if (active) setIsLoggedIn(response.ok);

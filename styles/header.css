@@ -145,6 +145,11 @@ body {
   margin: 0; padding: 0;
 }
 
+html[data-market-subdomain="true"]:not([data-market-header-ready="true"]) .header-nav,
+html[data-market-subdomain="true"]:not([data-market-header-ready="true"]) .header-drawer-nav {
+  visibility: hidden;
+}
+
 @media (min-width: 768px) {
   .header-nav { display: flex; }
 }

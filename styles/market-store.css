@@ -35,6 +35,15 @@
   color: var(--market-ink);
 }
 
+html[data-market-theme="dark"] {
+  color-scheme: dark;
+  background: #15121f;
+}
+
+html[data-market-theme="dark"] body {
+  background: #15121f;
+}
+
 html[data-market-theme="dark"] .market-page {
   color-scheme: dark;
   --market-ink: #f2eefb;
