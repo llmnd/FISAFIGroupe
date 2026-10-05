@@ -3,6 +3,21 @@ import { prisma } from "@/backend/lib/db";
 import { hashPassword } from "@/backend/utils/auth";
 import { EmployeeAuthError, EMPLOYEE_ROLES, authenticateEmployee, requireAdmin } from "@/lib/employeeAuth";
 
+const USER_PROFILES = ["MARKET_CUSTOMER", "TRAINING_PARTICIPANT"] as const;
+type UserProfile = (typeof USER_PROFILES)[number];
+
+function isUserProfile(value: unknown): value is UserProfile {
+  return USER_PROFILES.some((profile) => profile === value);
+}
+
+function isValidUserProfiles(value: unknown): value is UserProfile[] {
+  return (
+    Array.isArray(value) &&
+    value.every(isUserProfile) &&
+    new Set(value).size === value.length
+  );
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
   const { id } = req.query;
@@ -25,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastName: true,
           role: true,
           employeeRole: true,
+          profiles: true,
           active: true,
           createdAt: true,
           updatedAt: true,
@@ -40,13 +56,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "PUT") {
       // Mettre à jour un utilisateur
-      const { firstName, lastName, password, role, active, employeeRole } = req.body;
+      const { firstName, lastName, password, role, active, employeeRole, profiles } = req.body;
       if (
         employeeRole !== undefined &&
         employeeRole !== null &&
         !EMPLOYEE_ROLES.includes(employeeRole)
       ) {
         return res.status(400).json({ error: "Invalid employee role" });
+      }
+      if (profiles !== undefined && !isValidUserProfiles(profiles)) {
+        return res.status(400).json({ error: "Invalid user profiles" });
       }
 
       const updateData: Partial<{
@@ -56,6 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role?: string;
         active?: boolean;
         employeeRole?: string | null;
+        profiles?: UserProfile[];
       }> = {};
       
       if (firstName) updateData.firstName = firstName;
@@ -64,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (role) updateData.role = role;
       if (active !== undefined) updateData.active = active;
       if (employeeRole !== undefined) updateData.employeeRole = employeeRole;
+      if (profiles !== undefined) updateData.profiles = profiles;
 
       const user = await prisma.user.update({
         where: { id },
@@ -75,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastName: true,
           role: true,
           employeeRole: true,
+          profiles: true,
           active: true,
           createdAt: true,
           updatedAt: true,

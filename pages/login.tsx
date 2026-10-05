@@ -162,6 +162,15 @@ const LOGIN_CSS = `
   .l-field-line { position: absolute; bottom: -1px; left: 0; height: 2px; background: var(--blue); width: 0; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); }
   .l-field.focused .l-field-line { width: 100%; }
   .l-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .l-profile-fieldset { display: grid; gap: 0.55rem; margin: 0.6rem 0 0.9rem; padding: 0; border: 0; }
+  .l-profile-fieldset legend { margin-bottom: 0.3rem; color: var(--ink); font-size: 0.88rem; font-weight: 500; }
+  .l-profile-option { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.7rem 0.75rem; border: 1px solid rgba(11,24,41,0.12); border-radius: 5px; cursor: pointer; }
+  .l-profile-option:has(input:checked) { border-color: rgba(30,64,175,0.55); background: rgba(30,64,175,0.04); }
+  .l-profile-option input { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 0.15rem; accent-color: var(--blue); }
+  .l-profile-option span { display: grid; gap: 0.12rem; }
+  .l-profile-option strong { color: var(--ink); font-size: 0.83rem; font-weight: 500; }
+  .l-profile-option small, .l-profile-hint { color: rgba(11,24,41,0.58); font-size: 0.73rem; line-height: 1.4; }
+  .l-profile-hint { padding-left: 0.1rem; }
   .l-alert { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.9rem; font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 400; }
   .l-alert-err { background: #fff1f2; border-left: 2px solid #f43f5e; color: #9f1239; }
   .l-alert-ok  { background: #f0fdf4; border-left: 2px solid #22c55e; color: #166534; }
@@ -231,7 +240,13 @@ export default function LoginPage() {
     router.query.next === "/market" || router.query.next === "/market/commande";
   const [isLogin, setIsLogin] = useState(true);
   const [forgotPassword, setForgotPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "", firstName: "", lastName: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    profiles: [] as ("MARKET_CUSTOMER" | "TRAINING_PARTICIPANT")[],
+  });
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
@@ -359,9 +374,22 @@ export default function LoginPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
+  const toggleProfile = (profile: "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT") => {
+    setFormData((previous) => ({
+      ...previous,
+      profiles: previous.profiles.includes(profile)
+        ? previous.profiles.filter((item) => item !== profile)
+        : [...previous.profiles, profile],
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(null); setSuccess(null);
     try {
+      if (!isLogin && !forgotPassword && formData.profiles.length === 0) {
+        setError("Choisissez au moins un profil : client Market ou participant aux formations.");
+        return;
+      }
       if (forgotPassword) {
         const response = await fetch("/api/auth/forgot-password", {
           method: "POST",
@@ -521,7 +549,36 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <FloatField id="email" label="Adresse email" type="email" name="email" value={formData.email} onChange={handleChange} required focused={focusedField==="email"} onFocus={()=>setFocusedField("email")} onBlur={()=>setFocusedField(null)} />
+                  {!isLogin && !forgotPassword && (
+                    <fieldset className="l-profile-fieldset">
+                      <legend>Comment souhaitez-vous utiliser FiSAFi ?</legend>
+                      <label className="l-profile-option">
+                        <input
+                          type="checkbox"
+                          checked={formData.profiles.includes("MARKET_CUSTOMER")}
+                          onChange={() => toggleProfile("MARKET_CUSTOMER")}
+                        />
+                        <span>
+                          <strong>Client FiSAFi Market</strong>
+                          <small>Découvrir les produits et passer des commandes.</small>
+                        </span>
+                      </label>
+                      <label className="l-profile-option">
+                        <input
+                          type="checkbox"
+                          checked={formData.profiles.includes("TRAINING_PARTICIPANT")}
+                          onChange={() => toggleProfile("TRAINING_PARTICIPANT")}
+                        />
+                        <span>
+                          <strong>Participant aux formations FiSAFi Groupe</strong>
+                          <small>Consulter les formations et s’inscrire aux sessions.</small>
+                        </span>
+                      </label>
+                      <small className="l-profile-hint">Vous pouvez sélectionner les deux profils.</small>
+                    </fieldset>
+                  )}
+
+                  <FloatField id="email" label="Adresse email" type="email" name="email" value={formData.email} onChange={handleChange} required focused={focusedField==="email"} onFocus={()=>setFocusedField("email")} onBlur={()=>setFocusedField(null)} />
               {!forgotPassword && (
                 <FloatField id="password" label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} required focused={focusedField==="password"} onFocus={()=>setFocusedField("password")} onBlur={()=>setFocusedField(null)} autoComplete={isLogin ? "current-password" : "new-password"} />
               )}

@@ -141,11 +141,14 @@ export interface JWTPayload {
   role?: string;
 }
 
+export type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
+
 export interface CreateUserRequest {
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
+  profiles: UserProfile[];
 }
 
 export interface LoginRequest {
@@ -162,6 +165,7 @@ export interface AuthResponse {
     lastName?: string;
     role?: string;
     employeeRole?: string | null;
+    profiles: UserProfile[];
   };
 }
 

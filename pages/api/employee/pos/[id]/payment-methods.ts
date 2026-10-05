@@ -7,6 +7,7 @@ import {
 import { ERPOperationError } from "@/lib/erp/errors";
 import { getERPProvider } from "@/lib/erp";
 import { OdooApiError } from "@/lib/marketOdoo";
+import { assertEmployeePOSCompany, EmployeeCompanyError, resolveEmployeeCompany } from "@/lib/employeeCompany";
 
 function parsePositiveInteger(value: string | string[] | undefined): number | null {
   if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
@@ -23,11 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const account = await authenticateEmployee(req);
     requirePOSSale(account);
+    const company = await resolveEmployeeCompany(req);
     const configId = parsePositiveInteger(req.query.id);
     const sessionId = parsePositiveInteger(req.query.sessionId);
     if (configId === null || sessionId === null) {
       return res.status(400).json({ error: "La session de caisse demandée est invalide." });
     }
+    await assertEmployeePOSCompany(configId, company.id);
     const methods = await getERPProvider().getPOSPaymentMethods({
       configId,
       sessionId,
@@ -35,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     return res.status(200).json({ methods });
   } catch (error) {
-    if (error instanceof EmployeeAuthError || error instanceof ERPOperationError) {
+    if (error instanceof EmployeeAuthError || error instanceof EmployeeCompanyError || error instanceof ERPOperationError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

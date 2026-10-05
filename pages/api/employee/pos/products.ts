@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { authenticateEmployee, EmployeeAuthError, requirePOSRead } from "@/lib/employeeAuth";
 import { getERPProvider } from "@/lib/erp";
 import { OdooApiError } from "@/lib/marketOdoo";
+import { assertEmployeePOSCompany, EmployeeCompanyError, resolveEmployeeCompany } from "@/lib/employeeCompany";
 
 const PAGE_SIZE = 30;
 const MAX_OFFSET = 100_000;
@@ -20,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const account = await authenticateEmployee(req);
     requirePOSRead(account);
+    const company = await resolveEmployeeCompany(req);
 
     const rawConfigId = getSingleQueryValue(req.query.configId);
     if (!rawConfigId || !/^\d+$/.test(rawConfigId)) {
@@ -39,8 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "La page demandée est hors limites." });
     }
 
+    await assertEmployeePOSCompany(configId, company.id);
     const page = await getERPProvider().getPOSProducts({
       configId,
+      companyId: company.id,
       search,
       offset,
       limit: PAGE_SIZE,
@@ -48,6 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json(page);
   } catch (error) {
     if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error instanceof EmployeeCompanyError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

@@ -8,6 +8,7 @@ import {
   type SalesOrderInput,
 } from "@/lib/erp/sales";
 import { OdooApiError } from "@/lib/marketOdoo";
+import { EmployeeCompanyError, resolveEmployeeCompany } from "@/lib/employeeCompany";
 
 function isSalesOrderInput(value: unknown): value is SalesOrderInput {
   if (!value || typeof value !== "object") return false;
@@ -46,17 +47,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const employee = await authenticateEmployee(req);
     requireAdmin(employee);
+    const company = await resolveEmployeeCompany(req);
 
     if (req.method === "GET") {
       const resource = getQueryString(req.query.resource);
       const search = getQueryString(req.query.search);
       if (resource === "customers") {
-        return res.status(200).json({ customers: await searchSalesCustomers(search) });
+        return res.status(200).json({ customers: await searchSalesCustomers(search, company.id) });
       }
       if (resource === "products") {
-        return res.status(200).json({ products: await searchSalesProducts(search) });
+        return res.status(200).json({ products: await searchSalesProducts(search, company.id) });
       }
       return res.status(200).json(await listSalesOrders({
+        companyId: company.id,
         search,
         offset: getInteger(req.query.offset, 0),
         limit: getInteger(req.query.limit, 25),
@@ -66,10 +69,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!isSalesOrderInput(req.body)) {
       return res.status(400).json({ error: "Vérifiez le client, les lignes et les quantités du devis." });
     }
-    const order = await createSalesOrder(req.body);
+    const order = await createSalesOrder(req.body, company.id);
     return res.status(201).json({ order });
   } catch (error) {
     if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error instanceof EmployeeCompanyError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

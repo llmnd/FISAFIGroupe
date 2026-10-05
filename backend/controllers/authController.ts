@@ -11,7 +11,19 @@ export async function register(
   reply: FastifyReply
 ) {
   try {
-    const { email, password, firstName, lastName } = request.body;
+    const { email, password, firstName, lastName, profiles } = request.body;
+    const allowedProfiles = new Set(["MARKET_CUSTOMER", "TRAINING_PARTICIPANT"]);
+    if (
+      !Array.isArray(profiles) ||
+      profiles.length === 0 ||
+      profiles.some((profile) => typeof profile !== "string" || !allowedProfiles.has(profile)) ||
+      new Set(profiles).size !== profiles.length
+    ) {
+      return reply.status(400).send({
+        success: false,
+        error: "Choisissez au moins un profil valide.",
+      });
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -37,6 +49,7 @@ export async function register(
         password: hashedPassword,
         firstName,
         lastName,
+        profiles,
         emailVerificationTokenHash: verificationTokenHash,
         emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
@@ -73,6 +86,7 @@ export async function register(
         lastName: user.lastName || undefined,
         role: (user as any).role || 'user',
         employeeRole: user.employeeRole,
+        profiles: user.profiles,
       },
     };
 
@@ -222,6 +236,7 @@ export async function login(
         lastName: user.lastName || undefined,
         role: (user as any).role || 'user',
         employeeRole: user.employeeRole,
+        profiles: user.profiles,
       },
     };
 
@@ -422,6 +437,7 @@ export async function getMe(
         lastName: true,
         role: true,
         employeeRole: true,
+        profiles: true,
         active: true,
         createdAt: true,
         emailVerifiedAt: true,

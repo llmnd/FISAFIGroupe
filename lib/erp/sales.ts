@@ -1,4 +1,5 @@
 import { callOdoo, OdooApiError } from "@/lib/marketOdoo";
+import { getMarketOrderDeliveryDetails } from "@/lib/marketDeliveryOrder";
 
 export type SalesOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
 
@@ -20,6 +21,16 @@ export type SalesOrderLine = {
   total: number;
 };
 
+export type SalesOrderInvoice = {
+  id: number;
+  reference: string;
+  type: "invoice" | "credit_note";
+  date: string | null;
+  total: number;
+  currencyName: string | null;
+  pdfAvailable: boolean;
+};
+
 export type SalesOrderSummary = {
   id: number;
   reference: string;
@@ -31,12 +42,14 @@ export type SalesOrderSummary = {
   amountUntaxed: number;
   amountTax: number;
   amountTotal: number;
+  deliveryFeeEstimate: number | null;
   currencyName: string;
 };
 
 export type SalesOrder = SalesOrderSummary & {
   note: string;
   lines: SalesOrderLine[];
+  invoices: SalesOrderInvoice[];
 };
 
 export type SalesCustomer = {
@@ -68,6 +81,7 @@ type OdooOrder = {
   amount_total: number;
   note: string | false;
   order_line: number[];
+  invoice_ids?: number[];
 };
 type OdooOrderLine = {
   id: number;
@@ -107,6 +121,26 @@ type OdooVariant = {
 type OdooProductTemplateReference = {
   id: number;
   product_tmpl_id: [number, string];
+};
+type OdooSalesInvoice = {
+  id: number;
+  name: string;
+  move_type: "out_invoice" | "out_refund";
+  state: "posted";
+  invoice_date: string | false;
+  amount_total: number;
+  currency_id: Relation;
+  company_id: [number, string];
+  invoice_pdf_report_id: Relation;
+};
+type OdooInvoiceAttachment = {
+  id: number;
+  name: string;
+  mimetype: string;
+  res_model: string;
+  res_id: number;
+  res_field: string | false;
+  datas: string | false;
 };
 
 const MAX_ORDER_LINES = 50;
@@ -148,7 +182,10 @@ function isOdooOrder(value: unknown): value is OdooOrder {
     typeof order.amount_total === "number" && Number.isFinite(order.amount_total) &&
     (typeof order.note === "string" || order.note === false) &&
     Array.isArray(order.order_line) &&
-    order.order_line.every((id) => Number.isSafeInteger(id) && id > 0)
+    order.order_line.every((id) => Number.isSafeInteger(id) && id > 0) &&
+    (order.invoice_ids === undefined ||
+      (Array.isArray(order.invoice_ids) &&
+        order.invoice_ids.every((id) => Number.isSafeInteger(id) && id > 0)))
   );
 }
 
@@ -168,6 +205,73 @@ function isOdooOrderLine(value: unknown): value is OdooOrderLine {
     typeof line.price_subtotal === "number" && Number.isFinite(line.price_subtotal) &&
     typeof line.price_total === "number" && Number.isFinite(line.price_total)
   );
+}
+
+function isOdooSalesInvoice(value: unknown): value is OdooSalesInvoice {
+  if (!value || typeof value !== "object") return false;
+  const invoice = value as Partial<OdooSalesInvoice>;
+  return (
+    Number.isSafeInteger(invoice.id) &&
+    typeof invoice.name === "string" &&
+    (invoice.move_type === "out_invoice" || invoice.move_type === "out_refund") &&
+    invoice.state === "posted" &&
+    (typeof invoice.invoice_date === "string" || invoice.invoice_date === false) &&
+    typeof invoice.amount_total === "number" && Number.isFinite(invoice.amount_total) &&
+    isRelation(invoice.currency_id) &&
+    Array.isArray(invoice.company_id) &&
+    Number.isSafeInteger(invoice.company_id[0]) &&
+    typeof invoice.company_id[1] === "string" &&
+    isRelation(invoice.invoice_pdf_report_id)
+  );
+}
+
+function isOdooInvoiceAttachment(value: unknown): value is OdooInvoiceAttachment {
+  if (!value || typeof value !== "object") return false;
+  const attachment = value as Partial<OdooInvoiceAttachment>;
+  return (
+    Number.isSafeInteger(attachment.id) &&
+    typeof attachment.name === "string" &&
+    typeof attachment.mimetype === "string" &&
+    typeof attachment.res_model === "string" &&
+    Number.isSafeInteger(attachment.res_id) &&
+    (typeof attachment.res_field === "string" || attachment.res_field === false) &&
+    (typeof attachment.datas === "string" || attachment.datas === false)
+  );
+}
+
+async function fetchPostedSalesInvoices(
+  invoiceIds: number[],
+  companyId: number,
+): Promise<OdooSalesInvoice[]> {
+  if (invoiceIds.length === 0) return [];
+  if (invoiceIds.length > 100) {
+    throw new OdooApiError("Cette commande est associée à trop de factures pour être affichée.");
+  }
+  const payload: unknown = await callOdoo("account.move", "search_read", {
+    domain: [
+      ["id", "in", invoiceIds],
+      ["company_id", "=", companyId],
+      ["move_type", "in", ["out_invoice", "out_refund"]],
+      ["state", "=", "posted"],
+    ],
+    fields: [
+      "id", "name", "move_type", "state", "invoice_date", "amount_total",
+      "currency_id", "company_id", "invoice_pdf_report_id",
+    ],
+    limit: invoiceIds.length,
+    order: "invoice_date desc, id desc",
+  });
+  if (
+    !Array.isArray(payload) ||
+    !payload.every(isOdooSalesInvoice) ||
+    payload.some((invoice) =>
+      !invoiceIds.includes(invoice.id) || invoice.company_id[0] !== companyId
+    )
+  ) {
+    console.error("[ERP/Odoo] Sales invoice lookup returned an unexpected response.");
+    throw new OdooApiError("Odoo a renvoyé une liste de factures invalide.");
+  }
+  return payload;
 }
 
 function isOdooCustomer(value: unknown): value is OdooCustomer {
@@ -270,16 +374,20 @@ function parseOrder(payload: unknown, requestedId?: number): OdooOrder {
   return payload[0];
 }
 
-async function fetchSalesOrder(id: number): Promise<SalesOrder> {
+async function fetchSalesOrder(id: number, companyId: number): Promise<SalesOrder> {
   const payload: unknown = await callOdoo("sale.order", "search_read", {
-    domain: [["id", "=", id]],
+    domain: [["id", "=", id], ["company_id", "=", companyId]],
     fields: [
       "id", "name", "state", "partner_id", "client_order_ref", "date_order",
-      "currency_id", "amount_untaxed", "amount_tax", "amount_total", "note", "order_line",
+      "currency_id", "amount_untaxed", "amount_tax", "amount_total", "note", "order_line", "invoice_ids",
     ],
     limit: 1,
   });
+  if (Array.isArray(payload) && payload.length === 0) {
+    throw new OdooApiError("Le devis ou la commande n’existe pas dans l’entreprise sélectionnée.", 404);
+  }
   const order = parseOrder(payload, id);
+  const invoices = await fetchPostedSalesInvoices(order.invoice_ids ?? [], companyId);
   const lineIds = order.order_line;
   if (lineIds.length > MAX_ORDER_LINES_TO_READ) {
     throw new OdooApiError("Cette commande contient trop de lignes pour être affichée dans FiSAFi.", 413);
@@ -316,8 +424,18 @@ async function fetchSalesOrder(id: number): Promise<SalesOrder> {
     amountUntaxed: order.amount_untaxed,
     amountTax: order.amount_tax,
     amountTotal: order.amount_total,
+    deliveryFeeEstimate: getMarketOrderDeliveryDetails(order.note || "").feeEstimate,
     currencyName: order.currency_id[1],
     note: order.note || "",
+    invoices: invoices.map((invoice) => ({
+      id: invoice.id,
+      reference: invoice.name,
+      type: invoice.move_type === "out_refund" ? "credit_note" : "invoice",
+      date: invoice.invoice_date || null,
+      total: invoice.amount_total,
+      currencyName: invoice.currency_id === false ? null : invoice.currency_id[1],
+      pdfAvailable: invoice.invoice_pdf_report_id !== false,
+    })),
     lines: linesPayload.map((line) => ({
       id: line.id,
       name: line.name,
@@ -331,11 +449,12 @@ async function fetchSalesOrder(id: number): Promise<SalesOrder> {
   };
 }
 
-async function validateReferences(input: SalesOrderInput): Promise<void> {
+async function validateReferences(input: SalesOrderInput, companyId: number): Promise<void> {
   const partnerPayload: unknown = await callOdoo("res.partner", "search_read", {
     domain: [
       ["id", "=", input.partnerId],
       ["active", "=", true],
+      ["company_id", "in", [false, companyId]],
     ],
     fields: ["id"],
     limit: 1,
@@ -372,6 +491,7 @@ async function validateReferences(input: SalesOrderInput): Promise<void> {
       ["id", "in", templateIds],
       ["active", "=", true],
       ["sale_ok", "=", true],
+      ["company_id", "in", [false, companyId]],
     ],
     fields: ["id"],
     limit: templateIds.length,
@@ -387,18 +507,19 @@ async function validateReferences(input: SalesOrderInput): Promise<void> {
 }
 
 export async function listSalesOrders(options: {
+  companyId: number;
   search: string;
   offset: number;
   limit: number;
 }): Promise<{ orders: SalesOrderSummary[]; hasMore: boolean }> {
-  const { search, offset, limit } = options;
+  const { companyId, search, offset, limit } = options;
   if (
     !Number.isSafeInteger(offset) || offset < 0 ||
     !Number.isSafeInteger(limit) || limit < 1 || limit > MAX_PAGE_SIZE
   ) {
     throw new OdooApiError("Les paramètres de pagination sont invalides.", 400);
   }
-  const domain: unknown[] = [];
+  const domain: unknown[] = [["company_id", "=", companyId]];
   if (search.trim()) {
     const term = search.trim().slice(0, 80);
     domain.push("|", ["name", "ilike", term], ["client_order_ref", "ilike", term]);
@@ -431,25 +552,113 @@ export async function listSalesOrders(options: {
       amountUntaxed: order.amount_untaxed,
       amountTax: order.amount_tax,
       amountTotal: order.amount_total,
+      deliveryFeeEstimate: getMarketOrderDeliveryDetails(order.note || "").feeEstimate,
       currencyName: order.currency_id[1],
     })),
     hasMore,
   };
 }
 
-export async function getSalesOrder(id: number): Promise<SalesOrder> {
+export async function getSalesOrder(id: number, companyId: number): Promise<SalesOrder> {
   if (!Number.isSafeInteger(id) || id <= 0) {
     throw new OdooApiError("L’identifiant de commande est invalide.", 400);
   }
-  return fetchSalesOrder(id);
+  return fetchSalesOrder(id, companyId);
 }
 
-export async function searchSalesCustomers(searchTerm: string): Promise<SalesCustomer[]> {
+export async function getSalesOrderInvoicePdf(
+  orderId: number,
+  invoiceId: number,
+  companyId: number,
+): Promise<{ fileName: string; content: Buffer }> {
+  if (!Number.isSafeInteger(orderId) || orderId <= 0 || !Number.isSafeInteger(invoiceId) || invoiceId <= 0) {
+    throw new OdooApiError("L’identifiant de commande ou de facture est invalide.", 400);
+  }
+
+  const orderPayload: unknown = await callOdoo("sale.order", "search_read", {
+    domain: [["id", "=", orderId], ["company_id", "=", companyId]],
+    fields: ["id", "invoice_ids"],
+    limit: 1,
+  });
+  if (
+    !Array.isArray(orderPayload) ||
+    orderPayload.length !== 1 ||
+    !orderPayload[0] ||
+    typeof orderPayload[0] !== "object" ||
+    !("id" in orderPayload[0]) ||
+    orderPayload[0].id !== orderId ||
+    !("invoice_ids" in orderPayload[0]) ||
+    !Array.isArray(orderPayload[0].invoice_ids) ||
+    !orderPayload[0].invoice_ids.every((id: unknown) => Number.isSafeInteger(id) && Number(id) > 0)
+  ) {
+    throw new OdooApiError("La commande n’existe pas dans l’entreprise sélectionnée.", 404);
+  }
+  const linkedInvoiceIds = orderPayload[0].invoice_ids as number[];
+  if (!linkedInvoiceIds.includes(invoiceId)) {
+    throw new OdooApiError("Cette facture n’est pas associée à la commande demandée.", 404);
+  }
+
+  const invoices = await fetchPostedSalesInvoices([invoiceId], companyId);
+  const invoice = invoices[0];
+  if (!invoice) {
+    throw new OdooApiError("Aucune facture client validée n’est disponible pour cette commande.", 404);
+  }
+  if (invoice.invoice_pdf_report_id === false) {
+    throw new OdooApiError("La facture est validée dans Odoo, mais son PDF officiel n’a pas encore été généré.", 404);
+  }
+
+  const [attachmentId] = invoice.invoice_pdf_report_id;
+  const attachmentPayload: unknown = await callOdoo("ir.attachment", "search_read", {
+    domain: [
+      ["id", "=", attachmentId],
+      ["res_model", "=", "account.move"],
+      ["res_id", "=", invoiceId],
+      ["res_field", "=", "invoice_pdf_report_file"],
+      ["mimetype", "=", "application/pdf"],
+    ],
+    fields: ["id", "name", "mimetype", "res_model", "res_id", "res_field", "datas"],
+    limit: 1,
+  });
+  if (
+    !Array.isArray(attachmentPayload) ||
+    attachmentPayload.length !== 1 ||
+    !isOdooInvoiceAttachment(attachmentPayload[0]) ||
+    attachmentPayload[0].id !== attachmentId ||
+    attachmentPayload[0].res_model !== "account.move" ||
+    attachmentPayload[0].res_id !== invoiceId ||
+    attachmentPayload[0].res_field !== "invoice_pdf_report_file" ||
+    attachmentPayload[0].mimetype !== "application/pdf" ||
+    typeof attachmentPayload[0].datas !== "string"
+  ) {
+    throw new OdooApiError("Le PDF officiel de cette facture n’est pas disponible dans Odoo.", 404);
+  }
+
+  const base64Data = attachmentPayload[0].datas.replace(/\s/g, "");
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64Data)) {
+    console.error(`[ERP/Odoo] Invoice ${invoiceId} PDF attachment returned invalid base64 data.`);
+    throw new OdooApiError("Odoo a renvoyé un PDF de facture invalide.");
+  }
+  const content = Buffer.from(base64Data, "base64");
+  if (
+    content.length < 5 ||
+    content.length > 25 * 1024 * 1024 ||
+    content.subarray(0, 5).toString("ascii") !== "%PDF-"
+  ) {
+    console.error(`[ERP/Odoo] Invoice ${invoiceId} attachment is not a valid PDF.`);
+    throw new OdooApiError("Odoo a renvoyé un PDF de facture invalide.");
+  }
+
+  const safeReference = invoice.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `facture-${invoiceId}`;
+  return { fileName: `${safeReference}.pdf`, content };
+}
+
+export async function searchSalesCustomers(searchTerm: string, companyId: number): Promise<SalesCustomer[]> {
   const search = requireSearchTerm(searchTerm);
   const payload: unknown = await callOdoo("res.partner", "search_read", {
     domain: [
       ["active", "=", true],
       ["customer_rank", ">", 0],
+      ["company_id", "in", [false, companyId]],
       ["name", "ilike", search],
     ],
     fields: ["id", "name", "email", "phone", "active", "customer_rank"],
@@ -468,11 +677,12 @@ export async function searchSalesCustomers(searchTerm: string): Promise<SalesCus
   }));
 }
 
-export async function searchSalesProducts(searchTerm: string): Promise<SalesProduct[]> {
+export async function searchSalesProducts(searchTerm: string, companyId: number): Promise<SalesProduct[]> {
   const search = requireSearchTerm(searchTerm);
   const variantsPayload: unknown = await callOdoo("product.product", "search_read", {
     domain: [
       ["active", "=", true],
+      ["product_tmpl_id.company_id", "in", [false, companyId]],
       "|",
       ["name", "ilike", search],
       ["default_code", "ilike", search],
@@ -497,6 +707,7 @@ export async function searchSalesProducts(searchTerm: string): Promise<SalesProd
       ["id", "in", templateIds],
       ["sale_ok", "=", true],
       ["active", "=", true],
+      ["company_id", "in", [false, companyId]],
     ],
     fields: ["id", "name", "default_code", "sale_ok", "active"],
     limit: templateIds.length,
@@ -522,11 +733,12 @@ export async function searchSalesProducts(searchTerm: string): Promise<SalesProd
     }));
 }
 
-export async function createSalesOrder(input: SalesOrderInput): Promise<SalesOrder> {
+export async function createSalesOrder(input: SalesOrderInput, companyId: number): Promise<SalesOrder> {
   validateInput(input);
-  await validateReferences(input);
+  await validateReferences(input, companyId);
   const result: unknown = await callOdoo("sale.order", "create", {
     vals_list: [{
+      company_id: companyId,
       partner_id: input.partnerId,
       client_order_ref: input.clientOrderRef.trim() || false,
       note: input.note.trim(),
@@ -547,7 +759,7 @@ export async function createSalesOrder(input: SalesOrderInput): Promise<SalesOrd
     console.error("[ERP/Odoo] Sale order creation returned an unexpected identifier.");
     throw new OdooApiError("Odoo n’a pas confirmé la création du devis.");
   }
-  const order = await fetchSalesOrder(orderId);
+  const order = await fetchSalesOrder(orderId, companyId);
   if (order.state !== "draft" && order.state !== "sent") {
     console.error(`[ERP/Odoo] New sale order ${orderId} was created in state ${order.state}.`);
     throw new OdooApiError("Le devis a été créé dans un état inattendu.");
@@ -555,12 +767,12 @@ export async function createSalesOrder(input: SalesOrderInput): Promise<SalesOrd
   return order;
 }
 
-export async function updateSalesOrder(id: number, input: SalesOrderInput): Promise<SalesOrder> {
+export async function updateSalesOrder(id: number, input: SalesOrderInput, companyId: number): Promise<SalesOrder> {
   if (!Number.isSafeInteger(id) || id <= 0) {
     throw new OdooApiError("L’identifiant de commande est invalide.", 400);
   }
   validateInput(input);
-  const current = await fetchSalesOrder(id);
+  const current = await fetchSalesOrder(id, companyId);
   if (current.state !== "draft") {
     throw new OdooApiError("Seuls les devis à l’état brouillon peuvent être modifiés.", 409);
   }
@@ -568,8 +780,8 @@ export async function updateSalesOrder(id: number, input: SalesOrderInput): Prom
   if (preservedLines.some((line) => line.displayType !== "line_section" && line.displayType !== "line_note")) {
     throw new OdooApiError("Ce devis contient des lignes spéciales qui ne peuvent pas être modifiées depuis FiSAFi.", 409);
   }
-  await validateReferences(input);
-  const latest = await fetchSalesOrder(id);
+  await validateReferences(input, companyId);
+  const latest = await fetchSalesOrder(id, companyId);
   if (latest.state !== "draft") {
     throw new OdooApiError("Le devis vient de changer d’état et ne peut plus être modifié.", 409);
   }
@@ -594,20 +806,20 @@ export async function updateSalesOrder(id: number, input: SalesOrderInput): Prom
       ],
     },
   });
-  return fetchSalesOrder(id);
+  return fetchSalesOrder(id, companyId);
 }
 
-export async function confirmSalesOrder(id: number): Promise<SalesOrder> {
+export async function confirmSalesOrder(id: number, companyId: number): Promise<SalesOrder> {
   if (!Number.isSafeInteger(id) || id <= 0) {
     throw new OdooApiError("L’identifiant de commande est invalide.", 400);
   }
-  const current = await fetchSalesOrder(id);
+  const current = await fetchSalesOrder(id, companyId);
   if (current.state === "sale" || current.state === "done") return current;
   if (current.state !== "draft" && current.state !== "sent") {
     throw new OdooApiError("Ce devis ne peut pas être confirmé dans son état actuel.", 409);
   }
   await callOdoo("sale.order", "action_confirm", { ids: [id] });
-  const confirmed = await fetchSalesOrder(id);
+  const confirmed = await fetchSalesOrder(id, companyId);
   if (confirmed.state !== "sale" && confirmed.state !== "done") {
     console.error(`[ERP/Odoo] Confirmation of sale order ${id} did not change its state.`);
     throw new OdooApiError("Odoo n’a pas confirmé la commande.");

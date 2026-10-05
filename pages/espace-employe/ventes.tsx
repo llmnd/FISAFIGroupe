@@ -6,12 +6,14 @@ import { useRouter } from "next/router";
 import type {
   SalesCustomer,
   SalesOrder,
+  SalesOrderInvoice,
   SalesOrderInput,
   SalesOrderLine,
   SalesOrderState,
   SalesOrderSummary,
   SalesProduct,
 } from "@/lib/erp/sales";
+import { getMarketOrderDeliveryDetails } from "@/lib/marketDeliveryOrder";
 
 type OrderLineInput = {
   productId: number;
@@ -58,6 +60,7 @@ function isSalesOrderSummary(value: unknown): value is SalesOrderSummary {
     typeof value.amountUntaxed === "number" &&
     typeof value.amountTax === "number" &&
     typeof value.amountTotal === "number" &&
+    (typeof value.deliveryFeeEstimate === "number" || value.deliveryFeeEstimate === null) &&
     typeof value.currencyName === "string"
   );
 }
@@ -76,14 +79,30 @@ function isSalesOrderLine(value: unknown): value is SalesOrderLine {
   );
 }
 
+function isSalesOrderInvoice(value: unknown): value is SalesOrderInvoice {
+  return (
+    isRecord(value) &&
+    Number.isSafeInteger(value.id) &&
+    typeof value.reference === "string" &&
+    (value.type === "invoice" || value.type === "credit_note") &&
+    (typeof value.date === "string" || value.date === null) &&
+    typeof value.total === "number" &&
+    (typeof value.currencyName === "string" || value.currencyName === null) &&
+    typeof value.pdfAvailable === "boolean"
+  );
+}
+
 function isSalesOrder(value: unknown): value is SalesOrder {
   if (!isRecord(value)) return false;
   const noteValue = value.note;
   const lineValues = value.lines;
+  const invoiceValues = value.invoices;
   return isSalesOrderSummary(value) &&
     typeof noteValue === "string" &&
     Array.isArray(lineValues) &&
-    lineValues.every(isSalesOrderLine);
+    lineValues.every(isSalesOrderLine) &&
+    Array.isArray(invoiceValues) &&
+    invoiceValues.every(isSalesOrderInvoice);
 }
 
 function isSalesCustomer(value: unknown): value is SalesCustomer {
@@ -111,6 +130,8 @@ function formatAmount(amount: number): string {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(amount);
 }
 
+type LocationShareStatus = "idle" | "shared" | "copied" | "error";
+
 export default function EmployeeSalesPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<SalesOrderSummary[]>([]);
@@ -129,6 +150,9 @@ export default function EmployeeSalesPage() {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState<SalesOrder | null>(null);
+  const [locationShareStatus, setLocationShareStatus] = useState<LocationShareStatus>("idle");
+  const [invoiceActionId, setInvoiceActionId] = useState<number | null>(null);
+  const [invoiceActionError, setInvoiceActionError] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [customers, setCustomers] = useState<SalesCustomer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<SalesCustomer | null>(null);
@@ -274,6 +298,7 @@ export default function EmployeeSalesPage() {
       if (!isRecord(payload) || !isSalesOrder(payload.order)) {
         throw new Error("Odoo a renvoyé une commande invalide.");
       }
+      setLocationShareStatus("idle");
       setDetail(payload.order);
       setShowDetail(true);
     } catch (requestError) {
@@ -360,6 +385,7 @@ export default function EmployeeSalesPage() {
         throw new Error("Odoo n’a pas confirmé l’enregistrement du devis.");
       }
       setShowForm(false);
+      setLocationShareStatus("idle");
       setDetail(payload.order);
       setShowDetail(true);
       await loadOrders(false);
@@ -380,6 +406,7 @@ export default function EmployeeSalesPage() {
         throw new Error("Odoo n’a pas confirmé la commande.");
       }
       setPendingConfirmation(null);
+      setLocationShareStatus("idle");
       setDetail(payload.order);
       setShowDetail(true);
       await loadOrders(false);
@@ -397,6 +424,113 @@ export default function EmployeeSalesPage() {
     setOrders([]);
     ordersLength.current = 0;
     void loadOrders(false, term);
+  };
+
+  const detailDelivery = detail ? getMarketOrderDeliveryDetails(detail.note) : null;
+
+  const shareDelivery = async (order: SalesOrder) => {
+    const delivery = getMarketOrderDeliveryDetails(order.note);
+    if (!delivery.coordinates) return;
+
+    const mapUrl = `https://www.google.com/maps?q=${delivery.coordinates.latitude},${delivery.coordinates.longitude}`;
+    const productList = order.lines
+      .filter((line) => line.productId !== null)
+      .map((line) => `- ${line.name} × ${formatAmount(line.quantity)}`)
+      .join("\n");
+    const deliveryTotal = order.amountTotal + (delivery.feeEstimate ?? 0);
+    const shareText = [
+      `Livraison de la commande ${order.reference}`,
+      delivery.address ? `Adresse : ${delivery.address}` : "",
+      `Point GPS : ${mapUrl}`,
+      productList ? `Articles :\n${productList}` : "",
+      `Total Odoo : ${formatAmount(order.amountTotal)} ${order.currencyName}`,
+      ...(delivery.feeEstimate !== null
+        ? [
+            `Livraison estimée : ${formatAmount(delivery.feeEstimate)} ${order.currencyName}`,
+            `Total estimé avec livraison : ${formatAmount(deliveryTotal)} ${order.currencyName}`,
+            "Frais de livraison à confirmer par le vendeur.",
+          ]
+        : []),
+    ].filter(Boolean).join("\n");
+
+    setLocationShareStatus("idle");
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: `Livraison ${order.reference}`,
+          text: shareText,
+        });
+        setLocationShareStatus("shared");
+        return;
+      }
+      await navigator.clipboard.writeText(shareText);
+      setLocationShareStatus("copied");
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setLocationShareStatus("copied");
+      } catch (clipboardError) {
+        console.error("[Employee/Sales] Could not share or copy the delivery details:", {
+          shareError,
+          clipboardError,
+        });
+        setLocationShareStatus("error");
+      }
+    }
+  };
+
+  const shareOrDownloadInvoice = async (order: SalesOrder, invoice: SalesOrderInvoice) => {
+    setInvoiceActionId(invoice.id);
+    setInvoiceActionError("");
+    try {
+      const response = await fetch(
+        `/api/employee/sales/${order.id}/invoices/${invoice.id}`,
+        { headers: { Accept: "application/pdf, application/json" } },
+      );
+      if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const message =
+          isRecord(payload) && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de récupérer le PDF depuis Odoo.";
+        throw new Error(message);
+      }
+
+      const pdfBlob = await response.blob();
+      if (pdfBlob.type !== "application/pdf" || pdfBlob.size < 5) {
+        throw new Error("Odoo n’a pas renvoyé un fichier PDF valide.");
+      }
+      const pdfFile = new File([pdfBlob], `${invoice.reference}.pdf`, { type: "application/pdf" });
+      if (
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [pdfFile] })
+      ) {
+        await navigator.share({
+          title: `${invoice.type === "credit_note" ? "Avoir" : "Facture"} ${invoice.reference}`,
+          files: [pdfFile],
+        });
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(pdfBlob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = pdfFile.name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (actionError) {
+      if (actionError instanceof DOMException && actionError.name === "AbortError") return;
+      console.error(`[Employee/Sales] Could not retrieve or share Odoo invoice ${invoice.id}:`, actionError);
+      setInvoiceActionError(
+        actionError instanceof Error ? actionError.message : "Impossible de récupérer ou partager la facture.",
+      );
+    } finally {
+      setInvoiceActionId(null);
+    }
   };
 
   return (
@@ -459,9 +593,16 @@ export default function EmployeeSalesPage() {
                     {order.clientOrderRef && <span>Réf. client : {order.clientOrderRef}</span>}
                   </div>
                   <div className="employee-sales-amountRow">
-                    <span>Total TTC selon Odoo</span>
-                    <strong>{formatAmount(order.amountTotal)} {order.currencyName}</strong>
+                    <span>{order.deliveryFeeEstimate === null ? "Total TTC selon Odoo" : "Total estimé avec livraison"}</span>
+                    <strong>
+                      {formatAmount(order.amountTotal + (order.deliveryFeeEstimate ?? 0))} {order.currencyName}
+                    </strong>
                   </div>
+                  {order.deliveryFeeEstimate !== null && (
+                    <p className="employee-sales-deliveryEstimate">
+                      Dont {formatAmount(order.deliveryFeeEstimate)} {order.currencyName} de livraison estimée, à confirmer par le vendeur.
+                    </p>
+                  )}
                   <div className="employee-sales-actions">
                     <button type="button" className="employee-sales-secondaryButton" onClick={() => void openOrder(order.id)}>Détails</button>
                     {(order.state === "draft" || order.state === "sent") && (
@@ -483,7 +624,7 @@ export default function EmployeeSalesPage() {
 
         {showDetail && detail && (
           <div className="employee-sales-backdrop" role="presentation" onClick={() => setShowDetail(false)}>
-            <section className="employee-sales-modal" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" onClick={(event) => event.stopPropagation()}>
+            <section className="employee-sales-modal employee-sales-detailModal" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" onClick={(event) => event.stopPropagation()}>
               <div className="employee-sales-modalHeader">
                 <div>
                   <p className="employee-sales-eyebrow">Détail Odoo</p>
@@ -501,11 +642,100 @@ export default function EmployeeSalesPage() {
                   </div>
                 ))}
               </div>
+              {detailDelivery?.coordinates && (
+                <div className="employee-sales-location">
+                  <div>
+                    <strong>Point de livraison</strong>
+                    {detailDelivery.address && <span>{detailDelivery.address}</span>}
+                    <a
+                      href={`https://www.google.com/maps?q=${detailDelivery.coordinates.latitude},${detailDelivery.coordinates.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Ouvrir dans Google Maps
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    className="employee-sales-secondaryButton"
+                    onClick={() => void shareDelivery(detail)}
+                  >
+                    Partager la livraison
+                  </button>
+                  {locationShareStatus !== "idle" && (
+                    <p
+                      className={`employee-sales-shareFeedback${locationShareStatus === "error" ? " is-error" : ""}`}
+                      role={locationShareStatus === "error" ? "alert" : "status"}
+                      aria-live="polite"
+                    >
+                      {locationShareStatus === "shared"
+                        ? "Détails de livraison partagés."
+                        : locationShareStatus === "copied"
+                          ? "Détails de livraison copiés."
+                          : "Impossible de partager ou copier les détails de livraison."}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="employee-sales-totalBox">
                 <div><span>Hors taxes</span><strong>{formatAmount(detail.amountUntaxed)} {detail.currencyName}</strong></div>
                 <div><span>Taxes</span><strong>{formatAmount(detail.amountTax)} {detail.currencyName}</strong></div>
-                <div><span>Total</span><strong>{formatAmount(detail.amountTotal)} {detail.currencyName}</strong></div>
+                <div><span>Total TTC Odoo</span><strong>{formatAmount(detail.amountTotal)} {detail.currencyName}</strong></div>
+                {detailDelivery?.feeEstimate !== null && detailDelivery?.feeEstimate !== undefined && (
+                  <>
+                    <div>
+                      <span>Livraison estimée</span>
+                      <strong>{formatAmount(detailDelivery.feeEstimate)} {detail.currencyName}</strong>
+                    </div>
+                    <div>
+                      <span>Total estimé avec livraison</span>
+                      <strong>{formatAmount(detail.amountTotal + detailDelivery.feeEstimate)} {detail.currencyName}</strong>
+                    </div>
+                  </>
+                )}
               </div>
+              {detailDelivery?.feeEstimate !== null && detailDelivery?.feeEstimate !== undefined && (
+                <p className="employee-sales-deliveryDisclaimer">
+                  Les frais de livraison sont estimatifs, hors devis Odoo et à confirmer par le vendeur.
+                </p>
+              )}
+              {detail.invoices.length > 0 && (
+                <section className="employee-sales-invoices" aria-labelledby="sales-invoices-title">
+                  <h3 id="sales-invoices-title">Factures officielles Odoo</h3>
+                  <p>Seules les factures déjà validées dans Odoo sont disponibles ici.</p>
+                  {detail.invoices.map((invoice) => (
+                    <div key={invoice.id} className="employee-sales-invoiceRow">
+                      <span>
+                        <strong>{invoice.type === "credit_note" ? "Avoir" : "Facture"} {invoice.reference}</strong>
+                        <small>
+                          {invoice.date ? new Date(invoice.date).toLocaleDateString("fr-FR") : "Date non renseignée"}
+                          {" · "}
+                          {formatAmount(invoice.total)}{invoice.currencyName ? ` ${invoice.currencyName}` : ""}
+                        </small>
+                      </span>
+                      {invoice.pdfAvailable ? (
+                        <button
+                          type="button"
+                          className="employee-sales-secondaryButton"
+                          disabled={invoiceActionId !== null}
+                          onClick={() => void shareOrDownloadInvoice(detail, invoice)}
+                        >
+                          {invoiceActionId === invoice.id ? "Préparation…" : "Partager / télécharger le PDF"}
+                        </button>
+                      ) : (
+                        <span className="employee-sales-invoiceUnavailable">
+                          PDF non généré dans Odoo
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {invoiceActionError && (
+                    <p className="employee-sales-shareFeedback is-error" role="alert">
+                      {invoiceActionError}
+                    </p>
+                  )}
+                </section>
+              )}
               {detail.note && <p className="employee-sales-note">{detail.note}</p>}
               <div className="employee-sales-actions">
                 {detail.state === "draft" && (

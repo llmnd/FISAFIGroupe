@@ -63,6 +63,15 @@ function isReverseGeocodeResult(value: unknown): value is { address: string } {
   );
 }
 
+function isGeolocationError(error: unknown): error is GeolocationPositionError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "number"
+  );
+}
+
 export default function MarketDeliveryPage() {
   const router = useRouter();
   const [selection, setSelection] = useState<MarketDeliverySelection>({
@@ -197,31 +206,54 @@ export default function MarketDeliveryPage() {
     })();
   };
 
-  const useMyLocation = () => {
+  const useMyLocation = async () => {
     setLocationError("");
     setSaveError("");
+    if (!window.isSecureContext) {
+      setLocationError("La localisation nécessite une connexion sécurisée HTTPS. Ouvrez le site dans Safari ou Chrome à son adresse HTTPS, puis réessayez.");
+      return;
+    }
     if (!navigator.geolocation) {
       setLocationError("La géolocalisation n’est pas disponible sur cet appareil. Touchez un point sur la carte.");
       return;
     }
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setDestination({ latitude: coords.latitude, longitude: coords.longitude });
-        setLocating(false);
-      },
-      (error) => {
-        setLocating(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          setLocationError("Accès à la position refusé. Vous pouvez toujours choisir votre adresse sur la carte.");
-        } else if (error.code === error.TIMEOUT) {
-          setLocationError("La localisation prend trop de temps. Réessayez ou touchez votre adresse sur la carte.");
-        } else {
-          setLocationError("Position introuvable. Touchez votre adresse sur la carte pour continuer.");
+    const locate = (options: PositionOptions) =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+
+    try {
+      let position: GeolocationPosition;
+      try {
+        position = await locate({ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
+      } catch (error) {
+        if (
+          !isGeolocationError(error) ||
+          (error.code !== error.TIMEOUT && error.code !== error.POSITION_UNAVAILABLE)
+        ) {
+          throw error;
         }
-      },
-      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 },
-    );
+        position = await locate({ enableHighAccuracy: false, timeout: 20_000, maximumAge: 60_000 });
+      }
+      setDestination({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+    } catch (error) {
+      if (isGeolocationError(error) && error.code === error.PERMISSION_DENIED) {
+        setLocationError(
+          "Autorisation de localisation refusée. Dans les réglages de votre téléphone, autorisez la localisation pour Safari ou Chrome et pour ce site, puis réessayez. Vous pouvez aussi choisir le point sur la carte.",
+        );
+      } else if (isGeolocationError(error) && error.code === error.TIMEOUT) {
+        setLocationError(
+          "Votre position n’a pas pu être obtenue à temps. Activez la localisation de l’appareil, réessayez près d’une fenêtre ou choisissez le point sur la carte.",
+        );
+      } else {
+        setLocationError(
+          "Votre position est momentanément introuvable. Vérifiez que la localisation est activée, puis réessayez ou choisissez le point sur la carte.",
+        );
+      }
+    } finally {
+      setLocating(false);
+    }
   };
 
   const confirmSelection = (event: FormEvent<HTMLFormElement>) => {
@@ -390,8 +422,7 @@ export default function MarketDeliveryPage() {
           )}
 
           <p className="market-delivery-screen-privacy">
-            La position n’est partagée qu’après votre action. Les frais sont estimatifs et seront
-            confirmés par le vendeur. Le point de départ est encore approximatif à Liberté 6 Extension.
+            Le point de départ est FiSAFi Market, Dakar 00153.
           </p>
 
           {saveError && (

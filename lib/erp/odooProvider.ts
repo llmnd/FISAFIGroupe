@@ -464,14 +464,18 @@ function normalizeSessionStatus(value: string): POSSessionStatus {
 
 export class OdooERPProvider implements ERPProvider {
   async getProducts(options: {
+    companyId?: number;
     search: string;
     categoryId?: number | null;
     onlyAvailable?: boolean;
     offset: number;
     limit: number;
   }): Promise<ProductListPage> {
-    const { search, categoryId, onlyAvailable, offset, limit } = options;
+    const { companyId, search, categoryId, onlyAvailable, offset, limit } = options;
     const domain: unknown[] = [["active", "=", true], ["sale_ok", "=", true]];
+    if (companyId !== undefined) {
+      domain.push(["company_id", "in", [false, companyId]]);
+    }
     if (search) {
       domain.push("|", ["name", "ilike", search], ["default_code", "ilike", search]);
     }
@@ -549,13 +553,15 @@ export class OdooERPProvider implements ERPProvider {
     };
   }
 
-  async getProduct(id: number): Promise<Product> {
+  async getProduct(id: number, companyId?: number): Promise<Product> {
     if (!Number.isSafeInteger(id) || id < 1) {
       throw operationError("L’identifiant produit est invalide.", 400);
     }
 
     const payload: unknown = await callOdoo("product.template", "search_read", {
-      domain: [["id", "=", id]],
+      domain: companyId === undefined
+        ? [["id", "=", id]]
+        : [["id", "=", id], ["company_id", "in", [false, companyId]]],
       fields: [
         "id",
         "name",
@@ -573,7 +579,7 @@ export class OdooERPProvider implements ERPProvider {
       limit: 1,
     });
     if (!Array.isArray(payload) || payload.length !== 1 || !isOdooProductTemplate(payload[0])) {
-      throw new OdooApiError("Le produit demandé n’a pas été trouvé dans Odoo.");
+      throw new OdooApiError("Le produit demandé n’existe pas dans l’entreprise sélectionnée.", 404);
     }
     const product = payload[0];
     const stock = computeStock(product);
@@ -595,7 +601,7 @@ export class OdooERPProvider implements ERPProvider {
     };
   }
 
-  async updateProduct(id: number, input: ProductUpdateInput): Promise<Product> {
+  async updateProduct(id: number, input: ProductUpdateInput, companyId?: number): Promise<Product> {
     if (!Number.isSafeInteger(id) || id < 1) {
       throw operationError("L’identifiant produit est invalide.", 400);
     }
@@ -622,14 +628,14 @@ export class OdooERPProvider implements ERPProvider {
     if (input.active !== undefined) odooPayload.active = input.active;
 
     if (Object.keys(odooPayload).length === 0) {
-      return this.getProduct(id);
+      return this.getProduct(id, companyId);
     }
 
     await callOdoo("product.template", "write", { ids: [id], vals: odooPayload });
-    return this.getProduct(id);
+    return this.getProduct(id, companyId);
   }
 
-  async updateProductImage(id: number, imageBase64: string): Promise<Product> {
+  async updateProductImage(id: number, imageBase64: string, companyId?: number): Promise<Product> {
     if (!Number.isSafeInteger(id) || id < 1) {
       throw operationError("L’identifiant produit est invalide.", 400);
     }
@@ -646,10 +652,10 @@ export class OdooERPProvider implements ERPProvider {
       ids: [id],
       vals: { image_1920: cleaned },
     });
-    return this.getProduct(id);
+    return this.getProduct(id, companyId);
   }
 
-  async removeProductImage(id: number): Promise<Product> {
+  async removeProductImage(id: number, companyId?: number): Promise<Product> {
     if (!Number.isSafeInteger(id) || id < 1) {
       throw operationError("L’identifiant produit est invalide.", 400);
     }
@@ -657,12 +663,12 @@ export class OdooERPProvider implements ERPProvider {
       ids: [id],
       vals: { image_1920: false },
     });
-    return this.getProduct(id);
+    return this.getProduct(id, companyId);
   }
 
-  async getPointsOfSale(): Promise<PointOfSale[]> {
+  async getPointsOfSale(companyId?: number): Promise<PointOfSale[]> {
     const configs: unknown = await callOdoo("pos.config", "search_read", {
-      domain: [],
+      domain: companyId === undefined ? [] : [["company_id", "=", companyId]],
       fields: ["id", "name", "company_id", "current_session_id", "active"],
       limit: 200,
       order: "name asc",
@@ -722,16 +728,20 @@ export class OdooERPProvider implements ERPProvider {
 
   async getPOSProducts(options: {
     configId: number;
+    companyId?: number;
     search: string;
     offset: number;
     limit: number;
   }): Promise<POSProductPage> {
-    const { configId, search, offset, limit } = options;
+    const { configId, companyId, search, offset, limit } = options;
     const domain: unknown[] = [
       ["active", "=", true],
       ["sale_ok", "=", true],
       ["available_in_pos", "=", true],
     ];
+    if (companyId !== undefined) {
+      domain.push(["company_id", "in", [false, companyId]]);
+    }
     if (search) {
       domain.push("|", ["name", "ilike", search], ["default_code", "ilike", search]);
     }
@@ -752,6 +762,9 @@ export class OdooERPProvider implements ERPProvider {
     const page = (payload as OdooPOSProduct[]).slice(0, limit);
     const stockByTemplate = await getTemplateStock(page.map((product) => product.id));
     const config = await this.getPOSConfig(configId);
+    if (companyId !== undefined && (config.company_id === false || config.company_id[0] !== companyId)) {
+      throw operationError("Ce point de vente n’appartient pas à l’entreprise sélectionnée.", 403);
+    }
     const variants = Array.from(stockByTemplate.values()).flatMap((stock) => stock.variants);
     const locationStock = await this.getLocationStock(config, variants.map((variant) => variant.id));
     const products: POSProduct[] = page.map((product) => {

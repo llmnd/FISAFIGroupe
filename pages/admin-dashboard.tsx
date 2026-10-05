@@ -11,8 +11,9 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: "user" | "admin";
+  role: string;
   employeeRole?: "manager" | "seller" | "cashier" | "stock" | "accountant" | null;
+  profiles: UserProfile[];
   active: boolean;
   createdAt: string;
 }
@@ -62,8 +63,12 @@ interface InscriptionFormation {
 }
 
 type MarketOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
+type OdooCompanyType = "groupe" | "market";
+type OdooCompany = { id: number; name: string; type: OdooCompanyType };
+type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
 
 interface MarketStats {
+  company: { id: number; name: string; type: OdooCompanyType };
   period: {
     orders: number;
     confirmedOrders: number;
@@ -100,6 +105,10 @@ function formatMarketCurrency(amount: number): string {
   return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(amount)} FCFA`;
 }
 
+function getUserProfileLabel(profile: UserProfile): string {
+  return profile === "MARKET_CUSTOMER" ? "Client Market" : "Participant formation";
+}
+
 function getMarketOrderStatusLabel(state: MarketOrderState): string {
   const labels: Record<MarketOrderState, string> = {
     draft: "Brouillon",
@@ -116,6 +125,10 @@ function isMarketStats(value: unknown): value is MarketStats {
   const stats = value as Partial<MarketStats>;
   const period = stats.period;
   return (
+    !!stats.company &&
+    Number.isSafeInteger(stats.company.id) &&
+    typeof stats.company.name === "string" &&
+    (stats.company.type === "groupe" || stats.company.type === "market") &&
     !!period &&
     Number.isFinite(period.orders) &&
     Number.isFinite(period.confirmedOrders) &&
@@ -151,15 +164,19 @@ function isMarketStats(value: unknown): value is MarketStats {
 export default function AdminDashboard() {
   const router = useRouter();
   const buildApiUrl = (ep: string) => ep;
+  const routeTab = Array.isArray(router.query.tab) ? router.query.tab[0] : router.query.tab;
 
-  const getTabLabel = (tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce"): string => {
+  const getTabLabel = (
+    tab: "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce",
+    companyType?: OdooCompanyType,
+  ): string => {
     const labels: Record<string, string> = {
       users: "Utilisateurs",
       articles: "Articles",
       brochures: "Brochures",
       inscriptions: "Inscriptions",
       sessions: "Sessions",
-      ecommerce: "E-commerce",
+      ecommerce: companyType === "groupe" ? "Ventes Groupe" : "Market",
     };
     return labels[tab] || "";
   };
@@ -255,6 +272,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce">("users");
+  const [tabStateReady, setTabStateReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
@@ -266,6 +284,15 @@ export default function AdminDashboard() {
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [loadingMarketStats, setLoadingMarketStats] = useState(false);
   const [marketStatsError, setMarketStatsError] = useState("");
+  const [odooCompanies, setOdooCompanies] = useState<OdooCompany[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  const [loadingOdooCompanies, setLoadingOdooCompanies] = useState(false);
+  const [odooCompaniesError, setOdooCompaniesError] = useState("");
+  const [companyPickerSource, setCompanyPickerSource] = useState<"sidebar" | "topbar" | null>(null);
+  const marketStatsRequestId = useRef(0);
+  const authCheckStarted = useRef(false);
+  const initialTabScrollHandled = useRef(false);
+  const currentTabRef = useRef(activeTab);
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -276,6 +303,7 @@ export default function AdminDashboard() {
     lastName: "",
     password: "",
     employeeRole: "" as "" | "manager" | "seller" | "cashier" | "stock" | "accountant",
+    profiles: [] as UserProfile[],
   });
   const [actionSheetUser, setActionSheetUser] = useState<AdminUser | null>(null);
 
@@ -317,6 +345,8 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (authCheckStarted.current) return;
+    authCheckStarted.current = true;
     void (async () => {
       try {
         const response = await fetch("/api/auth/me");
@@ -346,6 +376,7 @@ export default function AdminDashboard() {
           lastName: typeof payload.data.lastName === "string" ? payload.data.lastName : undefined,
         });
         await fetchUsers();
+        void fetchOdooCompanies();
       } catch (error) {
         console.error("[Admin/Auth] Could not validate session:", error);
         await router.replace("/login");
@@ -356,27 +387,40 @@ export default function AdminDashboard() {
   }, [router]);
 
   useEffect(() => {
+    if (!router.isReady || tabStateReady) return;
     const VALID_TABS = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const;
     try {
-      const params = new URLSearchParams(window.location.search);
-      const q = params.get("tab");
+      const q = routeTab ?? null;
       if (q && VALID_TABS.includes(q as any)) {
         handleSetActiveTab(q as any);
       } else {
         const stored = localStorage.getItem("adminActiveTab");
         if (stored && VALID_TABS.includes(stored as any)) handleSetActiveTab(stored as any);
       }
-    } catch (e) {}
-  }, []);
+    } catch (error) {
+      console.error("[Admin/Navigation] Could not restore the active tab:", error);
+    } finally {
+      setTabStateReady(true);
+    }
+  }, [router.isReady, routeTab, tabStateReady]);
 
   useEffect(() => {
+    if (!router.isReady || !tabStateReady) return;
+    if (routeTab === activeTab) return;
     try {
       localStorage.setItem("adminActiveTab", activeTab);
-      router.replace({ pathname: router.pathname, query: { ...router.query, tab: activeTab } }, undefined, { shallow: true });
-    } catch (e) {}
-  }, [activeTab]);
+      void router.replace(
+        { pathname: router.pathname, query: { ...router.query, tab: activeTab } },
+        undefined,
+        { shallow: true },
+      ).catch((error: unknown) => {
+        console.error("[Admin/Navigation] Could not synchronize the active tab:", error);
+      });
+    } catch (error) {
+      console.error("[Admin/Navigation] Could not synchronize the active tab:", error);
+    }
+  }, [activeTab, routeTab, router.isReady, router.pathname, tabStateReady]);
 
-  const currentTabRef = useRef(activeTab);
   const saveScrollForTab = (tab: string) => {
     try { sessionStorage.setItem(`adminScroll_${tab}`, String(window.scrollY || 0)); } catch (e) {}
   };
@@ -398,7 +442,15 @@ export default function AdminDashboard() {
     }
     void router.push("/dashboard");
   };
-  useEffect(() => { restoreScrollForTab(activeTab); }, [activeTab]);
+  useEffect(() => {
+    if (!tabStateReady) return;
+    if (!initialTabScrollHandled.current) {
+      initialTabScrollHandled.current = true;
+      currentTabRef.current = activeTab;
+      return;
+    }
+    restoreScrollForTab(activeTab);
+  }, [activeTab, tabStateReady]);
   useEffect(() => {
     const onBeforeUnload = () => saveScrollForTab(currentTabRef.current);
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -417,8 +469,8 @@ export default function AdminDashboard() {
     else if (activeTab === "brochures") fetchBrochures();
     else if (activeTab === "inscriptions") fetchInscriptions();
     else if (activeTab === "sessions") { fetchFormations(); fetchSessions(); }
-    else if (activeTab === "ecommerce") fetchMarketStats();
-  }, [activeTab]);
+    else if (activeTab === "ecommerce" && selectedCompanyId !== null) void fetchMarketStats();
+  }, [activeTab, selectedCompanyId]);
 
   useEffect(() => {
     if (activeTab === "inscriptions") fetchInscriptions();
@@ -437,7 +489,22 @@ export default function AdminDashboard() {
         return;
       }
       const payload: unknown = await r.json();
-      if (!Array.isArray(payload)) {
+      if (
+        !Array.isArray(payload) ||
+        !payload.every(
+          (user): user is AdminUser =>
+            isRecord(user) &&
+            typeof user.id === "string" &&
+            typeof user.email === "string" &&
+            typeof user.role === "string" &&
+            typeof user.active === "boolean" &&
+            typeof user.createdAt === "string" &&
+            Array.isArray(user.profiles) &&
+            user.profiles.every(
+              (profile) => profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT",
+            ),
+        )
+      ) {
         throw new Error("Le serveur a renvoyé une liste d’utilisateurs invalide.");
       }
       setUsers(payload);
@@ -450,29 +517,99 @@ export default function AdminDashboard() {
     }
   };
 
+  const persistEmployeeCompany = async (companyId: number) => {
+    const response = await fetch("/api/employee/companies", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId }),
+    });
+    const payload: unknown = await response.json();
+    if (!response.ok) {
+      const message =
+        isRecord(payload) && typeof payload.error === "string"
+          ? payload.error
+          : `Impossible de sélectionner cette société (HTTP ${response.status}).`;
+      throw new Error(message);
+    }
+  };
+
+  const fetchOdooCompanies = async () => {
+    setLoadingOdooCompanies(true);
+    setOdooCompaniesError("");
+    try {
+      const response = await fetch("/api/admin/odoo-companies");
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          isRecord(payload) && typeof payload.error === "string"
+            ? payload.error
+            : `Impossible de charger les sociétés Odoo (HTTP ${response.status}).`;
+        throw new Error(message);
+      }
+      if (
+        !Array.isArray(payload) ||
+        !payload.every(
+          (company): company is OdooCompany =>
+            isRecord(company) &&
+            Number.isSafeInteger(company.id) &&
+            typeof company.name === "string",
+        )
+      ) {
+        throw new Error("Odoo a renvoyé une liste de sociétés invalide.");
+      }
+      setOdooCompanies(payload);
+      const storedCompanyId = Number(localStorage.getItem("adminOdooCompanyId"));
+      const savedCompany = payload.find((company) => company.id === storedCompanyId);
+      const marketCompany = payload.find((company) => company.name.toLowerCase().includes("market"));
+      const defaultCompany = savedCompany ?? marketCompany ?? (payload.length === 1 ? payload[0] : undefined);
+      if (defaultCompany) {
+        await persistEmployeeCompany(defaultCompany.id);
+        setSelectedCompanyId(defaultCompany.id);
+        localStorage.setItem("adminOdooCompanyId", String(defaultCompany.id));
+      }
+    } catch (error) {
+      console.error("[Admin/Odoo] Could not load companies:", error);
+      setOdooCompaniesError(
+        error instanceof Error ? error.message : "Impossible de charger les sociétés depuis Odoo.",
+      );
+    } finally {
+      setLoadingOdooCompanies(false);
+    }
+  };
+
   const fetchMarketStats = async () => {
+    if (selectedCompanyId === null) {
+      setMarketStats(null);
+      setMarketStatsError("Sélectionnez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi du tableau de bord.");
+      return;
+    }
+    const requestId = ++marketStatsRequestId.current;
     setLoadingMarketStats(true);
     setMarketStatsError("");
     try {
-      const response = await fetch("/api/admin/market-stats");
+      const response = await fetch(`/api/admin/market-stats?companyId=${selectedCompanyId}`);
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
           payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
             ? payload.error
             : "Impossible de charger les statistiques e-commerce.";
-        setMarketStatsError(message);
+        if (requestId === marketStatsRequestId.current) setMarketStatsError(message);
         return;
       }
-      if (!isMarketStats(payload)) {
-        setMarketStatsError("Le serveur a renvoyé des statistiques e-commerce invalides.");
+      if (!isMarketStats(payload) || payload.company.id !== selectedCompanyId) {
+        if (requestId === marketStatsRequestId.current) {
+          setMarketStatsError("Le serveur a renvoyé des statistiques invalides pour la société sélectionnée.");
+        }
         return;
       }
-      setMarketStats(payload);
+      if (requestId === marketStatsRequestId.current) setMarketStats(payload);
     } catch {
-      setMarketStatsError("Erreur réseau : impossible de charger les statistiques e-commerce.");
+      if (requestId === marketStatsRequestId.current) {
+        setMarketStatsError("Erreur réseau : impossible de charger les statistiques e-commerce.");
+      }
     } finally {
-      setLoadingMarketStats(false);
+      if (requestId === marketStatsRequestId.current) setLoadingMarketStats(false);
     }
   };
 
@@ -572,29 +709,64 @@ export default function AdminDashboard() {
     finally { setSubmittingSession(false); }
   };
 
+  const selectedCompany = odooCompanies.find((company) => company.id === selectedCompanyId) ?? null;
+  const adminTabs = selectedCompany?.type === "market"
+    ? (["users", "articles", "brochures", "ecommerce"] as const)
+    : (["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const);
+  const activeProfile: UserProfile | null =
+    selectedCompany?.type === "market"
+      ? "MARKET_CUSTOMER"
+      : selectedCompany?.type === "groupe"
+        ? "TRAINING_PARTICIPANT"
+        : null;
   const filteredUsers = users.filter(u => {
     const ms = u.email.toLowerCase().includes(searchQuery.toLowerCase()) || `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase());
     const mr = filterRole === "all" || u.role === filterRole;
     const ma = filterActive === "all" || (filterActive === "active" ? u.active : !u.active);
-    return ms && mr && ma;
+    const mp =
+      u.role === "admin" ||
+      u.profiles.length === 0 ||
+      !activeProfile ||
+      u.profiles.includes(activeProfile);
+    return ms && mr && ma && mp;
   });
 
   const handleSaveUser = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) { showToast("Champs requis manquants", "err"); return; }
     try {
-      const token = localStorage.getItem("token");
-      const url = modalMode === "add" ? "/api/users" : `/api/users/${selectedUser?.id}`;
-      const r = await fetch(url, { method: modalMode === "add" ? "POST" : "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...formData, employeeRole: formData.employeeRole || null }) });
+      const isAdding = modalMode === "add";
+      const r = await fetch("/api/users", {
+        method: isAdding ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          ...(isAdding ? {} : { id: selectedUser?.id }),
+          employeeRole: formData.employeeRole || null,
+        }),
+      });
       if (r.ok) { await fetchUsers(); setShowModal(false); showToast(modalMode === "add" ? "Utilisateur créé" : "Mis à jour"); }
-      else showToast("Erreur lors de la sauvegarde", "err");
-    } catch { showToast("Erreur réseau", "err"); }
+      else {
+        const payload: unknown = await r.json().catch(() => null);
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : `Erreur lors de la sauvegarde (${r.status})`;
+        showToast(message, "err");
+      }
+    } catch (error) {
+      console.error("[Admin/Users] Could not save user:", error);
+      showToast("Erreur réseau lors de la sauvegarde", "err");
+    }
   };
 
   const handleDeleteUser = async (userId: string) => {
     setActionSheetUser(null);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl(`/api/users/${userId}`), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId }),
+      });
       if (r.ok) { await fetchUsers(); showToast("Utilisateur supprimé"); }
       else showToast("Erreur suppression", "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -603,8 +775,11 @@ export default function AdminDashboard() {
   const handleToggleActive = async (userId: string, current: boolean) => {
     setActionSheetUser(null);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl(`/api/users/${userId}/toggle-active`), { method: "PATCH", headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId }),
+      });
       if (r.ok) { await fetchUsers(); showToast(current ? "Compte désactivé" : "Compte activé"); }
       else showToast("Erreur", "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -728,6 +903,60 @@ export default function AdminDashboard() {
   );
 
   const initials = ((currentUser.firstName?.[0] || "") + (currentUser.lastName?.[0] || "")).toUpperCase() || currentUser.email[0].toUpperCase();
+  const selectCompany = async (company: OdooCompany) => {
+    if (company.id === selectedCompanyId) {
+      setCompanyPickerSource(null);
+      return;
+    }
+    try {
+      await persistEmployeeCompany(company.id);
+    } catch (error) {
+      console.error("[Admin/Odoo] Could not persist the employee company context:", error);
+      setOdooCompaniesError(
+        error instanceof Error ? error.message : "Impossible de sélectionner cette société.",
+      );
+      return;
+    }
+    setOdooCompaniesError("");
+    marketStatsRequestId.current += 1;
+    setSelectedCompanyId(company.id);
+    localStorage.setItem("adminOdooCompanyId", String(company.id));
+    setMarketStats(null);
+    setMarketStatsError("");
+    if (company.type === "market" && (activeTab === "inscriptions" || activeTab === "sessions")) {
+      setActiveTab("users");
+    }
+    setCompanyPickerSource(null);
+  };
+  const renderCompanyPicker = (source: "sidebar" | "topbar") => companyPickerSource === source ? (
+    <div className="company-picker" role="group" aria-label="Choisir une société Odoo">
+      <strong>Entreprise active</strong>
+      {loadingOdooCompanies ? (
+        <span className="company-picker-message">Chargement des sociétés…</span>
+      ) : odooCompaniesError ? (
+        <>
+          <span className="company-picker-error">{odooCompaniesError}</span>
+          <button type="button" className="company-picker-option" onClick={() => void fetchOdooCompanies()}>
+            Réessayer
+          </button>
+        </>
+      ) : odooCompanies.length ? (
+        odooCompanies.map((company) => (
+          <button
+            type="button"
+            className={`company-picker-option${company.id === selectedCompanyId ? " selected" : ""}`}
+            key={company.id}
+            onClick={() => void selectCompany(company)}
+          >
+            <span>{company.name}</span>
+            {company.id === selectedCompanyId && <span aria-label="Sélectionnée">✓</span>}
+          </button>
+        ))
+      ) : (
+        <span className="company-picker-message">Aucune société Odoo accessible.</span>
+      )}
+    </div>
+  ) : null;
 
   const inscriptionsPending = inscriptions.filter(i => i.status === "liste_attente" || i.status === "demande_en_attente").length;
 
@@ -758,9 +987,9 @@ export default function AdminDashboard() {
             <span>Accueil du site</span>
             <span aria-hidden="true">↗</span>
           </a>
-          {(["users","articles","brochures","inscriptions","sessions","ecommerce"] as const).map(tab => (
+          {adminTabs.map(tab => (
             <button key={tab} className={`mob-nav-link${activeTab === tab ? " active" : ""}`} onClick={() => { handleSetActiveTab(tab); setNavOpen(false); }}>
-              <span>{getTabLabel(tab)}</span>
+              <span>{getTabLabel(tab, selectedCompany?.type)}</span>
               {tab === "users" && users.length > 0 && <span className="mob-nav-badge">{users.length}</span>}
               {tab === "inscriptions" && inscriptionsPending > 0 && <span className="mob-nav-badge">{inscriptionsPending}</span>}
             </button>
@@ -778,7 +1007,21 @@ export default function AdminDashboard() {
         {/* Sidebar desktop */}
         <aside className="admin-sidebar">
           <div className="sidebar-top">
-            <div className="sidebar-logo">Fi<span>SAFI</span></div>
+            <div className="company-logo-anchor">
+              <button
+                type="button"
+                className="sidebar-logo company-logo-button"
+                onClick={() => {
+                  setCompanyPickerSource((source) => source === "sidebar" ? null : "sidebar");
+                  if (!odooCompanies.length && !loadingOdooCompanies) void fetchOdooCompanies();
+                }}
+                aria-label={`Basculer d’entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
+                aria-expanded={companyPickerSource === "sidebar"}
+              >
+                Fi<span>SAFI</span>
+              </button>
+              {renderCompanyPicker("sidebar")}
+            </div>
             <div className="sidebar-badge">Admin Dashboard</div>
           </div>
 
@@ -786,7 +1029,9 @@ export default function AdminDashboard() {
             <div className="sidebar-avatar">{initials}</div>
             <div>
               <div className="sidebar-name">{currentUser.firstName} {currentUser.lastName}</div>
-              <div className="sidebar-role">Administrateur</div>
+              <div className="sidebar-role">
+                Administrateur{selectedCompany ? ` · ${selectedCompany.name}` : ""}
+              </div>
             </div>
           </div>
 
@@ -796,9 +1041,9 @@ export default function AdminDashboard() {
               <span aria-hidden="true">↗</span>
             </a>
             <span className="sidebar-nav-label">Gestion</span>
-            {(["users","articles","brochures","inscriptions","sessions","ecommerce"] as const).map(tab => (
+            {adminTabs.map(tab => (
               <button key={tab} className={`sidebar-link${activeTab === tab ? " active" : ""}`} onClick={() => handleSetActiveTab(tab)}>
-                <span className="sidebar-link-left">{getTabLabel(tab)}</span>
+                <span className="sidebar-link-left">{getTabLabel(tab, selectedCompany?.type)}</span>
                 {tab === "users" && users.length > 0 && <span className="sidebar-count blue">{users.length}</span>}
                 {tab === "inscriptions" && inscriptionsPending > 0 && <span className="sidebar-count">{inscriptionsPending}</span>}
                 {tab === "articles" && articles.length > 0 && <span className="sidebar-count blue">{articles.length}</span>}
@@ -823,11 +1068,23 @@ export default function AdminDashboard() {
         <div className="admin-main">
           {/* Mobile topbar */}
           <header className="mob-topbar">
-            <div style={{ display:"flex",alignItems:"center",gap:"0.625rem" }}>
-              <div className="mob-mobile-logo" aria-hidden="true">
-                <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi" width={72} height={72} priority />
-              </div>
-              <div className="mob-logo">Fi<span>SAFI</span></div>
+            <div className="company-logo-anchor">
+              <button
+                type="button"
+                className="company-mobile-logo-button"
+                onClick={() => {
+                  setCompanyPickerSource((source) => source === "topbar" ? null : "topbar");
+                  if (!odooCompanies.length && !loadingOdooCompanies) void fetchOdooCompanies();
+                }}
+                aria-label={`Basculer d’entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
+                aria-expanded={companyPickerSource === "topbar"}
+              >
+                <span className="mob-mobile-logo" aria-hidden="true">
+                  <Image src="/favicon/web-app-manifest-192x192.png" alt="" width={72} height={72} priority />
+                </span>
+                <span className="mob-logo">Fi<span>SAFI</span></span>
+              </button>
+              {renderCompanyPicker("topbar")}
             </div>
             <div className="mob-topbar-right">
               <PortalThemeToggle />
@@ -853,20 +1110,23 @@ export default function AdminDashboard() {
               <div className="admin-header">
                 <div className="admin-eyebrow">Gestion</div>
                 <h1 className="admin-title">Utilisateurs</h1>
-                <p className="admin-sub">Gérez les comptes et les droits d'accès</p>
+                <p className="admin-sub">
+                  Gérez les comptes, les profils d’usage et les droits d’accès
+                  {selectedCompany ? ` · ${selectedCompany.name}` : ""}
+                </p>
               </div>
 
               <div className="stats-row">
                 <div className="stat-card">
-                  <div className="stat-num">{users.length}</div>
+                  <div className="stat-num">{filteredUsers.length}</div>
                   <div className="stat-label">Total</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num green">{users.filter(u => u.active).length}</div>
+                  <div className="stat-num green">{filteredUsers.filter(u => u.active).length}</div>
                   <div className="stat-label">Actifs</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num orange">{users.filter(u => u.role === "admin").length}</div>
+                  <div className="stat-num orange">{filteredUsers.filter(u => u.role === "admin").length}</div>
                   <div className="stat-label">Admins</div>
                 </div>
               </div>
@@ -902,6 +1162,9 @@ export default function AdminDashboard() {
                       <div className="user-card-info">
                         <div className="user-card-name">{u.firstName} {u.lastName}</div>
                         <div className="user-card-email">{u.email}</div>
+                        <div className="user-card-email">
+                          {u.profiles.length ? u.profiles.map(getUserProfileLabel).join(" · ") : "Profil à classer"}
+                        </div>
                       </div>
                       <div className="user-card-right">
                         <div className={`status-dot ${u.active ? "active" : "inactive"}`}/>
@@ -918,7 +1181,7 @@ export default function AdminDashboard() {
                   ? <div className="empty"><div className="empty-icon">—</div><p className="empty-text">Aucun utilisateur trouvé</p></div>
                   : <div className="table-wrap">
                       <table>
-                        <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Nom</th><th>Email</th><th>Rôle d’accès</th><th>Profil d’usage</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
                         <tbody>
                           {filteredUsers.map(u => (
                             <tr key={u.id}>
@@ -929,6 +1192,13 @@ export default function AdminDashboard() {
                                 {u.employeeRole && <span className="badge badge-admin">{u.employeeRole}</span>}
                               </td>
                               <td>
+                                {u.profiles.length
+                                  ? u.profiles.map((profile) => (
+                                      <span className="badge badge-user" key={profile}>{getUserProfileLabel(profile)}</span>
+                                    ))
+                                  : <span className="badge">À classer</span>}
+                              </td>
+                              <td>
                                 <span style={{ display:"inline-flex",alignItems:"center",gap:"0.4rem",fontSize:12,color:u.active ? "var(--success)" : "var(--danger)" }}>
                                   <span className={`status-dot ${u.active ? "active" : "inactive"}`}/>
                                   {u.active ? "Actif" : "Inactif"}
@@ -937,7 +1207,7 @@ export default function AdminDashboard() {
                               <td>{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
                               <td>
                                 <div className="action-btns">
-                                  <button className="btn-sm" onClick={() => { setModalMode("edit"); setSelectedUser(u); setFormData({ email:u.email, firstName:u.firstName||"", lastName:u.lastName||"", password:"", employeeRole:u.employeeRole || "" }); setShowModal(true); }}>Éditer</button>
+                                  <button className="btn-sm" onClick={() => { setModalMode("edit"); setSelectedUser(u); setFormData({ email:u.email, firstName:u.firstName||"", lastName:u.lastName||"", password:"", employeeRole:u.employeeRole || "", profiles:u.profiles }); setShowModal(true); }}>Éditer</button>
                                   <button className="btn-sm" onClick={() => handleToggleActive(u.id, u.active)}>{u.active ? "Désactiver" : "Activer"}</button>
                                   <button className="btn-sm danger" onClick={() => { if (confirm("Supprimer cet utilisateur ?")) handleDeleteUser(u.id); }}>Supprimer</button>
                                 </div>
@@ -949,7 +1219,7 @@ export default function AdminDashboard() {
                     </div>}
               </div>
 
-              <button className="fab" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",password:"",employeeRole:"" }); setSelectedUser(null); setShowModal(true); }}>
+              <button className="fab" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",password:"",employeeRole:"",profiles:[] }); setSelectedUser(null); setShowModal(true); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </>)}
@@ -1248,30 +1518,49 @@ export default function AdminDashboard() {
                 <div className="admin-eyebrow">Commerce</div>
                 <div className="market-stats-heading">
                   <div>
-                    <h1 className="admin-title">Activité e-commerce</h1>
-                    <p className="admin-sub">Commandes du Market FiSAFi confirmées et suivies dans Odoo.</p>
+                    <h1 className="admin-title">
+                      {selectedCompany?.type === "groupe" ? "Ventes FiSAFi Groupe" : "FiSAFi Market"}
+                    </h1>
+                    <p className="admin-sub">
+                      {selectedCompany
+                        ? `Données Odoo de ${selectedCompany.name}, isolées des autres sociétés.`
+                        : "Choisissez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi."}
+                    </p>
                   </div>
-                  <button className="btn-sm market-refresh" onClick={fetchMarketStats} disabled={loadingMarketStats}>
+                  <button className="btn-sm market-refresh" onClick={() => void fetchMarketStats()} disabled={loadingMarketStats || selectedCompanyId === null}>
                     {loadingMarketStats ? "Actualisation…" : "Actualiser"}
                   </button>
                 </div>
               </div>
 
-              {marketStatsError && (
-                <div className="alert alert-err" role="alert">
-                  {marketStatsError}
-                  <button className="market-retry" onClick={fetchMarketStats}>Réessayer</button>
+              {selectedCompanyId === null && (
+                <div className="alert alert-err" role="status">
+                  {odooCompaniesError
+                    ? odooCompaniesError
+                    : loadingOdooCompanies
+                      ? "Chargement des sociétés accessibles dans Odoo…"
+                      : "Sélectionnez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi du tableau de bord."}
+                  {odooCompaniesError && (
+                    <button className="market-retry" onClick={() => void fetchOdooCompanies()}>Réessayer</button>
+                  )}
                 </div>
               )}
 
-              {loadingMarketStats && !marketStats ? (
+              {marketStatsError && (
+                <div className="alert alert-err" role="alert">
+                  {marketStatsError}
+                  <button className="market-retry" onClick={() => void fetchMarketStats()}>Réessayer</button>
+                </div>
+              )}
+
+              {selectedCompanyId !== null && loadingMarketStats && !marketStats ? (
                 <div className="empty"><div className="spinner"/></div>
-              ) : marketStats ? (
+              ) : marketStats && marketStats.company.id === selectedCompanyId ? (
                 <>
                   <div className="stats-row market-stats-grid">
                     <div className="stat-card">
                       <div className="stat-num blue">{marketStats.period.orders}</div>
-                      <div className="stat-label">Demandes · 30 jours</div>
+                      <div className="stat-label">{marketStats.company.type === "market" ? "Demandes" : "Devis / commandes"} · 30 jours</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-num green">{formatMarketCurrency(marketStats.period.confirmedRevenue)}</div>
@@ -1289,17 +1578,17 @@ export default function AdminDashboard() {
 
                   <div className="market-stats-secondary">
                     <div className="content-card">
-                      <span className="market-secondary-label">Taux de conversion · 30 jours</span>
+                      <span className="market-secondary-label">{marketStats.company.type === "market" ? "Taux de conversion" : "Taux de confirmation"} · 30 jours</span>
                       <strong>{marketStats.period.conversionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%</strong>
                       <span className="market-secondary-note">
-                        {marketStats.period.confirmedOrders} vente{marketStats.period.confirmedOrders === 1 ? "" : "s"} confirmée{marketStats.period.confirmedOrders === 1 ? "" : "s"} sur {marketStats.period.orders} demande{marketStats.period.orders === 1 ? "" : "s"}
+                        {marketStats.period.confirmedOrders} vente{marketStats.period.confirmedOrders === 1 ? "" : "s"} confirmée{marketStats.period.confirmedOrders === 1 ? "" : "s"} sur {marketStats.period.orders} {marketStats.company.type === "market" ? "demande" : "devis / commande"}{marketStats.period.orders === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="content-card">
                       <span className="market-secondary-label">Panier moyen confirmé · 30 jours</span>
                       <strong>{formatMarketCurrency(marketStats.period.averageConfirmedOrder)}</strong>
                       <span className="market-secondary-note">
-                        {marketStats.period.canceledOrders} demande{marketStats.period.canceledOrders === 1 ? "" : "s"} annulée{marketStats.period.canceledOrders === 1 ? "" : "s"}
+                        {marketStats.period.canceledOrders} {marketStats.company.type === "market" ? "demande" : "devis / commande"}{marketStats.period.canceledOrders === 1 ? "" : "s"} annulée{marketStats.period.canceledOrders === 1 ? "" : "s"}
                       </span>
                     </div>
                   </div>
@@ -1308,7 +1597,7 @@ export default function AdminDashboard() {
                     <div className="market-panel-heading">
                       <div>
                         <h2 id="market-monthly-title">Ventes confirmées</h2>
-                        <p>Évolution sur les six derniers mois</p>
+                        <p>{marketStats.company.name} · six derniers mois</p>
                       </div>
                       <span className="market-chart-legend"><i/> Chiffre d’affaires</span>
                     </div>
@@ -1320,25 +1609,25 @@ export default function AdminDashboard() {
                           return (
                             <div className="market-chart-column" key={`${month.year}-${month.month}`}>
                               <span className="market-chart-value">{formatMarketCurrency(month.confirmedRevenue)}</span>
-                              <div className="market-chart-track" aria-label={`${month.orders} demande${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
+                              <div className="market-chart-track" aria-label={`${month.orders} ${marketStats.company.type === "market" ? "demande" : "commande"}${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
                                 <div className="market-chart-bar" style={{ height: `${height}%` }}/>
                               </div>
                               <span className="market-chart-label">{month.label} {month.year}</span>
-                              <span className="market-chart-count">{month.orders} demande{month.orders === 1 ? "" : "s"}</span>
+                              <span className="market-chart-count">{month.orders} {marketStats.company.type === "market" ? "demande" : "commande"}{month.orders === 1 ? "" : "s"}</span>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="empty"><p className="empty-text">Aucune demande Market sur les six derniers mois</p></div>
+                      <div className="empty"><p className="empty-text">Aucune commande sur les six derniers mois pour {marketStats.company.name}.</p></div>
                     )}
                   </section>
 
                   <section className="market-panel" aria-labelledby="market-recent-title">
                     <div className="market-panel-heading">
                       <div>
-                        <h2 id="market-recent-title">Demandes récentes</h2>
-                        <p>Statut actuel récupéré depuis Odoo</p>
+                        <h2 id="market-recent-title">{marketStats.company.type === "market" ? "Demandes récentes" : "Devis et commandes récents"}</h2>
+                        <p>Statut actuel récupéré depuis Odoo · {marketStats.company.name}</p>
                       </div>
                     </div>
                     {marketStats.recentOrders.length ? (
@@ -1358,7 +1647,7 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     ) : (
-                      <div className="empty"><p className="empty-text">Aucune demande Market enregistrée</p></div>
+                      <div className="empty"><p className="empty-text">Aucune commande récente pour {marketStats.company.name}.</p></div>
                     )}
                   </section>
                   <p className="market-stats-updated">
@@ -1380,8 +1669,13 @@ export default function AdminDashboard() {
           { id:"brochures", label:"Brochures", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>, badge: 0 },
           { id:"inscriptions", label:"Inscrip.", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="10.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>, badge: inscriptionsPending },
           { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: 0 },
-          { id:"ecommerce", label:"Market", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>, badge: 0 },
-        ] as const).map(t => (
+          { id:"ecommerce", label:selectedCompany?.type === "groupe" ? "Ventes" : "Market", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>, badge: 0 },
+        ] as const)
+          .filter((tab) =>
+            selectedCompany?.type !== "market" ||
+            (tab.id !== "inscriptions" && tab.id !== "sessions")
+          )
+          .map(t => (
           <button key={t.id} className={`tab-btn${activeTab === t.id ? " active" : ""}`} onClick={() => handleSetActiveTab(t.id)}>
             <div className="tab-active-dot"/>
             {t.icon}
@@ -1403,7 +1697,7 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetUser.email} · {new Date(actionSheetUser.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            <button className="sheet-btn primary" onClick={() => { setModalMode("edit"); setSelectedUser(actionSheetUser); setFormData({ email:actionSheetUser.email, firstName:actionSheetUser.firstName||"", lastName:actionSheetUser.lastName||"", password:"", employeeRole:actionSheetUser.employeeRole || "" }); setActionSheetUser(null); setShowModal(true); }}>
+            <button className="sheet-btn primary" onClick={() => { setModalMode("edit"); setSelectedUser(actionSheetUser); setFormData({ email:actionSheetUser.email, firstName:actionSheetUser.firstName||"", lastName:actionSheetUser.lastName||"", password:"", employeeRole:actionSheetUser.employeeRole || "", profiles:actionSheetUser.profiles }); setActionSheetUser(null); setShowModal(true); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Modifier le profil
             </button>
@@ -1562,6 +1856,25 @@ export default function AdminDashboard() {
                 <option value="accountant">Comptable</option>
               </select>
             </div>
+            <fieldset className="form-group user-profiles-fieldset">
+              <legend className="form-label">Profils d’usage</legend>
+              {(["MARKET_CUSTOMER", "TRAINING_PARTICIPANT"] as const).map((profile) => (
+                <label className="user-profile-choice" key={profile}>
+                  <input
+                    type="checkbox"
+                    checked={formData.profiles.includes(profile)}
+                    onChange={() => setFormData((previous) => ({
+                      ...previous,
+                      profiles: previous.profiles.includes(profile)
+                        ? previous.profiles.filter((item) => item !== profile)
+                        : [...previous.profiles, profile],
+                    }))}
+                  />
+                  <span>{getUserProfileLabel(profile)}</span>
+                </label>
+              ))}
+              <small>Ces profils décrivent les services utilisés ; ils ne donnent pas de droits d’accès administrateur.</small>
+            </fieldset>
             {modalMode === "add" && (
               <div className="form-group">
                 <label className="form-label">Mot de passe</label>

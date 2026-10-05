@@ -8,6 +8,7 @@ import { ERPOperationError } from "@/lib/erp/errors";
 import { getERPProvider } from "@/lib/erp";
 import { withPOSConfigLock } from "@/lib/erp/posLock";
 import { OdooApiError } from "@/lib/marketOdoo";
+import { assertEmployeePOSCompany, EmployeeCompanyError, resolveEmployeeCompany } from "@/lib/employeeCompany";
 
 type OpenBody = {
   operationId: string;
@@ -43,11 +44,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const account = await authenticateEmployee(req);
     requirePOSOpen(account);
+    const company = await resolveEmployeeCompany(req);
     const configId = parseConfigId(req.query.id);
     const body = parseBody(req.body);
     if (configId === null || !body) {
       return res.status(400).json({ error: "Les données d’ouverture sont invalides." });
     }
+    await assertEmployeePOSCompany(configId, company.id);
     const session = await withPOSConfigLock(configId, () =>
       getERPProvider().openPOSSession({
         configId,
@@ -58,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     return res.status(200).json({ session });
   } catch (error) {
-    if (error instanceof EmployeeAuthError || error instanceof ERPOperationError) {
+    if (error instanceof EmployeeAuthError || error instanceof EmployeeCompanyError || error instanceof ERPOperationError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

@@ -113,19 +113,21 @@ export type POSClosingSummary = {
 
 export interface ERPProvider {
   getProducts(options: {
+    companyId?: number;
     search: string;
     categoryId?: number | null;
     onlyAvailable?: boolean;
     offset: number;
     limit: number;
   }): Promise<ProductListPage>;
-  getProduct(id: number): Promise<Product>;
-  updateProduct(id: number, input: ProductUpdateInput): Promise<Product>;
-  updateProductImage(id: number, imageBase64: string): Promise<Product>;
-  removeProductImage(id: number): Promise<Product>;
-  getPointsOfSale(): Promise<PointOfSale[]>;
+  getProduct(id: number, companyId?: number): Promise<Product>;
+  updateProduct(id: number, input: ProductUpdateInput, companyId?: number): Promise<Product>;
+  updateProductImage(id: number, imageBase64: string, companyId?: number): Promise<Product>;
+  removeProductImage(id: number, companyId?: number): Promise<Product>;
+  getPointsOfSale(companyId?: number): Promise<PointOfSale[]>;
   getPOSProducts(options: {
     configId: number;
+    companyId?: number;
     search: string;
     offset: number;
     limit: number;

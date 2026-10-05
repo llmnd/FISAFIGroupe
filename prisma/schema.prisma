@@ -136,6 +136,11 @@ model Brochure {
   @@map("Brochure")
 }
 
+enum UserProfile {
+  MARKET_CUSTOMER
+  TRAINING_PARTICIPANT
+}
+
 // Utilisateurs - Backend Authentication
 model User {
   id        String   @id @default(cuid())
@@ -144,6 +149,7 @@ model User {
   firstName String?
   lastName  String?
   role      String   @default("user") // "user", "admin", "moderator"
+  profiles  UserProfile[] @default([])
   active    Boolean  @default(true)
   employeeRole String?
   sessionVersion Int @default(0)

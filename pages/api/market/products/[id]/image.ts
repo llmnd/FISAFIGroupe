@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { listFiSafiCompanies } from "@/lib/odooCompanies";
+import { OdooApiError } from "@/lib/marketOdoo";
 
 const IMAGE_CACHE_CONTROL =
   "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=2592000";
@@ -37,6 +39,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const companies = await listFiSafiCompanies();
+    const market = companies.find((company) => company.type === "market");
+    if (!market) {
+      throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+    }
     const response = await fetch(`${odooOrigin}/json/2/product.template/search_read`, {
       method: "POST",
       headers: {
@@ -44,7 +51,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        domain: [["id", "=", Number(productId)]],
+        domain: [
+          ["id", "=", Number(productId)],
+          ["company_id", "in", [false, market.id]],
+          ["active", "=", true],
+          ["sale_ok", "=", true],
+          ["available_in_pos", "=", true],
+        ],
         fields: ["image_512"],
         limit: 1,
       }),
@@ -102,6 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).send(image);
   } catch (error) {
     console.error("[Market/Odoo] Product image request failed:", error);
-    return res.status(502).json({ error: "Impossible de joindre l’image du produit." });
+    return res.status(error instanceof OdooApiError ? error.statusCode : 502).json({
+      error: error instanceof OdooApiError ? error.message : "Impossible de joindre l’image du produit.",
+    });
   }
 }

@@ -78,7 +78,7 @@ body:has(.admin-layout){
   font-size:14px;
   line-height:1.55;
 }
-html{overflow-y:auto;scroll-padding-top:72px;}
+html{overflow-y:auto;scrollbar-gutter:stable;scroll-padding-top:72px;}
 
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
@@ -132,6 +132,14 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   font-family:var(--od-font);
   line-height:1;
 }
+.company-logo-anchor{position:relative;display:inline-flex;align-items:center;}
+.company-logo-button{
+  padding:0;border:0;background:transparent;text-align:left;cursor:pointer;
+}
+.company-logo-button:focus-visible,
+.company-mobile-logo-button:focus-visible{
+  outline:2px solid var(--orange-light);outline-offset:5px;border-radius:3px;
+}
 .sidebar-logo span{color:#e8d3e3;}
 .sidebar-badge{
   font-size:9px;
@@ -149,6 +157,7 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   border:1px solid rgba(255,255,255,.08);
   border-radius:6px;
   display:flex;align-items:center;gap:10px;
+  position:relative;
 }
 .sidebar-avatar{
   width:36px;height:36px;border-radius:50%;
@@ -156,7 +165,9 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:600;color:#fff;flex-shrink:0;
   letter-spacing:0.03em;
+  border:0;padding:0;cursor:pointer;
 }
+.mob-menu-avatar:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 .sidebar-name{
   font-size:13.5px;color:#fff;font-weight:500;line-height:1.25;
 }
@@ -309,6 +320,10 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   line-height:1;
 }
 .mob-logo span{color:var(--orange);}
+.company-mobile-logo-button{
+  display:flex;align-items:center;gap:.625rem;padding:0;border:0;
+  background:transparent;cursor:pointer;
+}
 .mob-topbar-right{display:flex;align-items:center;gap:10px;}
 
 .mob-avatar{
@@ -410,12 +425,14 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   padding:20px 24px;
   background:#fff;
   border-bottom:1px solid var(--line);
+  position:relative;
 }
 .mob-menu-avatar{
   width:42px;height:42px;border-radius:50%;
   background:var(--blue);
   display:flex;align-items:center;justify-content:center;
   font-size:14px;font-weight:600;color:#fff;flex-shrink:0;
+  border:0;padding:0;cursor:pointer;
 }
 .mob-menu-name{font-size:15px;color:var(--ink);font-weight:500;}
 .mob-menu-email{font-size:13px;color:var(--steel);margin-top:2px;}
@@ -1552,7 +1569,35 @@ html.dark .admin-layout .market-order-total,
 html.dark .admin-layout .market-chart-label,
 html.dark .admin-layout .market-stats-secondary strong{color:var(--ink-strong);}
 html.dark .admin-layout .market-order-row{border-color:var(--line-soft);}
-
+.company-picker{
+  position:absolute;z-index:110;top:calc(100% + 10px);left:0;right:auto;min-width:220px;
+  display:flex;flex-direction:column;gap:4px;padding:10px;
+  color:var(--ink);background:var(--white);border:1px solid var(--line);
+  border-radius:8px;box-shadow:var(--sh-lg);
+}
+.company-mobile-logo-button+.company-picker{top:calc(100% + 9px);}
+.company-picker>strong{
+  padding:3px 7px 6px;color:var(--steel);font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.company-picker-option{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 8px;border:0;border-radius:5px;background:transparent;
+  color:var(--ink);font:inherit;text-align:left;cursor:pointer;
+}
+.company-picker-option:hover,.company-picker-option.selected{background:var(--blue-soft);color:var(--blue);}
+.company-picker-option:focus-visible{outline:2px solid var(--blue);outline-offset:1px;}
+.company-picker-message,.company-picker-error{padding:5px 7px;color:var(--steel);font-size:12px;}
+.company-picker-error{color:var(--danger);}
+.user-profiles-fieldset{display:grid;gap:8px;border:0;padding:0;}
+.user-profiles-fieldset legend{padding:0;margin-bottom:2px;}
+.user-profile-choice{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;cursor:pointer;}
+.user-profile-choice input{width:16px;height:16px;accent-color:var(--blue);}
+.user-profiles-fieldset>small{color:var(--steel);font-size:11px;line-height:1.45;}
+html.dark .admin-layout .company-picker{background:var(--white);border-color:var(--line);color:var(--ink);}
+html.dark .admin-layout .company-picker-option{color:var(--ink);}
+html.dark .admin-layout .company-picker-option:hover,
+html.dark .admin-layout .company-picker-option.selected{background:var(--blue-soft);color:var(--blue);}
 @media(max-width:760px){
   .market-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .market-order-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;}

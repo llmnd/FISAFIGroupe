@@ -12,8 +12,8 @@ export type DeliveryEstimate = {
 };
 
 export const MARKET_ORIGIN: DeliveryCoordinates = {
-  latitude: 14.7334942,
-  longitude: -17.4671607,
+  latitude: 14.725752,
+  longitude: -17.469695,
 };
 
 export function getMarketOrigin(): DeliveryCoordinates {

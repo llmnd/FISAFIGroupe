@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import Link from "next/link";
 import PortalThemeToggle from "@/components/PortalThemeToggle";
 
@@ -22,7 +22,7 @@ export default function EmployeePortalHeader({
   return (
     <header className={`employee-portal-header ${pageClassName}`}>
       <div className="employee-portal-header-page">
-        <span className="employee-portal-header-page-label">FiSAFi Groupe</span>
+        <span className="employee-portal-header-page-label">FiSAFi · Espace employé</span>
         <strong>{title}</strong>
       </div>
 

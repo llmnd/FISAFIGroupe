@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { callOdoo, getTemplateStock, OdooApiError } from "@/lib/marketOdoo";
+import { listFiSafiCompanies } from "@/lib/odooCompanies";
 
 type OdooProduct = {
   id: number;
@@ -10,6 +11,7 @@ type OdooProduct = {
   image_128: string | false | null;
   compare_list_price: number;
   write_date: string;
+  company_id: [number, string] | false;
 };
 
 type MarketProduct = {
@@ -44,7 +46,11 @@ function isOdooProduct(value: unknown): value is OdooProduct {
     typeof product.uom_name === "string" &&
     (typeof product.image_128 === "string" || product.image_128 === false || product.image_128 === null) &&
     typeof product.compare_list_price === "number" &&
-    typeof product.write_date === "string"
+    typeof product.write_date === "string" &&
+    (product.company_id === false ||
+      (Array.isArray(product.company_id) &&
+        Number.isSafeInteger(product.company_id[0]) &&
+        typeof product.company_id[1] === "string"))
   );
 }
 
@@ -58,18 +64,32 @@ export default async function handler(
   }
 
   try {
+    const companies = await listFiSafiCompanies();
+    const market = companies.find((company) => company.type === "market");
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+
     const payload: unknown = await callOdoo("product.template", "search_read", {
       domain: [
         ["active", "=", true],
         ["sale_ok", "=", true],
         ["available_in_pos", "=", true],
+        ["company_id", "in", [false, market.id]],
       ],
-      fields: ["id", "name", "list_price", "categ_id", "uom_name", "image_128", "compare_list_price", "write_date"],
+      fields: [
+        "id", "name", "list_price", "categ_id", "uom_name", "image_128",
+        "compare_list_price", "write_date", "company_id",
+      ],
       limit: ODOO_PRODUCT_LIMIT,
       order: "name asc",
     });
 
-    if (!Array.isArray(payload) || !payload.every(isOdooProduct)) {
+    if (
+      !Array.isArray(payload) ||
+      !payload.every(isOdooProduct) ||
+      payload.some((product) =>
+        product.company_id !== false && product.company_id[0] !== market.id
+      )
+    ) {
       console.error("[Market/Odoo] Product response has an unexpected format.");
       return res.status(502).json({ error: "Le catalogue Odoo a renvoyé des données invalides." });
     }

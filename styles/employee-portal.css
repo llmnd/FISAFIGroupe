@@ -1018,6 +1018,13 @@ body:has(main.employee-portal-page) {
   font-weight: 600;
 }
 
+.employee-sales .employee-sales-deliveryEstimate {
+  margin: 4px 0 0;
+  color: var(--od-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .employee-sales .employee-sales-actions {
   display: flex;
   justify-content: flex-end;
@@ -1047,14 +1054,21 @@ body:has(main.employee-portal-page) {
 }
 
 /* --- Modales (style Odoo) --- */
+main.employee-sales {
+  contain: none;
+}
+
 .employee-sales .employee-sales-backdrop {
+  --employee-sales-modal-inset: clamp(12px, 4vh, 36px);
   position: fixed;
   z-index: 200;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--employee-sales-modal-inset) 16px;
   background: rgba(33,37,41,.45);
   animation: od-fade 140ms ease-out;
 }
@@ -1066,14 +1080,22 @@ body:has(main.employee-portal-page) {
 
 .employee-sales .employee-sales-modal {
   width: min(720px, 100%);
-  max-height: 90vh;
+  max-height: calc(100vh - var(--employee-sales-modal-inset) - var(--employee-sales-modal-inset));
+  max-height: calc(100dvh - var(--employee-sales-modal-inset) - var(--employee-sales-modal-inset));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 22px 24px 24px;
+  margin: 0 auto;
   border-radius: var(--od-r-md);
   background: #fff;
   box-shadow: var(--od-sh-lg);
   border: 1px solid var(--od-border);
   animation: od-fade 160ms ease-out;
+}
+
+.employee-sales .employee-sales-detailModal {
+  margin-top: 0;
 }
 
 .employee-sales .employee-sales-modalHeader {
@@ -1151,6 +1173,95 @@ body:has(main.employee-portal-page) {
   color: var(--od-text-strong);
   font-size: 14px;
   font-weight: 600;
+}
+
+.employee-sales .employee-sales-location {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--od-border-light);
+  border-radius: var(--od-r-md);
+  background: var(--od-bg);
+}
+.employee-sales .employee-sales-location > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.employee-sales .employee-sales-location strong {
+  color: var(--od-text-strong);
+  font-size: 13px;
+}
+.employee-sales .employee-sales-location span {
+  color: var(--od-text-muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.employee-sales .employee-sales-location a {
+  color: var(--od-primary);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.employee-sales .employee-sales-shareFeedback {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--od-success);
+  font-size: 12px;
+}
+.employee-sales .employee-sales-shareFeedback.is-error {
+  color: var(--od-danger);
+}
+.employee-sales .employee-sales-invoices {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--od-border-light);
+  border-radius: var(--od-r-md);
+  background: var(--od-bg);
+}
+.employee-sales .employee-sales-invoices h3 {
+  margin: 0;
+  color: var(--od-text-strong);
+  font-size: 14px;
+}
+.employee-sales .employee-sales-invoices > p {
+  margin: 0;
+  color: var(--od-text-muted);
+  font-size: 12.5px;
+}
+.employee-sales .employee-sales-invoiceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--od-border-light);
+}
+.employee-sales .employee-sales-invoiceRow > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+.employee-sales .employee-sales-invoiceRow strong {
+  color: var(--od-text-strong);
+  font-size: 13px;
+}
+.employee-sales .employee-sales-invoiceRow small,
+.employee-sales .employee-sales-invoiceUnavailable {
+  color: var(--od-text-muted);
+  font-size: 12px;
+}
+.employee-sales .employee-sales-deliveryDisclaimer {
+  margin: 8px 0 0;
+  color: var(--od-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .employee-sales .employee-sales-note {
@@ -3570,6 +3681,7 @@ html.dark .employee-portal-page .employee-portal-header .employee-portal-header-
     flex-wrap: wrap;
     order: 4;
   }
+
 }
 
 @media (max-width: 420px) {

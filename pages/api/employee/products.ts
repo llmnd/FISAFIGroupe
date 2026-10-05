@@ -9,6 +9,11 @@ import {
 } from "@/lib/employeeAuth";
 import { getERPProvider } from "@/lib/erp";
 import { OdooApiError } from "@/lib/marketOdoo";
+import {
+  assertEmployeeProductCompany,
+  EmployeeCompanyError,
+  resolveEmployeeCompany,
+} from "@/lib/employeeCompany";
 
 const PAGE_SIZE = 24;
 const MAX_OFFSET = 100_000;
@@ -57,12 +62,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const account = await authenticateEmployee(req);
+    const company = await resolveEmployeeCompany(req);
     const productId = getProductIdFromRequest(req);
 
     if (req.method === "GET") {
       requireProductRead(account);
       if (productId) {
-        const product = await getERPProvider().getProduct(productId);
+        const product = await getERPProvider().getProduct(productId, company.id);
         if (!canViewProductCost(account)) product.costPrice = null;
         return res.status(200).json({ product });
       }
@@ -84,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const page = await getERPProvider().getProducts({
+        companyId: company.id,
         search,
         categoryId: parsedCategoryId,
         onlyAvailable,
@@ -106,7 +113,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "Les données de mise à jour sont invalides." });
       }
       if ("costPrice" in payload) requireProductCostWrite(account);
-      const product = await getERPProvider().updateProduct(productId, payload);
+      await assertEmployeeProductCompany(productId, company.id);
+      const product = await getERPProvider().updateProduct(productId, payload, company.id);
       if (!canViewProductCost(account)) product.costPrice = null;
       return res.status(200).json({ product });
     }
@@ -122,7 +130,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (typeof payload !== "string" || !payload.trim()) {
         return res.status(400).json({ error: "Une image valide est requise." });
       }
-      const product = await getERPProvider().updateProductImage(productId, payload);
+      await assertEmployeeProductCompany(productId, company.id);
+      const product = await getERPProvider().updateProductImage(productId, payload, company.id);
       return res.status(200).json({ product });
     }
 
@@ -131,7 +140,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!productId) {
         return res.status(400).json({ error: "L’identifiant produit est invalide." });
       }
-      const product = await getERPProvider().removeProductImage(productId);
+      await assertEmployeeProductCompany(productId, company.id);
+      const product = await getERPProvider().removeProductImage(productId, company.id);
       return res.status(200).json({ product });
     }
 
@@ -139,6 +149,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Méthode non autorisée." });
   } catch (error) {
     if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error instanceof EmployeeCompanyError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

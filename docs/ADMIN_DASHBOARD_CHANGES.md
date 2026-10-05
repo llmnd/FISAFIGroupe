@@ -25,11 +25,16 @@ Vous avez maintenant un **dashboard administrateur complet et séparé** pour la
 ```
 GET    /api/users              → Lister tous les utilisateurs
 POST   /api/users              → Créer un nouvel utilisateur
+PUT    /api/users              → Mettre à jour un utilisateur (id dans le corps)
+PATCH  /api/users              → Basculer son statut actif (id dans le corps)
+DELETE /api/users              → Supprimer un utilisateur (id dans le corps)
 GET    /api/users/[id]         → Récupérer un utilisateur
 PUT    /api/users/[id]         → Mettre à jour un utilisateur
 DELETE /api/users/[id]         → Supprimer un utilisateur
 PATCH  /api/users/[id]/toggle-active → Activer/Désactiver
 ```
+
+Le dashboard utilise les routes de collection `PUT`, `PATCH` et `DELETE` avec `{ "id": "..." }` dans le corps JSON pour ses mutations, afin d'éviter les réponses 404 HTML des routes utilisateur dynamiques dans le serveur de développement Next.js.
 
 ### 4. **Redirection Automatique**
 - Les admins connectés sont automatiquement redirigés vers `/admin-dashboard`
@@ -46,7 +51,7 @@ PATCH  /api/users/[id]/toggle-active → Activer/Désactiver
 - `pages/ADMIN_DASHBOARD.md` - Documentation du dashboard admin
 
 **APIs:**
-- `pages/api/users.ts` - Gestion des utilisateurs (GET, POST)
+- `pages/api/users.ts` - Gestion des utilisateurs (GET, POST, PUT, PATCH, DELETE)
 - `pages/api/users/[id].ts` - Opérations sur un utilisateur spécifique (GET, PUT, DELETE)
 - `pages/api/users/[id]/toggle-active.ts` - Activation/Désactivation
 
@@ -200,4 +205,3 @@ Consultez ces fichiers pour plus de détails:
 **Complété le:** 27 Mars 2026  
 **Version:** 1.0  
 **Prochaines étapes:** Ajouter gestion des rôles, audit logs, 2FA
-

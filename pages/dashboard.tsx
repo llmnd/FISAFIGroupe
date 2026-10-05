@@ -6,6 +6,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import PortalThemeToggle from "@/components/PortalThemeToggle";
+import UserDashboardSkeleton from "@/components/UserDashboardSkeleton";
 import {
   getMarketDepartmentId,
   getMarketDepartmentName,
@@ -22,6 +23,7 @@ interface User {
   firstName?: string;
   lastName?: string;
   role: "user" | "admin" | "moderator";
+  profiles: Array<"MARKET_CUSTOMER" | "TRAINING_PARTICIPANT">;
 }
 
 interface SessionFormation {
@@ -32,7 +34,7 @@ interface SessionFormation {
   location: string;
   capacity: number;
   available: number;
-  status: "ouverte" | "complète" | "fermée";
+  status: "ouverte" | "complète" | "fermée" | "annulée" | "terminée" | "en_attente";
 }
 
 interface Formation {
@@ -95,7 +97,20 @@ interface MarketQuotation {
   }>;
 }
 
-type TabId = "home" | "inscriptions" | "formations" | "market-orders" | "security" | "inscriptions-manage" | "users" | "articles";
+interface MarketInvoice {
+  id: number;
+  reference: string;
+  type: "invoice" | "credit_note";
+  date: string | null;
+  dueDate: string | null;
+  total: number;
+  remaining: number;
+  currency: string | null;
+  paymentStatus: string;
+  referenceNote: string | null;
+}
+
+type TabId = "home" | "inscriptions" | "formations" | "market-orders" | "account" | "inscriptions-manage" | "users" | "articles";
 
 interface TabType {
   id: TabId;
@@ -107,17 +122,30 @@ interface TabType {
 const ALL_TABS: TabType[] = [
   { id: "home",                 label: "Accueil",                icon: "⌂" },
   { id: "inscriptions",        label: "Mes inscriptions",       icon: "◈" },
-  { id: "formations",          label: "Formations",             icon: "◉" },
-  { id: "market-orders",       label: "Devis & commandes",      icon: "▱" },
-  { id: "security",            label: "Sécurité du compte",      icon: "◇" },
+  { id: "formations",          label: "Formations et sessions",  icon: "◉" },
+  { id: "market-orders",       label: "Achats Market",           icon: "▱" },
+  { id: "account",             label: "Mon compte",              icon: "◇" },
   { id: "inscriptions-manage", label: "Gérer inscriptions",     icon: "◎", admin: true },
   { id: "users",               label: "Utilisateurs",           icon: "◇", admin: true },
   { id: "articles",            label: "Articles",               icon: "◆", admin: true },
 ];
 
+function getInvoicePaymentLabel(status: string): string {
+  const labels: Record<string, string> = {
+    not_paid: "À régler",
+    in_payment: "Paiement en cours",
+    paid: "Réglée",
+    partial: "Partiellement réglée",
+    reversed: "Annulée",
+    invoicing_legacy: "Ancienne facture",
+  };
+  return labels[status] ?? "Statut indisponible";
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const sessionRedirecting = useRef(false);
+  const sessionValidationStarted = useRef(false);
 
   const expireSession = () => {
     if (sessionRedirecting.current) return;
@@ -161,6 +189,12 @@ export default function DashboardPage() {
   const [marketQuotations, setMarketQuotations] = useState<MarketQuotation[]>([]);
   const [loadingMarketQuotations, setLoadingMarketQuotations] = useState(false);
   const [marketQuotationError, setMarketQuotationError] = useState("");
+  const [marketInvoices, setMarketInvoices] = useState<MarketInvoice[]>([]);
+  const [loadingMarketInvoices, setLoadingMarketInvoices] = useState(false);
+  const [marketInvoiceError, setMarketInvoiceError] = useState("");
+  const [groupInvoices, setGroupInvoices] = useState<MarketInvoice[]>([]);
+  const [loadingGroupInvoices, setLoadingGroupInvoices] = useState(false);
+  const [groupInvoiceError, setGroupInvoiceError] = useState("");
   const [reorderingQuotationId, setReorderingQuotationId] = useState<number | null>(null);
   const [marketReorderError, setMarketReorderError] = useState("");
   const [marketEmailVerified, setMarketEmailVerified] = useState(false);
@@ -172,6 +206,9 @@ export default function DashboardPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
+  const [savingProfile, setSavingProfile] = useState<"MARKET_CUSTOMER" | "TRAINING_PARTICIPANT" | null>(null);
   const [showInscriptionModal, setShowInscriptionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
@@ -221,6 +258,7 @@ export default function DashboardPage() {
             : "Impossible de charger vos devis.";
         throw new Error(message);
       }
+
       if (
         !payload ||
         typeof payload !== "object" ||
@@ -285,6 +323,56 @@ export default function DashboardPage() {
       setLoadingMarketQuotations(false);
     }
   }
+
+  async function fetchAccountInvoices(company: "market" | "groupe") {
+    const setLoading = company === "market" ? setLoadingMarketInvoices : setLoadingGroupInvoices;
+    const setError = company === "market" ? setMarketInvoiceError : setGroupInvoiceError;
+    const setInvoices = company === "market" ? setMarketInvoices : setGroupInvoices;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await authenticatedFetch(`/api/account/invoices?company=${company}`);
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de charger vos factures.";
+        throw new Error(message);
+      }
+      if (
+        !payload ||
+        typeof payload !== "object" ||
+        !("invoices" in payload) ||
+        !Array.isArray(payload.invoices) ||
+        !payload.invoices.every((invoice: unknown) =>
+          !!invoice &&
+          typeof invoice === "object" &&
+          "id" in invoice && Number.isSafeInteger(invoice.id) &&
+          "reference" in invoice && typeof invoice.reference === "string" &&
+          "type" in invoice && (invoice.type === "invoice" || invoice.type === "credit_note") &&
+          "date" in invoice && (typeof invoice.date === "string" || invoice.date === null) &&
+          "dueDate" in invoice && (typeof invoice.dueDate === "string" || invoice.dueDate === null) &&
+          "total" in invoice && typeof invoice.total === "number" && Number.isFinite(invoice.total) &&
+          "remaining" in invoice && typeof invoice.remaining === "number" && Number.isFinite(invoice.remaining) &&
+          "currency" in invoice && (typeof invoice.currency === "string" || invoice.currency === null) &&
+          "paymentStatus" in invoice && typeof invoice.paymentStatus === "string" &&
+          "referenceNote" in invoice && (typeof invoice.referenceNote === "string" || invoice.referenceNote === null)
+        )
+      ) {
+        throw new Error("Les factures reçues ne sont pas valides.");
+      }
+      setInvoices(payload.invoices as MarketInvoice[]);
+    } catch (fetchError) {
+      console.error(`[Dashboard] Could not load ${company} invoices:`, fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : "Impossible de charger vos factures.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const fetchMarketInvoices = () => fetchAccountInvoices("market");
+  const fetchGroupInvoices = () => fetchAccountInvoices("groupe");
 
   const reorderMarketQuotation = async (quotation: MarketQuotation) => {
     if (reorderingQuotationId !== null) return;
@@ -426,7 +514,53 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAddProfile = async (profile: "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT") => {
+    if (!user || user.profiles.includes(profile) || savingProfile) return;
+    setSavingProfile(profile);
+    setProfileError("");
+    setProfileMessage("");
+    try {
+      const response = await authenticatedFetch("/api/account/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile }),
+      });
+      const payload: unknown = await response.json();
+      if (
+        !response.ok ||
+        !payload ||
+        typeof payload !== "object" ||
+        !("profiles" in payload) ||
+        !Array.isArray(payload.profiles) ||
+        !payload.profiles.every(
+          (item) => item === "MARKET_CUSTOMER" || item === "TRAINING_PARTICIPANT",
+        )
+      ) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible d’ajouter ce profil à votre compte.";
+        throw new Error(message);
+      }
+      const updatedUser = { ...user, profiles: payload.profiles as User["profiles"] };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setProfileMessage(
+        profile === "MARKET_CUSTOMER"
+          ? "Votre espace client FiSAFi Market est activé."
+          : "Votre espace participant FiSAFi Groupe est activé.",
+      );
+    } catch (error) {
+      console.error("[Dashboard/Account] Could not add account profile:", error);
+      setProfileError(error instanceof Error ? error.message : "Impossible de mettre à jour les profils du compte.");
+    } finally {
+      setSavingProfile(null);
+    }
+  };
+
   useEffect(() => {
+    if (sessionValidationStarted.current) return;
+    sessionValidationStarted.current = true;
     void (async () => {
       try {
         const response = await fetch("/api/auth/me");
@@ -442,6 +576,8 @@ export default function DashboardPage() {
           !("id" in payload.data) || typeof payload.data.id !== "string" ||
           !("email" in payload.data) || typeof payload.data.email !== "string" ||
           !("role" in payload.data) || typeof payload.data.role !== "string"
+          || !("profiles" in payload.data) || !Array.isArray(payload.data.profiles)
+          || !payload.data.profiles.every((profile) => profile === "MARKET_CUSTOMER" || profile === "TRAINING_PARTICIPANT")
         ) throw new Error("Session validation returned invalid account data.");
 
         const freshUser = payload.data as User;
@@ -461,25 +597,37 @@ export default function DashboardPage() {
   // Charger les articles au changement d'onglet
   useEffect(() => {
     if (activeTab === "home" && user) {
-      void fetchMarketQuotations();
-      void fetchUserInscriptions();
+      if (user.profiles.includes("MARKET_CUSTOMER")) {
+        void fetchMarketQuotations();
+        void fetchMarketInvoices();
+      }
+      if (user.profiles.includes("TRAINING_PARTICIPANT")) {
+        void fetchUserInscriptions();
+        void fetchGroupInvoices();
+      }
     } else if (activeTab === "articles" && user?.role === "admin") {
       fetchArticles();
     } else if (activeTab === "inscriptions-manage" && user?.role === "admin") {
       fetchAdminInscriptions();
-    } else if (activeTab === "formations") {
+    } else if (activeTab === "formations" && user?.profiles.includes("TRAINING_PARTICIPANT")) {
       fetchFormations();
-    } else if (activeTab === "inscriptions" && user) {
+    } else if (activeTab === "inscriptions" && user?.profiles.includes("TRAINING_PARTICIPANT")) {
       fetchUserInscriptions();
-    } else if (activeTab === "market-orders" && user) {
+      void fetchGroupInvoices();
+    } else if (activeTab === "market-orders" && user?.profiles.includes("MARKET_CUSTOMER")) {
       void fetchMarketQuotations();
+      void fetchMarketInvoices();
     }
   }, [activeTab, user]);
 
   useEffect(() => {
-    if (!["home", "market-orders"].includes(activeTab) || !user) return;
+    if (
+      !["home", "market-orders"].includes(activeTab) ||
+      !user?.profiles.includes("MARKET_CUSTOMER")
+    ) return;
     const interval = window.setInterval(() => {
       void fetchMarketQuotations();
+      void fetchMarketInvoices();
     }, 60_000);
     return () => window.clearInterval(interval);
   }, [activeTab, user]);
@@ -635,6 +783,15 @@ export default function DashboardPage() {
       const data = await res.json();
       if (res.ok) {
         setInscriptionSuccess(`Inscription confirmée! ${data.message}`);
+        setUser((currentUser) => {
+          if (!currentUser || currentUser.profiles.includes("TRAINING_PARTICIPANT")) return currentUser;
+          const updatedUser = {
+            ...currentUser,
+            profiles: [...currentUser.profiles, "TRAINING_PARTICIPANT" as const],
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          return updatedUser;
+        });
         setInscriptionData({ firstName: '', lastName: '', email: '', phone: '', company: '' });
         setShowInscriptionModal(false);
         await fetchUserInscriptions();
@@ -811,25 +968,27 @@ export default function DashboardPage() {
   };
 
   const handleTab = (id: TabId) => {
+    if (id === "market-orders" && !user?.profiles.includes("MARKET_CUSTOMER")) return;
+    if (
+      (id === "inscriptions" || id === "formations") &&
+      !user?.profiles.includes("TRAINING_PARTICIPANT")
+    ) return;
     setActiveTab(id);
     setSidebarOpen(false);
   };
 
-  if (loading) return (
-    <div className="dash-loading">
-      <div className="dash-spinner" />
-    </div>
-  );
+  if (loading) return <UserDashboardSkeleton />;
   if (!user) return null;
 
-  const availableTabs = ALL_TABS.filter(t => !t.admin || user.role === "admin");
-  const tabs = user.role === "admin"
-    ? availableTabs
-    : [
-        ...availableTabs.filter((tab) => tab.id === "home"),
-        ...availableTabs.filter((tab) => tab.id === "market-orders"),
-        ...availableTabs.filter((tab) => tab.id !== "home" && tab.id !== "market-orders"),
-      ];
+  const hasMarketProfile = user.profiles.includes("MARKET_CUSTOMER");
+  const hasTrainingProfile = user.profiles.includes("TRAINING_PARTICIPANT");
+  const tabs = ALL_TABS.filter((tab) => {
+    if (tab.admin) return user.role === "admin";
+    if (user.role === "admin") return true;
+    if (tab.id === "market-orders") return hasMarketProfile;
+    if (tab.id === "inscriptions" || tab.id === "formations") return hasTrainingProfile;
+    return true;
+  });
   const firstInitial = user.firstName?.[0] ?? "";
   const lastInitial = user.lastName?.[0] ?? "";
   const initials = (firstInitial + lastInitial).toUpperCase() || (user.email?.[0] ?? "U").toUpperCase();
@@ -870,11 +1029,6 @@ export default function DashboardPage() {
             --sidebar-w: 240px;
           }
           body { padding-top:0 !important; font-family:'Outfit',sans-serif; font-weight:400; color:var(--ink); background:var(--mist); -webkit-font-smoothing:auto; }
-
-          /* ── LOADING ── */
-          .dash-loading { display:flex; align-items:center; justify-content:center; min-height:100svh; background:var(--mist); }
-          .dash-spinner { width:32px; height:32px; border:2px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:spin 0.7s linear infinite; }
-          @keyframes spin { to { transform:rotate(360deg); } }
 
           /* ── LAYOUT ── */
           .dash-layout { display:flex; min-height:100svh; }
@@ -1355,11 +1509,17 @@ export default function DashboardPage() {
                   Bonjour{user.firstName ? ` ${user.firstName}` : ""} !
                 </h1>
                 <p className="page-sub">
-                  Retrouvez ici vos devis, commandes et inscriptions FiSAFi.
+                  {hasMarketProfile && hasTrainingProfile
+                    ? "Retrouvez vos activités FiSAFi Market et FiSAFi Groupe dans des espaces distincts."
+                    : hasMarketProfile
+                      ? "Retrouvez vos devis, commandes et factures FiSAFi Market."
+                      : hasTrainingProfile
+                        ? "Retrouvez vos inscriptions et les formations FiSAFi Groupe."
+                        : "Consultez votre compte et activez les espaces FiSAFi qui vous concernent."}
                 </p>
 
                 <div className="dashboard-home-summary" aria-label="Résumé de votre compte">
-                  <button
+                  {hasMarketProfile && <button
                     className="dashboard-home-summary-card"
                     type="button"
                     onClick={() => handleTab("market-orders")}
@@ -1369,8 +1529,8 @@ export default function DashboardPage() {
                       {loadingMarketQuotations ? "…" : pendingQuotationCount}
                     </strong>
                     <span className="dashboard-home-summary-link">Consulter mes devis <span aria-hidden="true">→</span></span>
-                  </button>
-                  <button
+                  </button>}
+                  {hasMarketProfile && <button
                     className="dashboard-home-summary-card dashboard-home-summary-card--teal"
                     type="button"
                     onClick={() => handleTab("market-orders")}
@@ -1380,8 +1540,8 @@ export default function DashboardPage() {
                       {loadingMarketQuotations ? "…" : confirmedOrderCount}
                     </strong>
                     <span className="dashboard-home-summary-link">Suivre mes commandes <span aria-hidden="true">→</span></span>
-                  </button>
-                  <button
+                  </button>}
+                  {hasTrainingProfile && <button
                     className="dashboard-home-summary-card dashboard-home-summary-card--green"
                     type="button"
                     onClick={() => handleTab("inscriptions")}
@@ -1391,7 +1551,7 @@ export default function DashboardPage() {
                       {loadingInscriptions ? "…" : userInscriptions.length}
                     </strong>
                     <span className="dashboard-home-summary-link">Voir mes inscriptions <span aria-hidden="true">→</span></span>
-                  </button>
+                  </button>}
                 </div>
 
                 <div className="dashboard-home-section-heading">
@@ -1401,27 +1561,27 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="dashboard-home-shortcuts">
-                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("market-orders")}>
+                  {hasMarketProfile && <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("market-orders")}>
                     <span className="dashboard-home-shortcut-icon" aria-hidden="true">▱</span>
                     <span>
-                      <strong>Devis & commandes</strong>
-                      <span>Consultez vos demandes et leur statut.</span>
+                      <strong>Achats FiSAFi Market</strong>
+                      <span>Consultez vos devis, commandes et factures.</span>
                     </span>
                     <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
-                  </button>
-                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("formations")}>
+                  </button>}
+                  {hasTrainingProfile && <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("formations")}>
                     <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--teal" aria-hidden="true">◉</span>
                     <span>
-                      <strong>Formations</strong>
-                      <span>Découvrez les formations et leurs sessions.</span>
+                      <strong>Formations et sessions</strong>
+                      <span>Découvrez les formations FiSAFi Groupe et les sessions disponibles.</span>
                     </span>
                     <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
-                  </button>
-                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("security")}>
+                  </button>}
+                  <button type="button" className="dashboard-home-shortcut" onClick={() => handleTab("account")}>
                     <span className="dashboard-home-shortcut-icon dashboard-home-shortcut-icon--green" aria-hidden="true">◇</span>
                     <span>
-                      <strong>Sécurité du compte</strong>
-                      <span>Gérez votre mot de passe et vos accès.</span>
+                      <strong>Mon compte</strong>
+                      <span>Consultez vos informations et choisissez vos espaces FiSAFi.</span>
                     </span>
                     <span className="dashboard-home-shortcut-arrow" aria-hidden="true">→</span>
                   </button>
@@ -1432,21 +1592,30 @@ export default function DashboardPage() {
                     <p className="dashboard-home-section-kicker">Votre activité</p>
                     <h2>Les dernières mises à jour</h2>
                   </div>
-                  <button
+                  {(hasMarketProfile || hasTrainingProfile) && <button
                     type="button"
                     className="dashboard-home-refresh"
                     onClick={() => {
-                      void fetchMarketQuotations();
-                      void fetchUserInscriptions();
+                      if (hasMarketProfile) {
+                        void fetchMarketQuotations();
+                        void fetchMarketInvoices();
+                      }
+                      if (hasTrainingProfile) {
+                        void fetchUserInscriptions();
+                        void fetchGroupInvoices();
+                      }
                     }}
-                    disabled={loadingMarketQuotations || loadingInscriptions}
+                    disabled={
+                      (hasMarketProfile && (loadingMarketQuotations || loadingMarketInvoices)) ||
+                      (hasTrainingProfile && (loadingInscriptions || loadingGroupInvoices))
+                    }
                   >
                     Actualiser
-                  </button>
+                  </button>}
                 </div>
 
                 <div className="dashboard-home-activity">
-                  <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-quotes-title">
+                  {hasMarketProfile && <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-quotes-title">
                     <div className="dashboard-home-activity-title-row">
                       <h3 id="dashboard-home-quotes-title">Devis & commandes</h3>
                       <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("market-orders")}>
@@ -1458,6 +1627,10 @@ export default function DashboardPage() {
                     ) : marketQuotationError ? (
                       <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
                         {marketQuotationError}
+                      </p>
+                    ) : marketInvoiceError ? (
+                      <p className="dashboard-home-activity-message dashboard-home-activity-message--error" role="alert">
+                        {marketInvoiceError}
                       </p>
                     ) : recentMarketQuotations.length === 0 ? (
                       <p className="dashboard-home-activity-message">Aucun devis ou commande pour le moment.</p>
@@ -1475,9 +1648,9 @@ export default function DashboardPage() {
                         ))}
                       </ul>
                     )}
-                  </section>
+                  </section>}
 
-                  <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-inscriptions-title">
+                  {hasTrainingProfile && <section className="dashboard-home-activity-card" aria-labelledby="dashboard-home-inscriptions-title">
                     <div className="dashboard-home-activity-title-row">
                       <h3 id="dashboard-home-inscriptions-title">Formations</h3>
                       <button type="button" className="dashboard-home-view-all" onClick={() => handleTab("inscriptions")}>
@@ -1506,7 +1679,7 @@ export default function DashboardPage() {
                         ))}
                       </ul>
                     )}
-                  </section>
+                  </section>}
                 </div>
               </section>
             )}
@@ -1570,16 +1743,57 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 )}
+                {groupInvoiceError && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1.5rem" }}>
+                    {groupInvoiceError}
+                  </div>
+                )}
+                <section className="dashboard-home-activity-card" aria-labelledby="group-invoices-title" style={{ marginTop: "2rem" }}>
+                  <div className="dashboard-home-activity-title-row">
+                    <h2 id="group-invoices-title">Factures FiSAFi Groupe</h2>
+                  </div>
+                  {loadingGroupInvoices ? (
+                    <p className="dashboard-home-activity-message" role="status">Chargement de vos factures…</p>
+                  ) : groupInvoices.length === 0 ? (
+                    <p className="dashboard-home-activity-message">
+                      Aucune facture ou note de crédit publiée n’est associée à votre compte Groupe.
+                    </p>
+                  ) : (
+                    <ul className="dashboard-home-activity-list">
+                      {groupInvoices.map((invoice) => (
+                        <li key={invoice.id} className="dashboard-home-activity-item">
+                          <span className="dashboard-home-activity-mark dashboard-home-activity-mark--teal" aria-hidden="true">
+                            {invoice.type === "credit_note" ? "↩" : "▤"}
+                          </span>
+                          <span className="dashboard-home-activity-copy">
+                            <strong>{invoice.type === "credit_note" ? "Avoir" : "Facture"} {invoice.reference}</strong>
+                            <span>{invoice.date ? new Date(invoice.date).toLocaleDateString("fr-FR") : "Date non renseignée"}</span>
+                            {invoice.dueDate && <span>Échéance : {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}</span>}
+                            {invoice.referenceNote && <span>{invoice.referenceNote}</span>}
+                          </span>
+                          <span className="dashboard-home-activity-status">
+                            {getInvoicePaymentLabel(invoice.paymentStatus)} ·{" "}
+                            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.total)}
+                            {invoice.currency ? ` ${invoice.currency}` : ""}
+                            {invoice.remaining > 0
+                              ? ` · Solde ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.remaining)}`
+                              : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
               </>
             )}
 
             {activeTab === "market-orders" && (
               <>
                 <div className="page-eyebrow">FiSAFi Market</div>
-                <h1 className="page-title">Mes devis et commandes Market</h1>
+                <h1 className="page-title">Mes achats FiSAFi Market</h1>
                 <p className="page-sub">
-                  Consultez le statut de vos demandes. Le devis devient une commande confirmée
-                  seulement après validation du vendeur dans Odoo.
+                  Consultez les statuts de vos devis et commandes, ainsi que vos factures publiées.
+                  Le devis devient une commande confirmée après validation du vendeur dans Odoo.
                 </p>
 
                 {!marketEmailVerified && (
@@ -1627,16 +1841,24 @@ export default function DashboardPage() {
                     {marketReorderError}
                   </div>
                 )}
+                {marketInvoiceError && (
+                  <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>
+                    {marketInvoiceError}
+                  </div>
+                )}
                 <div className="market-refresh-row">
                   <button
                     className="market-action-button market-refresh-button"
                     type="button"
-                    onClick={() => void fetchMarketQuotations()}
-                    disabled={loadingMarketQuotations}
-                    aria-label={loadingMarketQuotations ? "Actualisation des devis en cours" : "Actualiser les devis"}
+                    onClick={() => {
+                      void fetchMarketQuotations();
+                      void fetchMarketInvoices();
+                    }}
+                    disabled={loadingMarketQuotations || loadingMarketInvoices}
+                    aria-label={loadingMarketQuotations || loadingMarketInvoices ? "Actualisation en cours" : "Actualiser les devis et factures"}
                   >
                     <svg
-                      className={`market-action-icon${loadingMarketQuotations ? " spinning" : ""}`}
+                      className={`market-action-icon${loadingMarketQuotations || loadingMarketInvoices ? " spinning" : ""}`}
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden="true"
@@ -1644,7 +1866,7 @@ export default function DashboardPage() {
                       <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M5.6 9a7 7 0 0 1 11.7-2L20 9M4 15l2.7 2a7 7 0 0 0 11.7-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {loadingMarketQuotations ? "Actualisation…" : "Actualiser les devis"}
+                    {loadingMarketQuotations || loadingMarketInvoices ? "Actualisation…" : "Actualiser devis et factures"}
                   </button>
                 </div>
                 {loadingMarketQuotations ? (
@@ -1751,17 +1973,123 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 )}
+
+                <section className="dashboard-home-activity-card" aria-labelledby="market-invoices-title" style={{ marginTop: "2rem" }}>
+                  <div className="dashboard-home-activity-title-row">
+                    <h2 id="market-invoices-title">Factures FiSAFi Market</h2>
+                  </div>
+                  {loadingMarketInvoices ? (
+                    <p className="dashboard-home-activity-message" role="status">Chargement de vos factures…</p>
+                  ) : marketInvoices.length === 0 ? (
+                    <p className="dashboard-home-activity-message">
+                      Aucune facture ou note de crédit publiée n’est associée à votre compte Market.
+                    </p>
+                  ) : (
+                    <ul className="dashboard-home-activity-list">
+                      {marketInvoices.map((invoice) => (
+                        <li key={invoice.id} className="dashboard-home-activity-item">
+                          <span className="dashboard-home-activity-mark" aria-hidden="true">
+                            {invoice.type === "credit_note" ? "↩" : "▤"}
+                          </span>
+                          <span className="dashboard-home-activity-copy">
+                            <strong>{invoice.type === "credit_note" ? "Avoir" : "Facture"} {invoice.reference}</strong>
+                            <span>{invoice.date ? new Date(invoice.date).toLocaleDateString("fr-FR") : "Date non renseignée"}</span>
+                            {invoice.dueDate && <span>Échéance : {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}</span>}
+                            {invoice.referenceNote && <span>{invoice.referenceNote}</span>}
+                          </span>
+                          <span className="dashboard-home-activity-status">
+                            {getInvoicePaymentLabel(invoice.paymentStatus)} ·{" "}
+                            {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.total)}
+                            {invoice.currency ? ` ${invoice.currency}` : ""}
+                            {invoice.remaining > 0 ? ` · Solde ${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(invoice.remaining)}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
               </>
             )}
 
-            {activeTab === "security" && (
+            {activeTab === "account" && (
               <>
                 <div className="page-eyebrow">Compte personnel</div>
-                <h1 className="page-title">Sécurité du compte</h1>
-                <p className="page-sub">Modifiez votre mot de passe. Pour votre sécurité, toutes les sessions ouvertes seront ensuite déconnectées.</p>
+                <h1 className="page-title">Mon compte</h1>
+                <p className="page-sub">Vos informations, votre type de compte et les espaces FiSAFi activés.</p>
+                <section
+                  aria-label="Informations personnelles"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+                    gap: "1rem",
+                    maxWidth: 900,
+                    marginTop: "1.5rem",
+                  }}
+                >
+                  {[
+                    ["Nom", [user.firstName, user.lastName].filter(Boolean).join(" ") || "Non renseigné"],
+                    ["Adresse email", user.email],
+                    ["Type de compte", user.role === "admin" ? "Administrateur" : user.role === "moderator" ? "Modérateur" : "Utilisateur"],
+                    ["Espaces activés", user.profiles.length
+                      ? user.profiles.map((profile) => profile === "MARKET_CUSTOMER" ? "Client Market" : "Participant FiSAFi Groupe").join(" · ")
+                      : "Aucun espace activé"],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      style={{
+                        padding: "1rem",
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        background: "var(--white)",
+                      }}
+                    >
+                      <div style={{ color: "var(--steel)", fontSize: 12, marginBottom: 6 }}>{label}</div>
+                      <strong style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>{value}</strong>
+                    </div>
+                  ))}
+                </section>
+                <section style={{ maxWidth: 900, marginTop: "2rem" }} aria-labelledby="account-profiles-title">
+                  <h2 id="account-profiles-title" style={{ color: "var(--ink)", fontSize: 18, marginBottom: 8 }}>
+                    Choisissez vos espaces
+                  </h2>
+                  <p className="page-sub" style={{ marginBottom: "1rem" }}>
+                    Vous pourrez activer les deux espaces. Les menus et les données correspondants apparaîtront ensuite dans votre tableau de bord.
+                  </p>
+                  {profileError && <div className="alert alert-error" role="alert">{profileError}</div>}
+                  {profileMessage && <div className="alert alert-success" role="status">{profileMessage}</div>}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "1rem" }}>
+                    {([
+                      ["MARKET_CUSTOMER", "Client FiSAFi Market", "Accédez à vos devis, commandes et factures Market."],
+                      ["TRAINING_PARTICIPANT", "Participant FiSAFi Groupe", "Accédez aux formations, sessions, inscriptions et factures Groupe."],
+                    ] as const).map(([profile, title, description]) => {
+                      const enabled = user.profiles.includes(profile);
+                      return (
+                        <div key={profile} style={{ padding: "1rem", border: "1px solid var(--line)", borderRadius: 8, background: "var(--white)" }}>
+                          <strong style={{ display: "block", color: "var(--ink)", marginBottom: 6 }}>{title}</strong>
+                          <p style={{ color: "var(--steel)", fontSize: 13, lineHeight: 1.5, marginBottom: 14 }}>{description}</p>
+                          <button
+                            type="button"
+                            className="btn-submit"
+                            disabled={enabled || savingProfile !== null}
+                            onClick={() => void handleAddProfile(profile)}
+                          >
+                            {enabled
+                              ? "Espace activé"
+                              : savingProfile === profile
+                                ? "Activation…"
+                                : "Activer cet espace"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+                <section style={{ maxWidth: 520, marginTop: "2rem" }} aria-labelledby="account-password-title">
+                  <h2 id="account-password-title" style={{ color: "var(--ink)", fontSize: 18 }}>Mot de passe</h2>
+                  <p className="page-sub" style={{ marginTop: 6 }}>Après modification, toutes les sessions ouvertes seront déconnectées.</p>
                 {passwordError && <div className="alert alert-error" role="alert" style={{ marginTop: "1rem" }}>{passwordError}</div>}
                 {passwordMessage && <div className="alert alert-success" role="status" style={{ marginTop: "1rem" }}>{passwordMessage}</div>}
-                <form onSubmit={handleChangePassword} style={{ display: "grid", gap: "1rem", maxWidth: 520, marginTop: "1.5rem" }}>
+                <form onSubmit={handleChangePassword} style={{ display: "grid", gap: "1rem", marginTop: "1.5rem" }}>
                   <label style={{ display: "grid", gap: "0.45rem", color: "var(--ink)" }}>
                     Mot de passe actuel
                     <input
@@ -1803,6 +2131,7 @@ export default function DashboardPage() {
                     {changingPassword ? "Modification…" : "Modifier mon mot de passe"}
                   </button>
                 </form>
+                </section>
               </>
             )}
 
@@ -1835,7 +2164,15 @@ export default function DashboardPage() {
                         {formation.sessions && formation.sessions.length > 0 ? (
                           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>
                             <div style={{ marginBottom: '0.75rem', fontWeight: 500, color: 'var(--ink)' }}>Sessions:</div>
-                            {formation.sessions.map(session => (
+                            {formation.sessions.map(session => {
+                              const isRegistrationOpen =
+                                session.status === "ouverte" &&
+                                Date.parse(session.startDate) > Date.now();
+                              const registrationDisabled =
+                                !isRegistrationOpen ||
+                                session.available <= 0 ||
+                                registeredSessionIds.has(session.id);
+                              return (
                               <div key={session.id} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(30,64,175,0.02)', borderRadius: '3px' }}>
                                 <div>{new Date(session.startDate).toLocaleDateString('fr-FR')}</div>
                                 <div style={{ fontSize: '11px', marginTop: '2px' }}>{session.location}</div>
@@ -1845,13 +2182,20 @@ export default function DashboardPage() {
                                 <button 
                                   className="formation-btn" 
                                   onClick={() => openInscriptionModal(formation, session)}
-                                  disabled={session.available === 0 || registeredSessionIds.has(session.id)}
-                                  style={{ marginTop: '0.5rem', width: '100%', opacity: session.available === 0 || registeredSessionIds.has(session.id) ? 0.5 : 1, cursor: session.available === 0 || registeredSessionIds.has(session.id) ? 'not-allowed' : 'pointer' }}
+                                  disabled={registrationDisabled}
+                                  style={{ marginTop: '0.5rem', width: '100%', opacity: registrationDisabled ? 0.5 : 1, cursor: registrationDisabled ? 'not-allowed' : 'pointer' }}
                                 >
-                                  {registeredSessionIds.has(session.id) ? 'Déjà inscrit' : (session.available === 0 ? 'Complète' : "S'inscrire")}
+                                  {registeredSessionIds.has(session.id)
+                                    ? 'Déjà inscrit'
+                                    : session.available <= 0 || session.status === "complète"
+                                      ? 'Complète'
+                                      : !isRegistrationOpen
+                                        ? 'Inscriptions fermées'
+                                        : "S'inscrire"}
                                 </button>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--line)', fontSize: '12px', color: 'var(--steel)' }}>

@@ -1,8 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { callOdoo, getTemplateStock, OdooApiError } from "@/lib/marketOdoo";
 import { authenticateMarketUser, MarketAuthError } from "@/lib/marketAuth";
+import { UserProfile } from "@prisma/client";
 import { prisma } from "@/backend/lib/db";
 import { emailService } from "@/backend/services/emailService";
+import { listFiSafiCompanies } from "@/lib/odooCompanies";
 import {
   getMarketDeliveryEstimate,
   isDeliveryCoordinates,
@@ -26,7 +28,7 @@ type ProductTemplate = {
   list_price: number;
 };
 
-type OdooPartner = { id: number };
+type OdooPartner = { id: number; company_id: [number, string] | false };
 type OdooOrder = {
   id: number;
   name: string;
@@ -34,6 +36,7 @@ type OdooOrder = {
   state: MarketOrderStatus;
   date_order: string;
   order_line: number[];
+  company_id: [number, string];
 };
 
 type OdooOrderLine = {
@@ -54,6 +57,7 @@ type OdooProductTemplateDetails = {
   id: number;
   categ_id: [number, string] | false;
   uom_name: string;
+  company_id: [number, string] | false;
 };
 
 type MarketOrderStatus = "draft" | "sent" | "sale" | "done" | "cancel";
@@ -93,6 +97,7 @@ type MarketAccount = {
   lastName: string | null;
   emailVerifiedAt: Date | null;
   odooPartnerId: number | null;
+  profiles: UserProfile[];
 };
 
 const MAX_ORDER_LINES = 30;
@@ -145,8 +150,15 @@ function isProductTemplate(value: unknown): value is ProductTemplate {
 }
 
 function isPartner(value: unknown): value is OdooPartner {
-  if (!value || typeof value !== "object" || !("id" in value)) return false;
-  return typeof value.id === "number" && Number.isSafeInteger(value.id) && value.id > 0;
+  if (!value || typeof value !== "object" || !("id" in value) || !("company_id" in value)) return false;
+  const partner = value as Partial<OdooPartner>;
+  return (
+    Number.isSafeInteger(partner.id) &&
+    (partner.company_id === false ||
+      (Array.isArray(partner.company_id) &&
+        Number.isSafeInteger(partner.company_id[0]) &&
+        typeof partner.company_id[1] === "string"))
+  );
 }
 
 function getCreatedId(value: unknown): number | null {
@@ -173,7 +185,10 @@ function isOdooOrder(value: unknown): value is OdooOrder {
     isMarketOrderStatus(order.state) &&
     typeof order.date_order === "string" &&
     Array.isArray(order.order_line) &&
-    order.order_line.every((lineId) => Number.isSafeInteger(lineId) && lineId > 0)
+    order.order_line.every((lineId) => Number.isSafeInteger(lineId) && lineId > 0) &&
+    Array.isArray(order.company_id) &&
+    Number.isSafeInteger(order.company_id[0]) &&
+    typeof order.company_id[1] === "string"
   );
 }
 
@@ -218,7 +233,11 @@ function isOdooProductTemplateDetails(value: unknown): value is OdooProductTempl
       (Array.isArray(product.categ_id) &&
         Number.isSafeInteger(product.categ_id[0]) &&
         typeof product.categ_id[1] === "string")) &&
-    typeof product.uom_name === "string"
+    typeof product.uom_name === "string" &&
+    (product.company_id === false ||
+      (Array.isArray(product.company_id) &&
+        Number.isSafeInteger(product.company_id[0]) &&
+        typeof product.company_id[1] === "string"))
   );
 }
 
@@ -251,17 +270,20 @@ async function getCustomerOrders(
       return res.status(200).json({ orders: [], emailVerified: Boolean(user.emailVerifiedAt) });
     }
 
+    const companies = await listFiSafiCompanies();
+    const market = companies.find((company) => company.type === "market");
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
     const ids = quotations.map((quotation) => quotation.odooOrderId);
     const payload: unknown = await callOdoo("sale.order", "search_read", {
-      domain: [["id", "in", ids]],
-      fields: ["id", "name", "state", "amount_total", "date_order", "order_line"],
+      domain: [["id", "in", ids], ["company_id", "=", market.id]],
+      fields: ["id", "name", "state", "amount_total", "date_order", "order_line", "company_id"],
       limit: ids.length,
       order: "date_order desc",
     });
     if (
       !Array.isArray(payload) ||
       !payload.every(isOdooOrder) ||
-      payload.some((order) => !ids.includes(order.id))
+      payload.some((order) => !ids.includes(order.id) || order.company_id[0] !== market.id)
     ) {
       console.error("[Market/Odoo] Customer quotation response has an unexpected format.");
       throw new OdooApiError("Odoo a renvoyé des données de devis invalides.");
@@ -270,7 +292,7 @@ async function getCustomerOrders(
     const orderLineIds = [...new Set(payload.flatMap((order) => order.order_line))];
     const linePayload: unknown = orderLineIds.length
       ? await callOdoo("sale.order.line", "search_read", {
-          domain: [["id", "in", orderLineIds]],
+          domain: [["id", "in", orderLineIds], ["order_id", "in", payload.map((order) => order.id)]],
           fields: ["id", "order_id", "product_id", "product_uom_qty", "price_unit", "price_subtotal"],
           limit: orderLineIds.length,
         })
@@ -311,15 +333,21 @@ async function getCustomerOrders(
     const templateIds = [...new Set(variantPayload.map((variant) => variant.product_tmpl_id[0]))];
     const templatePayload: unknown = templateIds.length
       ? await callOdoo("product.template", "search_read", {
-          domain: [["id", "in", templateIds]],
-          fields: ["id", "categ_id", "uom_name"],
+          domain: [
+            ["id", "in", templateIds],
+            ["company_id", "in", [false, market.id]],
+          ],
+          fields: ["id", "categ_id", "uom_name", "company_id"],
           limit: templateIds.length,
         })
       : [];
     if (
       !Array.isArray(templatePayload) ||
       !templatePayload.every(isOdooProductTemplateDetails) ||
-      templatePayload.some((product) => !templateIds.includes(product.id))
+      templatePayload.some((product) =>
+        !templateIds.includes(product.id) ||
+        (product.company_id !== false && product.company_id[0] !== market.id)
+      )
     ) {
       console.error("[Market/Odoo] Quotation product template response has an unexpected format.");
       throw new OdooApiError("Odoo a renvoyé des catégories de produits invalides.");
@@ -436,6 +464,7 @@ export default async function handler(
         lastName: true,
         emailVerifiedAt: true,
         odooPartnerId: true,
+        profiles: true,
       },
     });
   } catch (error) {
@@ -444,6 +473,9 @@ export default async function handler(
   }
   if (!user || user.email.toLowerCase() !== account.email.toLowerCase()) {
     return res.status(401).json({ error: "Votre compte n’est plus disponible. Connectez-vous à nouveau." });
+  }
+  if (!user.profiles.includes(UserProfile.MARKET_CUSTOMER)) {
+    return res.status(403).json({ error: "Un profil client FiSAFi Market est requis pour consulter ou créer des devis." });
   }
 
   if (req.method === "GET") {
@@ -488,6 +520,10 @@ export default async function handler(
   }
 
   try {
+    const companies = await listFiSafiCompanies();
+    const market = companies.find((company) => company.type === "market");
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+
     const productIds = [...requestedItems.keys()];
     const templates: unknown = await callOdoo("product.template", "search_read", {
       domain: [
@@ -495,6 +531,7 @@ export default async function handler(
         ["active", "=", true],
         ["sale_ok", "=", true],
         ["available_in_pos", "=", true],
+        ["company_id", "in", [false, market.id]],
       ],
       fields: ["id", "name", "list_price"],
       limit: MAX_ORDER_LINES,
@@ -542,12 +579,31 @@ export default async function handler(
 
     const phone = req.body.phone.trim();
     let partnerId = user.odooPartnerId;
+    let partnerCanBeUpdated = false;
+    if (partnerId) {
+      const linkedPartnerPayload: unknown = await callOdoo("res.partner", "search_read", {
+        domain: [["id", "=", partnerId]],
+        fields: ["id", "company_id"],
+        limit: 1,
+      });
+      if (!Array.isArray(linkedPartnerPayload) || !linkedPartnerPayload.every(isPartner)) {
+        console.error("[Market/Odoo] Linked partner response has an unexpected format.");
+        throw new OdooApiError("Odoo a renvoyé des données client invalides.");
+      }
+      const linkedPartner = linkedPartnerPayload[0];
+      if (!linkedPartner || (linkedPartner.company_id !== false && linkedPartner.company_id[0] !== market.id)) {
+        partnerId = null;
+      } else {
+        partnerCanBeUpdated = linkedPartner.company_id !== false;
+      }
+    }
     if (!partnerId) {
       const partnerResult: unknown = await callOdoo("res.partner", "create", {
         vals_list: [{
           name: req.body.customerName.trim(),
           phone,
           customer_rank: 1,
+          company_id: market.id,
           ...(user.emailVerifiedAt ? { email: user.email } : {}),
         }],
       });
@@ -560,7 +616,7 @@ export default async function handler(
         where: { id: user.id },
         data: { odooPartnerId: partnerId },
       });
-    } else {
+    } else if (partnerCanBeUpdated) {
       await callOdoo("res.partner", "write", {
         ids: [partnerId],
         vals: {
@@ -595,8 +651,9 @@ export default async function handler(
           ["parent_id", "=", customerPartnerId],
           ["type", "=", "delivery"],
           ["street", "=", req.body.address.trim()],
+          ["company_id", "in", [false, market.id]],
         ],
-        fields: ["id"],
+        fields: ["id", "company_id"],
         limit: 1,
       });
       if (!Array.isArray(deliveryPartners) || !deliveryPartners.every(isPartner)) {
@@ -610,6 +667,7 @@ export default async function handler(
             name: req.body.customerName.trim(),
             type: "delivery",
             parent_id: customerPartnerId,
+            company_id: market.id,
             phone,
             street: req.body.address.trim(),
             city: "Dakar",
@@ -635,6 +693,7 @@ export default async function handler(
     const createResult: unknown = await callOdoo("sale.order", "create", {
       vals_list: [{
         partner_id: customerPartnerId,
+        company_id: market.id,
         partner_shipping_id: deliveryPartnerId,
         client_order_ref: "FiSAFi Market",
         order_line: orderLines,
@@ -647,15 +706,18 @@ export default async function handler(
     }
 
     const createdOrders: unknown = await callOdoo("sale.order", "search_read", {
-      domain: [["id", "=", orderId]],
-      fields: ["id", "name", "amount_total", "state", "date_order", "order_line"],
+      domain: [["id", "=", orderId], ["company_id", "=", market.id]],
+      fields: ["id", "name", "amount_total", "state", "date_order", "order_line", "company_id"],
       limit: 1,
     });
     if (!Array.isArray(createdOrders) || !createdOrders.every(isOdooOrder) || !createdOrders[0]) {
       console.error("[Market/Odoo] Created quotation could not be read back.");
       throw new OdooApiError("Le devis a été créé mais Odoo n’a pas renvoyé sa référence.");
     }
-    if (createdOrders[0].state !== "draft" && createdOrders[0].state !== "sent") {
+    if (
+      createdOrders[0].company_id[0] !== market.id ||
+      (createdOrders[0].state !== "draft" && createdOrders[0].state !== "sent")
+    ) {
       console.error("[Market/Odoo] New quotation was not left in a reviewable draft state.");
       throw new OdooApiError("Le devis a été créé dans un état inattendu.");
     }

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { authenticateEmployee, EmployeeAuthError, requirePOSRead } from "@/lib/employeeAuth";
 import { getERPProvider } from "@/lib/erp";
 import { OdooApiError } from "@/lib/marketOdoo";
+import { EmployeeCompanyError, resolveEmployeeCompany } from "@/lib/employeeCompany";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
@@ -12,10 +13,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const employee = await authenticateEmployee(req);
     requirePOSRead(employee);
-    const pointsOfSale = await getERPProvider().getPointsOfSale();
+    const company = await resolveEmployeeCompany(req);
+    const pointsOfSale = await getERPProvider().getPointsOfSale(company.id);
     return res.status(200).json({ pointsOfSale });
   } catch (error) {
     if (error instanceof EmployeeAuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error instanceof EmployeeCompanyError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     if (error instanceof OdooApiError) {

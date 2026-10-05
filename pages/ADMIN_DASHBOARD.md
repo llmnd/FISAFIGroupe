@@ -152,6 +152,8 @@ Content-Type: application/json
 }
 ```
 
+Le dashboard utilise les mutations de collection `PUT /api/users`, `PATCH /api/users` et `DELETE /api/users`, avec l'identifiant du compte dans le corps JSON (`{ "id": "..." }`). Cela évite les réponses 404 HTML rencontrées sur les routes utilisateur dynamiques en développement.
+
 ### GET `/api/users/[id]`
 Récupère un utilisateur spécifique
 
@@ -332,4 +334,3 @@ Pour des questions ou pour signaler les problèmes:
 - Consultez [ADMIN_MANAGEMENT.md](./ADMIN_MANAGEMENT.md)
 - Consultez [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 - Vérifiez les logs du serveur
-
