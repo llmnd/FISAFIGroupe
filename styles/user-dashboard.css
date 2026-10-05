@@ -1195,6 +1195,245 @@ body:has(.dash-layout.user-dashboard) {
   margin-top: 0.2rem;
 }
 
+/* ── Commandes et factures Market ── */
+.dash-layout.user-dashboard .market-order-list {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.dash-layout.user-dashboard .market-order-card {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-r-md, 12px);
+  background: var(--od-surface);
+  box-shadow: var(--od-sh-xs, 0 1px 2px rgba(0, 0, 0, 0.04));
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.dash-layout.user-dashboard .market-order-card:hover {
+  border-color: var(--od-primary-border);
+  box-shadow: var(--od-sh-sm, 0 4px 12px rgba(0, 0, 0, 0.06));
+}
+.dash-layout.user-dashboard .market-order-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--od-border-light);
+}
+.dash-layout.user-dashboard .market-order-title {
+  min-width: 0;
+  margin: 0;
+  color: var(--od-text-strong);
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.dash-layout.user-dashboard .market-order-badge {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--od-r-pill, 999px);
+  background: var(--od-bg-alt);
+  color: var(--od-text);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+}
+.dash-layout.user-dashboard .market-order-badge--draft,
+.dash-layout.user-dashboard .market-order-badge--sent {
+  border-color: rgba(180, 83, 9, 0.18);
+  background: var(--od-warning-light, #fff4df);
+  color: var(--od-warning, #8a4b08);
+}
+.dash-layout.user-dashboard .market-order-badge--sale,
+.dash-layout.user-dashboard .market-order-badge--done {
+  border-color: rgba(22, 101, 52, 0.16);
+  background: var(--od-success-light, #eaf7ee);
+  color: var(--od-success, #166534);
+}
+.dash-layout.user-dashboard .market-order-badge--cancel {
+  border-color: rgba(185, 28, 28, 0.16);
+  background: var(--od-danger-light, #fff0f0);
+  color: var(--od-danger, #991b1b);
+}
+.dash-layout.user-dashboard .market-order-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.dash-layout.user-dashboard .market-order-meta-item {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--od-r, 8px);
+  background: var(--od-surface-soft);
+}
+.dash-layout.user-dashboard .market-order-meta-label {
+  color: var(--od-text-muted);
+  font-size: 11px;
+  font-weight: 550;
+}
+.dash-layout.user-dashboard .market-order-meta-item strong {
+  color: var(--od-text-strong);
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.dash-layout.user-dashboard .market-order-meta-item:first-child strong {
+  color: var(--od-primary);
+  font-size: 16px;
+}
+.dash-layout.user-dashboard .market-order-description {
+  margin: 0.9rem 0 0;
+  color: var(--od-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dash-layout.user-dashboard .market-order-products {
+  margin-top: 1.25rem;
+}
+.dash-layout.user-dashboard .market-order-products-title {
+  margin: 0 0 0.65rem;
+  color: var(--od-text-strong);
+  font-size: 13px;
+  font-weight: 650;
+}
+.dash-layout.user-dashboard .market-order-products-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dash-layout.user-dashboard .market-order-product {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid var(--od-border-light);
+  border-radius: var(--od-r, 8px);
+  background: var(--od-bg);
+}
+.dash-layout.user-dashboard .market-order-product-image {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--od-surface);
+  color: var(--od-text-soft);
+  object-fit: cover;
+}
+.dash-layout.user-dashboard .market-order-product-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+.dash-layout.user-dashboard .market-order-product-name {
+  color: var(--od-text-strong);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.dash-layout.user-dashboard .market-order-product-line {
+  color: var(--od-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dash-layout.user-dashboard .market-order-product-line--strong {
+  color: var(--od-text);
+  font-weight: 600;
+}
+.dash-layout.user-dashboard .market-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--od-border-light);
+}
+.dash-layout.user-dashboard .market-order-footer-hint {
+  color: var(--od-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dash-layout.user-dashboard .market-order-reorder {
+  min-height: 42px;
+  flex: 0 0 auto;
+  padding-inline: 1rem;
+}
+.dash-layout.user-dashboard #market-invoices-title {
+  font-size: 16px;
+}
+.dash-layout.user-dashboard #market-invoices-title::before {
+  content: "▤";
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  margin-right: 0.6rem;
+  place-items: center;
+  border-radius: var(--od-r, 8px);
+  background: var(--od-primary-light);
+  color: var(--od-primary);
+  font-size: 14px;
+  vertical-align: middle;
+}
+@media (max-width: 599px) {
+  .dash-layout.user-dashboard .market-order-list {
+    gap: 0.75rem;
+  }
+  .dash-layout.user-dashboard .market-order-header {
+    align-items: flex-start;
+  }
+  .dash-layout.user-dashboard .market-order-badge {
+    max-width: 46%;
+    white-space: normal;
+    text-align: center;
+  }
+  .dash-layout.user-dashboard .market-order-meta {
+    gap: 0.5rem;
+  }
+  .dash-layout.user-dashboard .market-order-meta-item {
+    padding: 0.65rem;
+  }
+  .dash-layout.user-dashboard .market-order-products-list {
+    grid-template-columns: 1fr;
+  }
+  .dash-layout.user-dashboard .market-order-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .dash-layout.user-dashboard .market-order-reorder {
+    width: 100%;
+  }
+  .dash-layout.user-dashboard .dashboard-home-activity-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .dash-layout.user-dashboard .dashboard-home-activity-copy {
+    flex: 1 1 calc(100% - 44px);
+  }
+  .dash-layout.user-dashboard .dashboard-home-activity-status {
+    max-width: 100%;
+    margin-left: 40px;
+    white-space: normal;
+  }
+}
+
 /* ── Recommander ── */
 .dashboard-market-reorder {
   display: grid;
@@ -1686,6 +1925,7 @@ html.dark .dash-layout.user-dashboard :is(
     .dashboard-home-summary-card,
     .dashboard-home-shortcut,
     .dashboard-home-activity-card,
+    .market-order-card,
     .dashboard-home-refresh,
     .account-info-card,
     .account-profile-card,
@@ -1752,6 +1992,13 @@ html.dark .dash-layout.user-dashboard .market-verification-notice {
 html.dark .dash-layout.user-dashboard .market-verification-title,
 html.dark .dash-layout.user-dashboard .market-verification-text {
   color: #fcd9a2;
+}
+html.dark .dash-layout.user-dashboard .market-order-card {
+  border-color: var(--od-border);
+  background: var(--od-surface);
+}
+html.dark .dash-layout.user-dashboard .market-order-card:hover {
+  border-color: var(--od-primary-border);
 }
 
 /* ══════════════════════════════════════════
