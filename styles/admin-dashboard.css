@@ -16,8 +16,13 @@ html{
 }
 @media(min-width:2200px){html{font-size:clamp(19px, .45vw + 10px, 24px)}}
 
-body:has(.admin-layout){
-  color-scheme:light;
+/* ── VARIABLES + FOND : définis sur html, body ET .admin-layout
+   pour ne jamais dépendre uniquement de :has() ── */
+body:has(.admin-layout),
+body.portal-has-admin,
+html:has(.admin-layout),
+html.portal-has-admin {
+  color-scheme: light !important;
 
   /* Texte : plus sombre = plus lisible */
   --ink:#1f2328;
@@ -66,10 +71,17 @@ body:has(.admin-layout){
   --topbar-h:3.75rem;
   --topbar-h-desk:4.25rem;
   --tabbar-h:3.75rem;
+}
 
-  padding-top:0!important;
-  background:var(--mist);
-  color:var(--ink);
+/* Le fond + la police sont posés ici avec !important pour résister
+   à tout globals.css qui voudrait imposer un thème sombre */
+body:has(.admin-layout),
+body.portal-has-admin {
+  padding-top:0 !important;
+  background:#f6f5f7 !important;
+  background:var(--mist) !important;
+  color:#1f2328 !important;
+  color:var(--ink) !important;
   font-family:var(--od-font);
   font-size:1rem;
   font-weight:450;
@@ -79,10 +91,21 @@ body:has(.admin-layout){
   text-rendering:optimizeLegibility;
   overflow-x:hidden;
 }
+
+html:has(.admin-layout),
+html.portal-has-admin {
+  background:#f6f5f7 !important;
+  color-scheme:light !important;
+}
+
 body:has(.admin-layout) button,
 body:has(.admin-layout) input,
 body:has(.admin-layout) select,
-body:has(.admin-layout) textarea{font-family:inherit}
+body:has(.admin-layout) textarea,
+body.portal-has-admin button,
+body.portal-has-admin input,
+body.portal-has-admin select,
+body.portal-has-admin textarea{font-family:inherit}
 
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -99,14 +122,31 @@ body:has(.admin-layout) textarea{font-family:inherit}
 }
 
 /* ── LAYOUT (pas d'isolation : sinon la topbar passe sous le backdrop) ── */
-.admin-layout{display:flex;min-height:100dvh}
-.admin-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:100dvh}
+.admin-layout{
+  display:flex;
+  min-height:100dvh;
+  background:#f6f5f7;
+  background:var(--mist);
+  color:#1f2328;
+  color:var(--ink);
+}
+.admin-main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  min-height:100dvh;
+  background:#f6f5f7;
+  background:var(--mist);
+}
 @media(min-width:900px){
   .admin-main{margin-left:var(--sidebar-w);width:calc(100% - var(--sidebar-w))}
 }
 .admin-content{
   padding:1.5rem 1.25rem 7.5rem;
   max-width:78rem;margin:0 auto;width:100%;
+  background:#f6f5f7;
+  background:var(--mist);
 }
 @media(min-width:900px){.admin-content{padding:2.25rem 2.75rem 3.5rem}}
 
@@ -374,7 +414,6 @@ select:focus{outline:none;border-color:var(--blue);box-shadow:var(--od-focus)}
 }
 .badge-admin,.cat-badge{background:var(--blue-soft);color:var(--blue);border-color:var(--blue-line)}
 .badge-user,.pub-off,.badge{background:rgba(75,85,99,.08);color:var(--steel);border-color:rgba(75,85,99,.18)}
-.badge-admin,.cat-badge{background:var(--blue-soft);color:var(--blue);border-color:var(--blue-line)}
 .pub-on{background:var(--success-soft);color:var(--success);border-color:rgba(23,122,59,.2)}
 .pub-wait{background:var(--warning-soft);color:var(--warning);border-color:rgba(154,95,0,.24)}
 

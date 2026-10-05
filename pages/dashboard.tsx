@@ -280,6 +280,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  /**
+   * Bloque le rendu du dashboard tant qu'un admin est en cours de redirection
+   * vers /admin-dashboard. Sans ce flag, `setUser` + `setLoading(false)`
+   * déclenchaient un rendu intermédiaire (« Bonjour Admin ») avant que
+   * router.replace ne change de page.
+   */
+  const [redirectingAdmin, setRedirectingAdmin] = useState(false);
+
   useEffect(() => {
     if (!sidebarOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -778,11 +786,18 @@ export default function DashboardPage() {
         if (!freshUser) {
           throw new Error("Session validation returned invalid account data.");
         }
+
+        // Admin : on redirige SANS monter le dashboard (évite le flash
+        // « Bonjour Admin » avant que router.replace ne change de page).
+        if (freshUser.role === "admin") {
+          setRedirectingAdmin(true);
+          localStorage.setItem("user", JSON.stringify(freshUser));
+          router.replace("/admin-dashboard");
+          return;
+        }
+
         setUser(freshUser);
         localStorage.setItem("user", JSON.stringify(freshUser));
-        if (freshUser.role === "admin") {
-          router.replace("/admin-dashboard");
-        }
       } catch (sessionError) {
         console.error("[Dashboard] Session validation failed:", sessionError);
         setError("Impossible de vérifier votre session. Réessayez.");
@@ -1242,7 +1257,9 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) return <UserDashboardSkeleton />;
+  // Skeleton tant qu'on charge OU tant qu'un admin est en cours de redirection.
+  // Bloque le flash « Bonjour Admin » avant router.replace("/admin-dashboard").
+  if (loading || redirectingAdmin) return <UserDashboardSkeleton />;
 
   if (!user) {
     return (
