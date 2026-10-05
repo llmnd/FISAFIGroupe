@@ -1,4 +1,5 @@
 .dash-layout.user-dashboard {
+  --user-dashboard-sidebar-bg: #4d2d43;
   --blue: var(--od-primary);
   --blue-deep: var(--od-primary-dark);
   --orange: var(--od-secondary);
@@ -15,7 +16,8 @@
 }
 
 .dash-layout.user-dashboard .dash-sidebar {
-  background: var(--od-primary-dark);
+  background: var(--user-dashboard-sidebar-bg);
+  color: #fff;
   box-shadow: 1px 0 0 rgba(0, 0, 0, 0.06);
 }
 
@@ -78,6 +80,21 @@
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
+}
+
+.dash-layout.user-dashboard .sidebar-foot .portal-theme-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dash-layout.user-dashboard .sidebar-foot .portal-theme-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 .dash-layout.user-dashboard .sidebar-logout:hover {
@@ -540,6 +557,135 @@
 
 .dashboard-home-activity-message--error {
   color: var(--od-danger);
+}
+
+html.dark .dash-layout.user-dashboard {
+  color-scheme: dark;
+  background: var(--od-bg);
+  color: var(--od-text);
+}
+
+html.dark .dash-layout.user-dashboard .dash-sidebar {
+  background: var(--user-dashboard-sidebar-bg);
+  color: #fff;
+}
+
+html.dark .dash-layout.user-dashboard .dash-topbar,
+html.dark .dash-layout.user-dashboard .dashboard-home-link,
+html.dark .dash-layout.user-dashboard .portal-theme-toggle {
+  border-color: var(--od-border);
+  background: var(--od-surface);
+  color: var(--od-text);
+}
+
+html.dark .dash-layout.user-dashboard .dash-topbar {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+html.dark .dash-layout.user-dashboard .topbar-logo {
+  color: var(--od-primary);
+}
+
+html.dark .dash-layout.user-dashboard .topbar-back-link {
+  border-color: var(--od-border);
+  background: var(--od-surface);
+  color: var(--od-primary);
+}
+
+html.dark .dash-layout.user-dashboard .topbar-back-link:hover {
+  border-color: var(--od-primary-border);
+  background: var(--od-primary-light);
+  color: var(--od-text-strong);
+}
+
+html.dark .dash-layout.user-dashboard .portal-theme-toggle:hover,
+html.dark .dash-layout.user-dashboard .dashboard-home-link:hover {
+  border-color: var(--od-primary-border);
+  background: var(--od-primary-light);
+  color: var(--od-text-strong);
+}
+
+html.dark .dash-layout.user-dashboard :is(
+  .empty-box,
+  .formation-card,
+  .table-wrap,
+  .article-form,
+  .article-item,
+  .dashboard-home-summary-card,
+  .dashboard-home-shortcut,
+  .dashboard-home-activity-card,
+  .dashboard-home-refresh
+) {
+  border-color: var(--od-border);
+  background: var(--od-surface);
+  color: var(--od-text);
+  box-shadow: var(--od-sh-xs);
+}
+
+html.dark .dash-layout.user-dashboard :is(
+  .form-input,
+  .form-textarea,
+  .form-select,
+  input,
+  select,
+  textarea
+) {
+  color-scheme: dark;
+  border-color: var(--od-border-strong);
+  background: var(--od-surface-soft);
+  color: var(--od-text);
+}
+
+html.dark .dash-layout.user-dashboard :is(
+  .form-input,
+  .form-textarea,
+  .form-select,
+  input,
+  select,
+  textarea
+)::placeholder {
+  color: var(--od-text-soft);
+}
+
+html.dark .dash-layout.user-dashboard :is(thead, thead tr) {
+  background: var(--od-bg-alt);
+}
+
+html.dark .dash-layout.user-dashboard :is(th, td) {
+  border-color: var(--od-border);
+  color: var(--od-text);
+}
+
+html.dark .dash-layout.user-dashboard th {
+  color: var(--od-text-muted);
+}
+
+html.dark .dash-layout.user-dashboard tbody tr:nth-child(even) td {
+  background: var(--od-surface-soft);
+}
+
+html.dark .dash-layout.user-dashboard tbody tr:hover td {
+  background: var(--od-primary-light);
+}
+
+html.dark .dash-layout.user-dashboard :is(.alert-error, .alert-success) {
+  border-color: var(--od-border);
+}
+
+html.dark .dash-layout.user-dashboard .alert-error {
+  background: var(--od-danger-light);
+  color: var(--od-danger);
+}
+
+html.dark .dash-layout.user-dashboard .alert-success {
+  background: var(--od-success-light);
+  color: var(--od-success);
+}
+
+html.dark .dash-layout.user-dashboard .badge-user {
+  border-color: var(--od-border);
+  background: var(--od-bg-alt);
+  color: var(--od-text-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

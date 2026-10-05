@@ -6,10 +6,14 @@ import Head from "next/head";
 import Image from "next/image"; // ← ajouté pour le logo image
 
 const LOGIN_CSS = `
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; }
+  .lw, .lw *, .lw *::before, .lw *::after, .l-top-back {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body:has(.lw) { padding-top: 0; }
 
-  :root {
+  .lw, .l-top-back {
     --ink: #0b1829;
     --blue: #1e40af;
     --blue-deep: #0f2470;
@@ -20,9 +24,11 @@ const LOGIN_CSS = `
   }
 
   .lw {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    min-height: 100dvh;
+    min-height: 100vh;
+    min-height: 100svh;
     font-family: 'Outfit', sans-serif;
   }
 
@@ -59,23 +65,26 @@ const LOGIN_CSS = `
 
   /* ── Logo image (remplace le texte) ── */
   .l-logo {
+    position: fixed;
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.5rem, env(safe-area-inset-right));
+    z-index: 10;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
     transition: opacity 0.2s;
-    width: 96px;
-    height: 96px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     overflow: hidden;
   }
   .l-logo:hover { opacity: 0.82; }
   .l-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-
-  /* Mobile logo (hidden by default, shown on small screens) */
   .l-mobile-logo { display: none; }
   .l-mobile-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .l-top { padding-top: 3.25rem; }
+
+  .l-top { padding-top: 0.5rem; }
   .l-top-back {
     position: fixed; top: max(0.5rem, env(safe-area-inset-top)); left: max(0.5rem, env(safe-area-inset-left));
     z-index: 10; display: inline-flex; align-items: center; gap: 0.5rem;
@@ -93,7 +102,7 @@ const LOGIN_CSS = `
     font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase;
     color: rgba(229,115,60,0.75);
     display: flex; align-items: center; gap: 0.75rem;
-    margin-bottom: 1.75rem; animation: fadeUp 0.9s 0.2s both;
+    margin-bottom: 1.75rem; animation: loginFadeUp 0.9s 0.2s both;
   }
   .l-eyebrow::before { content: ''; width: 1.75rem; height: 0.5px; background: rgba(229,115,60,0.6); flex-shrink: 0; }
   .l-headline {
@@ -101,22 +110,22 @@ const LOGIN_CSS = `
     font-size: clamp(2.6rem, 4.5vw, 3.8rem);
     font-weight: 300; line-height: 1.08; color: #fff;
     letter-spacing: -0.01em; margin-bottom: 1.5rem;
-    animation: fadeUp 0.9s 0.35s both;
+    animation: loginFadeUp 0.9s 0.35s both;
   }
   .l-headline em { font-style: italic; color: rgba(255,255,255,0.38); }
-  .l-body { font-size: 1rem; line-height: 1.8; color: rgba(255,255,255,0.55); font-weight: 300; max-width: 30ch; animation: fadeUp 0.9s 0.5s both; }
-  .l-stats { display: flex; gap: 1rem; margin-top: 2.5rem; animation: fadeUp 0.9s 0.65s both; }
+  .l-body { font-size: 1rem; line-height: 1.8; color: rgba(255,255,255,0.55); font-weight: 300; max-width: 30ch; animation: loginFadeUp 0.9s 0.5s both; }
+  .l-stats { display: flex; gap: 1rem; margin-top: 2.5rem; animation: loginFadeUp 0.9s 0.65s both; }
   .l-stat { border: 0.5px solid rgba(255,255,255,0.1); padding: 0.6rem 1rem; background: rgba(255,255,255,0.03); }
   @supports(backdrop-filter:blur(1px)){.l-stat{backdrop-filter:blur(8px);}}
   .l-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: rgba(255,255,255,0.85); font-weight: 300; line-height: 1; margin-bottom: 4px; }
   .l-stat-label { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
-  .l-sig { display: flex; align-items: center; justify-content: space-between; border-top: 0.5px solid rgba(255,255,255,0.07); padding-top: 1.25rem; animation: fadeUp 0.9s 0.8s both; }
+  .l-sig { display: flex; align-items: center; justify-content: space-between; border-top: 0.5px solid rgba(255,255,255,0.07); padding-top: 1.25rem; animation: loginFadeUp 0.9s 0.8s both; }
   .l-sig-inner { display: flex; align-items: center; gap: 0.85rem; }
   .l-sig-av { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(229,90,0,0.45); background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
   .l-sig-name { font-size: 0.9rem; color: rgba(255,255,255,0.85); font-weight: 400; letter-spacing: 0.03em; }
   .l-sig-role { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 2px; }
   .l-sig-ping { display: flex; align-items: center; gap: 0.45rem; }
-  .l-sig-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); opacity: 0.7; animation: ping 2.5s ease-in-out infinite; }
+  .l-sig-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); opacity: 0.7; animation: loginPing 2.5s ease-in-out infinite; }
   .l-sig-city { font-family: 'Cormorant Garamond', serif; font-size: 11.5px; font-style: italic; color: rgba(255,255,255,0.35); }
 
   .l-right {
@@ -134,7 +143,7 @@ const LOGIN_CSS = `
     background-image: linear-gradient(rgba(30,64,175,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(30,64,175,0.025) 1px, transparent 1px);
     background-size: 40px 40px; pointer-events: none;
   }
-  .l-form-wrap { width: 100%; max-width: 410px; position: relative; z-index: 1; animation: fadeUp 0.65s 0.1s both; }
+  .l-form-wrap { width: 100%; max-width: 410px; position: relative; z-index: 1; animation: loginFadeUp 0.65s 0.1s both; }
   .l-mode-pill { display: inline-flex; padding: 4px; border: 1px solid rgba(30,64,175,0.12); border-radius: 999px; background: rgba(255,255,255,0.75); margin-bottom: 1.6rem; }
   .l-pill-btn { min-width: 118px; padding: 0.62rem 1.15rem; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; background: transparent; border: none; color: rgba(11,24,41,0.55); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
   .l-pill-btn.active { background: var(--ink); color: #fff; box-shadow: 0 2px 6px rgba(11,24,41,0.14); }
@@ -163,7 +172,7 @@ const LOGIN_CSS = `
   .l-btn span { position: relative; z-index: 1; }
   .l-btn:disabled { background: #94a3b8; cursor: not-allowed; }
   .l-btn:disabled::before { display: none; }
-  .l-spinner { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; position: relative; z-index: 1; }
+  .l-spinner { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: loginSpinner 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; position: relative; z-index: 1; }
   .l-forgot { display: flex; justify-content: flex-end; margin-top: 0.7rem; }
   .l-forgot button { background: none; border: 0; color: var(--blue); cursor: pointer; font: inherit; font-size: 0.88rem; padding: 0.2rem 0; }
   .l-forgot button:hover, .l-foot button:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -174,21 +183,28 @@ const LOGIN_CSS = `
   .l-divider span { flex: 1; height: 0.5px; background: rgba(11,24,41,0.08); }
   .l-divider small { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(11,24,41,0.25); }
 
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes spin   { to { transform: rotate(360deg); } }
-  @keyframes ping   { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.35); } }
+  @keyframes loginFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes loginSpinner { to { transform: rotate(360deg); } }
+  @keyframes loginPing { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.35); } }
 
   @media (max-width: 768px) {
     .lw { grid-template-columns: 1fr; }
     .l-left { display: none; }
-    .l-right { min-height: 100dvh; padding: 4.75rem 1.5rem 2.5rem; justify-content: flex-start; }
-    /* hide the text pseudo-element on mobile; show circular logo instead */
+    .l-right { min-height: 100vh; min-height: 100svh; padding: 7.5rem 1.5rem 2.5rem; justify-content: flex-start; }
+    .l-form-wrap { animation: none; }
+    .l-mobile-logo { display: flex; justify-content: center; margin: 0 auto 1rem; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 1px solid var(--orange); background: #fff; }
     .l-form-wrap::before { display: none; }
-    .l-mobile-logo { display: flex; justify-content: center; margin: -3.25rem auto 1rem; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 1px solid var(--orange); background: #fff; }
-    .l-mobile-logo img { width: 100%; height: 100%; object-fit: cover; }
     .l-form-h { font-size: clamp(2.5rem, 10vw, 3.1rem); }
     .l-form-sub { margin-bottom: 1.25rem; }
     .l-row { gap: 0.75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lw *, .lw *::before, .lw *::after, .l-top-back {
+      animation: none !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   @media (max-width: 380px) {
@@ -198,16 +214,21 @@ const LOGIN_CSS = `
   }
 `;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const getPostLoginPath = (role?: string, employeeRole?: string | null) =>
-    router.query.next === "/market/commande"
-      ? "/market/commande"
-      : role === "admin"
-        ? "/admin-dashboard"
-        : employeeRole
-          ? "/espace-employe"
-          : "/";
+  const getPostLoginPath = (role?: string, employeeRole?: string | null) => {
+    if (router.query.next === "/market/commande") return "/market/commande";
+    if (router.query.next === "/market" && role !== "admin" && !employeeRole) return "/market";
+    if (role === "admin") return "/admin-dashboard";
+    if (employeeRole) return "/espace-employe";
+    return "/";
+  };
+  const returnToMarket =
+    router.query.next === "/market" || router.query.next === "/market/commande";
   const [isLogin, setIsLogin] = useState(true);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", firstName: "", lastName: "" });
@@ -216,6 +237,13 @@ export default function LoginPage() {
   const [success,      setSuccess]      = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const redirectTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (redirectTimerRef.current !== null) {
+      window.clearTimeout(redirectTimerRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -243,15 +271,7 @@ export default function LoginPage() {
           throw new Error(`Session check returned HTTP ${response.status}.`);
         }
         const payload: unknown = await response.json();
-        if (
-          !payload ||
-          typeof payload !== "object" ||
-          !("data" in payload) ||
-          !payload.data ||
-          typeof payload.data !== "object" ||
-          !("role" in payload.data) ||
-          typeof payload.data.role !== "string"
-        ) {
+        if (!isRecord(payload) || !isRecord(payload.data) || typeof payload.data.role !== "string") {
           throw new Error("Session check returned invalid account data.");
         }
         localStorage.setItem("user", JSON.stringify(payload.data));
@@ -274,14 +294,21 @@ export default function LoginPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let animId: number;
-    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
-    resize();
-    window.addEventListener("resize", resize);
-    const nodes: { x: number; y: number; vx: number; vy: number; r: number }[] = Array.from({ length: 38 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
-      r: Math.random() * 1.5 + 0.5,
-    }));
+    let isRunning = false;
+    const nodes: { x: number; y: number; vx: number; vy: number; r: number }[] = [];
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      if (nodes.length === 0) {
+        nodes.push(...Array.from({ length: 38 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          r: Math.random() * 1.5 + 0.5,
+        })));
+      }
+    };
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       nodes.forEach((n) => {
@@ -301,10 +328,32 @@ export default function LoginPage() {
           }
         }
       }
-      animId = requestAnimationFrame(draw);
+      if (isRunning) animId = requestAnimationFrame(draw);
     };
-    draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); };
+    const syncAnimation = () => {
+      const shouldAnimate =
+        !window.matchMedia("(max-width: 768px), (prefers-reduced-motion: reduce)").matches &&
+        document.visibilityState === "visible";
+      if (!shouldAnimate) {
+        isRunning = false;
+        cancelAnimationFrame(animId);
+        return;
+      }
+      resize();
+      if (!isRunning) {
+        isRunning = true;
+        draw();
+      }
+    };
+    window.addEventListener("resize", syncAnimation, { passive: true });
+    document.addEventListener("visibilitychange", syncAnimation);
+    syncAnimation();
+    return () => {
+      isRunning = false;
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", syncAnimation);
+      document.removeEventListener("visibilitychange", syncAnimation);
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -319,9 +368,17 @@ export default function LoginPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: formData.email }),
         });
-        const data = await response.json();
-        if (!response.ok) { setError(data.error || "Impossible de traiter la demande."); return; }
-        setSuccess(data.message || "Si un compte correspond à cette adresse, un lien va être envoyé.");
+        const data: unknown = await response.json();
+        if (!isRecord(data)) throw new Error("The password-reset response has an invalid format.");
+        if (!response.ok) {
+          setError(typeof data.error === "string" ? data.error : "Impossible de traiter la demande.");
+          return;
+        }
+        setSuccess(
+          typeof data.message === "string"
+            ? data.message
+            : "Si un compte correspond à cette adresse, un lien va être envoyé.",
+        );
         return;
       }
       const endpoint   = isLogin ? "/api/auth/login" : "/api/auth/register";
@@ -329,15 +386,30 @@ export default function LoginPage() {
       const response = await fetch(endpoint, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (!response.ok) { setError(data.error || "Une erreur est survenue"); return; }
-      if (data.data?.user) {
-        const userData = data.data.user;
-        localStorage.setItem("user", JSON.stringify(userData));
-        setSuccess("Connexion réussie !");
-        setTimeout(() => router.push(getPostLoginPath(userData.role, userData.employeeRole)), 1200);
+      const data: unknown = await response.json();
+      if (!isRecord(data)) throw new Error("The authentication response has an invalid format.");
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : "Une erreur est survenue.");
+        return;
       }
-    } catch { setError("Erreur de connexion au serveur"); }
+      const userData = isRecord(data.data) ? data.data.user : null;
+      if (!isRecord(userData) || typeof userData.role !== "string") {
+        setError("Le serveur a renvoyé des informations de compte invalides.");
+        return;
+      }
+      const role = userData.role;
+      const employeeRole =
+        typeof userData.employeeRole === "string" ? userData.employeeRole : null;
+      localStorage.setItem("user", JSON.stringify(userData));
+      setSuccess(isLogin ? "Connexion réussie !" : "Compte créé avec succès !");
+      redirectTimerRef.current = window.setTimeout(
+        () => void router.push(getPostLoginPath(role, employeeRole)),
+        1200,
+      );
+    } catch (requestError) {
+      console.error("[Auth] Authentication request failed:", requestError);
+      setError("Erreur de connexion au serveur");
+    }
     finally  { setLoading(false); }
   };
 
@@ -350,16 +422,10 @@ export default function LoginPage() {
 
   return (
     <div className="lw">
-      <a href="/" className="l-top-back">Retour</a>
+      <a href={returnToMarket ? "/market" : "/"} className="l-top-back">Retour</a>
       <Head>
         <title>{forgotPassword ? "Mot de passe oublié" : isLogin ? "Connexion" : "Inscription"} — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap"
-          rel="stylesheet"
-        />
       </Head>
 
       {/* eslint-disable-next-line react/no-danger */}
@@ -373,14 +439,13 @@ export default function LoginPage() {
         <div className="l-accent-bar" />
 
         <div className="l-top">
-          {/* ── Logo image (remplace "Fi SAFI Groupe" en texte) ── */}
-          <a href="/" className="l-logo">
+          <a href="/" className="l-logo" aria-label="Accueil FiSAFi Groupe">
             <Image
               src="/favicon/web-app-manifest-192x192.png"
-              alt="FiSAFi Groupe"
-              width={140}
-              height={60}
-              priority
+              alt=""
+              width={96}
+              height={96}
+              loading="eager"
             />
           </a>
         </div>
@@ -419,10 +484,15 @@ export default function LoginPage() {
       {/* RIGHT PANEL */}
       <div className="l-right">
         <div className="l-form-wrap">
-          {/* Mobile circular logo (visible on small screens) */}
-          <div className="l-mobile-logo" aria-hidden="true">
-            <Image src="/favicon/web-app-manifest-192x192.png" alt="FiSAFi Groupe" width={72} height={72} priority />
-          </div>
+          <a href="/" className="l-mobile-logo" aria-label="Accueil FiSAFi Groupe">
+            <Image
+              src="/favicon/web-app-manifest-192x192.png"
+              alt=""
+              width={64}
+              height={64}
+              loading="eager"
+            />
+          </a>
           {!forgotPassword && (
             <div className="l-mode-pill" role="group" aria-label="Choisir le mode d’accès">
               <button type="button" className={`l-pill-btn${isLogin ? " active" : ""}`} aria-pressed={isLogin} onClick={() => switchMode(true)}>Connexion</button>

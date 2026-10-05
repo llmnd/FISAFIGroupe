@@ -60,6 +60,7 @@ body:has(.admin-layout){
 
   /* Divers */
   --sidebar-w:260px;
+  --admin-sidebar-bg:#5b3a53;
   --topbar-h:56px;
   --topbar-h-desk:60px;
 }
@@ -110,7 +111,7 @@ html{overflow-y:auto;scroll-padding-top:72px;}
   top:0;left:0;bottom:0;
   width:var(--sidebar-w);
   flex-shrink:0;
-  background:var(--blue-deep);
+  background:var(--admin-sidebar-bg);
   flex-direction:column;
   overflow:hidden;
   z-index:50;
@@ -1457,6 +1458,10 @@ html.dark .admin-layout :is(input,textarea,select){background-color:var(--surfac
 html.dark .admin-layout :is(input,textarea,select)::placeholder{color:var(--steel-light);}
 html.dark .admin-layout tbody tr:nth-child(even) td{background:var(--surface-soft);}
 html.dark .admin-layout tr:hover td{background:rgba(181,140,169,.08);}
+html.dark .admin-layout thead{background:var(--surface-soft);}
+html.dark .admin-layout th{color:var(--steel);}
+html.dark .admin-layout .alert-error{background:var(--danger-soft);color:var(--danger);border-color:rgba(255,123,114,.28);}
+html.dark .admin-layout .alert-success{background:var(--success-soft);color:var(--success);border-color:rgba(101,201,138,.28);}
 html.dark .admin-layout .btn-cancel-fill:hover:not(:disabled),
 html.dark .admin-layout .sheet-cancel:hover{background:var(--surface-soft);color:var(--ink-strong);}
 html.dark .admin-layout .admin-topbar-back:hover{background:var(--blue);color:#17131a;border-color:var(--blue);}

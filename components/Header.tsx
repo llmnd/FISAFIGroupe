@@ -187,6 +187,9 @@ export default function Header({
   const visibleNavItems: NavItem[] = isMarketSubdomain
     ? [{ label: "Market", href: "/" }]
     : NAV_ITEMS;
+  const loginHref = marketActions || marketCartAction
+    ? "/login?next=%2Fmarket"
+    : "/login";
 
   useLayoutEffect(() => {
     if (window.location.hostname !== "market.fisafigroupe.com") return;
@@ -518,7 +521,7 @@ export default function Header({
               <span className="header-avatar-badge" aria-hidden="true" />
             </Link>
           ) : (
-            <Link href="/login" className="header-login-btn" aria-label="Connexion">
+            <Link href={loginHref} className="header-login-btn" aria-label="Connexion">
               <IconUser />
             </Link>
           )}
@@ -669,7 +672,7 @@ export default function Header({
 
           <div className="header-drawer-footer">
             <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
+              href={isLoggedIn ? "/dashboard" : loginHref}
               className="header-drawer-cta"
               onClick={closeMobile}
             >

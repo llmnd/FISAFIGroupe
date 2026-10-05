@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import PortalThemeToggle from "@/components/PortalThemeToggle";
 import {
   getMarketDepartmentId,
   getMarketDepartmentName,
@@ -1315,6 +1316,7 @@ export default function DashboardPage() {
           </nav>
 
           <div className="sidebar-foot">
+            <PortalThemeToggle />
             <button className="sidebar-logout" onClick={handleLogout}>
               ⊗ &nbsp;Déconnexion
             </button>

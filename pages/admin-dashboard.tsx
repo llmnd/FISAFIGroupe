@@ -17,6 +17,7 @@ interface User {
   createdAt: string;
 }
 interface AdminUser extends User {}
+type AdminSessionUser = Pick<User, "id" | "email" | "role" | "firstName" | "lastName">;
 interface Article {
   id: number;
   title: string;
@@ -89,6 +90,10 @@ interface MarketStats {
     date: string;
   }>;
   generatedAt: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function formatMarketCurrency(amount: number): string {
@@ -245,7 +250,7 @@ export default function AdminDashboard() {
     return null;
   };
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<AdminSessionUser | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
@@ -321,19 +326,25 @@ export default function AdminDashboard() {
         }
         const payload: unknown = await response.json();
         if (
-          !payload || typeof payload !== "object" || !("data" in payload) ||
-          !payload.data || typeof payload.data !== "object" ||
-          !("id" in payload.data) || typeof payload.data.id !== "string" ||
-          !("email" in payload.data) || typeof payload.data.email !== "string" ||
-          !("role" in payload.data) || typeof payload.data.role !== "string" ||
-          !("active" in payload.data) || typeof payload.data.active !== "boolean" ||
-          !("createdAt" in payload.data) || typeof payload.data.createdAt !== "string"
-        ) throw new Error("Session validation returned invalid account data.");
+          !isRecord(payload) ||
+          !isRecord(payload.data) ||
+          typeof payload.data.id !== "string" ||
+          typeof payload.data.email !== "string" ||
+          typeof payload.data.role !== "string"
+        ) {
+          throw new Error("Session validation returned invalid account data.");
+        }
         if (payload.data.role !== "admin") {
           await router.replace("/dashboard");
           return;
         }
-        setCurrentUser(payload.data as User);
+        setCurrentUser({
+          id: payload.data.id,
+          email: payload.data.email,
+          role: "admin",
+          firstName: typeof payload.data.firstName === "string" ? payload.data.firstName : undefined,
+          lastName: typeof payload.data.lastName === "string" ? payload.data.lastName : undefined,
+        });
         await fetchUsers();
       } catch (error) {
         console.error("[Admin/Auth] Could not validate session:", error);
@@ -415,24 +426,35 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl("/api/users"), { headers: { Authorization: `Bearer ${token}` } });
-      if (r.ok) setUsers(await r.json());
-    } catch {}
+      const r = await fetch(buildApiUrl("/api/users"));
+      if (!r.ok) {
+        const payload: unknown = await r.json().catch(() => null);
+        const message =
+          isRecord(payload) && typeof payload.error === "string"
+            ? payload.error
+            : `Impossible de charger les utilisateurs (HTTP ${r.status}).`;
+        showToast(message, "err");
+        return;
+      }
+      const payload: unknown = await r.json();
+      if (!Array.isArray(payload)) {
+        throw new Error("Le serveur a renvoyé une liste d’utilisateurs invalide.");
+      }
+      setUsers(payload);
+    } catch (error) {
+      console.error("[Admin/Users] Could not load users:", error);
+      showToast(
+        error instanceof Error ? error.message : "Erreur réseau lors du chargement des utilisateurs.",
+        "err",
+      );
+    }
   };
 
   const fetchMarketStats = async () => {
     setLoadingMarketStats(true);
     setMarketStatsError("");
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setMarketStatsError("Votre session a expiré. Reconnectez-vous.");
-        return;
-      }
-      const response = await fetch("/api/admin/market-stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch("/api/admin/market-stats");
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
@@ -457,10 +479,8 @@ export default function AdminDashboard() {
   const fetchInscriptions = async () => {
     setLoadingInscriptions(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { showToast("Non authentifié", "err"); setLoadingInscriptions(false); return; }
       const query = filterInscriptionStatus !== "all" ? `?status=${filterInscriptionStatus}` : "";
-      const r = await fetch(buildApiUrl(`/api/inscriptions-manage${query}`), { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(buildApiUrl(`/api/inscriptions-manage${query}`));
       if (r.ok) { const data = await r.json(); setInscriptions(data.data || []); }
       else showToast(`Erreur ${r.status}: ${r.statusText}`, "err");
     } catch { showToast("Erreur réseau", "err"); }
@@ -500,20 +520,20 @@ export default function AdminDashboard() {
   const fetchFormations = async () => {
     setLoadingFormations(true);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl("/api/formations?limit=100"), { headers: { Authorization: `Bearer ${token || ""}` } });
+      const r = await fetch(buildApiUrl("/api/formations?limit=100"));
       if (r.ok) { const data = await r.json(); setFormations(data.data?.formations || []); }
-    } catch {}
+      else showToast(`Impossible de charger les formations (HTTP ${r.status}).`, "err");
+    } catch { showToast("Erreur réseau lors du chargement des formations.", "err"); }
     finally { setLoadingFormations(false); }
   };
 
   const fetchSessions = async () => {
     setLoadingSessions(true);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch(buildApiUrl("/api/sessions"), { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(buildApiUrl("/api/sessions"));
       if (r.ok) { const data = await r.json(); setSessions(data.data || []); }
-    } catch {}
+      else showToast(`Impossible de charger les sessions (HTTP ${r.status}).`, "err");
+    } catch { showToast("Erreur réseau lors du chargement des sessions.", "err"); }
     finally { setLoadingSessions(false); }
   };
 
@@ -600,11 +620,10 @@ export default function AdminDashboard() {
 
   const fetchArticles = async () => {
     setLoadingArticles(true);
-    const token = localStorage.getItem("token");
     const endpoints = ["/api/fetch-articles-admin", "/api/admin/articles", "/api/articles/manage"];
     for (const endpoint of endpoints) {
       try {
-        const r = await fetch(endpoint, { headers: { Authorization: `Bearer ${token || ""}` }, method: "GET" });
+        const r = await fetch(endpoint);
         if (r.ok) {
           const d = await r.json();
           const articleList = Array.isArray(d.data) ? d.data : (d.data?.data || []);
@@ -659,10 +678,11 @@ export default function AdminDashboard() {
   const fetchBrochures = async () => {
     setLoadingBrochures(true);
     try {
-      const token = localStorage.getItem("token");
-      const r = await fetch("/api/brochures/manage", { headers: { Authorization: `Bearer ${token || ""}` } });
+      const r = await fetch("/api/brochures/manage");
       if (r.ok) { const d = await r.json(); setBrochures(d.data || []); }
-    } catch {} finally { setLoadingBrochures(false); }
+      else showToast(`Impossible de charger les brochures (HTTP ${r.status}).`, "err");
+    } catch { showToast("Erreur réseau lors du chargement des brochures.", "err"); }
+    finally { setLoadingBrochures(false); }
   };
 
   const handleSubmitBrochure = async (e: React.FormEvent) => {
