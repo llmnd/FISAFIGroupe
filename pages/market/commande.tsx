@@ -437,7 +437,7 @@ export default function MarketOrderPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!hasItems || submitting) return;
+    if (mobileStep !== 4 || !hasItems || submitting) return;
     setTouched({ name: true, phone: true, address: true });
     const firstInvalid = (["name", "phone", "address"] as Field[]).find((field) => errors[field]);
     if (firstInvalid) {
@@ -652,7 +652,7 @@ export default function MarketOrderPage() {
                   "Vérifiez les articles avant de poursuivre.",
                   "Choisissez comment recevoir votre commande.",
                   "Indiquez comment le vendeur peut vous joindre.",
-                  "Relisez les détails avant d’envoyer votre demande.",
+                  "Relisez tous les détails. Vous pourrez revenir les corriger avant de confirmer.",
                 ][mobileStep - 1]}
               </p>
             </div>
@@ -939,7 +939,9 @@ export default function MarketOrderPage() {
                     <ul>
                       {items.map((item) => (
                         <li key={item.id}>
-                          <span>{formatAmount(item.quantity)} × {item.name}</span>
+                          <span>
+                            {formatAmount(item.quantity)}{item.priceUnit === "kg" ? " kg" : ""} × {item.name}
+                          </span>
                           <strong>{formatAmount(lineAmount(item))} FCFA</strong>
                         </li>
                       ))}
@@ -997,12 +999,11 @@ export default function MarketOrderPage() {
                         ? "Choisir une adresse sur la carte"
                         : fulfillment === "delivery" && estimateStatus === "loading"
                           ? "Calcul des frais…"
-                          : "Envoyer ma demande au vendeur"}
+                          : "Confirmer et envoyer la demande"}
                   </button>
                   <p className="market-order-disclaimer">
-                    Le stock est vérifié avant l’enregistrement d’un devis à valider par
-                    le vendeur. Les frais de livraison sont estimatifs et seront confirmés par le vendeur.
-                    Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
+                    Vérifiez les articles, le mode de réception et vos coordonnées. Rien n’est envoyé
+                    avant votre confirmation. Le stock et les frais de livraison seront confirmés par le vendeur.
                   </p>
 
                   {submitError && (
@@ -1036,12 +1037,12 @@ export default function MarketOrderPage() {
                   </button>
                 ) : (
                   <button
-                    type="submit"
-                    form="market-order-form"
+                    type="button"
                     className="market-mobile-next"
                     disabled={submitting || (fulfillment === "delivery" && (!isEstimateCurrent || !deliveryEstimate?.serviceable))}
+                    onClick={() => formRef.current?.requestSubmit()}
                   >
-                    {submitting ? "Envoi…" : "Envoyer la demande"}
+                    {submitting ? "Envoi…" : "Confirmer la demande"}
                   </button>
                 )}
               </div>

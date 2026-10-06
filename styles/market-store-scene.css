@@ -2125,7 +2125,8 @@
   font: 500 clamp(0.78rem, 1.4vw, 1.15rem)/1.55 "Jost", system-ui, sans-serif;
 }
 
-.store-school-copy a {
+.store-school-copy a,
+.store-school-copy button {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -2134,17 +2135,22 @@
   border-radius: 999px;
   background: #250bb8;
   color: #fff;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
   font: 700 clamp(0.72rem, 1vw, 0.88rem)/1 "Jost", system-ui, sans-serif;
   text-decoration: none;
   transition: transform 180ms ease, background-color 180ms ease;
 }
 
-.store-school-copy a:hover {
+.store-school-copy a:hover,
+.store-school-copy button:hover {
   transform: translateY(-2px);
   background: #ff7417;
 }
 
 .store-school-copy a:focus-visible,
+.store-school-copy button:focus-visible,
 .store-slide-controls button:focus-visible {
   outline: 3px solid #ff7417;
   outline-offset: 3px;
@@ -2236,7 +2242,11 @@
   .store-school-poster {
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
     gap: 0.55rem;
-    padding: 1.15rem 1.8rem 3.5rem 1.2rem;
+    padding: 1.15rem 1.2rem 1.15rem;
+  }
+
+  .store.is-mobile .store-slide-controls {
+    display: none;
   }
 
   .store-school-copy h2 {
@@ -2251,7 +2261,8 @@
     font-size: clamp(0.7rem, 2.8vw, 0.9rem);
   }
 
-  .store-school-copy a {
+  .store-school-copy a,
+  .store-school-copy button {
     min-height: 2.4rem;
     padding: 0.6rem 0.75rem;
     font-size: 0.68rem;

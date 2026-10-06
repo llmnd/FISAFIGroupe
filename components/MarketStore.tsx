@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent, TouchEvent } from "react";
+import type { CSSProperties, FocusEvent, PointerEvent, TouchEvent } from "react";
 
 const STORE_SLIDE_DURATION_MS = 7_000;
 const STORE_SLIDE_COUNT = 2;
@@ -101,16 +101,35 @@ const STORE_AISLES: StoreAisle[] = [
 
 const cv = (v: string) => ({ "--c": v }) as CSSProperties;
 
-function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
+function MarketStore({
+  isMarketOpen,
+  onBrowseSchoolSupplies,
+}: {
+  isMarketOpen: boolean;
+  onBrowseSchoolSupplies: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
   const [customerPass, setCustomerPass] = useState(0);
   const [aisleIndex, setAisleIndex] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [autoplayPaused, setAutoplayPaused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const activeAisle = STORE_AISLES[aisleIndex];
   const room = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 760px)");
+    const updateMobileLayout = () => {
+      setIsMobile(mediaQuery.matches);
+      setActiveSlide(mediaQuery.matches ? 1 : 0);
+    };
+    updateMobileLayout();
+    mediaQuery.addEventListener("change", updateMobileLayout);
+    return () => mediaQuery.removeEventListener("change", updateMobileLayout);
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -121,29 +140,29 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || isMobile) {
       setOpen(true);
       return;
     }
 
     const t = setTimeout(() => setOpen(true), 700);
     return () => clearTimeout(t);
-  }, [reducedMotion]);
+  }, [isMobile, reducedMotion]);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || isMobile || autoplayPaused) return;
     const interval = setInterval(
       () => setActiveSlide((slide) => (slide + 1) % STORE_SLIDE_COUNT),
       STORE_SLIDE_DURATION_MS,
     );
     return () => clearInterval(interval);
-  }, [reducedMotion]);
+  }, [autoplayPaused, isMobile, reducedMotion]);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || isMobile) return;
     const interval = setInterval(() => setCustomerPass((pass) => pass + 1), 20_000);
     return () => clearInterval(interval);
-  }, [reducedMotion]);
+  }, [isMobile, reducedMotion]);
 
   const move = (e: PointerEvent) => {
     const el = room.current;
@@ -178,16 +197,33 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
     showSlide(activeSlide + (distance < 0 ? 1 : -1));
   };
 
+  const handleBlur = (event: FocusEvent<HTMLElement>) => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    if (!isMobile) setAutoplayPaused(false);
+  };
+
   return (
     <>
     <section
-      className={`store${open ? " has-opened" : ""}${activeSlide === 1 ? " is-poster-active" : ""}`}
+      className={`store${open ? " has-opened" : ""}${isMobile ? " is-mobile" : ""}${activeSlide === 1 ? " is-poster-active" : ""}`}
       onPointerMove={move}
-      onPointerLeave={resetPerspective}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onPointerLeave={() => {
+        if (!isMobile) {
+          resetPerspective();
+          setAutoplayPaused(false);
+        }
+      }}
+      onPointerEnter={() => {
+        if (!isMobile) setAutoplayPaused(true);
+      }}
+      onFocusCapture={() => !isMobile && setAutoplayPaused(true)}
+      onBlurCapture={handleBlur}
+      onTouchStart={isMobile ? undefined : handleTouchStart}
+      onTouchEnd={isMobile ? undefined : handleTouchEnd}
       aria-label="Boutique interactive FiSAFi Market"
     >
+      {!isMobile && (
+      <>
       <div className="store-room" ref={room}>
         <div className="store-wall" />
         <div className="store-floor" />
@@ -401,10 +437,12 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
           <i />
         </span>
       </div>
+      </>
+      )}
 
       <article
-        className={`store-school-poster${activeSlide === 1 ? " is-active" : ""}`}
-        aria-hidden={activeSlide !== 1}
+        className={`store-school-poster${activeSlide === 1 || isMobile ? " is-active" : ""}`}
+        aria-hidden={activeSlide !== 1 && !isMobile}
         aria-label="Affiche de rentrée scolaire FiSAFi Market"
       >
         <div className="store-school-copy">
@@ -414,19 +452,23 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
             Cahiers, stylos et fournitures scolaires : préparez la rentrée avec
             l’équipe FiSAFi.
           </p>
-          <a href="#infos-market" tabIndex={activeSlide === 1 ? 0 : -1}>
-            Demander vos fournitures <span aria-hidden="true">↗</span>
-          </a>
+          <button
+            type="button"
+            onClick={onBrowseSchoolSupplies}
+            tabIndex={activeSlide === 1 || isMobile ? 0 : -1}
+          >
+            Voir les fournitures <span aria-hidden="true">↗</span>
+          </button>
         </div>
         <img
-          src="/read.jpg"
+          src="/scolaire.jpg"
           alt="Un enfant avec son sac à dos qui lit un cahier, entouré de fournitures scolaires"
           loading="eager"
           decoding="async"
         />
       </article>
 
-      <div className="store-slide-controls" role="group" aria-label="Affiches et boutique">
+      {!isMobile && <div className="store-slide-controls" role="group" aria-label="Affiches et boutique">
         <button
           type="button"
           className="store-slide-arrow"
@@ -458,7 +500,7 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
         >
           <span aria-hidden="true">→</span>
         </button>
-      </div>
+      </div>}
 
     </section>
     </>

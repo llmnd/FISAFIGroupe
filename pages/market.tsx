@@ -665,7 +665,7 @@ export default function MarketPage() {
         return false;
       }
       if (!normalizedQuery) return true;
-      const searchableText = `${product.name} ${product.departmentName}`
+      const searchableText = `${product.name} ${product.departmentName} ${product.categoryPath ?? ""}`
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLocaleLowerCase("fr");
@@ -737,7 +737,9 @@ export default function MarketPage() {
 
   const scrollToProducts = () => {
     window.requestAnimationFrame(() => {
-      document.getElementById("market-products")?.scrollIntoView({
+      (document.getElementById("market-catalog-results") ??
+        document.getElementById("market-products") ??
+        document.getElementById("rayons"))?.scrollIntoView({
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
           ? "auto"
           : "smooth",
@@ -759,6 +761,15 @@ export default function MarketPage() {
     setSelectedDepartment(departmentId);
     setSelectedSubcategory(categoryPath);
     setCurrentPage(1);
+    scrollToProducts();
+  };
+
+  const browseSchoolSupplies = () => {
+    setSearchQuery("fourniture");
+    setSelectedDepartment("");
+    setSelectedSubcategory("");
+    setCurrentPage(1);
+    setCatalogToolsOpen(true);
     scrollToProducts();
   };
 
@@ -1305,7 +1316,10 @@ export default function MarketPage() {
           </p>
         )}
 
-        <MarketStore isMarketOpen={status.open} />
+        <MarketStore
+          isMarketOpen={status.open}
+          onBrowseSchoolSupplies={browseSchoolSupplies}
+        />
 
         {/* ═══ RAYONS & CATALOGUE ═══ */}
         <section
@@ -1421,7 +1435,7 @@ export default function MarketPage() {
           )}
 
           {showCatalogResults && (
-            <div className="market-search-results" aria-live="polite">
+            <div className="market-search-results" id="market-catalog-results" aria-live="polite">
               <div className="market-results-toolbar">
                 <div className="market-results-title">
                   <h3>
