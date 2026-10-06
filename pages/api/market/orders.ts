@@ -77,6 +77,7 @@ type ApiResponse = {
   total?: number;
   deliveryFee?: number;
   deliveryDistanceKm?: number;
+  success?: boolean;
   orders?: Array<{
     id: number;
     reference: string;
@@ -254,6 +255,102 @@ function isMarketOrderStatus(value: unknown): value is MarketOrderStatus {
     typeof value === "string" &&
     Object.prototype.hasOwnProperty.call(STATUS_LABELS, value)
   );
+}
+
+function isCancelRequest(value: unknown): value is { orderId: number } {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "orderId" in value &&
+    typeof value.orderId === "number" &&
+    Number.isSafeInteger(value.orderId) &&
+    value.orderId > 0
+  );
+}
+
+async function cancelCustomerOrder(
+  res: NextApiResponse<ApiResponse>,
+  user: MarketAccount,
+  orderId: number,
+) {
+  try {
+    const quotation = await prisma.marketQuotation.findFirst({
+      where: { userId: user.id, odooOrderId: orderId },
+      select: { id: true },
+    });
+    if (!quotation) {
+      return res.status(404).json({ error: "Cette demande est introuvable." });
+    }
+
+    const companies = await listFiSafiCompanies();
+    const market = companies.find((company) => company.type === "market");
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
+
+    const readOrder = async () => {
+      const payload: unknown = await callOdoo("sale.order", "search_read", {
+        domain: [["id", "=", orderId], ["company_id", "=", market.id]],
+        fields: ["id", "name", "state", "amount_total", "date_order", "order_line", "company_id"],
+        limit: 1,
+      });
+      if (!Array.isArray(payload) || !payload.every(isOdooOrder)) {
+        console.error("[Market/Odoo] Customer cancellation lookup returned an unexpected format.");
+        throw new OdooApiError("FiSAFi a renvoyé des données de commande invalides.");
+      }
+      return payload[0] ?? null;
+    };
+
+    const order = await readOrder();
+    if (!order || order.id !== orderId || order.company_id[0] !== market.id) {
+      return res.status(404).json({ error: "Cette demande est introuvable." });
+    }
+    if (order.state === "cancel") {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({ success: true });
+    }
+    if (order.state !== "draft" && order.state !== "sent") {
+      return res.status(409).json({
+        error: "Cette commande est déjà confirmée et ne peut plus être annulée depuis votre espace. Contactez notre équipe.",
+      });
+    }
+
+    await callOdoo("sale.order", "action_cancel", { ids: [orderId] });
+    const cancelledOrder = await readOrder();
+    if (!cancelledOrder || cancelledOrder.state !== "cancel") {
+      console.error(`[Market/Odoo] Cancellation of customer order ${orderId} was not confirmed.`);
+      throw new OdooApiError("FiSAFi n’a pas confirmé l’annulation de cette demande.", 502);
+    }
+
+    const update = await prisma.marketQuotation.updateMany({
+      where: { id: quotation.id, userId: user.id, state: { not: "cancel" } },
+      data: { state: "cancel", amountTotal: cancelledOrder.amount_total },
+    });
+    if (update.count === 1 && user.emailVerifiedAt) {
+      const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email;
+      try {
+        const sent = await emailService.sendMarketQuotationStatus(
+          user.email,
+          fullName,
+          cancelledOrder.name,
+          STATUS_LABELS.cancel,
+          cancelledOrder.amount_total,
+        );
+        if (!sent) {
+          console.error(`[Market] Cancellation email for quotation ${cancelledOrder.name} was not delivered.`);
+        }
+      } catch (error) {
+        console.error(`[Market] Could not send cancellation email for quotation ${cancelledOrder.name}:`, error);
+      }
+    }
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    if (error instanceof OdooApiError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error("[Market/Odoo] Customer order cancellation failed:", error);
+    return res.status(502).json({ error: "Impossible d’annuler cette demande pour le moment. Réessayez ou contactez notre équipe." });
+  }
 }
 
 async function getCustomerOrders(
@@ -437,8 +534,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>,
 ) {
-  if (req.method !== "POST" && req.method !== "GET") {
-    res.setHeader("Allow", "GET, POST");
+  if (req.method !== "POST" && req.method !== "GET" && req.method !== "DELETE") {
+    res.setHeader("Allow", "GET, POST, DELETE");
     return res.status(405).json({ error: "Méthode non autorisée." });
   }
 
@@ -480,6 +577,13 @@ export default async function handler(
 
   if (req.method === "GET") {
     return getCustomerOrders(res, user);
+  }
+
+  if (req.method === "DELETE") {
+    if (!isCancelRequest(req.body)) {
+      return res.status(400).json({ error: "L’identifiant de la demande est invalide." });
+    }
+    return cancelCustomerOrder(res, user, req.body.orderId);
   }
 
   if (!isOrderRequest(req.body)) {

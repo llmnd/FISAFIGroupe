@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -340,29 +340,91 @@ export default function AdminDashboard() {
   const authCheckStarted = useRef(false);
   const initialTabScrollHandled = useRef(false);
   const currentTabRef = useRef(activeTab);
+  const menuFocusFrameRef = useRef<number | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!navOpen) return;
 
+    const scrollY = window.scrollY;
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    root.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+
+    const focusableElements = () =>
+      document.querySelector<HTMLElement>("#admin-mobile-navigation")
+        ?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+    menuFocusFrameRef.current = window.requestAnimationFrame(() => {
+      menuFocusFrameRef.current = null;
+      focusableElements()?.[0]?.focus();
+    });
+
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setNavOpen(false);
-      mobileMenuButtonRef.current?.focus();
+      if (event.key === "Escape") {
+        setNavOpen(false);
+        mobileMenuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusableElements();
+      if (!elements?.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     const closeOnDesktopResize = () => {
       if (window.matchMedia("(min-width: 900px)").matches) setNavOpen(false);
     };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
     window.addEventListener("resize", closeOnDesktopResize, { passive: true });
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (menuFocusFrameRef.current !== null) {
+        window.cancelAnimationFrame(menuFocusFrameRef.current);
+        menuFocusFrameRef.current = null;
+      }
+      root.style.overflow = previousRootOverflow;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.right = previousBodyStyles.right;
+      body.style.width = previousBodyStyles.width;
+      body.style.overflow = previousBodyStyles.overflow;
+      window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", closeOnEscape);
       window.removeEventListener("resize", closeOnDesktopResize);
     };
   }, [navOpen]);
+
+  useEffect(
+    () => () => {
+      if (toastTimeoutRef.current !== null) clearTimeout(toastTimeoutRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const closeMenu = () => setNavOpen(false);
@@ -427,7 +489,11 @@ export default function AdminDashboard() {
 
   const showToast = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    if (toastTimeoutRef.current !== null) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      toastTimeoutRef.current = null;
+      setToast(null);
+    }, 3000);
   };
 
   useEffect(() => {
@@ -865,22 +931,39 @@ export default function AdminDashboard() {
     if (!adminTabs.includes(activeTab)) handleSetActiveTab("users");
   }, [selectedCompany?.type, activeTab, tabStateReady]);
 
-  const filteredUsers = users.filter(u => {
-    const q = searchQuery.toLowerCase();
-    const fullName = `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim().toLowerCase();
-    const ms =
-      u.email.toLowerCase().includes(q) ||
-      fullName.includes(q) ||
-      (u.phone ?? "").toLowerCase().includes(q);
-    const mr = filterRole === "all" || u.role === filterRole;
-    const ma = filterActive === "all" || (filterActive === "active" ? u.active : !u.active);
-    const mp =
-      u.role === "admin" ||
-      u.profiles.length === 0 ||
-      !activeProfile ||
-      u.profiles.includes(activeProfile);
-    return ms && mr && ma && mp;
-  });
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase("fr");
+    return users.filter((user) => {
+      const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim().toLocaleLowerCase("fr");
+      const matchesSearch =
+        !query ||
+        user.email.toLocaleLowerCase("fr").includes(query) ||
+        fullName.includes(query) ||
+        (user.phone ?? "").toLocaleLowerCase("fr").includes(query);
+      const matchesRole = filterRole === "all" || user.role === filterRole;
+      const matchesActive =
+        filterActive === "all" || (filterActive === "active" ? user.active : !user.active);
+      const matchesProfile =
+        user.role === "admin" ||
+        user.profiles.length === 0 ||
+        !activeProfile ||
+        user.profiles.includes(activeProfile);
+      return matchesSearch && matchesRole && matchesActive && matchesProfile;
+    });
+  }, [activeProfile, filterActive, filterRole, searchQuery, users]);
+
+  const filteredUserCounts = useMemo(
+    () =>
+      filteredUsers.reduce(
+        (counts, user) => {
+          counts.active += Number(user.active);
+          counts.admins += Number(user.role === "admin");
+          return counts;
+        },
+        { active: 0, admins: 0 },
+      ),
+    [filteredUsers],
+  );
 
   const handleSaveUser = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) { showToast("Champs requis manquants", "err"); return; }
@@ -1281,7 +1364,7 @@ export default function AdminDashboard() {
                 ref={mobileMenuButtonRef}
                 type="button"
                 className={`mob-menu-btn${navOpen ? " open" : ""}`}
-                onClick={() => setNavOpen(!navOpen)}
+                onClick={() => setNavOpen((isOpen) => !isOpen)}
                 aria-label={navOpen ? "Fermer le menu" : "Ouvrir le menu"}
                 aria-expanded={navOpen}
                 aria-controls="admin-mobile-navigation"
@@ -1310,11 +1393,11 @@ export default function AdminDashboard() {
                   <div className="stat-label">Total</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num green">{filteredUsers.filter(u => u.active).length}</div>
+                  <div className="stat-num green">{filteredUserCounts.active}</div>
                   <div className="stat-label">Actifs</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num orange">{filteredUsers.filter(u => u.role === "admin").length}</div>
+                  <div className="stat-num orange">{filteredUserCounts.admins}</div>
                   <div className="stat-label">Admins</div>
                 </div>
               </div>

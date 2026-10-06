@@ -1105,6 +1105,17 @@ body:has(.dash-layout.user-dashboard) {
 }
 .dash-layout.user-dashboard .market-order-footer-hint { font-size: 0.82rem; line-height: 1.45; color: var(--od-text-muted); }
 .dash-layout.user-dashboard .market-order-reorder { flex: 0 0 auto; padding-inline: 1.1rem; }
+.dash-layout.user-dashboard .market-order-cancel {
+  flex: 0 0 auto;
+  padding-inline: 1.1rem;
+  border: 1px solid #c2413a;
+  background: #fff;
+  color: #a92f29;
+}
+.dash-layout.user-dashboard .market-order-cancel:hover:not(:disabled) {
+  background: #fff4f2;
+  color: #8f211c;
+}
 .dash-layout.user-dashboard #market-invoices-title::before,
 .dash-layout.user-dashboard #group-invoices-title::before {
   content: "▤";
@@ -1126,7 +1137,8 @@ body:has(.dash-layout.user-dashboard) {
   .dash-layout.user-dashboard .market-order-meta-item { padding: 0.65rem; }
   .dash-layout.user-dashboard .market-order-products-list { grid-template-columns: 1fr; }
   .dash-layout.user-dashboard .market-order-footer { align-items: stretch; flex-direction: column; gap: 0.7rem; }
-  .dash-layout.user-dashboard .market-order-reorder { width: 100%; }
+  .dash-layout.user-dashboard .market-order-reorder,
+  .dash-layout.user-dashboard .market-order-cancel { width: 100%; }
   .dash-layout.user-dashboard .article-item { flex-direction: column; }
   .dash-layout.user-dashboard .form-buttons { flex-direction: column; }
 }

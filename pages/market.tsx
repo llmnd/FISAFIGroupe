@@ -42,6 +42,7 @@ type MarketProduct = {
   id: number;
   name: string;
   price: string;
+  priceAmount: number;
   badge?: "PROMO";
   artwork: ProductArtwork;
   hasImage: boolean;
@@ -49,6 +50,7 @@ type MarketProduct = {
   categoryPath: string | null;
   departmentId: string;
   departmentName: string;
+  searchableText: string;
   availableQuantity: number;
   variantChoiceRequired: boolean;
 };
@@ -152,6 +154,12 @@ function writeMarketCatalogCache(products: OdooCatalogProduct[]) {
 
 const fmt = (value: number) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(value);
+
+const normalizeMarketSearchText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("fr");
 
 /* Script inline : pose le thème avant le premier paint (zéro FOUC). */
 const MARKET_THEME_BOOTSTRAP = `(function(){try{
@@ -597,11 +605,7 @@ export default function MarketPage() {
 
   const isDark = themeChoice === "dark" || (themeChoice === "system" && systemPrefersDark);
 
-  const normalizedQuery = searchQuery
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("fr");
+  const normalizedQuery = normalizeMarketSearchText(searchQuery.trim());
 
   const { marketProducts, productsByDepartment, departments } = useMemo(() => {
     const products: MarketProduct[] = catalog.map((product) => {
@@ -612,6 +616,7 @@ export default function MarketPage() {
         id: product.id,
         name: product.name,
         price: pricePerKilogram ? `${price} / kg` : price,
+        priceAmount: getMarketPriceAmount(price) ?? 0,
         badge: product.isPromotion ? "PROMO" : undefined,
         artwork: getProductArtwork(departmentName),
         hasImage: product.hasImage,
@@ -619,6 +624,9 @@ export default function MarketPage() {
         categoryPath: product.categoryName,
         departmentId: getMarketDepartmentId(departmentName),
         departmentName,
+        searchableText: normalizeMarketSearchText(
+          `${product.name} ${departmentName} ${product.categoryName ?? ""}`,
+        ),
         availableQuantity: product.availableQuantity,
         variantChoiceRequired: product.variantChoiceRequired,
       };
@@ -654,35 +662,36 @@ export default function MarketPage() {
     };
   }, [catalog]);
 
-  const sortedProducts = useMemo(() => {
-    const filteredProducts = marketProducts.filter((product) => {
-      if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
-      if (
-        selectedSubcategory &&
-        !product.categoryPath?.startsWith(`${selectedSubcategory} /`) &&
-        product.categoryPath !== selectedSubcategory
-      ) {
-        return false;
-      }
-      if (!normalizedQuery) return true;
-      const searchableText = `${product.name} ${product.departmentName} ${product.categoryPath ?? ""}`
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLocaleLowerCase("fr");
-      return searchableText.includes(normalizedQuery);
-    });
+  const sortedMarketProducts = useMemo(
+    () =>
+      [...marketProducts].sort((left, right) => {
+        if (left.hasImage !== right.hasImage) return left.hasImage ? -1 : 1;
+        if (productSort === "price-asc" || productSort === "price-desc") {
+          const priceDifference = left.priceAmount - right.priceAmount;
+          if (priceDifference !== 0)
+            return productSort === "price-asc" ? priceDifference : -priceDifference;
+        }
+        return left.name.localeCompare(right.name, "fr", { sensitivity: "base" });
+      }),
+    [marketProducts, productSort],
+  );
 
-    return filteredProducts.sort((left, right) => {
-      if (left.hasImage !== right.hasImage) return left.hasImage ? -1 : 1;
-      if (productSort === "price-asc" || productSort === "price-desc") {
-        const priceDifference =
-          (getMarketPriceAmount(left.price) ?? 0) - (getMarketPriceAmount(right.price) ?? 0);
-        if (priceDifference !== 0)
-          return productSort === "price-asc" ? priceDifference : -priceDifference;
-      }
-      return left.name.localeCompare(right.name, "fr", { sensitivity: "base" });
-    });
-  }, [marketProducts, normalizedQuery, productSort, selectedDepartment, selectedSubcategory]);
+  const sortedProducts = useMemo(
+    () =>
+      sortedMarketProducts.filter((product) => {
+        if (selectedDepartment && product.departmentId !== selectedDepartment) return false;
+        if (
+          selectedSubcategory &&
+          !product.categoryPath?.startsWith(`${selectedSubcategory} /`) &&
+          product.categoryPath !== selectedSubcategory
+        ) {
+          return false;
+        }
+        if (!normalizedQuery) return true;
+        return product.searchableText.includes(normalizedQuery);
+      }),
+    [normalizedQuery, selectedDepartment, selectedSubcategory, sortedMarketProducts],
+  );
 
   const totalPages = Math.ceil(sortedProducts.length / MARKET_PAGE_SIZE);
   const page = Math.min(currentPage, Math.max(totalPages, 1));
@@ -701,8 +710,13 @@ export default function MarketPage() {
     searchQuery.trim() || selectedDepartment || selectedSubcategory,
   );
 
-  const getDepartmentSubcategories = (departmentId: string): MarketSubcategory[] => {
-    const products = productsByDepartment.get(departmentId) || [];
+  const activeMenuDepartmentData = departments.find(
+    (department) => department.id === activeMenuDepartment,
+  );
+  const activeMenuSubcategories = useMemo(() => {
+    if (!activeMenuDepartmentData) return [];
+
+    const products = productsByDepartment.get(activeMenuDepartmentData.id) || [];
     const subcategories = new Map<string, MarketSubcategory>();
     for (const product of products) {
       const path =
@@ -716,14 +730,7 @@ export default function MarketPage() {
     return [...subcategories.values()].sort((left, right) =>
       left.name.localeCompare(right.name, "fr"),
     );
-  };
-
-  const activeMenuDepartmentData = departments.find(
-    (department) => department.id === activeMenuDepartment,
-  );
-  const activeMenuSubcategories = activeMenuDepartmentData
-    ? getDepartmentSubcategories(activeMenuDepartmentData.id)
-    : [];
+  }, [activeMenuDepartmentData, productsByDepartment]);
 
   const openDepartmentsMenu = () => {
     setActiveMenuDepartment("");
@@ -870,14 +877,17 @@ export default function MarketPage() {
     scrollToProducts();
   };
 
+  const cartQuantities = useMemo(
+    () => new Map(cartItems.map((item) => [item.id, item.quantity])),
+    [cartItems],
+  );
+
   const getCartQuantity = (
     departmentId: string,
     productName: string,
     odooProductId: number,
   ) =>
-    cartItems.find(
-      (item) => item.id === getMarketProductId(departmentId, productName, odooProductId),
-    )?.quantity ?? 0;
+    cartQuantities.get(getMarketProductId(departmentId, productName, odooProductId)) ?? 0;
 
   const addProduct = (
     departmentId: string,

@@ -338,6 +338,8 @@ export default function DashboardPage() {
   const [groupInvoiceError, setGroupInvoiceError] = useState("");
   const [reorderingQuotationId, setReorderingQuotationId] = useState<number | null>(null);
   const [marketReorderError, setMarketReorderError] = useState("");
+  const [cancellingQuotationId, setCancellingQuotationId] = useState<number | null>(null);
+  const [marketCancellationError, setMarketCancellationError] = useState("");
   const [marketEmailVerified, setMarketEmailVerified] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
@@ -559,6 +561,62 @@ export default function DashboardPage() {
 
   const fetchMarketInvoices = () => fetchAccountInvoices("market");
   const fetchGroupInvoices = () => fetchAccountInvoices("groupe");
+
+  const cancelMarketQuotation = async (quotation: MarketQuotation) => {
+    if (
+      cancellingQuotationId !== null ||
+      (quotation.state !== "draft" && quotation.state !== "sent")
+    ) {
+      return;
+    }
+    if (!confirm(`Confirmer l’annulation du devis ${quotation.reference} ?`)) return;
+
+    setCancellingQuotationId(quotation.id);
+    setMarketCancellationError("");
+    try {
+      const response = await authenticatedFetch("/api/market/orders", {
+        method: "DELETE",
+        headers: authHeaders(),
+        body: JSON.stringify({ orderId: quotation.id }),
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
+            ? payload.error
+            : "Impossible d’annuler cette demande.";
+        throw new Error(message);
+      }
+      if (
+        !payload ||
+        typeof payload !== "object" ||
+        !("success" in payload) ||
+        payload.success !== true
+      ) {
+        throw new Error("La réponse d’annulation reçue est invalide.");
+      }
+
+      setMarketQuotations((current) =>
+        current.map((item) =>
+          item.id === quotation.id
+            ? { ...item, state: "cancel", statusLabel: "Annulé" }
+            : item
+        )
+      );
+    } catch (cancelError) {
+      console.error("[Dashboard] Could not cancel Market quotation:", cancelError);
+      setMarketCancellationError(
+        cancelError instanceof Error
+          ? cancelError.message
+          : "Impossible d’annuler cette demande."
+      );
+    } finally {
+      setCancellingQuotationId(null);
+    }
+  };
 
   const reorderMarketQuotation = async (quotation: MarketQuotation) => {
     if (reorderingQuotationId !== null) return;
@@ -2070,6 +2128,15 @@ export default function DashboardPage() {
                     {marketQuotationError}
                   </div>
                 )}
+                {marketCancellationError && (
+                  <div
+                    className="alert alert-error"
+                    role="alert"
+                    style={{ marginTop: "1rem" }}
+                  >
+                    {marketCancellationError}
+                  </div>
+                )}
                 {marketReorderError && (
                   <div
                     className="alert alert-error"
@@ -2242,21 +2309,40 @@ export default function DashboardPage() {
                           </div>
                         )}
 
-                        {quotation.items.length > 0 && (
+                        {(quotation.items.length > 0 ||
+                          quotation.state === "draft" ||
+                          quotation.state === "sent") && (
                           <footer className="market-order-footer">
-                            <span className="market-order-footer-hint">
-                              Prix et stock revérifiés à l’envoi.
-                            </span>
-                            <button
-                              className="market-action-button market-order-reorder"
-                              type="button"
-                              onClick={() => void reorderMarketQuotation(quotation)}
-                              disabled={reorderingQuotationId !== null}
-                            >
-                              {reorderingQuotationId === quotation.id
-                                ? "Préparation du panier…"
-                                : "Recommander"}
-                            </button>
+                            {quotation.items.length > 0 && (
+                              <>
+                                <span className="market-order-footer-hint">
+                                  Prix et stock revérifiés à l’envoi.
+                                </span>
+                                <button
+                                  className="market-action-button market-order-reorder"
+                                  type="button"
+                                  onClick={() => void reorderMarketQuotation(quotation)}
+                                  disabled={reorderingQuotationId !== null}
+                                >
+                                  {reorderingQuotationId === quotation.id
+                                    ? "Préparation du panier…"
+                                    : "Recommander"}
+                                </button>
+                              </>
+                            )}
+                            {(quotation.state === "draft" ||
+                              quotation.state === "sent") && (
+                              <button
+                                className="market-action-button market-order-cancel"
+                                type="button"
+                                onClick={() => void cancelMarketQuotation(quotation)}
+                                disabled={cancellingQuotationId !== null}
+                              >
+                                {cancellingQuotationId === quotation.id
+                                  ? "Annulation…"
+                                  : "Annuler la demande"}
+                              </button>
+                            )}
                           </footer>
                         )}
                       </article>

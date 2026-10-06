@@ -110,7 +110,6 @@ function MarketStore({
 }) {
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
-  const [customerPass, setCustomerPass] = useState(0);
   const [aisleIndex, setAisleIndex] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
   const [autoplayPaused, setAutoplayPaused] = useState(false);
@@ -119,6 +118,8 @@ function MarketStore({
   const activeAisle = STORE_AISLES[aisleIndex];
   const room = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+  const pointerPosition = useRef<{ x: number; y: number } | null>(null);
+  const pointerFrame = useRef<number | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 760px)");
@@ -158,21 +159,34 @@ function MarketStore({
     return () => clearInterval(interval);
   }, [autoplayPaused, isMobile, reducedMotion]);
 
-  useEffect(() => {
-    if (reducedMotion || isMobile) return;
-    const interval = setInterval(() => setCustomerPass((pass) => pass + 1), 20_000);
-    return () => clearInterval(interval);
-  }, [isMobile, reducedMotion]);
-
   const move = (e: PointerEvent) => {
     const el = room.current;
-    if (!el || e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--px", String((e.clientX - r.left) / r.width - 0.5));
-    el.style.setProperty("--py", String((e.clientY - r.top) / r.height - 0.5));
+    if (
+      !el ||
+      e.pointerType === "touch" ||
+      reducedMotion
+    ) {
+      return;
+    }
+    pointerPosition.current = { x: e.clientX, y: e.clientY };
+    if (pointerFrame.current !== null) return;
+    pointerFrame.current = window.requestAnimationFrame(() => {
+      pointerFrame.current = null;
+      const position = pointerPosition.current;
+      const roomElement = room.current;
+      if (!position || !roomElement) return;
+      const rect = roomElement.getBoundingClientRect();
+      roomElement.style.setProperty("--px", String((position.x - rect.left) / rect.width - 0.5));
+      roomElement.style.setProperty("--py", String((position.y - rect.top) / rect.height - 0.5));
+    });
   };
 
   const resetPerspective = () => {
+    if (pointerFrame.current !== null) {
+      window.cancelAnimationFrame(pointerFrame.current);
+      pointerFrame.current = null;
+    }
+    pointerPosition.current = null;
     room.current?.style.setProperty("--px", "0");
     room.current?.style.setProperty("--py", "0");
   };
@@ -253,8 +267,8 @@ function MarketStore({
             ))}
           </div>
         </div>
-        {customerPass > 0 && (
-          <div className="store-customer-pass is-crossing" key={customerPass} aria-hidden="true">
+        {!reducedMotion && (
+          <div className="store-customer-pass is-crossing" aria-hidden="true">
             <svg viewBox="0 0 100 180">
               <circle cx="50" cy="24" r="17" fill="#343044" />
               <path d="M31 47c4-8 34-8 38 0l9 49H22l9-49Z" fill="#343044" />
