@@ -283,22 +283,27 @@ body.portal-has-admin textarea{font-family:inherit}
 }
 .mob-menu{
   position:fixed;top:calc(var(--topbar-h) + env(safe-area-inset-top));right:0;bottom:0;
-  width:min(88vw,24rem);z-index:99;background:#fff;
+  width:min(88vw,24rem);max-height:calc(100dvh - var(--topbar-h) - env(safe-area-inset-top));
+  z-index:99;background:#fff;
   display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
   padding-bottom:env(safe-area-inset-bottom);
-  transform:translateX(100%);visibility:hidden;
-  transition:transform .3s cubic-bezier(.4,0,.2,1),visibility 0s linear .3s;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .16s ease,visibility 0s linear .16s;
 }
-.mob-menu.open{transform:none;visibility:visible;box-shadow:var(--sh-lg);transition:transform .3s cubic-bezier(.4,0,.2,1),visibility 0s}
-.mob-menu-user{display:flex;align-items:center;gap:.9rem;padding:1.4rem 1.5rem;border-bottom:1px solid var(--line)}
+.mob-menu.open{
+  opacity:1;visibility:visible;pointer-events:auto;box-shadow:var(--sh-lg);
+  transition:opacity .16s ease,visibility 0s;
+}
+.mob-menu-user{display:flex;flex:0 0 auto;align-items:center;gap:.9rem;padding:1.4rem 1.5rem;border-bottom:1px solid var(--line)}
 .mob-menu-avatar{width:2.8rem;height:2.8rem;font-size:.95rem;background:var(--blue)}
 .mob-menu-name{font-size:1.05rem;font-weight:700;color:var(--ink-strong)}
 .mob-menu-email{font-size:.88rem;color:var(--steel);margin-top:.1rem}
-.mob-nav-section{padding:.8rem 1.5rem .3rem}
+.mob-nav-section{flex:0 0 auto;padding:.8rem 1.5rem .3rem}
 .mob-nav-section-label{display:block;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--steel);margin-bottom:.3rem;font-weight:700}
 .mob-nav-link{
   display:flex;align-items:center;justify-content:space-between;
-  width:100%;padding:.95rem 0;border:0;border-bottom:1px solid var(--line-soft);background:none;
+  flex:0 0 auto;min-height:3rem;width:100%;padding:.75rem 0;border:0;border-bottom:1px solid var(--line-soft);background:none;
   color:var(--ink);font-size:1.02rem;font-weight:600;text-align:left;text-decoration:none;cursor:pointer;
   transition:color .15s;
 }
@@ -306,7 +311,7 @@ body.portal-has-admin textarea{font-family:inherit}
 .mob-nav-link.active{font-weight:700}
 .mob-nav-badge{font-size:.72rem;padding:.25rem .55rem;min-width:1.4rem}
 .mob-logout{
-  margin:1.1rem 1.5rem 1.5rem;width:auto;justify-content:center;padding:.8rem;
+  flex:0 0 auto;margin:1.1rem 1.5rem 1.5rem;width:auto;justify-content:center;padding:.8rem;
   border:0;border-radius:6px;background:var(--blue);color:#fff;font-size:1rem;font-weight:600;min-height:2.9rem;
 }
 .mob-logout:hover{background:var(--blue-deep);color:#fff}

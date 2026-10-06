@@ -346,24 +346,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!navOpen) return;
 
-    const scrollY = window.scrollY;
     const root = document.documentElement;
     const body = document.body;
     const previousRootOverflow = root.style.overflow;
-    const previousBodyStyles = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
-    };
+    const previousBodyOverflow = body.style.overflow;
     root.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
     body.style.overflow = "hidden";
 
     const focusableElements = () =>
@@ -373,13 +360,13 @@ export default function AdminDashboard() {
         );
     menuFocusFrameRef.current = window.requestAnimationFrame(() => {
       menuFocusFrameRef.current = null;
-      focusableElements()?.[0]?.focus();
+      focusableElements()?.[0]?.focus({ preventScroll: true });
     });
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setNavOpen(false);
-        mobileMenuButtonRef.current?.focus();
+        mobileMenuButtonRef.current?.focus({ preventScroll: true });
         return;
       }
       if (event.key !== "Tab") return;
@@ -407,13 +394,7 @@ export default function AdminDashboard() {
         menuFocusFrameRef.current = null;
       }
       root.style.overflow = previousRootOverflow;
-      body.style.position = previousBodyStyles.position;
-      body.style.top = previousBodyStyles.top;
-      body.style.left = previousBodyStyles.left;
-      body.style.right = previousBodyStyles.right;
-      body.style.width = previousBodyStyles.width;
-      body.style.overflow = previousBodyStyles.overflow;
-      window.scrollTo(0, scrollY);
+      body.style.overflow = previousBodyOverflow;
       window.removeEventListener("keydown", closeOnEscape);
       window.removeEventListener("resize", closeOnDesktopResize);
     };
@@ -1217,7 +1198,7 @@ export default function AdminDashboard() {
           aria-label="Fermer le menu de navigation"
           onClick={() => {
             setNavOpen(false);
-            mobileMenuButtonRef.current?.focus();
+            mobileMenuButtonRef.current?.focus({ preventScroll: true });
           }}
         />
       )}
@@ -1250,7 +1231,7 @@ export default function AdminDashboard() {
               aria-current={activeTab === tab ? "page" : undefined}
               onClick={() => {
                 handleSetActiveTab(tab);
-                mobileMenuButtonRef.current?.focus();
+                mobileMenuButtonRef.current?.focus({ preventScroll: true });
               }}
             >
               <span>{getTabLabel(tab, selectedCompany?.type)}</span>
