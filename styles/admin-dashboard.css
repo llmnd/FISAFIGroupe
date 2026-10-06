@@ -1659,3 +1659,120 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
   outline:2px solid var(--orange);
   outline-offset:3px;
 }
+/* ══════════════════════════════════════════════════════════
+   CHART PRIMITIVES v2
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Sparkline ─────────────────────────────────────────── */
+.sparkline{display:block;margin-top:.65rem;opacity:.9}
+.stat-card .sparkline{position:absolute;right:1rem;bottom:1rem;pointer-events:none}
+
+/* ── Delta badge on KPI cards ──────────────────────────── */
+.stat-delta{
+  display:inline-flex;align-items:center;gap:.28rem;
+  margin-top:.5rem;font-size:.72rem;font-weight:700;
+  letter-spacing:.02em;padding:.15rem .45rem;border-radius:999px;
+}
+.stat-delta.up{color:var(--success);background:var(--success-soft)}
+.stat-delta.down{color:var(--danger);background:var(--danger-soft)}
+.stat-delta.flat{color:var(--ink-muted);background:rgba(255,255,255,.04)}
+.stat-delta svg{width:.72rem;height:.72rem}
+
+/* ── Donut ─────────────────────────────────────────────── */
+.donut-wrap{
+  display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;
+}
+.donut-total{
+  fill:var(--ink-strong);font-family:var(--od-display);
+  font-size:1.65rem;font-weight:600;letter-spacing:-.02em;
+}
+.donut-caption{
+  fill:var(--ink-faint);font-size:.62rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+.donut-legend{list-style:none;display:flex;flex-direction:column;gap:.55rem;min-width:9rem}
+.donut-legend li{display:flex;align-items:center;gap:.55rem;font-size:.88rem;color:var(--ink)}
+.donut-legend .dot{width:.55rem;height:.55rem;border-radius:50%;flex-shrink:0}
+.donut-legend .label{flex:1;color:var(--ink-muted);font-weight:500}
+.donut-legend .value{font-weight:700;color:var(--ink-strong);font-feature-settings:"tnum"}
+
+/* ── Conversion bar ────────────────────────────────────── */
+.conversion{display:flex;flex-direction:column;gap:1.1rem}
+.conversion-track{
+  display:flex;height:2.35rem;border-radius:999px;overflow:hidden;
+  background:var(--surface-soft);border:1px solid var(--line-soft);
+}
+.conversion-segment{
+  display:flex;align-items:center;justify-content:center;
+  color:#0a0b11;font-size:.72rem;font-weight:800;
+  letter-spacing:.02em;transition:width .5s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.conversion-segment + .conversion-segment{box-shadow:inset 1px 0 0 rgba(0,0,0,.15)}
+.conversion-legend{list-style:none;display:flex;gap:1.5rem;flex-wrap:wrap}
+.conversion-legend li{display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+.conversion-legend .dot{width:.55rem;height:.55rem;border-radius:50%}
+.conversion-legend .label{color:var(--ink-muted);font-weight:500}
+.conversion-legend .value{color:var(--ink-strong);font-weight:700}
+
+/* ── RevenueCurve ──────────────────────────────────────── */
+.curve-wrap{position:relative;width:100%}
+.curve{display:block;overflow:visible}
+.curve-grid{stroke:var(--line-soft);stroke-dasharray:2 6;stroke-width:1}
+.curve-axis-line{stroke:var(--line);stroke-width:1}
+.curve-axis{
+  fill:var(--ink-faint);font-size:.66rem;font-weight:600;
+  letter-spacing:.02em;font-feature-settings:"tnum";
+}
+.curve-xlabel{
+  fill:var(--ink-faint);font-size:.72rem;font-weight:600;
+  text-transform:capitalize;transition:fill .15s;
+}
+.curve-xlabel.active{fill:var(--ink-strong)}
+.curve-guide{stroke:var(--blue-line);stroke-width:1;stroke-dasharray:3 4}
+.curve-peak{filter:drop-shadow(0 0 8px rgba(89,209,193,.55))}
+.curve-tooltip{
+  position:absolute;transform:translate(-50%,calc(-100% - 14px));
+  background:var(--ink-strong);color:#12121a;
+  padding:.55rem .75rem;border-radius:8px;pointer-events:none;
+  box-shadow:var(--sh-md);white-space:nowrap;
+  display:flex;flex-direction:column;gap:.1rem;
+  animation:fadeUp .15s ease;
+}
+.curve-tooltip::after{
+  content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);
+  width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:5px solid var(--ink-strong);
+}
+.curve-tooltip strong{font-size:.92rem;font-weight:700;letter-spacing:-.01em}
+.curve-tooltip span{font-size:.72rem;color:rgba(18,18,26,.7);font-weight:600}
+
+/* ── Chart grid: two-column layout for donut + conversion ─ */
+.chart-duo{
+  display:grid;grid-template-columns:1fr;gap:1.15rem;margin-bottom:1.15rem;
+}
+@media(min-width:900px){.chart-duo{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}}
+
+/* ── Staggered reveal for panels ───────────────────────── */
+.market-panel,.chart-duo > *{animation:fadeUp .4s ease both}
+.market-panel:nth-of-type(2){animation-delay:.05s}
+.market-panel:nth-of-type(3){animation-delay:.1s}
+
+/* ── Editorial refinement on panel headings ────────────── */
+.market-panel-heading h2{position:relative;padding-left:.85rem}
+.market-panel-heading h2::before{
+  content:"";position:absolute;left:0;top:.32em;bottom:.32em;width:2px;
+  background:linear-gradient(180deg,var(--blue),var(--orange));
+  border-radius:2px;
+}
+.market-chart-legend i{
+  box-shadow:0 0 0 3px rgba(89,209,193,.15);
+}
+
+/* ── Responsive polish ─────────────────────────────────── */
+@media(max-width:560px){
+  .donut-wrap{justify-content:center}
+  .donut-legend{min-width:0;width:100%}
+  .conversion-legend{gap:1rem}
+  .curve-tooltip{font-size:.85rem}
+}

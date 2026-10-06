@@ -6,6 +6,10 @@ import Head from "next/head";
 import Image from "next/image";
 import { ensureAuthSession } from "@/lib/clientAuthSession";
 
+/* ═══════════════════════════════════════════════════════════════════════
+   INTERFACES
+   ═══════════════════════════════════════════════════════════════════════ */
+
 interface User {
   id: string;
   email: string;
@@ -196,6 +200,444 @@ function authHeaders(json = true): HeadersInit {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CHART PRIMITIVES — SVG pur, zéro dépendance externe
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Compteur animé : easing cubic-out jusqu'à la valeur cible. */
+function useCountUp(target: number, duration = 900): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(target * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+/** Observe la largeur réelle d'un conteneur (pour les SVG responsive). */
+function useContainerWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setWidth(Math.round(entry.contentRect.width));
+    });
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
+
+/** Catmull-Rom → cubic bezier : courbe lisse passant par chaque point. */
+function smoothPath(points: Array<[number, number]>, tension = 1): string {
+  if (points.length < 2) return "";
+  let d = `M ${points[0][0]} ${points[0][1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const c1x = p1[0] + ((p2[0] - p0[0]) / 6) * tension;
+    const c1y = p1[1] + ((p2[1] - p0[1]) / 6) * tension;
+    const c2x = p2[0] - ((p3[0] - p1[0]) / 6) * tension;
+    const c2y = p2[1] - ((p3[1] - p1[1]) / 6) * tension;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
+
+/** Sparkline : mini-courbe avec remplissage dégradé pour les KPI. */
+function Sparkline({
+  values,
+  width = 130,
+  height = 34,
+  stroke = "var(--orange)",
+  fill = true,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+  stroke?: string;
+  fill?: boolean;
+}) {
+  const id = useMemo(() => `spark-${Math.random().toString(36).slice(2, 8)}`, []);
+  const path = useMemo(() => {
+    if (values.length < 2) return "";
+    const max = Math.max(...values);
+    const min = Math.min(...values, 0);
+    const range = max - min || 1;
+    const stepX = width / (values.length - 1);
+    const pts = values.map(
+      (v, i) => [i * stepX, height - ((v - min) / range) * height] as [number, number],
+    );
+    return smoothPath(pts);
+  }, [values, width, height]);
+
+  if (!path) return null;
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      aria-hidden="true"
+      className="sparkline"
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {fill && (
+        <path d={`${path} L ${width} ${height} L 0 ${height} Z`} fill={`url(#${id})`} stroke="none" />
+      )}
+      <path
+        d={path}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Donut : répartition proportionnelle avec légende et total centré. */
+function Donut({
+  segments,
+  size = 176,
+  thickness = 16,
+}: {
+  segments: Array<{ label: string; value: number; color: string }>;
+  size?: number;
+  thickness?: number;
+}) {
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  const radius = (size - thickness) / 2;
+  const c = size / 2;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="donut-wrap">
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="donut" role="img">
+        <circle cx={c} cy={c} r={radius} fill="none" stroke="var(--line-soft)" strokeWidth={thickness} />
+        {total > 0 &&
+          segments.map((seg) => {
+            if (!seg.value) return null;
+            const len = (seg.value / total) * circumference;
+            const el = (
+              <circle
+                key={seg.label}
+                cx={c}
+                cy={c}
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={thickness}
+                strokeDasharray={`${len} ${circumference - len}`}
+                strokeDashoffset={-offset}
+                transform={`rotate(-90 ${c} ${c})`}
+                strokeLinecap="butt"
+              />
+            );
+            offset += len;
+            return el;
+          })}
+        <text x={c} y={c - 2} textAnchor="middle" className="donut-total">
+          {total}
+        </text>
+        <text x={c} y={c + 18} textAnchor="middle" className="donut-caption">
+          transactions
+        </text>
+      </svg>
+      <ul className="donut-legend">
+        {segments.map((seg) => (
+          <li key={seg.label}>
+            <span className="dot" style={{ background: seg.color }} />
+            <span className="label">{seg.label}</span>
+            <span className="value">{seg.value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Barre de conversion : un tunnel horizontale empilée. */
+function ConversionBar({
+  segments,
+}: {
+  segments: Array<{ label: string; value: number; color: string }>;
+}) {
+  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
+  return (
+    <div className="conversion">
+      <div className="conversion-track">
+        {segments.map((seg) => (
+          <div
+            key={seg.label}
+            className="conversion-segment"
+            style={{ width: `${(seg.value / total) * 100}%`, background: seg.color }}
+            title={`${seg.label} · ${seg.value}`}
+          >
+            {seg.value / total > 0.09 && <span>{((seg.value / total) * 100).toFixed(0)}%</span>}
+          </div>
+        ))}
+      </div>
+      <ul className="conversion-legend">
+        {segments.map((seg) => (
+          <li key={seg.label}>
+            <span className="dot" style={{ background: seg.color }} />
+            <span className="label">{seg.label}</span>
+            <span className="value">{seg.value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Courbe de CA avec grille, gradient, pic surligné et tooltip au survol. */
+function RevenueCurve({
+  points,
+  height = 240,
+}: {
+  points: Array<{ label: string; year: number; value: number; count: number }>;
+  height?: number;
+}) {
+  const [ref, width] = useContainerWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+
+  const padL = 44;
+  const padR = 16;
+  const padT = 22;
+  const padB = 36;
+  const innerW = Math.max(width - padL - padR, 10);
+  const innerH = height - padT - padB;
+
+  const maxVal = Math.max(...points.map((p) => p.value), 1);
+  const niceMax = useMemo(() => {
+    const mag = Math.pow(10, Math.floor(Math.log10(maxVal)));
+    const norm = maxVal / mag;
+    const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    return step * mag;
+  }, [maxVal]);
+
+  const coords = useMemo(
+    () =>
+      points.map((p, i) => {
+        const x = padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+        const y = padT + innerH - (p.value / niceMax) * innerH;
+        return [x, y] as [number, number];
+      }),
+    [points, innerW, innerH, niceMax],
+  );
+
+  const linePath = useMemo(() => smoothPath(coords), [coords]);
+  const areaPath = useMemo(
+    () =>
+      linePath
+        ? `${linePath} L ${coords[coords.length - 1][0]} ${padT + innerH} L ${coords[0][0]} ${
+            padT + innerH
+          } Z`
+        : "",
+    [linePath, coords, innerH],
+  );
+
+  const peakIdx = useMemo(() => {
+    let idx = 0;
+    points.forEach((p, i) => {
+      if (p.value > points[idx].value) idx = i;
+    });
+    return idx;
+  }, [points]);
+
+  const gridLevels = [0.25, 0.5, 0.75, 1].map((r) => ({
+    r,
+    y: padT + innerH - r * innerH,
+    v: niceMax * r,
+  }));
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!width) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    let nearest = 0;
+    let best = Infinity;
+    coords.forEach(([cx], i) => {
+      const d = Math.abs(cx - x);
+      if (d < best) {
+        best = d;
+        nearest = i;
+      }
+    });
+    setHover(nearest);
+  };
+
+  if (!width) return <div ref={ref} style={{ height }} />;
+
+  const fmt = (n: number) =>
+    `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n)} FCFA`;
+
+  return (
+    <div ref={ref} className="curve-wrap">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+        className="curve"
+      >
+        <defs>
+          <linearGradient id="curve-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--orange)" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="var(--orange)" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="curve-line" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--blue)" />
+            <stop offset="100%" stopColor="var(--orange)" />
+          </linearGradient>
+        </defs>
+
+        {gridLevels.map((g) => (
+          <g key={g.r}>
+            <line x1={padL} x2={width - padR} y1={g.y} y2={g.y} className="curve-grid" />
+            <text x={padL - 8} y={g.y + 4} textAnchor="end" className="curve-axis">
+              {new Intl.NumberFormat("fr-FR", {
+                notation: "compact",
+                maximumFractionDigits: 1,
+              }).format(g.v)}
+            </text>
+          </g>
+        ))}
+        <line
+          x1={padL}
+          x2={width - padR}
+          y1={padT + innerH}
+          y2={padT + innerH}
+          className="curve-axis-line"
+        />
+
+        {areaPath && <path d={areaPath} fill="url(#curve-fill)" />}
+        {linePath && (
+          <path
+            d={linePath}
+            fill="none"
+            stroke="url(#curve-line)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+
+        {coords[peakIdx] && (
+          <circle
+            cx={coords[peakIdx][0]}
+            cy={coords[peakIdx][1]}
+            r="4.5"
+            fill="var(--orange)"
+            className="curve-peak"
+          />
+        )}
+
+        {coords.map(([x], i) => (
+          <text
+            key={i}
+            x={x}
+            y={height - 12}
+            textAnchor="middle"
+            className={`curve-xlabel${hover === i ? " active" : ""}`}
+          >
+            {points[i].label}
+          </text>
+        ))}
+
+        {hover !== null && coords[hover] && (
+          <>
+            <line
+              x1={coords[hover][0]}
+              x2={coords[hover][0]}
+              y1={padT}
+              y2={padT + innerH}
+              className="curve-guide"
+            />
+            <circle
+              cx={coords[hover][0]}
+              cy={coords[hover][1]}
+              r="4"
+              fill="var(--ink-strong)"
+              stroke="var(--mist)"
+              strokeWidth="2"
+            />
+          </>
+        )}
+      </svg>
+
+      {hover !== null && points[hover] && (
+        <div
+          className="curve-tooltip"
+          style={{ left: coords[hover][0], top: coords[hover][1] }}
+        >
+          <strong>{fmt(points[hover].value)}</strong>
+          <span>
+            {points[hover].label} {points[hover].year} · {points[hover].count} transaction
+            {points[hover].count === 1 ? "" : "s"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** KPI animé : nombre qui s'incrémente à l'apparition. */
+function KpiNumber({
+  value,
+  currency = false,
+  color,
+}: {
+  value: number;
+  currency?: boolean;
+  color?: string;
+}) {
+  const animated = useCountUp(value, 900);
+  const display = currency
+    ? `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(animated)} FCFA`
+    : Math.round(animated).toLocaleString("fr-FR");
+  return <div className={`stat-num ${color ?? ""}`}>{display}</div>;
+}
+
+/** Badge de delta vs période précédente. */
+function DeltaBadge({ delta }: { delta: number }) {
+  if (!isFinite(delta) || Math.abs(delta) < 0.05) {
+    return <span className="stat-delta flat">— stable</span>;
+  }
+  const up = delta > 0;
+  return (
+    <span className={`stat-delta ${up ? "up" : "down"}`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        {up ? <polyline points="6 15 12 9 18 15" /> : <polyline points="6 9 12 15 18 9" />}
+      </svg>
+      {Math.abs(delta).toFixed(1)}%
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COMPOSANT PRINCIPAL
+   ═══════════════════════════════════════════════════════════════════════ */
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -642,7 +1084,7 @@ export default function AdminDashboard() {
             ),
         )
       ) {
-        throw new Error("Le serveur a renvoyé une liste d’utilisateurs invalide.");
+        throw new Error("Le serveur a renvoyé une liste d'utilisateurs invalide.");
       }
       setUsers(payload);
     } catch (error) {
@@ -1176,6 +1618,20 @@ export default function AdminDashboard() {
 
   const inscriptionsPending = inscriptions.filter(i => i.status === "liste_attente" || i.status === "demande_en_attente").length;
 
+  /* ─── E-commerce : dérivés pour les charts ─── */
+  const marketDerived = (() => {
+    if (!marketStats) return null;
+    const orders = marketStats.monthly.map((m) => m.orders);
+    const revenues = marketStats.monthly.map((m) => m.confirmedRevenue);
+    const lastRevenue = revenues[revenues.length - 1] ?? 0;
+    const prevRevenue = revenues[revenues.length - 2] ?? 0;
+    const revDelta = prevRevenue > 0 ? ((lastRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+    const lastOrders = orders[orders.length - 1] ?? 0;
+    const prevOrders = orders[orders.length - 2] ?? 0;
+    const ordDelta = prevOrders > 0 ? ((lastOrders - prevOrders) / prevOrders) * 100 : 0;
+    return { orders, revenues, revDelta, ordDelta };
+  })();
+
   return (
     <>
       <Head>
@@ -1260,7 +1716,7 @@ export default function AdminDashboard() {
                   setCompanyPickerSource((source) => source === "sidebar" ? null : "sidebar");
                   if (!odooCompanies.length && !loadingOdooCompanies) void fetchOdooCompanies();
                 }}
-                aria-label={`Basculer d’entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
+                aria-label={`Basculer d'entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
                 aria-expanded={companyPickerSource === "sidebar"}
               >
                 Fi<span>SAFI</span>
@@ -1321,7 +1777,7 @@ export default function AdminDashboard() {
                   setCompanyPickerSource((source) => source === "topbar" ? null : "topbar");
                   if (!odooCompanies.length && !loadingOdooCompanies) void fetchOdooCompanies();
                 }}
-                aria-label={`Basculer d’entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
+                aria-label={`Basculer d'entreprise. Société active : ${selectedCompany?.name ?? "aucune"}`}
                 aria-expanded={companyPickerSource === "topbar"}
               >
                 <span className="mob-mobile-logo" aria-hidden="true">
@@ -1363,7 +1819,7 @@ export default function AdminDashboard() {
                 <div className="admin-eyebrow">Gestion</div>
                 <h1 className="admin-title">Utilisateurs</h1>
                 <p className="admin-sub">
-                  Gérez les comptes, les profils d’usage et les droits d’accès
+                  Gérez les comptes, les profils d'usage et les droits d'accès
                   {selectedCompany ? ` · ${selectedCompany.name}` : ""}
                 </p>
               </div>
@@ -1434,7 +1890,7 @@ export default function AdminDashboard() {
                   ? <div className="empty"><div className="empty-icon">—</div><p className="empty-text">Aucun utilisateur trouvé</p></div>
                   : <div className="table-wrap">
                       <table className="user-management-table">
-                        <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Rôle d’accès</th><th>Module</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Rôle d'accès</th><th>Module</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
                         <tbody>
                           {filteredUsers.map(u => (
                             <tr key={u.id}>
@@ -1815,27 +2271,33 @@ export default function AdminDashboard() {
 
               {selectedCompanyId !== null && loadingMarketStats && !marketStats ? (
                 <div className="empty"><div className="spinner"/></div>
-              ) : marketStats && marketStats.company.id === selectedCompanyId ? (
+              ) : marketStats && marketStats.company.id === selectedCompanyId && marketDerived ? (
                 <>
+                  {/* ── KPI animés avec sparklines et deltas ── */}
                   <div className="stats-row market-stats-grid">
                     <div className="stat-card">
-                      <div className="stat-num blue">{marketStats.period.orders}</div>
-                      <div className="stat-label">Ventes et commandes · 30 jours</div>
+                      <KpiNumber value={marketStats.period.orders} color="blue" />
+                      <div className="stat-label">Ventes &amp; commandes · 30 j</div>
+                      <DeltaBadge delta={marketDerived.ordDelta} />
+                      <Sparkline values={marketDerived.orders} stroke="var(--blue)" />
                     </div>
                     <div className="stat-card">
-                      <div className="stat-num green">{formatMarketCurrency(marketStats.period.confirmedRevenue)}</div>
-                      <div className="stat-label">Ventes confirmées · 30 jours</div>
+                      <KpiNumber value={marketStats.period.confirmedRevenue} currency color="green" />
+                      <div className="stat-label">CA confirmé · 30 j</div>
+                      <DeltaBadge delta={marketDerived.revDelta} />
+                      <Sparkline values={marketDerived.revenues} stroke="var(--orange)" />
                     </div>
                     <div className="stat-card">
-                      <div className="stat-num orange">{marketStats.period.pendingOrders}</div>
+                      <KpiNumber value={marketStats.period.pendingOrders} color="orange" />
                       <div className="stat-label">En attente</div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-num">{marketStats.period.customers}</div>
-                      <div className="stat-label">Clients · 30 jours</div>
+                      <KpiNumber value={marketStats.period.customers} />
+                      <div className="stat-label">Clients · 30 j</div>
                     </div>
                   </div>
 
+                  {/* ── Cartes secondaires ── */}
                   <div className="market-stats-secondary">
                     <div className="content-card">
                       <span className="market-secondary-label">Taux de confirmation · 30 jours</span>
@@ -1853,36 +2315,69 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* ── Duo : donut + barre de conversion ── */}
+                  <div className="chart-duo">
+                    <div className="market-panel">
+                      <div className="market-panel-heading">
+                        <div>
+                          <h2>Répartition des transactions</h2>
+                          <p>{marketStats.company.name} · 30 derniers jours</p>
+                        </div>
+                      </div>
+                      <Donut
+                        segments={[
+                          { label: "Confirmées", value: marketStats.period.confirmedOrders, color: "var(--success)" },
+                          { label: "En attente", value: marketStats.period.pendingOrders, color: "var(--warning)" },
+                          { label: "Annulées", value: marketStats.period.canceledOrders, color: "var(--danger)" },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="market-panel">
+                      <div className="market-panel-heading">
+                        <div>
+                          <h2>Tunnel de conversion</h2>
+                          <p>{marketStats.period.orders} transactions sur la période</p>
+                        </div>
+                      </div>
+                      <ConversionBar
+                        segments={[
+                          { label: "Confirmées", value: marketStats.period.confirmedOrders, color: "var(--success)" },
+                          { label: "En attente", value: marketStats.period.pendingOrders, color: "var(--warning)" },
+                          { label: "Annulées", value: marketStats.period.canceledOrders, color: "var(--danger)" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ── Courbe de CA mensuelle ── */}
                   <section className="market-panel" aria-labelledby="market-monthly-title">
                     <div className="market-panel-heading">
                       <div>
                         <h2 id="market-monthly-title">Ventes confirmées</h2>
                         <p>{marketStats.company.name} · six derniers mois</p>
                       </div>
-                      <span className="market-chart-legend"><i/> Chiffre d’affaires</span>
+                      <span className="market-chart-legend"><i/> Chiffre d'affaires</span>
                     </div>
                     {marketStats.monthly.some((month) => month.orders > 0) ? (
-                      <div className="market-chart">
-                        {marketStats.monthly.map((month) => {
-                          const maxRevenue = Math.max(...marketStats.monthly.map((item) => item.confirmedRevenue), 0);
-                          const height = maxRevenue > 0 ? Math.max((month.confirmedRevenue / maxRevenue) * 100, month.confirmedRevenue > 0 ? 6 : 0) : 0;
-                          return (
-                            <div className="market-chart-column" key={`${month.year}-${month.month}`}>
-                              <span className="market-chart-value">{formatMarketCurrency(month.confirmedRevenue)}</span>
-                              <div className="market-chart-track" aria-label={`${month.orders} transaction${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
-                                <div className="market-chart-bar" style={{ height: `${height}%` }}/>
-                              </div>
-                              <span className="market-chart-label">{month.label} {month.year}</span>
-                              <span className="market-chart-count">{month.orders} transaction{month.orders === 1 ? "" : "s"}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <RevenueCurve
+                        points={marketStats.monthly.map((m) => ({
+                          label: m.label,
+                          year: m.year,
+                          value: m.confirmedRevenue,
+                          count: m.orders,
+                        }))}
+                      />
                     ) : (
-                      <div className="empty"><p className="empty-text">Aucune vente ni commande sur les six derniers mois pour {marketStats.company.name}.</p></div>
+                      <div className="empty">
+                        <p className="empty-text">
+                          Aucune vente ni commande sur les six derniers mois pour {marketStats.company.name}.
+                        </p>
+                      </div>
                     )}
                   </section>
 
+                  {/* ── Historique complet ── */}
                   <section className="market-panel" aria-labelledby="market-recent-title">
                     <div className="market-panel-heading">
                       <div>
@@ -2196,7 +2691,7 @@ export default function AdminDashboard() {
               </select>
             </div>
             <fieldset className="form-group user-profiles-fieldset">
-              <legend className="form-label">Profils d’usage</legend>
+              <legend className="form-label">Profils d'usage</legend>
               {(["MARKET_CUSTOMER", "TRAINING_PARTICIPANT"] as const).map((profile) => (
                 <label className="user-profile-choice" key={profile}>
                   <input
@@ -2212,7 +2707,7 @@ export default function AdminDashboard() {
                   <span>{getUserProfileLabel(profile)}</span>
                 </label>
               ))}
-              <small>Ces profils décrivent les services utilisés ; ils ne donnent pas de droits d’accès administrateur.</small>
+              <small>Ces profils décrivent les services utilisés ; ils ne donnent pas de droits d'accès administrateur.</small>
             </fieldset>
             {modalMode === "add" && (
               <div className="form-group">
