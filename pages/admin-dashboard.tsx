@@ -1111,7 +1111,7 @@ export default function AdminDashboard() {
   };
 
   if (loading || !currentUser) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "#f6f5f7" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "var(--mist, #10111a)" }}>
       <div className="spinner" />
     </div>
   );
@@ -1181,7 +1181,7 @@ export default function AdminDashboard() {
       <Head>
         <title>Admin Dashboard — FiSAFi Groupe</title>
         <meta name="robots" content="noindex" />
-        <meta name="color-scheme" content="light" />
+        <meta name="color-scheme" content="dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -1433,7 +1433,7 @@ export default function AdminDashboard() {
                 {filteredUsers.length === 0
                   ? <div className="empty"><div className="empty-icon">—</div><p className="empty-text">Aucun utilisateur trouvé</p></div>
                   : <div className="table-wrap">
-                      <table>
+                      <table className="user-management-table">
                         <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Rôle d’accès</th><th>Module</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
                         <tbody>
                           {filteredUsers.map(u => (
@@ -1441,11 +1441,11 @@ export default function AdminDashboard() {
                               <td style={{ fontWeight:600 }}>{u.firstName} {u.lastName}</td>
                               <td>{u.email}</td>
                               <td>{u.phone || "Non renseigné"}</td>
-                              <td>
+                              <td className="user-role-cell">
                                 <span className={`badge badge-${u.role}`}>{u.role}</span>
                                 {u.employeeRole && <span className="badge badge-admin">{u.employeeRole}</span>}
                               </td>
-                              <td>
+                              <td className="user-module-cell">
                                 {u.profiles.length
                                   ? u.profiles.map((profile) => (
                                       <span className="badge badge-user" key={profile}>{getUserProfileLabel(profile)}</span>
