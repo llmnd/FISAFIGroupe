@@ -906,7 +906,7 @@ export default function DashboardPage() {
         if (freshUser.role === "admin") {
           setRedirectingAdmin(true);
           localStorage.setItem("user", JSON.stringify(freshUser));
-          window.location.replace("/admin-dashboard");
+          await router.replace("/admin-dashboard");
           return;
         }
 

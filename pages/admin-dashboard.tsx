@@ -1204,49 +1204,49 @@ export default function AdminDashboard() {
       )}
 
       {/* Mobile menu */}
-      <nav
-        id="admin-mobile-navigation"
-        className={`mob-menu${navOpen ? " open" : ""}`}
-        aria-label="Navigation mobile"
-        aria-hidden={!navOpen}
-      >
-        <div className="mob-menu-user">
-          <div className="mob-menu-avatar">{initials}</div>
-          <div>
-            <div className="mob-menu-name">{currentUser.firstName} {currentUser.lastName}</div>
-            <div className="mob-menu-email">{currentUser.email}</div>
+      {navOpen && (
+        <nav
+          id="admin-mobile-navigation"
+          className="mob-menu open"
+          aria-label="Navigation mobile"
+        >
+          <div className="mob-menu-user">
+            <div className="mob-menu-avatar">{initials}</div>
+            <div>
+              <div className="mob-menu-name">{currentUser.firstName} {currentUser.lastName}</div>
+              <div className="mob-menu-email">{currentUser.email}</div>
+            </div>
           </div>
-        </div>
-        <div className="mob-nav-section">
-          <span className="mob-nav-section-label">Navigation</span>
-          <a href="/" className="mob-nav-link">
-            <span>Accueil du site</span>
-            <span aria-hidden="true">↗</span>
-          </a>
-          {adminTabs.map(tab => (
-            <button
-              type="button"
-              key={tab}
-              className={`mob-nav-link${activeTab === tab ? " active" : ""}`}
-              aria-current={activeTab === tab ? "page" : undefined}
-              onClick={() => {
-                handleSetActiveTab(tab);
-                mobileMenuButtonRef.current?.focus({ preventScroll: true });
-              }}
-            >
-              <span>{getTabLabel(tab, selectedCompany?.type)}</span>
-              {tab === "users" && users.length > 0 && <span className="mob-nav-badge">{users.length}</span>}
-              {tab === "inscriptions" && inscriptionsPending > 0 && <span className="mob-nav-badge">{inscriptionsPending}</span>}
-            </button>
-          ))}
-          <a href="/espace-employe" className="mob-nav-link">
-            <span>Espace employé</span>
-            <span aria-hidden="true">→</span>
-          </a>
-          <a href="/dashboard" className="mob-nav-link"><span>Retour Dashboard</span></a>
-        </div>
-        <button className="mob-nav-link mob-logout" onClick={handleLogout}>Déconnexion</button>
-      </nav>
+          <div className="mob-nav-section">
+            <span className="mob-nav-section-label">Navigation</span>
+            <a href="/" className="mob-nav-link">
+              <span>Accueil du site</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+            {adminTabs.map(tab => (
+              <button
+                type="button"
+                key={tab}
+                className={`mob-nav-link${activeTab === tab ? " active" : ""}`}
+                aria-current={activeTab === tab ? "page" : undefined}
+                onClick={() => {
+                  handleSetActiveTab(tab);
+                  mobileMenuButtonRef.current?.focus({ preventScroll: true });
+                }}
+              >
+                <span>{getTabLabel(tab, selectedCompany?.type)}</span>
+                {tab === "users" && users.length > 0 && <span className="mob-nav-badge">{users.length}</span>}
+                {tab === "inscriptions" && inscriptionsPending > 0 && <span className="mob-nav-badge">{inscriptionsPending}</span>}
+              </button>
+            ))}
+            <a href="/espace-employe" className="mob-nav-link">
+              <span>Espace employé</span>
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+          <button className="mob-nav-link mob-logout" onClick={handleLogout}>Déconnexion</button>
+        </nav>
+      )}
 
       <div className="admin-layout">
         {/* Sidebar desktop */}

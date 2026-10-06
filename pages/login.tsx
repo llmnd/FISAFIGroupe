@@ -436,8 +436,13 @@ export default function LoginPage() {
         typeof userData.employeeRole === "string" ? userData.employeeRole : null;
       localStorage.setItem("user", JSON.stringify(userData));
       setSuccess(isLogin ? "Connexion réussie !" : "Compte créé avec succès !");
+      const destination = getPostLoginPath(role, employeeRole);
+      if (role === "admin") {
+        await router.replace(destination);
+        return;
+      }
       redirectTimerRef.current = window.setTimeout(
-        () => void router.push(getPostLoginPath(role, employeeRole)),
+        () => void router.replace(destination),
         1200,
       );
     } catch (requestError) {

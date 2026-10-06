@@ -288,12 +288,9 @@ body.portal-has-admin textarea{font-family:inherit}
   display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   padding-bottom:env(safe-area-inset-bottom);
-  opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity .16s ease,visibility 0s linear .16s;
 }
 .mob-menu.open{
-  opacity:1;visibility:visible;pointer-events:auto;box-shadow:var(--sh-lg);
-  transition:opacity .16s ease,visibility 0s;
+  box-shadow:var(--sh-lg);
 }
 .mob-menu-user{display:flex;flex:0 0 auto;align-items:center;gap:.9rem;padding:1.4rem 1.5rem;border-bottom:1px solid var(--line)}
 .mob-menu-avatar{width:2.8rem;height:2.8rem;font-size:.95rem;background:var(--blue)}
