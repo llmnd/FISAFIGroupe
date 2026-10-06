@@ -902,12 +902,11 @@ export default function DashboardPage() {
           throw new Error("Session validation returned invalid account data.");
         }
 
-        // Admin : on redirige SANS monter le dashboard (évite le flash
-        // « Bonjour Admin » avant que router.replace ne change de page).
+        // Admin : quitter complètement le dashboard évite de conserver son état mobile.
         if (freshUser.role === "admin") {
           setRedirectingAdmin(true);
           localStorage.setItem("user", JSON.stringify(freshUser));
-          router.replace("/admin-dashboard");
+          window.location.replace("/admin-dashboard");
           return;
         }
 
@@ -1372,8 +1371,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Skeleton tant qu'on charge OU tant qu'un admin est en cours de redirection.
-  // Bloque le flash « Bonjour Admin » avant router.replace("/admin-dashboard").
+  // Skeleton tant qu'on charge OU tant qu'un admin quitte cette page.
   if (loading || redirectingAdmin) return <UserDashboardSkeleton />;
 
   if (!user) {
