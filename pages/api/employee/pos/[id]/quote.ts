@@ -79,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof OdooApiError) {
       console.error("[Employee/POS] Could not price cart:", error);
       return res.status(error.statusCode).json({
-        error: "Le prix de cette vente n’a pas pu être confirmé par Odoo.",
+        error: "Le prix de cette vente n’a pas pu être confirmé.",
       });
     }
     console.error("[Employee/POS] Unexpected cart-pricing error:", error);

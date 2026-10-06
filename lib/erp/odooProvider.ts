@@ -515,7 +515,7 @@ export class OdooERPProvider implements ERPProvider {
     }
     if (typeof rawTotalCount !== "number" || !Number.isSafeInteger(rawTotalCount) || rawTotalCount < 0) {
       console.error("[ERP/Odoo] Product catalog count response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé un nombre de produits invalide.");
+      throw new OdooApiError("FiSAFi a renvoyé un nombre de produits invalide.");
     }
 
     const products = payload.slice(0, limit).map((product) => {
@@ -851,7 +851,7 @@ export class OdooERPProvider implements ERPProvider {
       quantPayload.length > 10_000 ||
       !quantPayload.every(isOdooStockQuant)
     ) {
-      throw new OdooApiError("Odoo a renvoyé des niveaux de stock invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des niveaux de stock invalides.");
     }
     const stockByVariant = new Map<number, number>();
     for (const quant of quantPayload as OdooStockQuant[]) {
@@ -993,7 +993,7 @@ export class OdooERPProvider implements ERPProvider {
       limit: 2,
     });
     if (!Array.isArray(matchingPayload) || !matchingPayload.every(isPOSSessionDetails)) {
-      throw new OdooApiError("Odoo a renvoyé une session d’ouverture invalide.");
+      throw new OdooApiError("FiSAFi a renvoyé une session d’ouverture invalide.");
     }
     if (matchingPayload.length > 1) {
       throw operationError("Plusieurs sessions correspondent à cette demande. Contactez un administrateur.");
@@ -1022,7 +1022,7 @@ export class OdooERPProvider implements ERPProvider {
         typeof opened.opening_notes !== "string" ||
         !opened.opening_notes.includes(ownerMarker)
       ) {
-        throw new OdooApiError("Odoo n’a pas confirmé l’ouverture de la caisse.");
+        throw new OdooApiError("FiSAFi n’a pas confirmé l’ouverture de la caisse.");
       }
       return sessionResult(opened);
     }
@@ -1039,7 +1039,7 @@ export class OdooERPProvider implements ERPProvider {
     });
     const openedConfig = await this.getPOSConfig(configId);
     if (openedConfig.current_session_id === false) {
-      throw new OdooApiError("Odoo n’a pas créé de session de caisse.");
+      throw new OdooApiError("FiSAFi n’a pas créé de session de caisse.");
     }
     const session = await this.getPOSSession(openedConfig.current_session_id[0]);
     if (
@@ -1063,7 +1063,7 @@ export class OdooERPProvider implements ERPProvider {
       typeof verified.opening_notes !== "string" ||
       !verified.opening_notes.includes(openMarker)
     ) {
-      throw new OdooApiError("Odoo n’a pas confirmé l’ouverture de la caisse.");
+      throw new OdooApiError("FiSAFi n’a pas confirmé l’ouverture de la caisse.");
     }
     return sessionResult(verified);
   }
@@ -1083,7 +1083,7 @@ export class OdooERPProvider implements ERPProvider {
     }
     if (config.cash_rounding) {
       throw operationError(
-        "L’arrondi de caisse Odoo est activé. Il doit être pris en charge avant l’encaissement dans FiSAFi.",
+        "L’arrondi de caisse est activé. Il doit être pris en charge avant l’encaissement.",
       );
     }
     const { methods } = await this.getSessionPaymentMethods(session);
@@ -1151,7 +1151,7 @@ export class OdooERPProvider implements ERPProvider {
       );
     }
     if (config.company_id === false) {
-      throw operationError("La société Odoo de cette caisse n’a pas pu être vérifiée.");
+      throw operationError("La société FiSAFi de cette caisse n’a pas pu être vérifiée.");
     }
     const companyPayload: unknown = await callOdoo("res.company", "search_read", {
       domain: [["id", "=", config.company_id[0]]],
@@ -1413,7 +1413,7 @@ export class OdooERPProvider implements ERPProvider {
         limit: 2,
       });
       if (!Array.isArray(payload) || !payload.every(isPOSOrder)) {
-        throw new OdooApiError("Odoo a renvoyé une vente POS invalide.");
+        throw new OdooApiError("FiSAFi a renvoyé une vente invalide.");
       }
       if (payload.length > 1) {
         throw operationError("La clé de vente est associée à plusieurs commandes.");
@@ -1496,7 +1496,7 @@ export class OdooERPProvider implements ERPProvider {
 
     const created = await readExistingOrder();
     if (!created) {
-      throw new OdooApiError("Odoo n’a pas confirmé l’enregistrement de la vente.");
+      throw new OdooApiError("FiSAFi n’a pas confirmé l’enregistrement de la vente.");
     }
     return this.resultFromExistingOrder(created, orderMarker, sessionId, amountReceived);
   }
@@ -1601,7 +1601,7 @@ export class OdooERPProvider implements ERPProvider {
       !paymentsPayload.every(isPOSPayment) ||
       paymentsPayload.length !== paymentIds.length
     ) {
-      throw new OdooApiError("Odoo n’a pas renvoyé les paiements de caisse attendus.");
+      throw new OdooApiError("FiSAFi n’a pas renvoyé les paiements de caisse attendus.");
     }
 
     const bankExpected = new Map<number, number>();
@@ -1738,7 +1738,7 @@ export class OdooERPProvider implements ERPProvider {
           !("successful" in cashResult) ||
           cashResult.successful !== true
         ) {
-          throw operationError("Odoo a refusé le comptage de caisse. Vérifiez les commandes en attente.");
+          throw operationError("FiSAFi a refusé le comptage de caisse. Vérifiez les commandes en attente.");
         }
       }
       await callOdoo("pos.session", "update_closing_control_state_session", {
@@ -1760,12 +1760,12 @@ export class OdooERPProvider implements ERPProvider {
       closeResult.successful !== true
     ) {
       throw operationError(
-        "Odoo n’a pas clôturé la caisse. Des commandes, écarts ou contrôles restent à traiter dans Odoo.",
+        "FiSAFi n’a pas clôturé la caisse. Des commandes, écarts ou contrôles restent à traiter.",
       );
     }
     const closed = await this.getPOSSession(sessionId);
     if (closed.state !== "closed" || closed.closing_notes !== closingMarker) {
-      throw new OdooApiError("Odoo n’a pas confirmé la clôture de la caisse.");
+      throw new OdooApiError("FiSAFi n’a pas confirmé la clôture de la caisse.");
     }
     return sessionResult(closed);
   }

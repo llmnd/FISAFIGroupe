@@ -659,7 +659,7 @@ export default function AdminDashboard() {
         localStorage.setItem("adminOdooCompanyId", String(defaultCompany.id));
       }
     } catch (error) {
-      console.error("[Admin/Odoo] Could not load companies:", error);
+      console.error("[Admin/FiSAFi] Could not load companies:", error);
       setOdooCompaniesError(
         error instanceof Error ? error.message : "Impossible de charger les sociétés.",
       );
@@ -737,7 +737,7 @@ export default function AdminDashboard() {
       }
       const receipt = await response.blob();
       if (receipt.type.split(";")[0] !== "text/html" || receipt.size < 20) {
-        throw new Error("Odoo n’a pas renvoyé un reçu valide.");
+        throw new Error("Le reçu reçu est invalide.");
       }
       const fileName = `recu-${(transaction.receiptNumber || transaction.reference)
         .replace(/[^a-zA-Z0-9._-]/g, "_")
@@ -1061,7 +1061,7 @@ export default function AdminDashboard() {
     try {
       await persistEmployeeCompany(company.id);
     } catch (error) {
-      console.error("[Admin/Odoo] Could not persist the employee company context:", error);
+      console.error("[Admin/FiSAFi] Could not persist the employee company context:", error);
       setOdooCompaniesError(
         error instanceof Error ? error.message : "Impossible de sélectionner cette société.",
       );
@@ -1842,7 +1842,7 @@ export default function AdminDashboard() {
                                 <th scope="col">Total</th>
                                 <th scope="col">Statut</th>
                                 <th scope="col">Facture</th>
-                                <th scope="col">Reçu Odoo</th>
+                                <th scope="col">Reçu FiSAFi</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1873,7 +1873,7 @@ export default function AdminDashboard() {
                                         type="button"
                                         className="market-receipt-download"
                                         onClick={() => void downloadPosReceipt(transaction)}
-                                        title="Reçu natif Odoo au format HTML, imprimable ou enregistrable en PDF depuis le navigateur."
+                                        title="Reçu FiSAFi au format HTML, imprimable ou enregistrable en PDF depuis le navigateur."
                                         disabled={
                                           receiptDownloadId === transaction.id ||
                                           transaction.state === "draft" ||

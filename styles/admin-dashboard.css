@@ -1,6 +1,6 @@
 /* ============================================================
    FiSAFi — Admin Dashboard
-   Palette Odoo (violet #714B67 / teal #017e84), clair uniquement.
+   Palette FiSAFi (violet #714B67 / teal #017e84), clair uniquement.
    Typographie forte et fluide : tout est en rem, et la taille de
    base grandit avec l'écran (15px mobile → 19px grands écrans).
    Chargée statiquement, scopée à .admin-layout
@@ -30,14 +30,14 @@ html.portal-has-admin {
   --steel:#4b5563;
   --steel-light:#7b838f;
 
-  /* Violet Odoo */
+  /* Violet FiSAFi */
   --blue:#714B67;
   --blue-deep:#5b3a53;
   --blue-hover:#63425a;
   --blue-soft:rgba(113,75,103,.08);
   --blue-line:rgba(113,75,103,.22);
 
-  /* Teal Odoo */
+  /* Teal FiSAFi */
   --orange:#017e84;
   --orange-light:#1a9aa0;
 

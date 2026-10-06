@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof OdooApiError) {
       console.error("[Employee/POS] Could not open session:", error);
       return res.status(error.statusCode).json({
-        error: "Odoo n’a pas pu ouvrir la caisse. Vérifiez l’état de la session avant de réessayer.",
+        error: "La caisse n’a pas pu être ouverte. Vérifiez l’état de la session avant de réessayer.",
       });
     }
     console.error("[Employee/POS] Unexpected session-opening error:", error);

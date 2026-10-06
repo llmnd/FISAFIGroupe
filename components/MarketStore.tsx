@@ -1,5 +1,8 @@
 import { memo, useEffect, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent } from "react";
+import type { CSSProperties, PointerEvent, TouchEvent } from "react";
+
+const STORE_SLIDE_DURATION_MS = 7_000;
+const STORE_SLIDE_COUNT = 2;
 
 const LINES = [
   "Salam ! Bienvenue chez FiSAFi.",
@@ -103,24 +106,44 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
   const [line, setLine] = useState(0);
   const [customerPass, setCustomerPass] = useState(0);
   const [aisleIndex, setAisleIndex] = useState(0);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const activeAisle = STORE_AISLES[aisleIndex];
   const room = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateReducedMotion = () => setReducedMotion(mediaQuery.matches);
+    updateReducedMotion();
+    mediaQuery.addEventListener("change", updateReducedMotion);
+    return () => mediaQuery.removeEventListener("change", updateReducedMotion);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) {
       setOpen(true);
       return;
     }
 
     const t = setTimeout(() => setOpen(true), 700);
     return () => clearTimeout(t);
-  }, []);
+  }, [reducedMotion]);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotion) return;
+    const interval = setInterval(
+      () => setActiveSlide((slide) => (slide + 1) % STORE_SLIDE_COUNT),
+      STORE_SLIDE_DURATION_MS,
+    );
+    return () => clearInterval(interval);
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion) return;
     const interval = setInterval(() => setCustomerPass((pass) => pass + 1), 20_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [reducedMotion]);
 
   const move = (e: PointerEvent) => {
     const el = room.current;
@@ -135,12 +158,34 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
     room.current?.style.setProperty("--py", "0");
   };
 
+  const showSlide = (slide: number) => {
+    setActiveSlide((slide + STORE_SLIDE_COUNT) % STORE_SLIDE_COUNT);
+  };
+
+  const handleTouchStart = (event: TouchEvent<HTMLElement>) => {
+    touchStartX.current = event.touches.length === 1 ? event.touches[0].clientX : null;
+  };
+
+  const handleTouchEnd = (event: TouchEvent<HTMLElement>) => {
+    const startX = touchStartX.current;
+    touchStartX.current = null;
+    if (startX === null || event.changedTouches.length !== 1) return;
+
+    const distance = event.changedTouches[0].clientX - startX;
+    if (Math.abs(distance) < 55) return;
+
+    event.preventDefault();
+    showSlide(activeSlide + (distance < 0 ? 1 : -1));
+  };
+
   return (
     <>
     <section
-      className={`store${open ? " has-opened" : ""}`}
+      className={`store${open ? " has-opened" : ""}${activeSlide === 1 ? " is-poster-active" : ""}`}
       onPointerMove={move}
       onPointerLeave={resetPerspective}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       aria-label="Boutique interactive FiSAFi Market"
     >
       <div className="store-room" ref={room}>
@@ -355,6 +400,64 @@ function MarketStore({ isMarketOpen }: { isMarketOpen: boolean }) {
           <em>{isMarketOpen ? "Bienvenue" : "À bientôt"}</em>
           <i />
         </span>
+      </div>
+
+      <article
+        className={`store-school-poster${activeSlide === 1 ? " is-active" : ""}`}
+        aria-hidden={activeSlide !== 1}
+        aria-label="Affiche de rentrée scolaire FiSAFi Market"
+      >
+        <div className="store-school-copy">
+          <span className="store-school-eyebrow">C’EST LA RENTRÉE</span>
+          <h2>La rentrée commence chez FiSAFi Market</h2>
+          <p>
+            Cahiers, stylos et fournitures scolaires : préparez la rentrée avec
+            l’équipe FiSAFi.
+          </p>
+          <a href="#infos-market" tabIndex={activeSlide === 1 ? 0 : -1}>
+            Demander vos fournitures <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <img
+          src="/read.jpg"
+          alt="Un enfant avec son sac à dos qui lit un cahier, entouré de fournitures scolaires"
+          loading="eager"
+          decoding="async"
+        />
+      </article>
+
+      <div className="store-slide-controls" role="group" aria-label="Affiches et boutique">
+        <button
+          type="button"
+          className="store-slide-arrow"
+          onClick={() => showSlide(activeSlide - 1)}
+          aria-label="Afficher le panneau précédent"
+        >
+          <span aria-hidden="true">←</span>
+        </button>
+        <div className="store-slide-pagination">
+          {[0, 1].map((slide) => (
+            <button
+              key={slide}
+              type="button"
+              className={`store-slide-dot${activeSlide === slide ? " is-active" : ""}`}
+              onClick={() => showSlide(slide)}
+              aria-label={slide === 0 ? "Afficher la boutique" : "Afficher l’affiche de rentrée"}
+              aria-current={activeSlide === slide ? "true" : undefined}
+            />
+          ))}
+          <span className="store-slide-status" aria-live="polite" aria-atomic="true">
+            {activeSlide + 1} / {STORE_SLIDE_COUNT}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="store-slide-arrow"
+          onClick={() => showSlide(activeSlide + 1)}
+          aria-label="Afficher le panneau suivant"
+        >
+          <span aria-hidden="true">→</span>
+        </button>
       </div>
 
     </section>

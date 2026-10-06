@@ -269,7 +269,7 @@ async function fetchPostedSalesInvoices(
     )
   ) {
     console.error("[ERP/Odoo] Sales invoice lookup returned an unexpected response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de factures invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de factures invalide.");
   }
   return payload;
 }
@@ -369,7 +369,7 @@ function parseOrder(payload: unknown, requestedId?: number): OdooOrder {
     !isOdooOrder(payload[0]) ||
     (requestedId !== undefined && payload[0].id !== requestedId)
   ) {
-    throw new OdooApiError("Odoo n’a pas renvoyé la commande demandée.");
+    throw new OdooApiError("FiSAFi n’a pas renvoyé la commande demandée.");
   }
   return payload[0];
 }
@@ -410,7 +410,7 @@ async function fetchSalesOrder(id: number, companyId: number): Promise<SalesOrde
     linesPayload.some((line) => line.order_id[0] !== id || !lineIds.includes(line.id))
   ) {
     console.error(`[ERP/Odoo] Sale order ${id} returned invalid order lines.`);
-    throw new OdooApiError("Odoo a renvoyé des lignes de commande invalides.");
+    throw new OdooApiError("FiSAFi a renvoyé des lignes de commande invalides.");
   }
 
   return {
@@ -536,7 +536,7 @@ export async function listSalesOrders(options: {
   });
   if (!Array.isArray(payload) || !payload.every(isOdooOrder)) {
     console.error("[ERP/Odoo] Sales order list returned an unexpected response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de commandes invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de commandes invalide.");
   }
   const hasMore = payload.length > limit;
   const page = payload.slice(0, limit);
@@ -604,7 +604,7 @@ export async function getSalesOrderInvoicePdf(
     throw new OdooApiError("Aucune facture client validée n’est disponible pour cette commande.", 404);
   }
   if (invoice.invoice_pdf_report_id === false) {
-    throw new OdooApiError("La facture est validée dans Odoo, mais son PDF officiel n’a pas encore été généré.", 404);
+    throw new OdooApiError("La facture est validée, mais son PDF officiel n’a pas encore été généré.", 404);
   }
 
   const [attachmentId] = invoice.invoice_pdf_report_id;
@@ -630,13 +630,13 @@ export async function getSalesOrderInvoicePdf(
     attachmentPayload[0].mimetype !== "application/pdf" ||
     typeof attachmentPayload[0].datas !== "string"
   ) {
-    throw new OdooApiError("Le PDF officiel de cette facture n’est pas disponible dans Odoo.", 404);
+    throw new OdooApiError("Le PDF officiel de cette facture n’est pas encore disponible.", 404);
   }
 
   const base64Data = attachmentPayload[0].datas.replace(/\s/g, "");
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64Data)) {
     console.error(`[ERP/Odoo] Invoice ${invoiceId} PDF attachment returned invalid base64 data.`);
-    throw new OdooApiError("Odoo a renvoyé un PDF de facture invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé un PDF de facture invalide.");
   }
   const content = Buffer.from(base64Data, "base64");
   if (
@@ -645,7 +645,7 @@ export async function getSalesOrderInvoicePdf(
     content.subarray(0, 5).toString("ascii") !== "%PDF-"
   ) {
     console.error(`[ERP/Odoo] Invoice ${invoiceId} attachment is not a valid PDF.`);
-    throw new OdooApiError("Odoo a renvoyé un PDF de facture invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé un PDF de facture invalide.");
   }
 
   const safeReference = invoice.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `facture-${invoiceId}`;
@@ -667,7 +667,7 @@ export async function searchSalesCustomers(searchTerm: string, companyId: number
   });
   if (!Array.isArray(payload) || !payload.every(isOdooCustomer)) {
     console.error("[ERP/Odoo] Customer search returned an unexpected response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de clients invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de clients invalide.");
   }
   return payload.map((customer) => ({
     id: customer.id,
@@ -693,7 +693,7 @@ export async function searchSalesProducts(searchTerm: string, companyId: number)
   });
   if (!Array.isArray(variantsPayload) || !variantsPayload.every(isOdooVariant)) {
     console.error("[ERP/Odoo] Sales product search returned an unexpected response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de produits invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de produits invalide.");
   }
   if (variantsPayload.length === 0) return [];
 
@@ -719,7 +719,7 @@ export async function searchSalesProducts(searchTerm: string, companyId: number)
     templatesPayload.some((template) => !templateIds.includes(template.id))
   ) {
     console.error("[ERP/Odoo] Sales product templates returned an unexpected response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de produits invalide.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de produits invalide.");
   }
   const saleableTemplateIds = new Set(templatesPayload.filter((template) => template.sale_ok).map((template) => template.id));
   return variantsPayload
@@ -757,7 +757,7 @@ export async function createSalesOrder(input: SalesOrderInput, companyId: number
       : null;
   if (!orderId) {
     console.error("[ERP/Odoo] Sale order creation returned an unexpected identifier.");
-    throw new OdooApiError("Odoo n’a pas confirmé la création du devis.");
+    throw new OdooApiError("FiSAFi n’a pas confirmé la création du devis.");
   }
   const order = await fetchSalesOrder(orderId, companyId);
   if (order.state !== "draft" && order.state !== "sent") {
@@ -822,7 +822,7 @@ export async function confirmSalesOrder(id: number, companyId: number): Promise<
   const confirmed = await fetchSalesOrder(id, companyId);
   if (confirmed.state !== "sale" && confirmed.state !== "done") {
     console.error(`[ERP/Odoo] Confirmation of sale order ${id} did not change its state.`);
-    throw new OdooApiError("Odoo n’a pas confirmé la commande.");
+    throw new OdooApiError("FiSAFi n’a pas confirmé la commande.");
   }
   return confirmed;
 }

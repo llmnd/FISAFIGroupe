@@ -42,7 +42,7 @@ export async function callOdoo<T>(
     origin = configuredUrl.origin;
   } catch (error) {
     console.error("[Market/Odoo] Invalid Odoo URL configuration:", error);
-    throw new OdooApiError("La configuration du catalogue Odoo est invalide.", 500);
+    throw new OdooApiError("La configuration du catalogue FiSAFi est invalide.", 500);
   }
 
   let response: Response;
@@ -58,7 +58,7 @@ export async function callOdoo<T>(
     });
   } catch (error) {
     console.error(`[Market/Odoo] ${model}/${method} request failed:`, error);
-    throw new OdooApiError(`Impossible de joindre Odoo pendant l’appel ${model}/${method}.`);
+    throw new OdooApiError("Impossible de joindre le service FiSAFi. Réessayez dans quelques instants.");
   }
 
   if (!response.ok) {
@@ -80,12 +80,12 @@ export async function callOdoo<T>(
     );
     if (response.status === 401 || response.status === 403) {
       throw new OdooApiError(
-        `Odoo a refusé l’accès pendant ${model}/${method} (HTTP ${response.status}). Vérifiez les droits du compte associé à la clé API.`,
+        `Le service FiSAFi a refusé l’accès (HTTP ${response.status}). Vérifiez les autorisations de votre compte.`,
       );
     }
     if (response.status === 429) {
       throw new OdooApiError(
-        `Odoo limite actuellement l’appel ${model}/${method} (HTTP 429). Réessayez dans quelques instants.`,
+        "Le service FiSAFi est temporairement très sollicité. Réessayez dans quelques instants.",
         429,
       );
     }
@@ -97,11 +97,11 @@ export async function callOdoo<T>(
     }
     if (response.status === 400 || response.status === 422) {
       throw new OdooApiError(
-        `Odoo a rejeté les données envoyées pendant ${model}/${method} (HTTP ${response.status}). Consultez les journaux du serveur FiSAFi.`,
+        `Le service FiSAFi n’a pas accepté la demande (HTTP ${response.status}). Réessayez ou contactez l’équipe FiSAFi.`,
       );
     }
     throw new OdooApiError(
-      `Odoo a échoué pendant ${model}/${method} (HTTP ${response.status}). Consultez les journaux du serveur FiSAFi.`,
+      `Le service FiSAFi est indisponible (HTTP ${response.status}). Réessayez dans quelques instants.`,
     );
   }
 
@@ -109,7 +109,7 @@ export async function callOdoo<T>(
     return (await response.json()) as T;
   } catch (error) {
     console.error(`[Market/Odoo] ${model}/${method} returned invalid JSON:`, error);
-    throw new OdooApiError("Odoo a renvoyé une réponse invalide.");
+    throw new OdooApiError("Le service FiSAFi a renvoyé une réponse invalide.");
   }
 }
 
@@ -147,7 +147,7 @@ export async function getTemplateStock(
     !payload.every(isProductVariant)
   ) {
     console.error("[Market/Odoo] Product stock response has an unexpected format.");
-    throw new OdooApiError("Odoo a renvoyé des données de stock invalides.");
+    throw new OdooApiError("Le catalogue FiSAFi a renvoyé des données de stock invalides.");
   }
 
   const stockByTemplate = new Map<number, OdooTemplateStock>();

@@ -42,27 +42,28 @@ const LOGIN_CSS = `
     padding: 2.75rem 3rem;
     overflow: hidden;
   }
-  .l-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.8; }
+  .l-visual { display: none; }
+  .l-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; opacity: 0.8; }
   .l-left-grad {
     position: absolute; inset: 0;
     background:
       radial-gradient(ellipse 70% 55% at 15% 20%, rgba(30,64,175,0.22) 0%, transparent 60%),
       radial-gradient(ellipse 55% 45% at 85% 80%, rgba(229,90,0,0.13) 0%, transparent 55%),
       linear-gradient(160deg, rgba(6,14,30,0.5) 0%, rgba(6,14,30,0.0) 100%);
-    pointer-events: none; z-index: 1;
+    pointer-events: none; z-index: 2;
   }
   .l-rule {
     position: absolute; top: 0; left: 42%; width: 0.5px; height: 100%;
     background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.04) 70%, transparent 100%);
-    z-index: 1; transform: skewX(-4deg);
+    z-index: 2; transform: skewX(-4deg);
   }
   .l-accent-bar {
     position: absolute; top: 0; left: 3rem;
     width: 2px; height: 5.5rem;
     background: linear-gradient(180deg, var(--orange) 0%, transparent 100%);
-    z-index: 2;
+    z-index: 3;
   }
-  .l-top, .l-mid, .l-bottom { position: relative; z-index: 3; }
+  .l-top, .l-mid, .l-bottom { position: relative; z-index: 4; }
 
   /* ── Logo image (remplace le texte) ── */
   .l-logo {
@@ -207,6 +208,19 @@ const LOGIN_CSS = `
     .l-form-h { font-size: clamp(2.5rem, 10vw, 3.1rem); }
     .l-form-sub { margin-bottom: 1.25rem; }
     .l-row { gap: 0.75rem; }
+  }
+
+  @media (min-width: 769px) {
+    .l-visual {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(160deg, rgba(6,14,30,0.64), rgba(6,14,30,0.76)),
+        url('/hero/6.jpg') center 54% / cover no-repeat;
+      pointer-events: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -453,6 +467,7 @@ export default function LoginPage() {
 
       {/* LEFT PANEL */}
       <div className="l-left">
+        <div className="l-visual" aria-hidden="true" />
         <canvas ref={canvasRef} className="l-canvas" />
         <div className="l-left-grad" />
         <div className="l-rule" />
@@ -476,12 +491,8 @@ export default function LoginPage() {
             L&apos;expertise<br />qui fait<br /><em>la différence</em>
           </h1>
           <p className="l-body">
-            Plateforme sécurisée de gestion et de collaboration pour les équipes FiSAFi.
+            Plateforme sécurisée.
           </p>
-          <div className="l-stats">
-            <div className="l-stat"><div className="l-stat-num">1+</div><div className="l-stat-label">Années d&apos;expérience</div></div>
-            <div className="l-stat"><div className="l-stat-num">10+</div><div className="l-stat-label">Projets livrés</div></div>
-          </div>
         </div>
 
         <div className="l-bottom">

@@ -39,6 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error(`[Employee/Sales] Unexpected invoice PDF request for order ${orderId}:`, error);
-    return res.status(502).json({ error: "Impossible de récupérer le PDF de la facture Odoo." });
+    return res.status(502).json({ error: "Impossible de récupérer le PDF de la facture auprès de FiSAFi." });
   }
 }

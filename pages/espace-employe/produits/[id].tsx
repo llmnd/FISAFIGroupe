@@ -180,7 +180,7 @@ export default function EmployeeProductDetailsPage() {
       setProduct(result);
       setForm(toFormValues(result));
       setEditing(false);
-      setNotice("Les modifications ont été enregistrées dans Odoo.");
+      setNotice("Les modifications ont été enregistrées dans le catalogue FiSAFi.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Impossible d’enregistrer les modifications.");
     } finally {
@@ -229,7 +229,7 @@ export default function EmployeeProductDetailsPage() {
       if (!isProduct(result)) throw new Error("Le catalogue a renvoyé des données produit invalides.");
       setProduct(result);
       setForm(toFormValues(result));
-      setNotice("L’image du produit a été mise à jour dans Odoo.");
+      setNotice("L’image du produit a été mise à jour dans le catalogue FiSAFi.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Impossible de mettre à jour l’image.");
     } finally {
@@ -256,7 +256,7 @@ export default function EmployeeProductDetailsPage() {
       if (!isProduct(result)) throw new Error("Le catalogue a renvoyé des données produit invalides.");
       setProduct(result);
       setForm(toFormValues(result));
-      setNotice("L’image du produit a été supprimée d’Odoo.");
+      setNotice("L’image du produit a été supprimée du catalogue FiSAFi.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Impossible de supprimer l’image.");
     } finally {
@@ -291,7 +291,7 @@ export default function EmployeeProductDetailsPage() {
               <div className="employee-products-detailHeading">
                 <div>
                   <h1 className="employee-products-title">{product.name}</h1>
-                  <p className="employee-products-subtitle">Détails du produit synchronisés avec Odoo.</p>
+                  <p className="employee-products-subtitle">Détails du produit synchronisés avec le catalogue FiSAFi.</p>
                 </div>
                 <div className="employee-products-detailActions">
                   {canEdit && (
@@ -342,7 +342,7 @@ export default function EmployeeProductDetailsPage() {
                           Supprimer l’image
                         </button>
                       )}
-                      <small>JPEG, PNG ou WebP — 700 Ko maximum. L’image est enregistrée dans Odoo.</small>
+                      <small>JPEG, PNG ou WebP — 700 Ko maximum. L’image est enregistrée dans le catalogue FiSAFi.</small>
                     </div>
                   )}
                 </section>

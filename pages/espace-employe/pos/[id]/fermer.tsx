@@ -128,7 +128,7 @@ export default function ClosePOSPage() {
     } catch (requestError) {
       setError(requestError instanceof Error
         ? requestError.message
-        : "Odoo n’a pas confirmé la clôture. Actualisez l’état de la caisse avant de réessayer.");
+        : "La clôture n’a pas été confirmée. Actualisez l’état de la caisse avant de réessayer.");
     } finally {
       setSubmitting(false);
     }
@@ -151,14 +151,14 @@ export default function ClosePOSPage() {
           <p className="employee-close-eyebrow">Fin de session</p>
           <h1 className="employee-close-title">Clôturer la caisse</h1>
           {loading ? (
-            <p className="employee-close-notice">Récupération des montants attendus depuis Odoo…</p>
+            <p className="employee-close-notice">Récupération des montants attendus…</p>
           ) : (
             <>
               {error && <p role="alert" className="employee-close-error">{error}</p>}
               {summary && (
                 <form className="employee-close-card" onSubmit={(event) => void submitClose(event)}>
                   <p className="employee-close-intro">
-                    Comparez chaque montant attendu avec le montant réellement compté. Odoo conserve le détail et valide la clôture.
+                    Comparez chaque montant attendu avec le montant réellement compté. FiSAFi conserve le détail et valide la clôture.
                   </p>
                   {summary.methods
                     .filter((method) => method.type === "bank" || summary.cashControl)
@@ -166,7 +166,7 @@ export default function ClosePOSPage() {
                       <label key={method.id} className="employee-close-method">
                         <span>
                           <strong>{method.name}</strong>
-                          <small>Attendu dans Odoo : {money(method.expectedAmount)}</small>
+                          <small>Montant attendu : {money(method.expectedAmount)}</small>
                         </span>
                         <input
                           type="number"
@@ -186,11 +186,11 @@ export default function ClosePOSPage() {
                     ))}
                   {!summary.cashControl && (
                     <p className="employee-close-notice">
-                      Le contrôle d’espèces est désactivé dans Odoo ; seuls les montants des moyens de paiement bancaires sont rapprochés.
+                      Le contrôle d’espèces est désactivé ; seuls les montants des moyens de paiement bancaires sont rapprochés.
                     </p>
                   )}
                   <button type="submit" disabled={submitting} className={`employee-close-button ${submitting ? "is-disabled" : ""}`}>
-                    {submitting ? "Clôture en cours dans Odoo…" : "Confirmer la clôture"}
+                    {submitting ? "Clôture en cours…" : "Confirmer la clôture"}
                   </button>
                 </form>
               )}

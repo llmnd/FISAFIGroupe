@@ -54,7 +54,7 @@ export async function listFiSafiCompanies(): Promise<FiSafiCompany[]> {
     new Set(payload.map((company) => company.id)).size !== payload.length
   ) {
     console.error("[Odoo/Companies] Company list returned an invalid or incomplete response.");
-    throw new OdooApiError("Odoo a renvoyé une liste de sociétés invalide ou incomplète.");
+    throw new OdooApiError("FiSAFi a renvoyé une liste de sociétés invalide ou incomplète.");
   }
 
   cachedCompanies = payload.reduce<FiSafiCompany[]>((companies, record) => {

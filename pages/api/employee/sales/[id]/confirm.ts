@@ -29,6 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error(`[Employee/Sales] Unexpected confirmation error for order ${id}:`, error);
-    return res.status(502).json({ error: "Odoo n’a pas pu confirmer ce devis." });
+    return res.status(502).json({ error: "FiSAFi n’a pas pu confirmer ce devis." });
   }
 }

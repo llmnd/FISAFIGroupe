@@ -208,7 +208,7 @@ export default function EmployeeProductsPage() {
         />
         <section className="employee-products-content">
           <h1 className="employee-products-title">Produits</h1>
-          <p className="employee-products-subtitle">Consultez les articles Odoo, leur stock et leur disponibilité.</p>
+          <p className="employee-products-subtitle">Consultez les articles FiSAFi, leur stock et leur disponibilité.</p>
 
           <div className="employee-products-toolbar">
             <div className="employee-products-toolbarStart">

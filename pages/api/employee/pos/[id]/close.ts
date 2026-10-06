@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof OdooApiError) {
       console.error("[Employee/POS] Odoo could not close session:", error);
       return res.status(error.statusCode).json({
-        error: "Odoo n’a pas confirmé la clôture. Vérifiez l’état de la caisse avant de réessayer.",
+        error: "La clôture n’a pas été confirmée. Vérifiez l’état de la caisse avant de réessayer.",
       });
     }
     console.error("[Employee/POS] Unexpected session-closing error:", error);

@@ -110,7 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const companies = await listFiSafiCompanies();
     const company = companies.find((item) => item.type === companyType);
     if (!company) {
-      throw new OdooApiError(`La société ${companyLabel} n’est pas configurée dans Odoo.`, 503);
+      throw new OdooApiError(`La société ${companyLabel} n’est pas configurée.`, 503);
     }
 
     let partnerId = localUser.odooPartnerId;
@@ -122,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         limit: 1,
       });
       if (!Array.isArray(linkedPartners) || !linkedPartners.every(isOdooPartner)) {
-        throw new OdooApiError("Odoo a renvoyé un contact client invalide.");
+        throw new OdooApiError("FiSAFi a renvoyé un contact client invalide.");
       }
       const linkedPartner = linkedPartners[0];
       if (
@@ -145,10 +145,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         limit: 100,
       });
       if (!Array.isArray(partners) || !partners.every(isOdooPartner)) {
-        throw new OdooApiError("Odoo a renvoyé des contacts clients invalides.");
+        throw new OdooApiError("FiSAFi a renvoyé des contacts clients invalides.");
       }
       if (partners.length >= 100) {
-        throw new OdooApiError("Odoo a renvoyé trop de contacts pour vérifier le compte client.");
+        throw new OdooApiError("FiSAFi a renvoyé trop de contacts pour vérifier le compte client.");
       }
       const matchingPartners = partners.filter((partner) =>
         typeof partner.email === "string" &&
@@ -182,7 +182,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       !Array.isArray(contacts) ||
       !contacts.every(isOdooIdRecord)
     ) {
-      throw new OdooApiError("Odoo a renvoyé une liste de contacts clients invalide.");
+      throw new OdooApiError("FiSAFi a renvoyé une liste de contacts clients invalide.");
     }
     if (contacts.length >= 1_000) {
       throw new OdooApiError("Le compte client possède trop de contacts pour vérifier ses factures.");
@@ -210,7 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         invoice.company_id[0] !== company.id || !partnerIds.includes(invoice.partner_id[0])
       )
     ) {
-      throw new OdooApiError("Odoo a renvoyé une liste de factures invalide.");
+      throw new OdooApiError("FiSAFi a renvoyé une liste de factures invalide.");
     }
 
     return res.status(200).json({

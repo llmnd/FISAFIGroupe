@@ -258,7 +258,7 @@ export default function EmployeePOSPage() {
           typeof payload.quote.amountTax !== "number" ||
           !Number.isFinite(payload.quote.amountTax)
         ) {
-          throw new Error("Le total reçu d’Odoo est invalide.");
+          throw new Error("Le total reçu est invalide.");
         }
         if (controller.signal.aborted) return;
         setQuote(payload.quote as POSSaleQuote);
@@ -269,7 +269,7 @@ export default function EmployeePOSPage() {
           setQuote(null);
           setQuoteError(requestError instanceof Error
             ? requestError.message
-            : "Le total n’a pas pu être confirmé par Odoo.");
+            : "Le total n’a pas pu être confirmé.");
         }
       }).finally(() => {
         if (!controller.signal.aborted) setQuoting(false);
@@ -314,7 +314,7 @@ export default function EmployeePOSPage() {
     if (!point?.session || !quote || !paymentMethodId || submittingSale || cart.length === 0) return;
     const received = Number(amountReceived);
     if (!Number.isSafeInteger(received) || received < quote.amountTotal) {
-      setCheckoutError("Le montant reçu doit couvrir le total confirmé par Odoo.");
+      setCheckoutError("Le montant reçu doit couvrir le total confirmé.");
       return;
     }
     const selectedMethod = paymentMethods.find((method) => method.id === Number(paymentMethodId));
@@ -367,7 +367,7 @@ export default function EmployeePOSPage() {
         !("change" in payload.sale) ||
         typeof payload.sale.change !== "number"
       ) {
-        throw new Error("Odoo n’a pas renvoyé une confirmation de vente valide.");
+        throw new Error("La confirmation de vente reçue est invalide.");
       }
       setSaleResult(payload.sale as POSSaleResult);
       setCart([]);
@@ -516,7 +516,7 @@ export default function EmployeePOSPage() {
                     </div>
                   )}
                   <div className="employee-pos-totalRow">
-                    <span>{quote ? "Total confirmé par Odoo" : "Total indicatif"}</span>
+                    <span>{quote ? "Total confirmé par FiSAFi" : "Total indicatif"}</span>
                     <strong>{money(quote?.amountTotal ?? total)}</strong>
                   </div>
                   {quote && quote.amountTax > 0 && (
@@ -554,12 +554,12 @@ export default function EmployeePOSPage() {
                       )}
                     </>
                   )}
-                  {quoting && <p role="status" className="employee-pos-notice">Vérification du prix et des taxes dans Odoo…</p>}
+                  {quoting && <p role="status" className="employee-pos-notice">Vérification du prix et des taxes…</p>}
                   {quoteError && <p role="alert" className="employee-pos-error">{quoteError}</p>}
                   {checkoutError && <p role="alert" className="employee-pos-error">{checkoutError}</p>}
                   {saleResult && (
                     <p role="status" className="employee-pos-success">
-                      Vente confirmée dans Odoo : {saleResult.reference}. Total {money(saleResult.amountTotal)}.
+                      Vente confirmée par FiSAFi : {saleResult.reference}. Total {money(saleResult.amountTotal)}.
                       {saleResult.change > 0 ? ` Monnaie rendue : ${money(saleResult.change)}.` : ""}
                     </p>
                   )}
@@ -569,7 +569,7 @@ export default function EmployeePOSPage() {
                     disabled={!quote || !paymentMethodId || submittingSale || !!quoteError || cart.length === 0}
                     onClick={() => void submitSale()}
                   >
-                    {submittingSale ? "Confirmation dans Odoo…" : "Encaisser et enregistrer la vente"}
+                    {submittingSale ? "Confirmation en cours…" : "Encaisser et enregistrer la vente"}
                   </button>
                 </aside>
               </div>

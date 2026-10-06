@@ -168,7 +168,7 @@ export default function OpenPOSPage() {
                 />
                 <p className="employee-open-hint">Le montant doit être un nombre entier positif ou nul.</p>
                 <p className="employee-open-hint">
-                  L’ouverture est enregistrée dans Odoo avec une clé de reprise pour éviter de créer deux sessions si la connexion est interrompue.
+                  L’ouverture est enregistrée par FiSAFi avec une clé de reprise pour éviter de créer deux sessions si la connexion est interrompue.
                 </p>
                 <button
                   type="submit"

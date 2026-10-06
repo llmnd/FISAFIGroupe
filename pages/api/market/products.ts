@@ -66,7 +66,7 @@ export default async function handler(
   try {
     const companies = await listFiSafiCompanies();
     const market = companies.find((company) => company.type === "market");
-    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
 
     const payload: unknown = await callOdoo("product.template", "search_read", {
       domain: [
@@ -91,7 +91,7 @@ export default async function handler(
       )
     ) {
       console.error("[Market/Odoo] Product response has an unexpected format.");
-      return res.status(502).json({ error: "Le catalogue Odoo a renvoyé des données invalides." });
+      return res.status(502).json({ error: "Le catalogue FiSAFi a renvoyé des données invalides." });
     }
 
     const stockByTemplate = await getTemplateStock(payload.map((product) => product.id));
@@ -118,6 +118,6 @@ export default async function handler(
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error("[Market/Odoo] Product request failed:", error);
-    return res.status(502).json({ error: "Impossible de joindre le catalogue Odoo." });
+    return res.status(502).json({ error: "Impossible de joindre le catalogue FiSAFi." });
   }
 }

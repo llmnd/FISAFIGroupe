@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { authenticateEmployee, EmployeeAuthError, requireAdmin } from "@/lib/employeeAuth";
 import { OdooApiError, callOdoo } from "@/lib/marketOdoo";
@@ -153,6 +155,7 @@ function relationLabel(value: OdooRelation): string {
 
 function renderReceipt(
   companyName: string,
+  logoDataUrl: string,
   order: OdooPOSOrder,
   lines: OdooPOSOrderLine[],
   payments: OdooPOSPayment[],
@@ -200,6 +203,7 @@ function renderReceipt(
     body { margin: 0; padding: 24px; background: #f3f4f6; }
     .receipt { max-width: 420px; margin: 0 auto; padding: 28px; background: #fff; }
     header { text-align: center; padding-bottom: 18px; border-bottom: 1px dashed #9ca3af; }
+    .logo { display: block; width: auto; max-width: 180px; height: auto; max-height: 90px; margin: 0 auto 14px; object-fit: contain; }
     h1 { margin: 0 0 8px; font-size: 22px; }
     .subtitle, small, .meta { color: #586474; }
     .subtitle { font-size: 13px; }
@@ -219,7 +223,7 @@ function renderReceipt(
 </head>
 <body>
   <main class="receipt">
-    <header><h1>${escapeHtml(companyName)}</h1><div class="subtitle">Ticket de caisse</div></header>
+    <header><img class="logo" src="${logoDataUrl}" alt="Logo ${escapeHtml(companyName)}"><h1>${escapeHtml(companyName)}</h1><div class="subtitle">Ticket de caisse</div></header>
     <section class="meta">
       <div><strong>Référence :</strong> ${reference}</div>
       <div><strong>Date :</strong> ${formattedDate}</div>
@@ -293,7 +297,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderPayload.some((order) => order.id !== orderId || order.company_id[0] !== company.id)
     ) {
       console.error(`[Admin/POS] Odoo returned an invalid company-filtered record for order ${orderId}.`);
-      throw new OdooApiError("Odoo a renvoyé des données de reçu invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des données de reçu invalides.");
     }
     const order = orderPayload[0];
     if (!order) {
@@ -334,10 +338,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paymentPayload.length !== order.payment_ids.length
     ) {
       console.error(`[Admin/POS] Odoo returned incomplete line or payment data for order ${orderId}.`);
-      throw new OdooApiError("Odoo a renvoyé des lignes ou paiements incomplets pour ce reçu.");
+      throw new OdooApiError("FiSAFi a renvoyé des lignes ou paiements incomplets pour ce reçu.");
     }
 
-    const receiptHtml = renderReceipt(company.name, order, linePayload, paymentPayload);
+    const logoFile = company.type === "market" ? "market.jpeg" : "logo.jpeg";
+    const logo = await readFile(join(process.cwd(), "public", logoFile));
+    const logoDataUrl = `data:image/jpeg;base64,${logo.toString("base64")}`;
+    const receiptHtml = renderReceipt(company.name, logoDataUrl, order, linePayload, paymentPayload);
     const safeReference = order.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `ticket-${order.id}`;
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="recu-${safeReference}.html"`);

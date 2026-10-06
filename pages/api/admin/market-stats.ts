@@ -141,7 +141,7 @@ function isConfirmed(state: MarketOrderState): boolean {
 
 function toStatsOrder(order: OdooSaleOrder): StatsOrder {
   const date = parseOdooDate(order.date_order);
-  if (!date) throw new OdooApiError("Odoo a renvoyé une date de commande invalide.");
+  if (!date) throw new OdooApiError("FiSAFi a renvoyé une date de commande invalide.");
   return {
     id: order.id,
     reference: order.name,
@@ -155,7 +155,7 @@ function toStatsOrder(order: OdooSaleOrder): StatsOrder {
 
 function toPOSStatsOrder(order: OdooPOSOrder): StatsOrder {
   const date = parseOdooDate(order.date_order);
-  if (!date) throw new OdooApiError("Odoo a renvoyé une date de vente invalide.");
+  if (!date) throw new OdooApiError("FiSAFi a renvoyé une date de vente invalide.");
   const state: MarketOrderState =
     order.state === "draft" ? "draft" : order.state === "cancel" ? "cancel" : "done";
   return {
@@ -184,7 +184,7 @@ function toSaleTransaction(order: OdooSaleOrder): Transaction {
     cancel: "Annulée",
   };
   const date = parseOdooDate(order.date_order);
-  if (!date) throw new OdooApiError("Odoo a renvoyé une date de commande invalide.");
+  if (!date) throw new OdooApiError("FiSAFi a renvoyé une date de commande invalide.");
   return {
     id: order.id,
     kind: "sale_order",
@@ -211,7 +211,7 @@ function toPOSTransaction(order: OdooPOSOrder): Transaction {
     cancel: { state: "cancel", label: "Annulée" },
   };
   const date = parseOdooDate(order.date_order);
-  if (!date) throw new OdooApiError("Odoo a renvoyé une date de vente invalide.");
+  if (!date) throw new OdooApiError("FiSAFi a renvoyé une date de vente invalide.");
   return {
     id: order.id,
     kind: "pos_order",
@@ -256,12 +256,12 @@ async function fetchRecentOdooRecords<T extends { id: number }>(
       order: "date_order desc, id desc",
     });
     if (!Array.isArray(payload)) {
-      throw new OdooApiError(`Odoo a renvoyé une liste de ${model} invalide.`);
+      throw new OdooApiError(`FiSAFi a renvoyé une liste de ${model} invalide.`);
     }
     const page: T[] = [];
     for (const value of payload) {
       if (!isRecord(value) || seenIds.has(value.id)) {
-        throw new OdooApiError(`Odoo a renvoyé des données de ${model} invalides ou incomplètes.`);
+        throw new OdooApiError(`FiSAFi a renvoyé des données de ${model} invalides ou incomplètes.`);
       }
       seenIds.add(value.id);
       page.push(value);
@@ -310,7 +310,7 @@ async function fetchHistoryPage(
     new Set(posPayload.map((order) => order.id)).size !== posPayload.length
   ) {
     console.error("[Admin/Market] Odoo returned invalid data for the company transaction history.");
-    throw new OdooApiError("Odoo a renvoyé des données de ventes ou commandes invalides.");
+    throw new OdooApiError("FiSAFi a renvoyé des données de ventes ou commandes invalides.");
   }
 
   const saleTransactions = salePayload.map(toSaleTransaction);
@@ -361,7 +361,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       companyPayload.some((item) => item.id !== companyId)
     ) {
       console.error("[Admin/Odoo] Selected company lookup returned an invalid response.");
-      throw new OdooApiError("Odoo a renvoyé une réponse de société invalide.");
+      throw new OdooApiError("FiSAFi a renvoyé une réponse de société invalide.");
     }
     const company = companyPayload[0];
     if (!company) {
@@ -418,7 +418,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       new Set(posPayload.map((order) => order.id)).size !== posPayload.length
     ) {
       console.error("[Admin/Market] Odoo returned invalid or incomplete company-filtered sales data.");
-      throw new OdooApiError("Odoo a renvoyé des données de ventes ou commandes invalides ou incomplètes.");
+      throw new OdooApiError("FiSAFi a renvoyé des données de ventes ou commandes invalides ou incomplètes.");
     }
 
     const statsOrders = [
@@ -478,7 +478,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error.statusCode === 429) {
         res.setHeader("Retry-After", "5");
         return res.status(429).json({
-          error: "Odoo limite temporairement les consultations. Réessayez dans quelques secondes.",
+          error: "FiSAFi limite temporairement les consultations. Réessayez dans quelques secondes.",
         });
       }
       return res.status(error.statusCode).json({ error: "Les données de ventes FiSAFi sont temporairement indisponibles." });

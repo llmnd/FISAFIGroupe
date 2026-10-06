@@ -61,7 +61,7 @@ export default function EmployeePointsOfSalePage() {
         <section className="employee-points-content">
           <p className="employee-points-eyebrow">Opérations</p>
           <h1 className="employee-points-title">Points de vente</h1>
-          <p className="employee-points-subtitle">État actuel synchronisé depuis Odoo.</p>
+          <p className="employee-points-subtitle">État actuel synchronisé avec FiSAFi.</p>
           <div className="employee-points-toolbar">
             <Link href="/espace-employe" className="employee-points-back">← Retour au tableau de bord</Link>
             <button type="button" onClick={() => void loadPointsOfSale()} disabled={loading} className="employee-points-refresh">
@@ -126,7 +126,7 @@ export default function EmployeePointsOfSalePage() {
               })}
             </div>
           )}
-          <p className="employee-points-note">Les ouvertures, ventes et clôtures sont transmises à Odoo après vérification des permissions et des montants côté serveur.</p>
+          <p className="employee-points-note">Les ouvertures, ventes et clôtures sont transmises à FiSAFi après vérification des permissions et des montants.</p>
         </section>
       </main>
     </>

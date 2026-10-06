@@ -200,11 +200,11 @@ export default function EmployeeSalesPage() {
       });
       const payload = await request(`/api/employee/sales?${params.toString()}`);
       if (!isRecord(payload) || typeof payload.hasMore !== "boolean") {
-        throw new Error("Odoo a renvoyé une liste de ventes invalide.");
+        throw new Error("La liste des ventes reçue est invalide.");
       }
       const pageOrders = payload.orders;
       if (!Array.isArray(pageOrders) || !pageOrders.every(isSalesOrderSummary)) {
-        throw new Error("Odoo a renvoyé une liste de ventes invalide.");
+        throw new Error("La liste des ventes reçue est invalide.");
       }
       setOrders((current) => {
         const next = append ? [...current, ...pageOrders] : pageOrders;
@@ -239,7 +239,7 @@ export default function EmployeeSalesPage() {
         .then((payload) => {
           if (!isRecord(payload) || !Array.isArray(payload.customers) ||
               !payload.customers.every(isSalesCustomer)) {
-            throw new Error("Odoo a renvoyé une liste de clients invalide.");
+            throw new Error("La liste des clients reçue est invalide.");
           }
           if (current) setCustomers(payload.customers);
         })
@@ -265,7 +265,7 @@ export default function EmployeeSalesPage() {
         .then((payload) => {
           if (!isRecord(payload) || !Array.isArray(payload.products) ||
               !payload.products.every(isSalesProduct)) {
-            throw new Error("Odoo a renvoyé une liste de produits invalide.");
+            throw new Error("La liste des produits reçue est invalide.");
           }
           if (current) setProducts(payload.products);
         })
@@ -296,7 +296,7 @@ export default function EmployeeSalesPage() {
     try {
       const payload = await request(`/api/employee/sales/${id}`);
       if (!isRecord(payload) || !isSalesOrder(payload.order)) {
-        throw new Error("Odoo a renvoyé une commande invalide.");
+        throw new Error("La commande reçue est invalide.");
       }
       setLocationShareStatus("idle");
       setDetail(payload.order);
@@ -382,7 +382,7 @@ export default function EmployeeSalesPage() {
         },
       );
       if (!isRecord(payload) || !isSalesOrder(payload.order)) {
-        throw new Error("Odoo n’a pas confirmé l’enregistrement du devis.");
+        throw new Error("L’enregistrement du devis n’a pas été confirmé.");
       }
       setShowForm(false);
       setLocationShareStatus("idle");
@@ -403,7 +403,7 @@ export default function EmployeeSalesPage() {
     try {
       const payload = await request(`/api/employee/sales/${pendingConfirmation.id}/confirm`, { method: "POST" });
       if (!isRecord(payload) || !isSalesOrder(payload.order)) {
-        throw new Error("Odoo n’a pas confirmé la commande.");
+        throw new Error("La commande n’a pas été confirmée.");
       }
       setPendingConfirmation(null);
       setLocationShareStatus("idle");
@@ -443,7 +443,7 @@ export default function EmployeeSalesPage() {
       delivery.address ? `Adresse : ${delivery.address}` : "",
       `Point GPS : ${mapUrl}`,
       productList ? `Articles :\n${productList}` : "",
-      `Total Odoo : ${formatAmount(order.amountTotal)} ${order.currencyName}`,
+      `Total FiSAFi : ${formatAmount(order.amountTotal)} ${order.currencyName}`,
       ...(delivery.feeEstimate !== null
         ? [
             `Livraison estimée : ${formatAmount(delivery.feeEstimate)} ${order.currencyName}`,
@@ -493,13 +493,13 @@ export default function EmployeeSalesPage() {
         const message =
           isRecord(payload) && typeof payload.error === "string"
             ? payload.error
-            : "Impossible de récupérer le PDF depuis Odoo.";
+            : "Impossible de récupérer le PDF auprès de FiSAFi.";
         throw new Error(message);
       }
 
       const pdfBlob = await response.blob();
       if (pdfBlob.type !== "application/pdf" || pdfBlob.size < 5) {
-        throw new Error("Odoo n’a pas renvoyé un fichier PDF valide.");
+        throw new Error("Le fichier PDF reçu est invalide.");
       }
       const pdfFile = new File([pdfBlob], `${invoice.reference}.pdf`, { type: "application/pdf" });
       if (
@@ -524,7 +524,7 @@ export default function EmployeeSalesPage() {
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch (actionError) {
       if (actionError instanceof DOMException && actionError.name === "AbortError") return;
-      console.error(`[Employee/Sales] Could not retrieve or share Odoo invoice ${invoice.id}:`, actionError);
+      console.error(`[Employee/Sales] Could not retrieve or share FiSAFi invoice ${invoice.id}:`, actionError);
       setInvoiceActionError(
         actionError instanceof Error ? actionError.message : "Impossible de récupérer ou partager la facture.",
       );
@@ -536,7 +536,7 @@ export default function EmployeeSalesPage() {
   return (
     <>
       <Head>
-        <title>Ventes Odoo — Espace employé FiSAFi</title>
+        <title>Ventes — Espace employé FiSAFi</title>
         <meta name="robots" content="noindex" />
       </Head>
       <main className="employee-portal-page employee-sales">
@@ -547,13 +547,13 @@ export default function EmployeeSalesPage() {
           backLabel="Espace employé"
         />
         <section className="employee-sales-content">
-          <p className="employee-sales-eyebrow">Module Odoo</p>
+          <p className="employee-sales-eyebrow">Espace FiSAFi</p>
           <h1 className="employee-sales-title">Ventes, devis et commandes</h1>
           <p className="employee-sales-subtitle">
-            Consultez les ventes Odoo, préparez des devis et confirmez les commandes. Les prix et totaux sont calculés par Odoo.
+            Consultez les ventes, préparez des devis et confirmez les commandes. Les prix et totaux suivent les règles commerciales FiSAFi.
           </p>
           <div className="employee-sales-notice">
-            La confirmation déclenche le flux commercial Odoo et peut lancer les opérations logistiques. Elle ne crée ni facture ni paiement.
+            La confirmation transmet la commande à l’équipe FiSAFi pour traitement commercial et logistique. Elle ne crée ni facture ni paiement.
           </div>
           <div className="employee-sales-toolbar">
             <Link href="/admin-dashboard" className="employee-sales-back">← Dashboard admin</Link>
@@ -574,7 +574,7 @@ export default function EmployeeSalesPage() {
           </form>
           {error && <p role="alert" className="employee-sales-error">{error}</p>}
           {loading ? (
-            <p className="employee-sales-empty">Chargement des ventes depuis Odoo…</p>
+            <p className="employee-sales-empty">Chargement des ventes FiSAFi…</p>
           ) : orders.length === 0 ? (
             <p className="employee-sales-empty">Aucun devis ou commande trouvé.</p>
           ) : (
@@ -593,7 +593,7 @@ export default function EmployeeSalesPage() {
                     {order.clientOrderRef && <span>Réf. client : {order.clientOrderRef}</span>}
                   </div>
                   <div className="employee-sales-amountRow">
-                    <span>{order.deliveryFeeEstimate === null ? "Total TTC selon Odoo" : "Total estimé avec livraison"}</span>
+                    <span>{order.deliveryFeeEstimate === null ? "Total TTC FiSAFi" : "Total estimé avec livraison"}</span>
                     <strong>
                       {formatAmount(order.amountTotal + (order.deliveryFeeEstimate ?? 0))} {order.currencyName}
                     </strong>
@@ -627,7 +627,7 @@ export default function EmployeeSalesPage() {
             <section className="employee-sales-modal employee-sales-detailModal" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" onClick={(event) => event.stopPropagation()}>
               <div className="employee-sales-modalHeader">
                 <div>
-                  <p className="employee-sales-eyebrow">Détail Odoo</p>
+                  <p className="employee-sales-eyebrow">Détail de la commande</p>
                   <h2 id="order-detail-title" className="employee-sales-modalTitle">{detail.reference}</h2>
                 </div>
                 <button type="button" className="employee-sales-closeButton" aria-label="Fermer" onClick={() => setShowDetail(false)}>×</button>
@@ -680,7 +680,7 @@ export default function EmployeeSalesPage() {
               <div className="employee-sales-totalBox">
                 <div><span>Hors taxes</span><strong>{formatAmount(detail.amountUntaxed)} {detail.currencyName}</strong></div>
                 <div><span>Taxes</span><strong>{formatAmount(detail.amountTax)} {detail.currencyName}</strong></div>
-                <div><span>Total TTC Odoo</span><strong>{formatAmount(detail.amountTotal)} {detail.currencyName}</strong></div>
+                <div><span>Total TTC</span><strong>{formatAmount(detail.amountTotal)} {detail.currencyName}</strong></div>
                 {detailDelivery?.feeEstimate !== null && detailDelivery?.feeEstimate !== undefined && (
                   <>
                     <div>
@@ -696,13 +696,13 @@ export default function EmployeeSalesPage() {
               </div>
               {detailDelivery?.feeEstimate !== null && detailDelivery?.feeEstimate !== undefined && (
                 <p className="employee-sales-deliveryDisclaimer">
-                  Les frais de livraison sont estimatifs, hors devis Odoo et à confirmer par le vendeur.
+                  Les frais de livraison sont estimatifs et à confirmer par le vendeur.
                 </p>
               )}
               {detail.invoices.length > 0 && (
                 <section className="employee-sales-invoices" aria-labelledby="sales-invoices-title">
-                  <h3 id="sales-invoices-title">Factures officielles Odoo</h3>
-                  <p>Seules les factures déjà validées dans Odoo sont disponibles ici.</p>
+                  <h3 id="sales-invoices-title">Factures disponibles</h3>
+                  <p>Seules les factures déjà validées par l’équipe FiSAFi sont disponibles ici.</p>
                   {detail.invoices.map((invoice) => (
                     <div key={invoice.id} className="employee-sales-invoiceRow">
                       <span>
@@ -724,7 +724,7 @@ export default function EmployeeSalesPage() {
                         </button>
                       ) : (
                         <span className="employee-sales-invoiceUnavailable">
-                          PDF non généré dans Odoo
+                          PDF non disponible
                         </span>
                       )}
                     </div>
@@ -763,7 +763,7 @@ export default function EmployeeSalesPage() {
               </div>
               {formError && <p role="alert" className="employee-sales-error">{formError}</p>}
               <form onSubmit={submitOrder}>
-                <label className="employee-sales-label" htmlFor="customer-search">Client Odoo</label>
+                <label className="employee-sales-label" htmlFor="customer-search">Client</label>
                 {selectedCustomer ? (
                   <div className="employee-sales-selectedCustomer">
                     <span><strong>{selectedCustomer.name}</strong>{selectedCustomer.email ? ` · ${selectedCustomer.email}` : ""}</span>
@@ -775,7 +775,7 @@ export default function EmployeeSalesPage() {
                     {customers.length > 0 && <div className="employee-sales-results">
                       {customers.map((customer) => (
                         <button type="button" key={customer.id} className="employee-sales-result" onClick={() => { setSelectedCustomer(customer); setCustomers([]); setCustomerSearch(""); }}>
-                          <strong>{customer.name}</strong><span>{customer.email || customer.phone || "Client Odoo"}</span>
+                          <strong>{customer.name}</strong><span>{customer.email || customer.phone || "Client FiSAFi"}</span>
                         </button>
                       ))}
                     </div>}
@@ -785,7 +785,7 @@ export default function EmployeeSalesPage() {
                 <label className="employee-sales-label" htmlFor="order-reference">Référence client (facultatif)</label>
                 <input id="order-reference" maxLength={64} value={clientOrderRef} onChange={(event) => setClientOrderRef(event.target.value)} className="employee-sales-input" />
 
-                <label className="employee-sales-label" htmlFor="product-search">Ajouter des produits Odoo</label>
+                <label className="employee-sales-label" htmlFor="product-search">Ajouter des produits</label>
                 <input id="product-search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Rechercher un nom ou une référence produit" className="employee-sales-input" />
                 {products.length > 0 && <div className="employee-sales-results">
                   {products.map((product) => (
@@ -821,7 +821,7 @@ export default function EmployeeSalesPage() {
 
                 <label className="employee-sales-label" htmlFor="order-note">Note interne au devis</label>
                 <textarea id="order-note" maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="employee-sales-input" />
-                <p className="employee-sales-helper">Le total définitif, les taxes et les règles de prix sont calculés dans Odoo.</p>
+                <p className="employee-sales-helper">Le total définitif, les taxes et les règles de prix sont calculés selon les paramètres FiSAFi.</p>
                 <div className="employee-sales-actions">
                   <button type="button" className="employee-sales-secondaryButton" disabled={saving} onClick={() => setShowForm(false)}>Annuler</button>
                   <button type="submit" className="employee-sales-primaryButton" disabled={saving}>
@@ -837,7 +837,7 @@ export default function EmployeeSalesPage() {
           <div className="employee-sales-backdrop" role="presentation" onClick={() => !confirming && setPendingConfirmation(null)}>
             <section className="employee-sales-confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(event) => event.stopPropagation()}>
               <h2 id="confirm-title" className="employee-sales-modalTitle">Confirmer {pendingConfirmation.reference} ?</h2>
-              <p className="employee-sales-confirmText">Cette action confirme la commande dans Odoo et peut déclencher les opérations logistiques. Elle ne crée ni facture ni paiement.</p>
+              <p className="employee-sales-confirmText">Cette action confirme la commande auprès de l’équipe FiSAFi et peut déclencher son traitement logistique. Elle ne crée ni facture ni paiement.</p>
               {error && <p role="alert" className="employee-sales-error">{error}</p>}
               <div className="employee-sales-actions">
                 <button

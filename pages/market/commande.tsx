@@ -460,7 +460,7 @@ export default function MarketOrderPage() {
     );
     if (linkedItems.length !== items.length) {
       setSubmitError(
-        "Un article de ce panier est ancien et n’est plus associé au catalogue Odoo. Retirez-le puis ajoutez-le à nouveau depuis le marché.",
+        "Un article de ce panier n’est plus associé au catalogue FiSAFi Market. Retirez-le puis ajoutez-le à nouveau depuis le marché.",
       );
       return;
     }
@@ -493,7 +493,7 @@ export default function MarketOrderPage() {
         const message =
           payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
             ? payload.error
-            : "Impossible d’enregistrer la demande dans Odoo.";
+            : "Impossible d’enregistrer la demande auprès de FiSAFi.";
         throw new Error(message);
       }
       if (!isCreateOrderResponse(payload)) {
@@ -501,7 +501,7 @@ export default function MarketOrderPage() {
       }
 
       const orderMessage = [
-        "Salam FiSAFi Market ! Une nouvelle demande de commande attend votre validation dans Odoo.",
+        "Salam FiSAFi Market ! Une nouvelle demande de commande attend votre validation.",
         `Référence du devis : ${payload.orderReference}`,
         `Nom du client : ${customerName.trim()}`,
         `Téléphone du client : ${phone.trim()}`,
@@ -519,12 +519,12 @@ export default function MarketOrderPage() {
           const isKg = item.priceUnit === "kg";
           return `- ${item.name} x${formatAmount(item.quantity)}${isKg ? " kg" : ""}`;
         }),
-        `Total du devis Odoo : ${formatAmount(payload.total)} FCFA`,
+        `Total du devis : ${formatAmount(payload.total)} FCFA`,
         ...(fulfillment === "delivery"
           ? [`Estimation produits + livraison : ${formatAmount(payload.total + payload.deliveryFee)} FCFA (hors confirmation vendeur)`]
           : []),
         ...(note.trim() ? [`Précision : ${note.trim()}`] : []),
-        "Merci de vérifier le stock et de confirmer le devis dans Odoo.",
+        "Merci de vérifier le stock et de confirmer le devis.",
       ].join("\n");
       setOrderConfirmation({
         reference: payload.orderReference,
@@ -535,8 +535,8 @@ export default function MarketOrderPage() {
       });
       clearCart();
     } catch (error) {
-      console.error("[Market] Could not create the Odoo quotation:", error);
-      setSubmitError(error instanceof Error ? error.message : "Impossible de transmettre la demande à Odoo.");
+      console.error("[Market] Could not create the FiSAFi quotation:", error);
+      setSubmitError(error instanceof Error ? error.message : "Impossible de transmettre la demande à FiSAFi.");
     } finally {
       setSubmitting(false);
     }
@@ -548,7 +548,7 @@ export default function MarketOrderPage() {
         <title>Mon panier — FiSAFi Market</title>
         <meta
           name="description"
-          content="Vérifiez le stock de votre panier FiSAFi Market et envoyez une demande de devis à valider par le vendeur dans Odoo."
+          content="Vérifiez le stock de votre panier FiSAFi Market et envoyez une demande de devis à valider par le vendeur."
         />
       </Head>
       <main
@@ -591,7 +591,7 @@ export default function MarketOrderPage() {
           ) : orderConfirmation ? (
             <div className="market-order-confirmation">
               <span>Demande enregistrée</span>
-              <h1>Votre devis est dans Odoo.</h1>
+              <h1>Votre demande de devis est enregistrée.</h1>
               <p>
                 Référence <strong>{orderConfirmation.reference}</strong> · Total du devis{" "}
                 <strong>{formatAmount(orderConfirmation.total)} FCFA</strong>.
@@ -608,7 +608,7 @@ export default function MarketOrderPage() {
                 </p>
               )}
               <p>
-                Le vendeur doit vérifier le stock et confirmer le devis dans Odoo. Prévenez-le sur
+                Le vendeur doit vérifier le stock et confirmer le devis. Prévenez-le sur
                 WhatsApp pour qu’il puisse traiter votre demande.
               </p>
               <div>
@@ -1000,9 +1000,9 @@ export default function MarketOrderPage() {
                           : "Envoyer ma demande au vendeur"}
                   </button>
                   <p className="market-order-disclaimer">
-                    Le stock est vérifié dans Odoo avant l’enregistrement d’un devis à valider par
-                    le vendeur. Les frais de livraison sont estimatifs, calculés hors devis Odoo et
-                    confirmés par le vendeur. Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
+                    Le stock est vérifié avant l’enregistrement d’un devis à valider par
+                    le vendeur. Les frais de livraison sont estimatifs et seront confirmés par le vendeur.
+                    Vos coordonnées et l’adresse de livraison sont transmises à FiSAFi.
                   </p>
 
                   {submitError && (

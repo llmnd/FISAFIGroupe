@@ -35,14 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     odooOrigin = configuredUrl.origin;
   } catch (error) {
     console.error("[Market/Odoo] Invalid Odoo URL configuration for product image:", error);
-    return res.status(500).json({ error: "La configuration du catalogue Odoo est invalide." });
+    return res.status(500).json({ error: "La configuration du catalogue FiSAFi est invalide." });
   }
 
   try {
     const companies = await listFiSafiCompanies();
     const market = companies.find((company) => company.type === "market");
     if (!market) {
-      throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+      throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
     }
     const response = await fetch(`${odooOrigin}/json/2/product.template/search_read`, {
       method: "POST",
@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const firstProduct: unknown = payload[0];
     if (!firstProduct || typeof firstProduct !== "object" || !("image_512" in firstProduct)) {
       console.error("[Market/Odoo] Product image response has an unexpected format.");
-      return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
+      return res.status(502).json({ error: "L’image du produit renvoyée par FiSAFi est invalide." });
     }
 
     const encodedImage = firstProduct.image_512;
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (typeof encodedImage !== "string" || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encodedImage)) {
       console.error("[Market/Odoo] Product image response has an unexpected content type.");
-      return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
+      return res.status(502).json({ error: "L’image du produit renvoyée par FiSAFi est invalide." });
     }
 
     const image = Buffer.from(encodedImage, "base64");
@@ -107,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               : null;
     if (!contentType) {
       console.error("[Market/Odoo] Product image response is not a supported image.");
-      return res.status(502).json({ error: "L’image du produit renvoyée par Odoo est invalide." });
+      return res.status(502).json({ error: "L’image du produit renvoyée par FiSAFi est invalide." });
     }
 
     res.setHeader("Content-Type", contentType);

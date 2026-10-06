@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof OdooApiError) {
       console.error("[Employee/POS] Odoo could not register sale:", error);
       return res.status(error.statusCode).json({
-        error: "La vente n’a pas pu être confirmée par Odoo. Actualisez la caisse avant de réessayer.",
+        error: "La vente n’a pas pu être confirmée. Actualisez la caisse avant de réessayer.",
       });
     }
     console.error("[Employee/POS] Unexpected sale error:", error);

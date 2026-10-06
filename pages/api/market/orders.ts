@@ -272,7 +272,7 @@ async function getCustomerOrders(
 
     const companies = await listFiSafiCompanies();
     const market = companies.find((company) => company.type === "market");
-    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
     const ids = quotations.map((quotation) => quotation.odooOrderId);
     const payload: unknown = await callOdoo("sale.order", "search_read", {
       domain: [["id", "in", ids], ["company_id", "=", market.id]],
@@ -286,7 +286,7 @@ async function getCustomerOrders(
       payload.some((order) => !ids.includes(order.id) || order.company_id[0] !== market.id)
     ) {
       console.error("[Market/Odoo] Customer quotation response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé des données de devis invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des données de devis invalides.");
     }
 
     const orderLineIds = [...new Set(payload.flatMap((order) => order.order_line))];
@@ -303,7 +303,7 @@ async function getCustomerOrders(
       linePayload.some((line) => !orderLineIds.includes(line.id))
     ) {
       console.error("[Market/Odoo] Quotation line response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé des lignes de devis invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des lignes de devis invalides.");
     }
 
     const productLines = linePayload.filter(
@@ -324,7 +324,7 @@ async function getCustomerOrders(
       variantPayload.some((variant) => !productIds.includes(variant.id))
     ) {
       console.error("[Market/Odoo] Quotation product response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé des produits de devis invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des produits de devis invalides.");
     }
 
     const templateByVariantId = new Map(
@@ -350,7 +350,7 @@ async function getCustomerOrders(
       )
     ) {
       console.error("[Market/Odoo] Quotation product template response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé des catégories de produits invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des catégories de produits invalides.");
     }
     const templateById = new Map(templatePayload.map((product) => [product.id, product]));
     const linesByOrderId = new Map<number, QuotationItem[]>();
@@ -358,13 +358,13 @@ async function getCustomerOrders(
       const orderId = line.order_id[0];
       if (!ids.includes(orderId)) {
         console.error("[Market/Odoo] Quotation line belongs to an unexpected order.");
-        throw new OdooApiError("Odoo a renvoyé des lignes de devis invalides.");
+        throw new OdooApiError("FiSAFi a renvoyé des lignes de devis invalides.");
       }
       const templateId = templateByVariantId.get(line.product_id[0]);
       const template = templateId ? templateById.get(templateId) : undefined;
       if (!templateId || !template) {
         console.error("[Market/Odoo] A quotation line references a missing product template.");
-        throw new OdooApiError("Un produit de ce devis n’est plus disponible dans Odoo.");
+        throw new OdooApiError("Un produit de ce devis n’est plus disponible dans le catalogue FiSAFi.");
       }
       const orderItems = linesByOrderId.get(orderId) ?? [];
       orderItems.push({
@@ -522,7 +522,7 @@ export default async function handler(
   try {
     const companies = await listFiSafiCompanies();
     const market = companies.find((company) => company.type === "market");
-    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée dans Odoo.", 503);
+    if (!market) throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
 
     const productIds = [...requestedItems.keys()];
     const templates: unknown = await callOdoo("product.template", "search_read", {
@@ -539,7 +539,7 @@ export default async function handler(
 
     if (!Array.isArray(templates) || !templates.every(isProductTemplate)) {
       console.error("[Market/Odoo] Order product response has an unexpected format.");
-      throw new OdooApiError("Odoo a renvoyé des données produit invalides.");
+      throw new OdooApiError("FiSAFi a renvoyé des données produit invalides.");
     }
     if (templates.length !== productIds.length) {
       return res.status(409).json({
@@ -588,7 +588,7 @@ export default async function handler(
       });
       if (!Array.isArray(linkedPartnerPayload) || !linkedPartnerPayload.every(isPartner)) {
         console.error("[Market/Odoo] Linked partner response has an unexpected format.");
-        throw new OdooApiError("Odoo a renvoyé des données client invalides.");
+        throw new OdooApiError("FiSAFi a renvoyé des données client invalides.");
       }
       const linkedPartner = linkedPartnerPayload[0];
       if (!linkedPartner || (linkedPartner.company_id !== false && linkedPartner.company_id[0] !== market.id)) {
@@ -610,7 +610,7 @@ export default async function handler(
       partnerId = getCreatedId(partnerResult) ?? 0;
       if (!partnerId) {
         console.error("[Market/Odoo] Customer creation returned an unexpected response.");
-        throw new OdooApiError("Odoo n’a pas pu enregistrer la fiche client.");
+        throw new OdooApiError("FiSAFi n’a pas pu enregistrer la fiche client.");
       }
       await prisma.user.update({
         where: { id: user.id },
@@ -627,7 +627,7 @@ export default async function handler(
       });
     }
     if (!partnerId) {
-      throw new OdooApiError("Odoo n’a pas pu retrouver la fiche client.");
+      throw new OdooApiError("FiSAFi n’a pas pu retrouver la fiche client.");
     }
     const customerPartnerId = partnerId;
 
@@ -658,7 +658,7 @@ export default async function handler(
       });
       if (!Array.isArray(deliveryPartners) || !deliveryPartners.every(isPartner)) {
         console.error("[Market/Odoo] Delivery contact response has an unexpected format.");
-        throw new OdooApiError("Odoo n’a pas renvoyé une adresse de livraison valide.");
+        throw new OdooApiError("FiSAFi n’a pas renvoyé une adresse de livraison valide.");
       }
       deliveryPartnerId = deliveryPartners[0]?.id ?? 0;
       if (!deliveryPartnerId) {
@@ -676,7 +676,7 @@ export default async function handler(
         deliveryPartnerId = getCreatedId(deliveryPartnerResult) ?? 0;
         if (!deliveryPartnerId) {
           console.error("[Market/Odoo] Delivery contact creation returned an unexpected response.");
-          throw new OdooApiError("Odoo n’a pas pu enregistrer l’adresse de livraison.");
+          throw new OdooApiError("FiSAFi n’a pas pu enregistrer l’adresse de livraison.");
         }
       }
     }
@@ -702,7 +702,7 @@ export default async function handler(
     const orderId = getCreatedId(createResult);
     if (!orderId) {
       console.error("[Market/Odoo] Quotation creation returned an unexpected response.");
-      throw new OdooApiError("Odoo n’a pas pu créer le devis.");
+      throw new OdooApiError("FiSAFi n’a pas pu créer le devis.");
     }
 
     const createdOrders: unknown = await callOdoo("sale.order", "search_read", {
@@ -712,7 +712,7 @@ export default async function handler(
     });
     if (!Array.isArray(createdOrders) || !createdOrders.every(isOdooOrder) || !createdOrders[0]) {
       console.error("[Market/Odoo] Created quotation could not be read back.");
-      throw new OdooApiError("Le devis a été créé mais Odoo n’a pas renvoyé sa référence.");
+      throw new OdooApiError("Le devis a été créé mais FiSAFi n’a pas renvoyé sa référence.");
     }
     if (
       createdOrders[0].company_id[0] !== market.id ||
@@ -744,6 +744,6 @@ export default async function handler(
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error("[Market/Odoo] Order creation failed:", error);
-    return res.status(502).json({ error: "Impossible de transmettre la demande à Odoo. Réessayez ou contactez FiSAFi." });
+    return res.status(502).json({ error: "Impossible de transmettre la demande à FiSAFi. Réessayez ou contactez notre équipe." });
   }
 }
