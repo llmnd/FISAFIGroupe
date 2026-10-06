@@ -2585,6 +2585,16 @@ html.theme-transitioning *::after {
   }
 }
 
+@media (max-width: 760px) {
+  .header-market-actions .market-rayons-link:hover,
+  .header-market-actions .market-rayons-link:focus-visible,
+  .header-market-actions .market-rayons-link.is-open {
+    transform: none;
+    background: #f1ebff;
+    color: #5733bd;
+  }
+}
+
 @media (max-width: 420px) {
   .market-page .market-product-grid { gap: 0.55rem; }
 
