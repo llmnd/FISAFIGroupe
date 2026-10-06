@@ -146,7 +146,7 @@ body:has(.dash-layout.user-dashboard) {
    ══════════════════════════════════════════ */
 .dash-layout.user-dashboard > .dash-overlay {
   position: fixed;
-  inset: var(--topbar-h) 0 0 0;
+  inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 0 0 0;
   z-index: 40;
   display: block;
   padding: 0;
@@ -169,7 +169,7 @@ body:has(.dash-layout.user-dashboard) {
    ══════════════════════════════════════════ */
 .dash-layout.user-dashboard > .dash-sidebar {
   position: fixed;
-  top: var(--topbar-h);
+  top: calc(var(--topbar-h) + env(safe-area-inset-top));
   left: 0;
   bottom: 0;
   z-index: 50;
@@ -309,7 +309,7 @@ body:has(.dash-layout.user-dashboard) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0.9rem 0.7rem calc(0.9rem + env(safe-area-inset-bottom));
+  padding: 0.9rem 0.7rem calc(1.6rem + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .dash-layout.user-dashboard .sidebar-logout {
@@ -318,7 +318,7 @@ body:has(.dash-layout.user-dashboard) {
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  min-height: 2.6rem;
+  min-height: 3.1rem;
   padding: 0.7rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--od-r);
@@ -335,8 +335,10 @@ body:has(.dash-layout.user-dashboard) {
    TOPBAR (au-dessus de l'overlay et du tiroir)
    ══════════════════════════════════════════ */
 .dash-layout.user-dashboard .dash-topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 60;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -344,8 +346,9 @@ body:has(.dash-layout.user-dashboard) {
   gap: 0.6rem;
   width: 100%;
   min-width: 0;
-  height: var(--topbar-h);
-  padding-inline: max(0.9rem, env(safe-area-inset-left)) max(0.9rem, env(safe-area-inset-right));
+  height: calc(var(--topbar-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(0.9rem, env(safe-area-inset-right)) 0
+    max(0.9rem, env(safe-area-inset-left));
   background: var(--od-surface);
   border-bottom: 1px solid var(--od-border);
 }
@@ -449,6 +452,7 @@ body:has(.dash-layout.user-dashboard) {
   flex-direction: column;
   width: 100%;
   min-width: 0;
+  padding-top: calc(var(--topbar-h) + env(safe-area-inset-top));
 }
 .dash-layout.user-dashboard .dash-content {
   flex: 1;
@@ -484,12 +488,16 @@ body:has(.dash-layout.user-dashboard) {
   .dash-layout.user-dashboard .dash-main {
     margin-left: var(--sidebar-w);
     width: calc(100% - var(--sidebar-w));
+    padding-top: var(--topbar-h);
   }
   .dash-layout.user-dashboard > .dash-overlay { display: none; }
   .dash-layout.user-dashboard .dash-topbar {
-    position: relative;
+    position: fixed;
+    left: var(--sidebar-w);
+    right: 0;
+    height: var(--topbar-h);
     grid-template-columns: minmax(0, 1fr) auto;
-    padding-inline: 2rem;
+    padding: 0 2rem;
   }
   .dash-layout.user-dashboard .dash-brand { visibility: hidden; }
   .dash-layout.user-dashboard .topbar-hamburger { display: none; }
