@@ -504,8 +504,8 @@ html[data-market-theme="light"] .header-drawer.has-market-actions {
 .market-catalog-search-toggle:hover,
 .market-catalog-search-toggle:focus-visible,
 .market-catalog-search-toggle[aria-expanded="true"] {
-  border-color: rgba(112, 71, 245, 0.34);
-  background: #f4efff;
+  transform: none;
+  background: var(--market-surface);
 }
 
 .market-catalog-search-toggle:focus-visible {
