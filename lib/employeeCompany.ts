@@ -17,7 +17,7 @@ export async function resolveEmployeeCompany(
 ): Promise<FiSafiCompany> {
   const companies = await listFiSafiCompanies();
   if (!companies.length) {
-    throw new EmployeeCompanyError("Aucune société FiSAFi Groupe ou FiSAFi Market n’est accessible dans Odoo.", 403);
+    throw new EmployeeCompanyError("Aucune société FiSAFi Groupe ou FiSAFi Market n’est accessible.", 403);
   }
 
   const rawId = requestedId === undefined

@@ -19,15 +19,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hasGroup = companies.some((company) => company.type === "groupe");
     if (!hasMarket || !hasGroup) {
       return res.status(403).json({
-        error: "Le compte Odoo doit avoir accès aux sociétés FiSAFi Groupe et FiSAFi Market. Vérifiez ses droits multi-sociétés.",
+        error: "Le compte doit avoir accès aux sociétés FiSAFi Groupe et FiSAFi Market. Vérifiez ses droits.",
       });
     }
     return res.status(200).json(companies);
   } catch (error) {
-    if (error instanceof EmployeeAuthError || error instanceof OdooApiError) {
+    if (error instanceof EmployeeAuthError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error("[Admin/Odoo] Could not load companies:", error);
-    return res.status(502).json({ error: "Impossible de charger les sociétés depuis Odoo." });
+    if (error instanceof OdooApiError) {
+      return res.status(error.statusCode).json({ error: "Impossible de charger les sociétés FiSAFi pour le moment." });
+    }
+    return res.status(502).json({ error: "Impossible de charger les sociétés FiSAFi pour le moment." });
   }
 }

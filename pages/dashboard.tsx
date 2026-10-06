@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Head from "next/head";
 import Image from "next/image";
@@ -21,6 +21,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string | null;
   role: "user" | "admin" | "moderator";
   profiles: Array<"MARKET_CUSTOMER" | "TRAINING_PARTICIPANT">;
 }
@@ -56,6 +57,10 @@ function parseDashboardUser(value: unknown): User | null {
     lastName:
       "lastName" in value && typeof value.lastName === "string"
         ? value.lastName
+        : undefined,
+    phone:
+      "phone" in value && typeof value.phone === "string"
+        ? value.phone
         : undefined,
     profiles,
   };
@@ -344,9 +349,17 @@ export default function DashboardPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [savingAccountPhone, setSavingAccountPhone] = useState(false);
+  const [accountContactError, setAccountContactError] = useState("");
+  const [accountContactMessage, setAccountContactMessage] = useState("");
   const [savingProfile, setSavingProfile] = useState<
     "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT" | null
   >(null);
+
+  useEffect(() => {
+    setProfilePhone(user?.phone ?? "");
+  }, [user?.id, user?.phone]);
   const [showInscriptionModal, setShowInscriptionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionFormation | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
@@ -762,6 +775,50 @@ export default function DashboardPage() {
       );
     } finally {
       setSavingProfile(null);
+    }
+  };
+
+  const handleSaveAccountPhone = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user || savingAccountPhone) return;
+    setSavingAccountPhone(true);
+    setAccountContactError("");
+    setAccountContactMessage("");
+    try {
+      const response = await authenticatedFetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: profilePhone }),
+      });
+      const payload: unknown = await response.json();
+      if (
+        !response.ok ||
+        !payload ||
+        typeof payload !== "object" ||
+        !("phone" in payload) ||
+        (typeof payload.phone !== "string" && payload.phone !== null)
+      ) {
+        const message =
+          payload &&
+          typeof payload === "object" &&
+          "error" in payload &&
+          typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de mettre à jour votre numéro.";
+        throw new Error(message);
+      }
+      const updatedUser = { ...user, phone: payload.phone };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setProfilePhone(payload.phone ?? "");
+      setAccountContactMessage("Votre numéro de téléphone a été mis à jour.");
+    } catch (error) {
+      console.error("[Dashboard/Account] Could not save account phone:", error);
+      setAccountContactError(
+        error instanceof Error ? error.message : "Impossible de mettre à jour votre numéro.",
+      );
+    } finally {
+      setSavingAccountPhone(false);
     }
   };
 
@@ -2136,7 +2193,7 @@ export default function DashboardPage() {
                             : quotation.state === "sent"
                             ? "Le vendeur vous a envoyé un devis à examiner."
                             : quotation.state === "sale"
-                            ? "Votre demande a été confirmée dans Odoo."
+                            ? "Votre demande a été confirmée par notre équipe."
                             : quotation.state === "done"
                             ? "Cette commande est terminée."
                             : "Cette demande a été annulée."}
@@ -2292,6 +2349,7 @@ export default function DashboardPage() {
                         "Non renseigné",
                     ],
                     ["Adresse email", user.email],
+                    ["Téléphone", user.phone || "Non renseigné"],
                     [
                       "Type de compte",
                       user.role === "admin"
@@ -2301,13 +2359,13 @@ export default function DashboardPage() {
                         : "Utilisateur",
                     ],
                     [
-                      "Espaces activés",
+                      "Modules activés",
                       user.profiles.length
                         ? user.profiles
                             .map((profile) =>
                               profile === "MARKET_CUSTOMER"
-                                ? "Client Market"
-                                : "Participant FiSAFi Groupe"
+                                ? "Module e-commerce"
+                                : "Module formation"
                             )
                             .join(" · ")
                         : "Aucun espace activé",
@@ -2325,10 +2383,49 @@ export default function DashboardPage() {
                 </section>
                 <section
                   className="account-block"
+                  aria-labelledby="account-contact-title"
+                >
+                  <h2 id="account-contact-title" className="account-block-title">
+                    Coordonnées du compte
+                  </h2>
+                  <p className="page-sub account-block-sub">
+                    Elles seront reprises automatiquement lors de vos commandes Market.
+                  </p>
+                  {accountContactError && (
+                    <div className="alert alert-error" role="alert">
+                      {accountContactError}
+                    </div>
+                  )}
+                  {accountContactMessage && (
+                    <div className="alert alert-success" role="status">
+                      {accountContactMessage}
+                    </div>
+                  )}
+                  <form onSubmit={handleSaveAccountPhone} className="account-password-form account-contact-form">
+                    <label className="account-field">
+                      <span>Numéro de téléphone</span>
+                      <input
+                        className="form-input"
+                        type="tel"
+                        autoComplete="tel"
+                        inputMode="tel"
+                        required
+                        value={profilePhone}
+                        onChange={(event) => setProfilePhone(event.target.value)}
+                        placeholder="+221 77 000 00 00"
+                      />
+                    </label>
+                    <button type="submit" className="btn-submit" disabled={savingAccountPhone}>
+                      {savingAccountPhone ? "Enregistrement…" : "Mettre à jour mes coordonnées"}
+                    </button>
+                  </form>
+                </section>
+                <section
+                  className="account-block"
                   aria-labelledby="account-profiles-title"
                 >
                   <h2 id="account-profiles-title" className="account-block-title">
-                    Choisissez vos espaces
+                    Choisissez vos modules
                   </h2>
                   <p className="page-sub account-block-sub">
                     Vous pourrez activer les deux espaces. Les menus et les données
@@ -2349,12 +2446,12 @@ export default function DashboardPage() {
                       [
                         [
                           "MARKET_CUSTOMER",
-                          "Client FiSAFi Market",
+                          "Module e-commerce",
                           "Accédez à vos devis, commandes et factures Market.",
                         ],
                         [
                           "TRAINING_PARTICIPANT",
-                          "Participant FiSAFi Groupe",
+                          "Module formation",
                           "Accédez aux formations, sessions, inscriptions et factures Groupe.",
                         ],
                       ] as const

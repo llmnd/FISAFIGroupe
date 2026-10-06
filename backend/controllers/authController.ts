@@ -11,8 +11,20 @@ export async function register(
   reply: FastifyReply
 ) {
   try {
-    const { email, password, firstName, lastName, profiles } = request.body;
+    const { email, password, firstName, lastName, phone, profiles } = request.body;
     const allowedProfiles = new Set(["MARKET_CUSTOMER", "TRAINING_PARTICIPANT"]);
+    const normalizedPhone = typeof phone === "string" ? phone.trim() : "";
+    const phoneDigits = normalizedPhone.replace(/\D/g, "");
+    if (
+      !/^\+?[\d\s().-]+$/.test(normalizedPhone) ||
+      phoneDigits.length < 8 ||
+      phoneDigits.length > 15
+    ) {
+      return reply.status(400).send({
+        success: false,
+        error: "Saisissez un numéro de téléphone valide.",
+      });
+    }
     if (
       !Array.isArray(profiles) ||
       profiles.length === 0 ||
@@ -49,6 +61,7 @@ export async function register(
         password: hashedPassword,
         firstName,
         lastName,
+        phone: normalizedPhone,
         profiles,
         emailVerificationTokenHash: verificationTokenHash,
         emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -84,6 +97,7 @@ export async function register(
         email: user.email,
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
+        phone: user.phone,
         role: (user as any).role || 'user',
         employeeRole: user.employeeRole,
         profiles: user.profiles,
@@ -234,6 +248,7 @@ export async function login(
         email: user.email,
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
+        phone: user.phone,
         role: (user as any).role || 'user',
         employeeRole: user.employeeRole,
         profiles: user.profiles,
@@ -435,6 +450,7 @@ export async function getMe(
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         employeeRole: true,
         profiles: true,

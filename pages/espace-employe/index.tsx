@@ -89,12 +89,6 @@ export default function EmployeeHomePage() {
                 <span className="employee-home-section-note">Services connectés à FiSAFi</span>
               </div>
               <div className="employee-home-card-grid">
-                <Link href="/espace-employe/points-de-vente" className="employee-tool-card">
-                  <span className="employee-home-card-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg></span>
-                  <span className="employee-home-card-title">Points de vente</span>
-                  <span className="employee-home-card-text">Suivez l’état des caisses Odoo et accédez aux opérations autorisées.</span>
-                  <span className="employee-card-link employee-home-card-link">Afficher les points de vente →</span>
-                </Link>
                 {["admin", "manager", "seller", "stock", "accountant"].includes(employee.role) ||
                 ["manager", "seller", "stock", "accountant"].includes(employee.employeeRole || "") ? (
                   <Link href="/espace-employe/produits" className="employee-tool-card">

@@ -629,6 +629,22 @@ tr:hover td{background:var(--blue-soft)}
 .market-status-draft,.market-status-sent{background:var(--warning-soft);color:var(--warning)}
 .market-status-cancel{background:var(--danger-soft);color:var(--danger)}
 .market-stats-updated{text-align:right;color:var(--steel);font-size:.8rem;margin-top:.5rem}
+.market-history-table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.market-history-table{width:100%;min-width:1120px;border-collapse:collapse;font-size:.82rem}
+.market-history-table th{padding:.75rem .65rem;text-align:left;white-space:nowrap;color:var(--steel);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.market-history-table td{padding:.75rem .65rem;border-bottom:1px solid var(--line-soft);color:var(--ink);vertical-align:middle}
+.market-history-table tbody tr:hover{background:var(--surface-soft)}
+.market-history-table td strong{display:block;color:var(--ink-strong);white-space:nowrap}
+.market-history-table td time{white-space:nowrap}
+.market-history-kind{display:block;margin-top:.2rem;color:var(--steel);font-size:.72rem}
+.market-history-total{font-weight:700;white-space:nowrap}
+.market-history-pagination{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-top:1rem;color:var(--steel);font-size:.82rem}
+.market-history-pagination>div{display:flex;gap:.55rem}
+.market-history-pagination button:disabled{opacity:.5;cursor:not-allowed}
+.market-receipt-download{padding:.4rem .6rem;border:1px solid var(--blue);border-radius:5px;background:var(--blue-soft);color:var(--blue);font:inherit;font-size:.78rem;font-weight:700;white-space:nowrap;cursor:pointer}
+.market-receipt-download:hover:not(:disabled){background:var(--blue);color:#fff}
+.market-receipt-download:disabled{opacity:.55;cursor:not-allowed}
+.market-receipt-error{margin-top:.8rem;color:var(--danger);font-size:.88rem}
 
 /* ══ SÉLECTEUR DE SOCIÉTÉ ══ */
 .company-picker{
@@ -664,6 +680,7 @@ tr:hover td{background:var(--blue-soft)}
   .market-chart{gap:.3rem}
   .market-chart-track{height:6.5rem}
   .market-chart-value,.market-chart-count{font-size:.62rem}
+  .market-history-pagination{align-items:flex-start;flex-direction:column}
   .modal{padding:1.5rem 1.15rem calc(1.5rem + env(safe-area-inset-bottom))}
   .form-panel,.section-form{padding:1.1rem}
   .content-card{padding:.95rem 1rem}

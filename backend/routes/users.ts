@@ -37,6 +37,7 @@ export async function usersRoutes(app: FastifyInstance) {
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           active: true,
@@ -64,6 +65,7 @@ export async function usersRoutes(app: FastifyInstance) {
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           active: true,
@@ -87,10 +89,11 @@ export async function usersRoutes(app: FastifyInstance) {
       if (!await requireAdmin(request, reply)) return;
 
       const { id } = request.params as { id: string };
-      const { email, firstName, lastName, employeeRole } = request.body as {
+      const { email, firstName, lastName, phone, employeeRole } = request.body as {
         email?: string;
         firstName?: string;
         lastName?: string;
+        phone?: string | null;
         employeeRole?: string | null;
       };
       const allowedEmployeeRoles = ['manager', 'seller', 'cashier', 'stock', 'accountant'];
@@ -108,6 +111,7 @@ export async function usersRoutes(app: FastifyInstance) {
           email,
           firstName,
           lastName,
+          ...(phone !== undefined ? { phone } : {}),
           ...(employeeRole !== undefined ? { employeeRole } : {}),
         },
         select: {
@@ -115,6 +119,7 @@ export async function usersRoutes(app: FastifyInstance) {
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           active: true,

@@ -148,6 +148,7 @@ export interface CreateUserRequest {
   password: string;
   firstName?: string;
   lastName?: string;
+  phone: string;
   profiles: UserProfile[];
 }
 
@@ -163,6 +164,7 @@ export interface AuthResponse {
     email: string;
     firstName?: string;
     lastName?: string;
+    phone?: string | null;
     role?: string;
     employeeRole?: string | null;
     profiles: UserProfile[];

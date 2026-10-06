@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,
@@ -56,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "PUT") {
       // Mettre à jour un utilisateur
-      const { firstName, lastName, password, role, active, employeeRole, profiles } = req.body;
+      const { firstName, lastName, phone, password, role, active, employeeRole, profiles } = req.body;
       if (
         employeeRole !== undefined &&
         employeeRole !== null &&
@@ -71,6 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updateData: Partial<{
         firstName?: string;
         lastName?: string;
+        phone?: string | null;
         password?: string;
         role?: string;
         active?: boolean;
@@ -80,6 +82,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       if (firstName) updateData.firstName = firstName;
       if (lastName) updateData.lastName = lastName;
+      if (phone !== undefined) {
+        if (phone !== null && typeof phone !== "string") {
+          return res.status(400).json({ error: "Invalid phone number" });
+        }
+        updateData.phone = typeof phone === "string" && phone.trim() ? phone.trim() : null;
+      }
       if (password) updateData.password = await hashPassword(password);
       if (role) updateData.role = role;
       if (active !== undefined) updateData.active = active;
@@ -94,6 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,

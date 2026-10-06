@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="foot-logo">Fi<span>SAFI</span> Groupe</div>
           <div className="foot-tagline">L&apos;expertise qui fait la différence</div>
           <p className="footer-desc">
-            Partenaire stratégique en expertise technologique, ingénierie et conseil pour l&apos;Afrique.
+            Entreprise sénégalaise à vocation africaine, elle intervient dans les réseaux &amp; télécoms, les infrastructures IT, la cybersécurité, l’ingénierie et le conseil, tout en développant des activités de commerce général, import-export, négoce et distribution.
           </p>
           <div className="footer-socials">
             <a
@@ -42,6 +42,7 @@ export default function Footer() {
             <li><a href={companyUrl("/services#infrastructure")}>Infrastructure IT</a></li>
             <li><a href={companyUrl("/services#security")}>Cybersécurité</a></li>
             <li><a href={companyUrl("/services#consulting")}>Conseil Stratégique</a></li>
+            <li><a href={companyUrl("/market")}>Trading</a></li>
           </ul>
         </div>
 

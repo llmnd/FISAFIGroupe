@@ -254,6 +254,19 @@ export default function MarketOrderPage() {
           if ("email" in payload.data && typeof payload.data.email === "string") {
             setAccountEmail(payload.data.email);
           }
+          const firstName =
+            "firstName" in payload.data && typeof payload.data.firstName === "string"
+              ? payload.data.firstName.trim()
+              : "";
+          const lastName =
+            "lastName" in payload.data && typeof payload.data.lastName === "string"
+              ? payload.data.lastName.trim()
+              : "";
+          const accountName = [firstName, lastName].filter(Boolean).join(" ");
+          if (accountName) setCustomerName(accountName);
+          if ("phone" in payload.data && typeof payload.data.phone === "string" && payload.data.phone.trim()) {
+            setPhone(payload.data.phone);
+          }
           setIsLoggedIn(true);
         }
       } catch (error) {

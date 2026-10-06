@@ -32,10 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     setEmployeeCompanyCookie(req, res, company);
     return res.status(200).json({ selectedCompanyId: company.id });
   } catch (error) {
-    if (error instanceof EmployeeAuthError || error instanceof EmployeeCompanyError || error instanceof OdooApiError) {
+    if (error instanceof EmployeeAuthError || error instanceof EmployeeCompanyError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
+    if (error instanceof OdooApiError) {
+      console.error("[Employee/Companies] Could not resolve FiSAFi company context:", error);
+      return res.status(error.statusCode).json({ error: "Impossible de charger les sociétés FiSAFi pour le moment." });
+    }
     console.error("[Employee/Companies] Could not resolve Odoo company context:", error);
-    return res.status(502).json({ error: "Impossible de charger les sociétés Odoo." });
+    return res.status(502).json({ error: "Impossible de charger les sociétés FiSAFi pour le moment." });
   }
 }

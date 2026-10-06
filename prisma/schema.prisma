@@ -148,6 +148,7 @@ model User {
   password  String   // Hashed with bcrypt
   firstName String?
   lastName  String?
+  phone     String?
   role      String   @default("user") // "user", "admin", "moderator"
   profiles  UserProfile[] @default([])
   active    Boolean  @default(true)

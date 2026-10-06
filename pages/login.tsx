@@ -246,6 +246,7 @@ export default function LoginPage() {
     password: "",
     firstName: "",
     lastName: "",
+    phone: "",
     profiles: [] as ("MARKET_CUSTOMER" | "TRAINING_PARTICIPANT")[],
   });
   const [loading,      setLoading]      = useState(false);
@@ -378,7 +379,7 @@ export default function LoginPage() {
     e.preventDefault(); setLoading(true); setError(null); setSuccess(null);
     try {
       if (!isLogin && !forgotPassword && formData.profiles.length === 0) {
-        setError("Choisissez au moins un profil : client Market ou participant aux formations.");
+        setError("Choisissez au moins un module : e-commerce ou formation.");
         return;
       }
       if (forgotPassword) {
@@ -540,9 +541,13 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {!isLogin && !forgotPassword && (
+                <FloatField id="phone" label="Numéro de téléphone" type="tel" name="phone" value={formData.phone} onChange={handleChange} required focused={focusedField==="phone"} onFocus={()=>setFocusedField("phone")} onBlur={()=>setFocusedField(null)} autoComplete="tel" />
+              )}
+
                   {!isLogin && !forgotPassword && (
                     <fieldset className="l-profile-fieldset">
-                      <legend>Comment souhaitez-vous utiliser FiSAFi ?</legend>
+                      <legend>Quels modules souhaitez-vous activer ?</legend>
                       <label className="l-profile-option">
                         <input
                           type="checkbox"
@@ -550,7 +555,7 @@ export default function LoginPage() {
                           onChange={() => toggleProfile("MARKET_CUSTOMER")}
                         />
                         <span>
-                          <strong>Client FiSAFi Market</strong>
+                          <strong>Module e-commerce</strong>
                           <small>Découvrir les produits et passer des commandes.</small>
                         </span>
                       </label>
@@ -561,7 +566,7 @@ export default function LoginPage() {
                           onChange={() => toggleProfile("TRAINING_PARTICIPANT")}
                         />
                         <span>
-                          <strong>Participant aux formations FiSAFi Groupe</strong>
+                          <strong>Module formation</strong>
                           <small>Consulter les formations et s’inscrire aux sessions.</small>
                         </span>
                       </label>

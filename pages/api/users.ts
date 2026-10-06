@@ -18,6 +18,18 @@ function isValidUserProfiles(value: unknown): value is UserProfile[] {
   );
 }
 
+function getPrismaErrorCode(error: unknown): string | null {
+  return (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    /^P\d{4}$/.test(error.code)
+  )
+    ? error.code
+    : null;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
   try {
@@ -31,6 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,
@@ -46,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "POST") {
       // Créer un nouvel utilisateur
-      const { email, firstName, lastName, password, employeeRole, profiles } = req.body;
+      const { email, firstName, lastName, phone, password, employeeRole, profiles } = req.body;
 
       if (!email || !firstName || !lastName || !password) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -76,6 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email,
           firstName,
           lastName,
+          phone: typeof phone === "string" && phone.trim() ? phone.trim() : null,
           password: hashedPassword,
           role: "user",
           employeeRole: employeeRole || null,
@@ -87,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,
@@ -100,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === "PUT") {
-      const { id, firstName, lastName, password, employeeRole, profiles } = req.body;
+      const { id, firstName, lastName, phone, password, employeeRole, profiles } = req.body;
       if (typeof id !== "string" || !id) {
         return res.status(400).json({ error: "Invalid user ID" });
       }
@@ -120,6 +135,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (lastName !== undefined && typeof lastName !== "string") {
         return res.status(400).json({ error: "Invalid last name" });
       }
+      if (phone !== undefined && phone !== null && typeof phone !== "string") {
+        return res.status(400).json({ error: "Invalid phone number" });
+      }
       if (password !== undefined && typeof password !== "string") {
         return res.status(400).json({ error: "Invalid password" });
       }
@@ -129,6 +147,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: {
           ...(firstName !== undefined ? { firstName } : {}),
           ...(lastName !== undefined ? { lastName } : {}),
+          ...(phone !== undefined
+            ? { phone: typeof phone === "string" && phone.trim() ? phone.trim() : null }
+            : {}),
           ...(password ? { password: await hashPassword(password) } : {}),
           ...(employeeRole !== undefined ? { employeeRole: employeeRole || null } : {}),
           ...(profiles !== undefined ? { profiles } : {}),
@@ -138,6 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,
@@ -172,6 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: true,
           firstName: true,
           lastName: true,
+          phone: true,
           role: true,
           employeeRole: true,
           profiles: true,
@@ -199,10 +222,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof EmployeeAuthError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
-    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+    const prismaErrorCode = getPrismaErrorCode(error);
+    if (prismaErrorCode === "P2025") {
       return res.status(404).json({ error: "User not found" });
     }
     console.error("Error in users API:", error);
+    if (prismaErrorCode === "P2021" || prismaErrorCode === "P2022") {
+      return res.status(503).json({
+        error: "Le schéma de la base ne correspond pas encore à l’application. Arrêtez puis redémarrez le serveur après avoir appliqué les migrations Prisma.",
+      });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 }

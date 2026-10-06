@@ -86,6 +86,13 @@ export async function callOdoo<T>(
     if (response.status === 429) {
       throw new OdooApiError(
         `Odoo limite actuellement l’appel ${model}/${method} (HTTP 429). Réessayez dans quelques instants.`,
+        429,
+      );
+    }
+    if (response.status === 404) {
+      throw new OdooApiError(
+        `La méthode ${model}/${method} n’est pas disponible sur le système connecté (HTTP 404).`,
+        404,
       );
     }
     if (response.status === 400 || response.status === 422) {

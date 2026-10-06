@@ -11,6 +11,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string | null;
   role: string;
   employeeRole?: "manager" | "seller" | "cashier" | "stock" | "accountant" | null;
   profiles: UserProfile[];
@@ -67,6 +68,23 @@ type MarketOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
 type OdooCompanyType = "groupe" | "market";
 type OdooCompany = { id: number; name: string; type: OdooCompanyType };
 type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
+type MarketHistoryCursor = { saleOffset: number; posOffset: number };
+
+interface MarketTransaction {
+  id: number;
+  kind: "sale_order" | "pos_order";
+  reference: string;
+  session: string | null;
+  date: string;
+  pointOfSale: string | null;
+  receiptNumber: string | null;
+  customer: string;
+  operator: string | null;
+  amountTotal: number;
+  state: MarketOrderState;
+  statusLabel: string;
+  invoiceStatus: string;
+}
 
 interface MarketStats {
   company: { id: number; name: string; type: OdooCompanyType };
@@ -87,14 +105,9 @@ interface MarketStats {
     orders: number;
     confirmedRevenue: number;
   }>;
-  recentOrders: Array<{
-    id: number;
-    reference: string;
-    customer: string;
-    state: MarketOrderState;
-    amountTotal: number;
-    date: string;
-  }>;
+  transactions: MarketTransaction[];
+  hasMore: boolean;
+  nextCursor: MarketHistoryCursor | null;
   generatedAt: string;
 }
 
@@ -109,18 +122,7 @@ function formatMarketCurrency(amount: number): string {
 }
 
 function getUserProfileLabel(profile: UserProfile): string {
-  return profile === "MARKET_CUSTOMER" ? "Client Market" : "Participant formation";
-}
-
-function getMarketOrderStatusLabel(state: MarketOrderState): string {
-  const labels: Record<MarketOrderState, string> = {
-    draft: "Brouillon",
-    sent: "Devis envoyé",
-    sale: "Confirmée",
-    done: "Terminée",
-    cancel: "Annulée",
-  };
-  return labels[state];
+  return profile === "MARKET_CUSTOMER" ? "Module e-commerce" : "Module formation";
 }
 
 function isMarketStats(value: unknown): value is MarketStats {
@@ -150,16 +152,30 @@ function isMarketStats(value: unknown): value is MarketStats {
         Number.isFinite(month.orders) &&
         Number.isFinite(month.confirmedRevenue),
     ) &&
-    Array.isArray(stats.recentOrders) &&
-    stats.recentOrders.every(
+    Array.isArray(stats.transactions) &&
+    stats.transactions.every(
       (order) =>
         Number.isSafeInteger(order.id) &&
+        (order.kind === "sale_order" || order.kind === "pos_order") &&
         typeof order.reference === "string" &&
+        (typeof order.session === "string" || order.session === null) &&
+        (typeof order.pointOfSale === "string" || order.pointOfSale === null) &&
+        (typeof order.receiptNumber === "string" || order.receiptNumber === null) &&
         typeof order.customer === "string" &&
+        (typeof order.operator === "string" || order.operator === null) &&
         ["draft", "sent", "sale", "done", "cancel"].includes(order.state) &&
         Number.isFinite(order.amountTotal) &&
-        typeof order.date === "string",
+        typeof order.date === "string" &&
+        typeof order.statusLabel === "string" &&
+        typeof order.invoiceStatus === "string",
     ) &&
+    typeof stats.hasMore === "boolean" &&
+    (stats.nextCursor === null ||
+      (stats.nextCursor !== undefined &&
+        Number.isSafeInteger(stats.nextCursor.saleOffset) &&
+        stats.nextCursor.saleOffset >= 0 &&
+        Number.isSafeInteger(stats.nextCursor.posOffset) &&
+        stats.nextCursor.posOffset >= 0)) &&
     typeof stats.generatedAt === "string"
   );
 }
@@ -309,6 +325,12 @@ export default function AdminDashboard() {
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [loadingMarketStats, setLoadingMarketStats] = useState(false);
   const [marketStatsError, setMarketStatsError] = useState("");
+  const [receiptDownloadId, setReceiptDownloadId] = useState<number | null>(null);
+  const [receiptDownloadError, setReceiptDownloadError] = useState("");
+  const [marketHistoryPage, setMarketHistoryPage] = useState(0);
+  const [marketHistoryCursors, setMarketHistoryCursors] = useState<Array<MarketHistoryCursor | null>>([
+    { saleOffset: 0, posOffset: 0 },
+  ]);
   const [odooCompanies, setOdooCompanies] = useState<OdooCompany[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [loadingOdooCompanies, setLoadingOdooCompanies] = useState(false);
@@ -364,6 +386,7 @@ export default function AdminDashboard() {
     email: "",
     firstName: "",
     lastName: "",
+    phone: "",
     password: "",
     employeeRole: "" as "" | "manager" | "seller" | "cashier" | "stock" | "accountant",
     profiles: [] as UserProfile[],
@@ -537,7 +560,7 @@ export default function AdminDashboard() {
     else if (activeTab === "inscriptions") fetchInscriptions();
     else if (activeTab === "sessions") { fetchFormations(); fetchSessions(); }
     else if (activeTab === "ecommerce" && selectedCompanyId !== null) void fetchMarketStats();
-  }, [activeTab, selectedCompanyId]);
+  }, [activeTab, selectedCompanyId, marketHistoryPage]);
 
   useEffect(() => {
     if (activeTab === "inscriptions") fetchInscriptions();
@@ -610,7 +633,7 @@ export default function AdminDashboard() {
         const message =
           isRecord(payload) && typeof payload.error === "string"
             ? payload.error
-            : `Impossible de charger les sociétés Odoo (HTTP ${response.status}).`;
+            : `Impossible de charger les sociétés (HTTP ${response.status}).`;
         throw new Error(message);
       }
       if (
@@ -623,7 +646,7 @@ export default function AdminDashboard() {
             (company.type === "groupe" || company.type === "market"),
         )
       ) {
-        throw new Error("Odoo a renvoyé une liste de sociétés invalide.");
+        throw new Error("La liste des sociétés reçue est invalide.");
       }
       setOdooCompanies(payload);
       const storedCompanyId = Number(localStorage.getItem("adminOdooCompanyId"));
@@ -638,7 +661,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("[Admin/Odoo] Could not load companies:", error);
       setOdooCompaniesError(
-        error instanceof Error ? error.message : "Impossible de charger les sociétés depuis Odoo.",
+        error instanceof Error ? error.message : "Impossible de charger les sociétés.",
       );
     } finally {
       setLoadingOdooCompanies(false);
@@ -651,11 +674,18 @@ export default function AdminDashboard() {
       setMarketStatsError("Sélectionnez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi du tableau de bord.");
       return;
     }
+    const cursor = marketHistoryCursors[marketHistoryPage];
+    if (!cursor) return;
     const requestId = ++marketStatsRequestId.current;
     setLoadingMarketStats(true);
     setMarketStatsError("");
     try {
-      const response = await fetch(`/api/admin/market-stats?companyId=${selectedCompanyId}`);
+      const query = new URLSearchParams({
+        companyId: String(selectedCompanyId),
+        saleOffset: String(cursor.saleOffset),
+        posOffset: String(cursor.posOffset),
+      });
+      const response = await fetch(`/api/admin/market-stats?${query}`);
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
@@ -671,13 +701,62 @@ export default function AdminDashboard() {
         }
         return;
       }
-      if (requestId === marketStatsRequestId.current) setMarketStats(payload);
+      if (requestId === marketStatsRequestId.current) {
+        setMarketStats(payload);
+        setMarketHistoryCursors((cursors) => {
+          const nextCursors = cursors.slice(0, marketHistoryPage + 1);
+          if (payload.hasMore && payload.nextCursor) {
+            nextCursors[marketHistoryPage + 1] = payload.nextCursor;
+          }
+          return nextCursors;
+        });
+      }
     } catch {
       if (requestId === marketStatsRequestId.current) {
         setMarketStatsError("Erreur réseau : impossible de charger les statistiques e-commerce.");
       }
     } finally {
       if (requestId === marketStatsRequestId.current) setLoadingMarketStats(false);
+    }
+  };
+
+  const downloadPosReceipt = async (transaction: MarketTransaction) => {
+    if (selectedCompanyId === null) return;
+    setReceiptDownloadId(transaction.id);
+    setReceiptDownloadError("");
+    try {
+      const query = new URLSearchParams({ companyId: String(selectedCompanyId) });
+      const response = await fetch(`/api/admin/pos-orders/${transaction.id}/receipt?${query}`);
+      if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const message =
+          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "Impossible de récupérer le reçu depuis FiSAFi.";
+        throw new Error(message);
+      }
+      const receipt = await response.blob();
+      if (receipt.type.split(";")[0] !== "text/html" || receipt.size < 20) {
+        throw new Error("Odoo n’a pas renvoyé un reçu valide.");
+      }
+      const fileName = `recu-${(transaction.receiptNumber || transaction.reference)
+        .replace(/[^a-zA-Z0-9._-]/g, "_")
+        .slice(0, 100)}.html`;
+      const objectUrl = URL.createObjectURL(receipt);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      console.error(`[Admin/POS] Could not download the receipt for order ${transaction.id}:`, error);
+      setReceiptDownloadError(
+        error instanceof Error ? error.message : "Impossible de récupérer le reçu FiSAFi.",
+      );
+    } finally {
+      setReceiptDownloadId(null);
     }
   };
 
@@ -789,7 +868,10 @@ export default function AdminDashboard() {
   const filteredUsers = users.filter(u => {
     const q = searchQuery.toLowerCase();
     const fullName = `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim().toLowerCase();
-    const ms = u.email.toLowerCase().includes(q) || fullName.includes(q);
+    const ms =
+      u.email.toLowerCase().includes(q) ||
+      fullName.includes(q) ||
+      (u.phone ?? "").toLowerCase().includes(q);
     const mr = filterRole === "all" || u.role === filterRole;
     const ma = filterActive === "all" || (filterActive === "active" ? u.active : !u.active);
     const mp =
@@ -989,6 +1071,8 @@ export default function AdminDashboard() {
     marketStatsRequestId.current += 1;
     setSelectedCompanyId(company.id);
     localStorage.setItem("adminOdooCompanyId", String(company.id));
+    setMarketHistoryPage(0);
+    setMarketHistoryCursors([{ saleOffset: 0, posOffset: 0 }]);
     setMarketStats(null);
     setMarketStatsError("");
     if (company.type === "market" && (activeTab === "inscriptions" || activeTab === "sessions")) {
@@ -997,7 +1081,7 @@ export default function AdminDashboard() {
     setCompanyPickerSource(null);
   };
   const renderCompanyPicker = (source: "sidebar" | "topbar") => companyPickerSource === source ? (
-    <div className="company-picker" role="group" aria-label="Choisir une société Odoo">
+    <div className="company-picker" role="group" aria-label="Choisir une société">
       <strong>Entreprise active</strong>
       {loadingOdooCompanies ? (
         <span className="company-picker-message">Chargement des sociétés…</span>
@@ -1021,7 +1105,7 @@ export default function AdminDashboard() {
           </button>
         ))
       ) : (
-        <span className="company-picker-message">Aucune société Odoo accessible.</span>
+        <span className="company-picker-message">Aucune société accessible.</span>
       )}
     </div>
   ) : null;
@@ -1266,6 +1350,7 @@ export default function AdminDashboard() {
                       <div className="user-card-info">
                         <div className="user-card-name">{u.firstName} {u.lastName}</div>
                         <div className="user-card-email">{u.email}</div>
+                        <div className="user-card-email">{u.phone || "Téléphone non renseigné"}</div>
                         <div className="user-card-email">
                           {u.profiles.length ? u.profiles.map(getUserProfileLabel).join(" · ") : "Profil à classer"}
                         </div>
@@ -1285,12 +1370,13 @@ export default function AdminDashboard() {
                   ? <div className="empty"><div className="empty-icon">—</div><p className="empty-text">Aucun utilisateur trouvé</p></div>
                   : <div className="table-wrap">
                       <table>
-                        <thead><tr><th>Nom</th><th>Email</th><th>Rôle d’accès</th><th>Profil d’usage</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Rôle d’accès</th><th>Module</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
                         <tbody>
                           {filteredUsers.map(u => (
                             <tr key={u.id}>
                               <td style={{ fontWeight:600 }}>{u.firstName} {u.lastName}</td>
                               <td>{u.email}</td>
+                              <td>{u.phone || "Non renseigné"}</td>
                               <td>
                                 <span className={`badge badge-${u.role}`}>{u.role}</span>
                                 {u.employeeRole && <span className="badge badge-admin">{u.employeeRole}</span>}
@@ -1311,7 +1397,7 @@ export default function AdminDashboard() {
                               <td>{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
                               <td>
                                 <div className="action-btns">
-                                  <button className="btn-sm" onClick={() => { setModalMode("edit"); setSelectedUser(u); setFormData({ email:u.email, firstName:u.firstName||"", lastName:u.lastName||"", password:"", employeeRole:u.employeeRole || "", profiles:u.profiles }); setShowModal(true); }}>Éditer</button>
+                                  <button className="btn-sm" onClick={() => { setModalMode("edit"); setSelectedUser(u); setFormData({ email:u.email, firstName:u.firstName||"", lastName:u.lastName||"", phone:u.phone || "", password:"", employeeRole:u.employeeRole || "", profiles:u.profiles }); setShowModal(true); }}>Éditer</button>
                                   <button className="btn-sm" onClick={() => handleToggleActive(u.id, u.active)}>{u.active ? "Désactiver" : "Activer"}</button>
                                   <button className="btn-sm danger" onClick={() => { if (confirm("Supprimer cet utilisateur ?")) handleDeleteUser(u.id); }}>Supprimer</button>
                                 </div>
@@ -1323,7 +1409,7 @@ export default function AdminDashboard() {
                     </div>}
               </div>
 
-              <button className="fab" aria-label="Ajouter un utilisateur" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",password:"",employeeRole:"",profiles:[] }); setSelectedUser(null); setShowModal(true); }}>
+              <button className="fab" aria-label="Ajouter un utilisateur" onClick={() => { setModalMode("add"); setFormData({ email:"",firstName:"",lastName:"",phone:"",password:"",employeeRole:"",profiles:[] }); setSelectedUser(null); setShowModal(true); }}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </>)}
@@ -1629,11 +1715,11 @@ export default function AdminDashboard() {
                 <div className="market-stats-heading">
                   <div>
                     <h1 className="admin-title">
-                      {selectedCompany?.type === "groupe" ? "Ventes FiSAFi Groupe" : "FiSAFi Market"}
+                      {selectedCompany?.type === "groupe" ? "Ventes et commandes FiSAFi Groupe" : "Ventes et commandes FiSAFi Market"}
                     </h1>
                     <p className="admin-sub">
                       {selectedCompany
-                        ? `Données Odoo de ${selectedCompany.name}, isolées des autres sociétés.`
+                        ? `Historique complet des ventes, tickets de caisse et commandes de ${selectedCompany.name}.`
                         : "Choisissez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi."}
                     </p>
                   </div>
@@ -1648,7 +1734,7 @@ export default function AdminDashboard() {
                   {odooCompaniesError
                     ? odooCompaniesError
                     : loadingOdooCompanies
-                      ? "Chargement des sociétés accessibles dans Odoo…"
+                      ? "Chargement des sociétés accessibles…"
                       : "Sélectionnez FiSAFi Groupe ou FiSAFi Market avec le logo FiSAFi du tableau de bord."}
                   {odooCompaniesError && (
                     <button className="market-retry" onClick={() => void fetchOdooCompanies()}>Réessayer</button>
@@ -1670,7 +1756,7 @@ export default function AdminDashboard() {
                   <div className="stats-row market-stats-grid">
                     <div className="stat-card">
                       <div className="stat-num blue">{marketStats.period.orders}</div>
-                      <div className="stat-label">{marketStats.company.type === "market" ? "Demandes" : "Devis / commandes"} · 30 jours</div>
+                      <div className="stat-label">Ventes et commandes · 30 jours</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-num green">{formatMarketCurrency(marketStats.period.confirmedRevenue)}</div>
@@ -1678,7 +1764,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="stat-card">
                       <div className="stat-num orange">{marketStats.period.pendingOrders}</div>
-                      <div className="stat-label">Devis en attente</div>
+                      <div className="stat-label">En attente</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-num">{marketStats.period.customers}</div>
@@ -1688,17 +1774,17 @@ export default function AdminDashboard() {
 
                   <div className="market-stats-secondary">
                     <div className="content-card">
-                      <span className="market-secondary-label">{marketStats.company.type === "market" ? "Taux de conversion" : "Taux de confirmation"} · 30 jours</span>
+                      <span className="market-secondary-label">Taux de confirmation · 30 jours</span>
                       <strong>{marketStats.period.conversionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%</strong>
                       <span className="market-secondary-note">
-                        {marketStats.period.confirmedOrders} vente{marketStats.period.confirmedOrders === 1 ? "" : "s"} confirmée{marketStats.period.confirmedOrders === 1 ? "" : "s"} sur {marketStats.period.orders} {marketStats.company.type === "market" ? "demande" : "devis / commande"}{marketStats.period.orders === 1 ? "" : "s"}
+                        {marketStats.period.confirmedOrders} vente{marketStats.period.confirmedOrders === 1 ? "" : "s"} confirmée{marketStats.period.confirmedOrders === 1 ? "" : "s"} sur {marketStats.period.orders} transaction{marketStats.period.orders === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="content-card">
                       <span className="market-secondary-label">Panier moyen confirmé · 30 jours</span>
                       <strong>{formatMarketCurrency(marketStats.period.averageConfirmedOrder)}</strong>
                       <span className="market-secondary-note">
-                        {marketStats.period.canceledOrders} {marketStats.company.type === "market" ? "demande" : "devis / commande"}{marketStats.period.canceledOrders === 1 ? "" : "s"} annulée{marketStats.period.canceledOrders === 1 ? "" : "s"}
+                        {marketStats.period.canceledOrders} transaction{marketStats.period.canceledOrders === 1 ? "" : "s"} annulée{marketStats.period.canceledOrders === 1 ? "" : "s"}
                       </span>
                     </div>
                   </div>
@@ -1719,45 +1805,117 @@ export default function AdminDashboard() {
                           return (
                             <div className="market-chart-column" key={`${month.year}-${month.month}`}>
                               <span className="market-chart-value">{formatMarketCurrency(month.confirmedRevenue)}</span>
-                              <div className="market-chart-track" aria-label={`${month.orders} ${marketStats.company.type === "market" ? "demande" : "commande"}${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
+                              <div className="market-chart-track" aria-label={`${month.orders} transaction${month.orders === 1 ? "" : "s"} en ${month.label} ${month.year}`}>
                                 <div className="market-chart-bar" style={{ height: `${height}%` }}/>
                               </div>
                               <span className="market-chart-label">{month.label} {month.year}</span>
-                              <span className="market-chart-count">{month.orders} {marketStats.company.type === "market" ? "demande" : "commande"}{month.orders === 1 ? "" : "s"}</span>
+                              <span className="market-chart-count">{month.orders} transaction{month.orders === 1 ? "" : "s"}</span>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="empty"><p className="empty-text">Aucune commande sur les six derniers mois pour {marketStats.company.name}.</p></div>
+                      <div className="empty"><p className="empty-text">Aucune vente ni commande sur les six derniers mois pour {marketStats.company.name}.</p></div>
                     )}
                   </section>
 
                   <section className="market-panel" aria-labelledby="market-recent-title">
                     <div className="market-panel-heading">
                       <div>
-                        <h2 id="market-recent-title">{marketStats.company.type === "market" ? "Demandes récentes" : "Devis et commandes récents"}</h2>
-                        <p>Statut actuel récupéré depuis Odoo · {marketStats.company.name}</p>
+                        <h2 id="market-recent-title">Historique complet des ventes et commandes</h2>
+                        <p>Ventes en caisse POS et commandes · {marketStats.company.name}</p>
                       </div>
                     </div>
-                    {marketStats.recentOrders.length ? (
-                      <div className="market-order-list">
-                        {marketStats.recentOrders.map((order) => (
-                          <article className="market-order-row" key={order.id}>
-                            <div className="market-order-main">
-                              <strong>{order.reference}</strong>
-                              <span>{order.customer}</span>
-                            </div>
-                            <span className={`market-order-status market-status-${order.state}`}>
-                              {getMarketOrderStatusLabel(order.state)}
-                            </span>
-                            <time dateTime={order.date}>{new Date(order.date).toLocaleDateString("fr-FR")}</time>
-                            <strong className="market-order-total">{formatMarketCurrency(order.amountTotal)}</strong>
-                          </article>
-                        ))}
-                      </div>
+                    {marketStats.transactions.length ? (
+                      <>
+                        <div className="market-history-table-wrap">
+                          <table className="market-history-table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Réf. de la commande</th>
+                                <th scope="col">Session</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Point de vente</th>
+                                <th scope="col">N° de reçu</th>
+                                <th scope="col">Client</th>
+                                <th scope="col">Vendeur / caissier</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Statut</th>
+                                <th scope="col">Facture</th>
+                                <th scope="col">Reçu Odoo</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {marketStats.transactions.map((transaction) => (
+                                <tr key={`${transaction.kind}-${transaction.id}`}>
+                                  <td>
+                                    <strong>{transaction.reference}</strong>
+                                    <span className="market-history-kind">
+                                      {transaction.kind === "pos_order" ? "Ticket de caisse" : "Devis / commande"}
+                                    </span>
+                                  </td>
+                                  <td>{transaction.session ?? "—"}</td>
+                                  <td><time dateTime={transaction.date}>{new Date(transaction.date).toLocaleString("fr-FR")}</time></td>
+                                  <td>{transaction.pointOfSale ?? "—"}</td>
+                                  <td>{transaction.receiptNumber ?? "—"}</td>
+                                  <td>{transaction.customer}</td>
+                                  <td>{transaction.operator ?? "—"}</td>
+                                  <td className="market-history-total">{formatMarketCurrency(transaction.amountTotal)}</td>
+                                  <td>
+                                    <span className={`market-order-status market-status-${transaction.state}`}>
+                                      {transaction.statusLabel}
+                                    </span>
+                                  </td>
+                                  <td>{transaction.invoiceStatus}</td>
+                                  <td>
+                                    {transaction.kind === "pos_order" ? (
+                                      <button
+                                        type="button"
+                                        className="market-receipt-download"
+                                        onClick={() => void downloadPosReceipt(transaction)}
+                                        title="Reçu natif Odoo au format HTML, imprimable ou enregistrable en PDF depuis le navigateur."
+                                        disabled={
+                                          receiptDownloadId === transaction.id ||
+                                          transaction.state === "draft" ||
+                                          transaction.state === "cancel"
+                                        }
+                                      >
+                                        {receiptDownloadId === transaction.id ? "Préparation…" : "Télécharger HTML"}
+                                      </button>
+                                    ) : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {receiptDownloadError && (
+                          <p className="market-receipt-error" role="alert">{receiptDownloadError}</p>
+                        )}
+                        <div className="market-history-pagination">
+                          <span>Page {marketHistoryPage + 1} · {marketStats.transactions.length} transaction{marketStats.transactions.length === 1 ? "" : "s"} affichée{marketStats.transactions.length === 1 ? "" : "s"}</span>
+                          <div>
+                            <button
+                              type="button"
+                              className="btn-sm"
+                              onClick={() => setMarketHistoryPage((page) => Math.max(0, page - 1))}
+                              disabled={loadingMarketStats || marketHistoryPage === 0}
+                            >
+                              Précédent
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-sm"
+                              onClick={() => setMarketHistoryPage((page) => page + 1)}
+                              disabled={loadingMarketStats || !marketStats.hasMore || !marketStats.nextCursor}
+                            >
+                              Suivant
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="empty"><p className="empty-text">Aucune commande récente pour {marketStats.company.name}.</p></div>
+                      <div className="empty"><p className="empty-text">Aucune vente ni commande pour {marketStats.company.name}.</p></div>
                     )}
                   </section>
                   <p className="market-stats-updated">
@@ -1810,7 +1968,7 @@ export default function AdminDashboard() {
             <div className="sheet-sub">{actionSheetUser.email} · {new Date(actionSheetUser.createdAt).toLocaleDateString("fr-FR")}</div>
           </div>
           <div className="sheet-actions">
-            <button className="sheet-btn primary" onClick={() => { setModalMode("edit"); setSelectedUser(actionSheetUser); setFormData({ email:actionSheetUser.email, firstName:actionSheetUser.firstName||"", lastName:actionSheetUser.lastName||"", password:"", employeeRole:actionSheetUser.employeeRole || "", profiles:actionSheetUser.profiles }); setActionSheetUser(null); setShowModal(true); }}>
+            <button className="sheet-btn primary" onClick={() => { setModalMode("edit"); setSelectedUser(actionSheetUser); setFormData({ email:actionSheetUser.email, firstName:actionSheetUser.firstName||"", lastName:actionSheetUser.lastName||"", phone:actionSheetUser.phone || "", password:"", employeeRole:actionSheetUser.employeeRole || "", profiles:actionSheetUser.profiles }); setActionSheetUser(null); setShowModal(true); }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Modifier le profil
             </button>
@@ -1944,6 +2102,10 @@ export default function AdminDashboard() {
               <div className="form-group">
                 <label className="form-label">Prénom</label>
                 <input type="text" className="form-input" value={formData.firstName} onChange={e => setFormData({...formData,firstName:e.target.value})} placeholder="Prénom"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Téléphone</label>
+                <input type="tel" className="form-input" value={formData.phone} onChange={e => setFormData({...formData,phone:e.target.value})} placeholder="+221 77 000 00 00"/>
               </div>
               <div className="form-group">
                 <label className="form-label">Nom</label>
