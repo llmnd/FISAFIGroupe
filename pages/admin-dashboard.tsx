@@ -2246,7 +2246,7 @@ export default function AdminDashboard() {
                 <div className="market-stats-heading">
                   <div>
                     <h1 className="admin-title">
-                      {selectedCompany?.type === "groupe" ? "Ventes et commandes FiSAFi Groupe" : "Ventes et commandes FiSAFi Market"}
+                      {selectedCompany?.type === "groupe" ? "FiSAFi Groupe" : "FiSAFi Market"}
                     </h1>
                     <p className="admin-sub">
                       {selectedCompany
