@@ -291,6 +291,7 @@ function Sparkline({
       height={height}
       aria-hidden="true"
       className="sparkline"
+      preserveAspectRatio="none"
     >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
@@ -602,35 +603,45 @@ function RevenueCurve({
   );
 }
 
-/** KPI animé : nombre qui s'incrémente à l'apparition. */
+/** KPI animé : valeur + unité alignées sur la même ligne, sans wrap. */
 function KpiNumber({
   value,
-  currency = false,
+  unit,
   color,
 }: {
   value: number;
-  currency?: boolean;
+  unit?: string;
   color?: string;
 }) {
   const animated = useCountUp(value, 900);
-  const display = currency
-    ? `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(animated)} FCFA`
-    : Math.round(animated).toLocaleString("fr-FR");
-  return <div className={`stat-num ${color ?? ""}`}>{display}</div>;
+  const formatted = new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0,
+  }).format(Math.round(animated));
+  return (
+    <div className={`stat-num ${color ?? ""}`}>
+      <span className="stat-num-value">{formatted}</span>
+      {unit && <span className="stat-num-unit">{unit}</span>}
+    </div>
+  );
 }
 
-/** Badge de delta vs période précédente. */
-function DeltaBadge({ delta }: { delta: number }) {
+/** Badge de delta discret, sans aplat coloré, avec libellé contextuel. */
+function DeltaBadge({ delta, label = "vs période préc." }: { delta: number; label?: string }) {
   if (!isFinite(delta) || Math.abs(delta) < 0.05) {
-    return <span className="stat-delta flat">— stable</span>;
+    return (
+      <span className="stat-delta flat">
+        <span>— stable</span>
+      </span>
+    );
   }
   const up = delta > 0;
   return (
     <span className={`stat-delta ${up ? "up" : "down"}`}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
         {up ? <polyline points="6 15 12 9 18 15" /> : <polyline points="6 9 12 15 18 9" />}
       </svg>
-      {Math.abs(delta).toFixed(1)}%
+      <strong>{Math.abs(delta).toFixed(1)}%</strong>
+      <span>{label}</span>
     </span>
   );
 }
@@ -2276,24 +2287,27 @@ export default function AdminDashboard() {
                   {/* ── KPI animés avec sparklines et deltas ── */}
                   <div className="stats-row market-stats-grid">
                     <div className="stat-card">
+                      <div className="stat-label">Ventes &amp; commandes</div>
                       <KpiNumber value={marketStats.period.orders} color="blue" />
-                      <div className="stat-label">Ventes &amp; commandes · 30 j</div>
                       <DeltaBadge delta={marketDerived.ordDelta} />
                       <Sparkline values={marketDerived.orders} stroke="var(--blue)" />
                     </div>
+
                     <div className="stat-card">
-                      <KpiNumber value={marketStats.period.confirmedRevenue} currency color="green" />
-                      <div className="stat-label">CA confirmé · 30 j</div>
+                      <div className="stat-label">CA confirmé</div>
+                      <KpiNumber value={marketStats.period.confirmedRevenue} unit="FCFA" color="green" />
                       <DeltaBadge delta={marketDerived.revDelta} />
                       <Sparkline values={marketDerived.revenues} stroke="var(--orange)" />
                     </div>
+
                     <div className="stat-card">
-                      <KpiNumber value={marketStats.period.pendingOrders} color="orange" />
                       <div className="stat-label">En attente</div>
+                      <KpiNumber value={marketStats.period.pendingOrders} color="orange" />
                     </div>
+
                     <div className="stat-card">
+                      <div className="stat-label">Clients</div>
                       <KpiNumber value={marketStats.period.customers} />
-                      <div className="stat-label">Clients · 30 j</div>
                     </div>
                   </div>
 
@@ -2418,7 +2432,7 @@ export default function AdminDashboard() {
                                   <td>{transaction.pointOfSale ?? "—"}</td>
                                   <td>{transaction.receiptNumber ?? "—"}</td>
                                   <td>{transaction.customer}</td>
-                                  <td>{transaction.operator ?? "—"}</td>
+                                  <td title={transaction.operator ?? undefined}>{transaction.operator ?? "—"}</td>
                                   <td className="market-history-total">{formatMarketCurrency(transaction.amountTotal)}</td>
                                   <td>
                                     <span className={`market-order-status market-status-${transaction.state}`}>

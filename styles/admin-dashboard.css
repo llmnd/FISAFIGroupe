@@ -72,7 +72,8 @@ html.portal-has-admin{
   --od-font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --od-display:"Georgia","Times New Roman",serif;
 
-  --sidebar-w:16.5rem;
+  /* ⭐ Sidebar réduite : gain d'espace horizontal */
+  --sidebar-w:14rem;
   --topbar-h:3.5rem;
   --topbar-h-desk:4rem;
   --tabbar-h:3.75rem;
@@ -177,7 +178,7 @@ body.portal-has-admin textarea{font-family:inherit}
 }
 @media(min-width:900px){.admin-sidebar{display:flex}}
 
-.sidebar-top{padding:1.65rem 1.35rem 1.1rem}
+.sidebar-top{padding:1.65rem 1.15rem 1.1rem}
 .company-logo-anchor{position:relative;display:inline-flex;align-items:center}
 
 .sidebar-logo,.mob-logo{
@@ -209,9 +210,9 @@ body.portal-has-admin textarea{font-family:inherit}
 .sidebar-user-section{
   display:flex;
   align-items:center;
-  gap:.75rem;
-  margin:.6rem .75rem .35rem;
-  padding:.75rem .8rem;
+  gap:.6rem;
+  margin:.6rem .6rem .35rem;
+  padding:.7rem .7rem;
   background:rgba(255,255,255,.03);
   border:1px solid var(--line-soft);
   border-radius:8px;
@@ -227,15 +228,15 @@ body.portal-has-admin textarea{font-family:inherit}
   flex-shrink:0;
 }
 .sidebar-avatar{
-  width:2.35rem;
-  height:2.35rem;
-  font-size:.78rem;
+  width:2.25rem;
+  height:2.25rem;
+  font-size:.75rem;
   background:linear-gradient(135deg,var(--blue) 0%,#8b6a95 100%);
   color:#12121a;
 }
-.sidebar-name{font-size:.95rem;font-weight:600;color:#fff;line-height:1.25}
+.sidebar-name{font-size:.92rem;font-weight:600;color:#fff;line-height:1.25}
 .sidebar-role{
-  font-size:.66rem;
+  font-size:.62rem;
   color:var(--ink-faint);
   letter-spacing:.06em;
   text-transform:uppercase;
@@ -246,7 +247,7 @@ body.portal-has-admin textarea{font-family:inherit}
 .sidebar-nav{
   flex:1 1 auto;
   min-height:0;
-  padding:.6rem .55rem 1rem;
+  padding:.6rem .45rem 1rem;
   overflow-y:auto;
   overscroll-behavior:contain;
   scrollbar-width:thin;
@@ -255,11 +256,11 @@ body.portal-has-admin textarea{font-family:inherit}
 }
 .sidebar-nav-label{
   display:block;
-  font-size:.64rem;
+  font-size:.62rem;
   letter-spacing:.2em;
   text-transform:uppercase;
   color:var(--ink-faint);
-  padding:1.1rem .85rem .4rem;
+  padding:1.1rem .8rem .4rem;
   font-weight:700;
 }
 .sidebar-link{
@@ -267,14 +268,14 @@ body.portal-has-admin textarea{font-family:inherit}
   align-items:center;
   justify-content:space-between;
   width:100%;
-  min-height:2.6rem;
-  padding:.55rem .85rem;
+  min-height:2.5rem;
+  padding:.55rem .75rem;
   margin-bottom:.1rem;
   border:0;
   border-radius:6px;
   background:none;
   color:rgba(236,238,244,.72);
-  font-size:.92rem;
+  font-size:.88rem;
   font-weight:500;
   cursor:pointer;
   text-align:left;
@@ -292,8 +293,8 @@ body.portal-has-admin textarea{font-family:inherit}
   content:'';
   position:absolute;
   left:0;
-  top:.55rem;
-  bottom:.55rem;
+  top:.5rem;
+  bottom:.5rem;
   width:2px;
   background:var(--blue);
   border-radius:0 2px 2px 0;
@@ -310,20 +311,20 @@ body.portal-has-admin textarea{font-family:inherit}
   line-height:1;
 }
 .sidebar-count{
-  font-size:.68rem;
-  padding:.25rem .5rem;
-  min-width:1.35rem;
+  font-size:.66rem;
+  padding:.22rem .45rem;
+  min-width:1.3rem;
 }
 .sidebar-count.blue{background:rgba(255,255,255,.14);color:#fff}
 
 .sidebar-footer{
   flex:0 0 auto;
-  padding:.75rem .55rem calc(1.25rem + env(safe-area-inset-bottom));
+  padding:.75rem .45rem calc(1.25rem + env(safe-area-inset-bottom));
   border-top:1px solid var(--line-soft);
 }
 .btn-logout-new{
   width:100%;
-  min-height:2.75rem;
+  min-height:2.65rem;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -332,7 +333,7 @@ body.portal-has-admin textarea{font-family:inherit}
   border:1px solid var(--line);
   border-radius:6px;
   color:var(--ink-muted);
-  font-size:.88rem;
+  font-size:.85rem;
   font-weight:600;
   cursor:pointer;
   transition:background .15s,color .15s,border-color .15s;
@@ -359,7 +360,7 @@ body.portal-has-admin textarea{font-family:inherit}
   .mob-topbar{
     left:var(--sidebar-w);
     height:var(--topbar-h-desk);
-    padding:0 3rem;
+    padding:0 2.25rem;
     justify-content:flex-end;
   }
   .mob-topbar .company-logo-anchor{display:none}
@@ -642,7 +643,7 @@ body.portal-has-admin textarea{font-family:inherit}
   max-width:54rem;
 }
 
-/* ══ KPI / STATS ═════════════════════════════════════════ */
+/* ══ KPI / STATS — v2 ════════════════════════════════════ */
 .stats-row{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -653,13 +654,14 @@ body.portal-has-admin textarea{font-family:inherit}
   .stats-row{grid-template-columns:repeat(2,1fr)}
   .stats-row .stat-card:last-child:nth-child(odd){grid-column:1/-1}
 }
+
 .stat-card{
   position:relative;
   display:flex;
   flex-direction:column;
   justify-content:flex-end;
-  min-height:7.25rem;
-  padding:1.4rem 1.5rem;
+  min-height:8.75rem;
+  padding:1.15rem 1.3rem 1.05rem;
   background:var(--white);
   border:1px solid var(--line);
   border-radius:10px;
@@ -667,25 +669,77 @@ body.portal-has-admin textarea{font-family:inherit}
   transition:border-color .18s,background .18s;
 }
 .stat-card:hover{border-color:var(--line-strong);background:var(--surface-hover)}
+
+/* Sparkline : ancrée en haut à droite, taille contenue */
+.stat-card .sparkline{
+  position:absolute;
+  top:1.05rem;
+  right:1.15rem;
+  width:74px;
+  height:26px;
+  margin:0;
+  opacity:.7;
+  pointer-events:none;
+}
+
+/* Label : réserve la place de la sparkline, ne wrappe plus */
+.stat-label{
+  font-size:.64rem;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--ink-muted);
+  margin:0;
+  padding-right:5.25rem;
+  line-height:1.4;
+  font-weight:600;
+}
+
+/* Numéro : valeur + unité alignées sur la même baseline */
 .stat-num{
-  font-size:clamp(1.7rem,1.35rem + 1vw,2.35rem);
+  display:flex;
+  align-items:baseline;
+  flex-wrap:nowrap;
+  gap:.35rem;
+  font-size:clamp(1.55rem,1.3rem + .9vw,2.05rem);
   font-weight:700;
   color:var(--ink-strong);
   line-height:1;
   letter-spacing:-.03em;
   font-feature-settings:"tnum","ss01";
+  margin-top:auto;
+  padding-top:.55rem;
+  white-space:nowrap;
+}
+.stat-num-unit{
+  font-size:.5em;
+  font-weight:600;
+  color:var(--ink-muted);
+  letter-spacing:.02em;
+  transform:translateY(-.1em);
 }
 .stat-num.blue{color:var(--blue-soft)}
 .stat-num.green{color:var(--success)}
 .stat-num.orange{color:var(--orange)}
-.stat-label{
-  font-size:.68rem;
-  letter-spacing:.13em;
-  text-transform:uppercase;
-  color:var(--ink-muted);
-  margin-top:.65rem;
+
+/* Delta : discret, sans aplat coloré, sous le nombre */
+.stat-delta{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  margin:.5rem 0 0;
+  padding:0;
+  font-size:.7rem;
   font-weight:600;
+  letter-spacing:.005em;
+  background:transparent !important;
+  border:0 !important;
 }
+.stat-delta strong{font-weight:800;font-feature-settings:"tnum"}
+.stat-delta > span{color:var(--ink-faint);font-weight:500}
+.stat-delta.up{color:var(--success)}
+.stat-delta.down{color:var(--danger)}
+.stat-delta.flat{color:var(--ink-muted)}
+.stat-delta svg{width:.68rem;height:.68rem;flex-shrink:0}
 
 /* ══ RECHERCHE / FILTRES ═════════════════════════════════ */
 .search-box{
@@ -1298,7 +1352,7 @@ tr:last-child td{border-bottom:none}
 .market-retry:hover{opacity:1}
 
 .market-stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-.market-stats-grid .stat-num{font-size:clamp(1.05rem,.8rem + .9vw,1.85rem);overflow-wrap:anywhere}
+.market-stats-grid .stat-num{font-size:clamp(1.35rem,1.05rem + .9vw,1.85rem);overflow-wrap:anywhere}
 .market-stats-grid .stat-label{line-height:1.45}
 
 .market-stats-secondary{
@@ -1367,54 +1421,6 @@ tr:last-child td{border-bottom:none}
   border-radius:50%;
   background:var(--blue);
 }
-.market-chart{
-  display:grid;
-  grid-template-columns:repeat(6,minmax(0,1fr));
-  gap:.8rem;
-  align-items:end;
-}
-.market-chart-column{
-  min-width:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:.5rem;
-  text-align:center;
-}
-.market-chart-value{
-  width:100%;
-  font-size:.7rem;
-  color:var(--ink-muted);
-  font-weight:600;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.market-chart-track{
-  width:min(2.6rem,70%);
-  height:9rem;
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  overflow:hidden;
-  background:var(--surface-soft);
-  border-radius:999px;
-}
-.market-chart-bar{
-  width:100%;
-  min-height:0;
-  background:linear-gradient(180deg,var(--orange),#8c6a95);
-  border-radius:999px 999px 6px 6px;
-  transition:height .3s ease;
-  box-shadow:0 0 18px rgba(89,209,193,.15);
-}
-.market-chart-label{
-  font-size:.78rem;
-  font-weight:600;
-  color:var(--ink);
-  text-transform:capitalize;
-}
-.market-chart-count{font-size:.7rem;color:var(--ink-faint)}
 
 .market-order-list{display:flex;flex-direction:column}
 .market-order-row{
@@ -1443,29 +1449,74 @@ tr:last-child td{border-bottom:none}
 .market-status-cancel{background:var(--danger-soft);color:var(--danger)}
 .market-stats-updated{text-align:right;color:var(--ink-faint);font-size:.78rem;margin-top:.5rem}
 
-.market-history-table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
-.market-history-table{width:100%;min-width:1120px;border-collapse:collapse;font-size:.82rem}
+/* ── Historique complet des ventes et commandes ─────────── */
+.market-history-table-wrap{
+  max-width:100%;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+}
+.market-history-table{
+  width:100%;
+  min-width:1080px;
+  border-collapse:collapse;
+  font-size:.72rem;
+}
 .market-history-table th{
-  padding:.75rem .65rem;
+  padding:.7rem .55rem;
   text-align:left;
   white-space:nowrap;
   color:var(--ink-faint);
-  font-size:.68rem;
+  font-size:.6rem;
   letter-spacing:.08em;
   text-transform:uppercase;
   border-bottom:1px solid var(--line);
 }
 .market-history-table td{
-  padding:.8rem .65rem;
+  padding:.7rem .55rem;
   border-bottom:1px solid var(--line-soft);
   color:var(--ink);
   vertical-align:middle;
+  font-size:.72rem;
+  line-height:1.35;
 }
 .market-history-table tbody tr:hover{background:var(--surface-hover)}
-.market-history-table td strong{display:block;color:var(--ink-strong);white-space:nowrap;font-weight:600}
-.market-history-table td time{white-space:nowrap}
-.market-history-kind{display:block;margin-top:.2rem;color:var(--ink-faint);font-size:.7rem}
-.market-history-total{font-weight:650;white-space:nowrap}
+.market-history-table td strong{
+  display:block;
+  color:var(--ink-strong);
+  white-space:nowrap;
+  font-weight:600;
+  font-size:.76rem;
+}
+.market-history-table td time{
+  white-space:nowrap;
+  font-size:.7rem;
+}
+.market-history-kind{
+  display:block;
+  margin-top:.18rem;
+  color:var(--ink-faint);
+  font-size:.6rem;
+}
+
+/* ⭐ Colonnes à contenu potentiellement long : jamais de retour
+   à la ligne — le tableau s'élargit et scrolle horizontalement. */
+.market-history-table td:nth-child(1),  /* Réf. de la commande */
+.market-history-table td:nth-child(2),  /* Session */
+.market-history-table td:nth-child(4),  /* Point de vente */
+.market-history-table td:nth-child(6),  /* Client */
+.market-history-table td:nth-child(7){  /* Vendeur / caissier */
+  white-space:nowrap;
+}
+
+/* ⭐ Le SEUL élément qui garde sa taille d'origine */
+.market-history-total{
+  font-weight:700;
+  white-space:nowrap;
+  font-size:.85rem;
+  color:var(--ink-strong);
+  letter-spacing:-.01em;
+}
+
 .market-history-pagination{
   display:flex;
   align-items:center;
@@ -1473,18 +1524,18 @@ tr:last-child td{border-bottom:none}
   gap:.8rem;
   margin-top:1rem;
   color:var(--ink-muted);
-  font-size:.8rem;
+  font-size:.76rem;
 }
 .market-history-pagination>div{display:flex;gap:.55rem}
 .market-history-pagination button:disabled{opacity:.45;cursor:not-allowed}
 .market-receipt-download{
-  padding:.4rem .65rem;
+  padding:.35rem .6rem;
   border:1px solid var(--blue-line);
   border-radius:6px;
   background:var(--blue-dim);
   color:var(--blue-soft);
   font:inherit;
-  font-size:.76rem;
+  font-size:.7rem;
   font-weight:600;
   white-space:nowrap;
   cursor:pointer;
@@ -1558,16 +1609,16 @@ tr:last-child td{border-bottom:none}
   .admin-content{padding:1.15rem 1rem 7.5rem}
   .admin-header{margin-bottom:1.75rem;padding-bottom:1.4rem}
   .admin-title{font-size:1.65rem}
-  .stat-card{min-height:6.6rem;padding:1.15rem 1.15rem}
+  .stat-card{min-height:7.4rem;padding:1rem 1.1rem}
+  .stat-num{font-size:1.5rem}
+  .stat-card .sparkline{width:56px;height:22px;top:.9rem;right:.95rem}
+  .stat-label{padding-right:4rem;font-size:.6rem}
   .stats-row{gap:.65rem}
 
   .market-stats-heading{align-items:flex-start;flex-direction:column}
   .market-stats-secondary{grid-template-columns:1fr}
   .market-panel{padding:1.15rem 1rem}
   .market-panel-heading{align-items:flex-start}
-  .market-chart{gap:.3rem}
-  .market-chart-track{height:6.5rem}
-  .market-chart-value,.market-chart-count{font-size:.62rem}
   .market-history-pagination{align-items:flex-start;flex-direction:column}
 
   .modal{padding:1.4rem 1.15rem calc(1.4rem + env(safe-area-inset-bottom))}
@@ -1587,7 +1638,7 @@ tr:last-child td{border-bottom:none}
 @media(min-width:1600px){
   .admin-content{padding:3.25rem 3.75rem 4.5rem;max-width:88rem}
   .stats-row{gap:1.1rem}
-  .stat-card{padding:1.6rem 1.6rem;min-height:8rem}
+  .stat-card{padding:1.4rem 1.5rem;min-height:9rem}
   .content-card{padding:1.4rem 1.6rem}
 }
 
@@ -1659,24 +1710,13 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
   outline:2px solid var(--orange);
   outline-offset:3px;
 }
+
 /* ══════════════════════════════════════════════════════════
    CHART PRIMITIVES v2
    ══════════════════════════════════════════════════════════ */
 
 /* ── Sparkline ─────────────────────────────────────────── */
-.sparkline{display:block;margin-top:.65rem;opacity:.9}
-.stat-card .sparkline{position:absolute;right:1rem;bottom:1rem;pointer-events:none}
-
-/* ── Delta badge on KPI cards ──────────────────────────── */
-.stat-delta{
-  display:inline-flex;align-items:center;gap:.28rem;
-  margin-top:.5rem;font-size:.72rem;font-weight:700;
-  letter-spacing:.02em;padding:.15rem .45rem;border-radius:999px;
-}
-.stat-delta.up{color:var(--success);background:var(--success-soft)}
-.stat-delta.down{color:var(--danger);background:var(--danger-soft)}
-.stat-delta.flat{color:var(--ink-muted);background:rgba(255,255,255,.04)}
-.stat-delta svg{width:.72rem;height:.72rem}
+.sparkline{display:block;opacity:.9}
 
 /* ── Donut ─────────────────────────────────────────────── */
 .donut-wrap{
