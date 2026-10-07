@@ -50,15 +50,6 @@ type StoreAisle = {
 const STORE_AISLES: StoreAisle[] = [
   {
     number: "01",
-    label: "Fruits & légumes",
-    name: "Fruits & légumes",
-    href: "#fruits-legumes-produits",
-    kind: "produce",
-    colors: ["#e8453c", "#f5a623", "#3c985f", "#f47b20", "#d6458f", "#f2ca65"],
-    candy: ["#e8453c", "#f5a623", "#3c985f", "#d6458f"],
-  },
-  {
-    number: "02",
     label: "Épicerie",
     name: "Épicerie & gourmandises",
     href: "#epicerie-produits",
@@ -66,6 +57,15 @@ const STORE_AISLES: StoreAisle[] = [
     images: ["pringles.jpg", "cafe.jpg"],
     colors: SNACKS,
     candy: CANDY,
+  },
+  {
+    number: "02",
+    label: "Fruits & légumes",
+    name: "Fruits & légumes",
+    href: "#fruits-legumes-produits",
+    kind: "produce",
+    colors: ["#e8453c", "#f5a623", "#3c985f", "#f47b20", "#d6458f", "#f2ca65"],
+    candy: ["#e8453c", "#f5a623", "#3c985f", "#d6458f"],
   },
   {
     number: "03",

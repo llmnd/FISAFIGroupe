@@ -6,6 +6,10 @@ const IMAGE_CACHE_CONTROL =
   "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=2592000";
 const MISSING_IMAGE_CACHE_CONTROL = "public, max-age=300, s-maxage=300";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -58,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ["sale_ok", "=", true],
           ["available_in_pos", "=", true],
         ],
-        fields: ["image_512"],
+        fields: ["image_512", "image_128"],
         limit: 1,
       }),
       signal: AbortSignal.timeout(20_000),
@@ -76,12 +80,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const firstProduct: unknown = payload[0];
-    if (!firstProduct || typeof firstProduct !== "object" || !("image_512" in firstProduct)) {
+    if (
+      !isRecord(firstProduct) ||
+      (!("image_512" in firstProduct) && !("image_128" in firstProduct))
+    ) {
       console.error("[Market/Odoo] Product image response has an unexpected format.");
       return res.status(502).json({ error: "L’image du produit renvoyée par FiSAFi est invalide." });
     }
 
-    const encodedImage = firstProduct.image_512;
+    const encodedImage =
+      typeof firstProduct.image_512 === "string" && firstProduct.image_512.length > 0
+        ? firstProduct.image_512
+        : firstProduct.image_128;
     if (encodedImage === false || encodedImage === null || encodedImage === "") {
       res.setHeader("Cache-Control", MISSING_IMAGE_CACHE_CONTROL);
       return res.status(404).json({ error: "Ce produit n’a pas de photo." });

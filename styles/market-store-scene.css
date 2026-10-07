@@ -102,10 +102,12 @@
   z-index: 5;
   pointer-events: none;
   content: "";
-  opacity: 0.06;
-  mix-blend-mode: overlay;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.6) 0.5px, transparent 0.5px);
-  background-size: 3px 3px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.035),
+    transparent 48%,
+    rgba(0, 0, 0, 0.025)
+  );
 }
 
 .store-room {
@@ -959,7 +961,6 @@
     rgba(214, 232, 244, 0.28) 50%,
     rgba(255, 255, 255, 0.5) 100%
   );
-  backdrop-filter: blur(16px) saturate(1.1);
   transition: transform 1.5s cubic-bezier(0.7, 0, 0.2, 1) 0.15s;
 }
 .store-door i {

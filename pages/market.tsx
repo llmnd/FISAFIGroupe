@@ -390,7 +390,9 @@ function ProductIllustration({ artwork }: { artwork: ProductArtwork }) {
 function ProductArtworkView({ product }: { product: MarketProduct }) {
   const [imageFailed, setImageFailed] = useState(false);
   const [imageObjectPosition, setImageObjectPosition] = useState("center");
-  if (imageFailed) return <ProductIllustration artwork={product.artwork} />;
+  if (!product.hasImage || imageFailed) {
+    return <ProductIllustration artwork={product.artwork} />;
+  }
 
   return (
     <img
@@ -475,7 +477,7 @@ function MarketProductCard({
             {product.badge}
           </span>
         )}
-        <ProductArtworkView product={product} />
+        <ProductArtworkView key={product.imageUrl} product={product} />
       </button>
 
       <div className="market-product-info">
@@ -1652,7 +1654,10 @@ export default function MarketPage() {
               {selectedProduct.badge && (
                 <span className="market-product-dialog-badge">PROMO</span>
               )}
-              <ProductArtworkView product={selectedProduct} />
+              <ProductArtworkView
+                key={selectedProduct.imageUrl}
+                product={selectedProduct}
+              />
             </div>
             <div className="market-product-dialog-content">
               <span className="market-product-dialog-department">
@@ -1672,13 +1677,31 @@ export default function MarketPage() {
                   FCFA{/\/\s*kg\b/i.test(selectedProduct.price) && " / kg"}
                 </span>
               </p>
-              <p className="market-product-dialog-note">
-                {selectedProduct.variantChoiceRequired
-                  ? "Contactez FiSAFi pour préciser la variante souhaitée."
-                  : `Stock indicatif : ${fmt(selectedProduct.availableQuantity)}${
-                      /\/\s*kg\b/i.test(selectedProduct.price) ? " kg" : ""
-                    }. Revérifié à la commande.`}
-              </p>
+              {(() => {
+                const isKg = /\/\s*kg\b/i.test(selectedProduct.price);
+                const unavailable =
+                  selectedProduct.variantChoiceRequired ||
+                  selectedProduct.availableQuantity < (isKg ? 0.5 : 1);
+
+                return (
+                  <>
+                    {unavailable && (
+                      <p className="market-product-dialog-availability" role="status">
+                        Indisponible
+                      </p>
+                    )}
+                    <p className="market-product-dialog-note">
+                      {selectedProduct.variantChoiceRequired
+                        ? "Contactez FiSAFi pour préciser la variante souhaitée."
+                        : unavailable
+                          ? "Ce produit est momentanément indisponible."
+                          : `Stock indicatif : ${fmt(selectedProduct.availableQuantity)}${
+                              isKg ? " kg" : ""
+                            }. Revérifié à la commande.`}
+                    </p>
+                  </>
+                );
+              })()}
 
               {(() => {
                 const quantity = getCartQuantity(
@@ -1695,6 +1718,10 @@ export default function MarketPage() {
                         quantityStep,
                     )
                   : 1;
+                const canAddFirstQuantity =
+                  firstQuantity > 0 &&
+                  selectedProduct.availableQuantity >= firstQuantity &&
+                  !selectedProduct.variantChoiceRequired;
 
                 return quantity > 0 ? (
                   <div
@@ -1763,11 +1790,10 @@ export default function MarketPage() {
                     }
                     disabled={
                       getMarketPriceAmount(selectedProduct.price) === null ||
-                      firstQuantity <= 0 ||
-                      selectedProduct.variantChoiceRequired
+                      !canAddFirstQuantity
                     }
                   >
-                    {selectedProduct.variantChoiceRequired || firstQuantity <= 0
+                    {!canAddFirstQuantity
                       ? "Indisponible"
                       : "Ajouter au panier"}
                     <span aria-hidden="true">+</span>

@@ -1711,6 +1711,15 @@ html[data-market-theme="dark"] .market-page .market-product-cart-controls button
   font: 600 0.78rem/1 "Jost", system-ui, sans-serif;
 }
 
+.market-product-dialog-availability {
+  margin: 0.8rem 0 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(179, 38, 30, 0.1);
+  color: #b3261e;
+  font: 700 0.72rem/1.2 "Jost", system-ui, sans-serif;
+}
+
 .market-product-dialog-note {
   margin: 0.65rem 0 1.5rem;
   color: var(--market-muted);
