@@ -1,0 +1,41 @@
+name: Deploy FISAFI Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to OVH VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script_stop: true
+          script: |
+            set -e
+
+            cd /var/www/fisafi
+
+            echo "=== Mise à jour du code ==="
+            git pull --ff-only origin main
+
+            echo "=== Installation des dépendances ==="
+            npm ci
+
+            echo "=== Build du backend ==="
+            npm run build:backend
+
+            echo "=== Redémarrage PM2 ==="
+            pm2 restart fisafi-api
+
+            echo "=== Vérification ==="
+            pm2 status
+
+            echo "=== Déploiement terminé ==="
