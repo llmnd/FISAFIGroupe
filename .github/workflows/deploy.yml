@@ -29,6 +29,9 @@ jobs:
             echo "=== Installation des dépendances ==="
             npm ci
 
+            echo "=== Application des migrations Prisma ==="
+            npm run prisma:deploy
+
             echo "=== Build du backend ==="
             npm run build:backend
 

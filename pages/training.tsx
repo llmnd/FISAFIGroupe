@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { isSessionRegistrationOpen } from "@/backend/lib/sessionAvailability";
 
 // Icon components extracted for better code organization
 const CalendarIcon = () => (
@@ -40,7 +43,23 @@ const DownloadIcon = () => (
   </svg>
 );
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+type TrainingSessionOption = {
+  id: string;
+  formationId: string;
+  formationTitle: string;
+  startDate: string;
+  endDate: string;
+  registrationDeadline: string;
+  location: string;
+  available: number;
+};
+
 export default function FormationPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -55,6 +74,147 @@ export default function FormationPage() {
   const [brochures, setBrochures] = useState<any[]>([]);
   const [loadingBrochures, setLoadingBrochures] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [sessionOptions, setSessionOptions] = useState<TrainingSessionOption[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsLoadError, setSessionsLoadError] = useState("");
+  const [selectedSessionUnavailable, setSelectedSessionUnavailable] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [sessionStatusCheckTime, setSessionStatusCheckTime] = useState(Date.now());
+  const eligibleSessionOptions = useMemo(
+    () =>
+      sessionOptions.filter((session) =>
+        isSessionRegistrationOpen(
+          {
+            ...session,
+            status: "ouverte",
+          },
+          new Date(sessionStatusCheckTime),
+        ),
+      ),
+    [sessionOptions, sessionStatusCheckTime],
+  );
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const queryValue = (value: string | string[] | undefined) =>
+      Array.isArray(value) ? value[0] : value;
+    const sessionId = queryValue(router.query.sessionId) ?? "";
+    const validSessionId = /^[1-9]\d*$/.test(sessionId);
+    if (!validSessionId) return;
+
+    setSelectedSessionId(sessionId);
+    window.requestAnimationFrame(() => {
+      document.getElementById("inscription")?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+    });
+  }, [router.isReady, router.query.sessionId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(
+      () => setSessionStatusCheckTime(Date.now()),
+      30_000,
+    );
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/sessions", { signal: controller.signal })
+      .then(async (response) => {
+        const payload: unknown = await response.json();
+        if (!response.ok) {
+          throw new Error("Impossible de charger les sessions de formation.");
+        }
+        const sessions = isRecord(payload) ? payload.data : payload;
+        if (!Array.isArray(sessions)) {
+          throw new Error("La liste des sessions est invalide.");
+        }
+        const availableSessions = sessions.flatMap((session) => {
+            if (
+              !isRecord(session) ||
+              !Number.isSafeInteger(session.id) ||
+              !Number.isSafeInteger(session.formationId) ||
+              typeof session.startDate !== "string" ||
+              typeof session.endDate !== "string" ||
+              typeof session.registrationDeadline !== "string"
+            ) {
+              return [];
+            }
+            const available = Number(
+              session.available ??
+                (Number(session.capacity) - Number(session.currentParticipants)),
+            );
+            const formation = isRecord(session.formation) ? session.formation : null;
+            const formationTitle =
+              typeof session.formationTitle === "string"
+                ? session.formationTitle
+                : formation && typeof formation.name === "string"
+                  ? formation.name
+                  : null;
+            if (
+              !Number.isFinite(available) ||
+              available <= 0 ||
+              !formationTitle ||
+              !isSessionRegistrationOpen({
+                startDate: session.startDate,
+                endDate: session.endDate,
+                registrationDeadline: session.registrationDeadline,
+                status: typeof session.status === "string" ? session.status : "",
+                available,
+              })
+            ) return [];
+            return [{
+              id: String(session.id),
+              formationId: String(session.formationId),
+              formationTitle,
+              startDate: session.startDate,
+              endDate: session.endDate,
+              registrationDeadline: session.registrationDeadline,
+              location: typeof session.location === "string" ? session.location : "",
+              available,
+            }];
+          });
+        setSessionOptions(availableSessions);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("[Training] Could not load available sessions:", error);
+        setSessionsLoadError(
+          error instanceof Error
+            ? error.message
+            : "Impossible de charger les sessions de formation.",
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSessionsLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (sessionsLoading || !selectedSessionId) return;
+    if (eligibleSessionOptions.some((session) => session.id === selectedSessionId)) return;
+
+    setSelectedSessionUnavailable(true);
+    setSelectedSessionId("");
+  }, [selectedSessionId, eligibleSessionOptions, sessionsLoading]);
+
+  useEffect(() => {
+    const selectedSession = eligibleSessionOptions.find(
+      (session) => session.id === selectedSessionId,
+    );
+    if (!selectedSession) return;
+    setFormData((previous) =>
+      previous.formationId === selectedSession.formationId
+        ? previous
+        : { ...previous, formationId: selectedSession.formationId },
+    );
+  }, [selectedSessionId, eligibleSessionOptions]);
 
   // Fetch brochures on client only
   useEffect(() => {
@@ -92,7 +252,6 @@ export default function FormationPage() {
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
     // Validation email en temps réel
     if (name === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -118,6 +277,13 @@ export default function FormationPage() {
       setSubmitStatus(null);
       return;
     }
+    if (!eligibleSessionOptions.some((session) => session.id === selectedSessionId)) {
+      setSubmitStatus({
+        type: "error",
+        message: "Choisissez une session ouverte avec des places disponibles.",
+      });
+      return;
+    }
     
     setLoading(true);
     setSubmitStatus(null);
@@ -135,13 +301,16 @@ export default function FormationPage() {
           email: formData.email,
           phone: formData.phone,
           formationId: Number.parseInt(formData.formationId, 10),
+          sessionId: Number.parseInt(selectedSessionId, 10),
           message: formData.message,
         }),
       });
       const data = await response.json();
       if (response.ok) {
-        setSubmitStatus({ type: 'success', message: 'Inscription confirmée ! Nous vous contacterons très bientôt.' });
+        setSubmitStatus({ type: 'success', message: 'Votre demande d’inscription est enregistrée. Nous vous contacterons très bientôt.' });
         setFormData({ firstName: '', lastName: '', email: '', phone: '', formationId: '', message: '' });
+        setSelectedSessionId("");
+        setSelectedSessionUnavailable(false);
       } else {
         setSubmitStatus({ type: 'error', message: data.error || "Une erreur est survenue lors de l'inscription." });
       }
@@ -478,14 +647,45 @@ export default function FormationPage() {
               <input id="phone" type="tel" name="phone" value={formData.phone} onChange={handleFormChange} placeholder="+221 77 XXX XX XX" required className="form-input" />
             </div>
             <div className="form-group">
-              <label htmlFor="formation" className="form-label">Formation souhaitée *</label>
-              <select id="formation" name="formationId" value={formData.formationId} onChange={handleFormChange} required className="form-input">
-                <option value="">Sélectionnez une formation</option>
-                <option value="1">Administration Réseaux & Télécoms</option>
-                <option value="2">Infrastructure IT & Virtualisation</option>
-                <option value="3">Cybersécurité & Digital Trust</option>
-                <option value="4">Certification Professionnelle</option>
+              <label htmlFor="formation" className="form-label">Session souhaitée *</label>
+              <select
+                id="formation"
+                value={selectedSessionId}
+                onChange={(event) => {
+                  const session = eligibleSessionOptions.find((option) => option.id === event.target.value);
+                  setSelectedSessionId(event.target.value);
+                  setSelectedSessionUnavailable(false);
+                  setFormData((previous) => ({
+                    ...previous,
+                    formationId: session?.formationId ?? "",
+                  }));
+                }}
+                required
+                className="form-input"
+                disabled={sessionsLoading || eligibleSessionOptions.length === 0}
+              >
+                <option value="">
+                  {sessionsLoading ? "Chargement des sessions…" : "Sélectionnez une session"}
+                </option>
+                {eligibleSessionOptions.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {session.formationTitle} · {new Date(session.startDate).toLocaleDateString("fr-FR")}
+                    {` · inscriptions jusqu’au ${new Date(session.registrationDeadline).toLocaleString("fr-FR")}`}
+                    {session.location ? ` · ${session.location}` : ""}
+                    {` · ${session.available} place${session.available > 1 ? "s" : ""}`}
+                  </option>
+                ))}
               </select>
+              {(sessionsLoadError || selectedSessionUnavailable || (!sessionsLoading && !eligibleSessionOptions.length)) && (
+                <div className="form-error" role="alert">
+                  {sessionsLoadError ||
+                    (selectedSessionUnavailable
+                      ? "La session sélectionnée n’est plus disponible. Choisissez une autre session."
+                      : "Aucune session ouverte avec des places disponibles pour le moment.")}
+                  {" "}
+                  <Link href="/sessions">Consulter le calendrier</Link>
+                </div>
+              )}
             </div>
             <div className="form-group">
               <label htmlFor="message" className="form-label">Message</label>
@@ -502,7 +702,7 @@ export default function FormationPage() {
             <button
               type="submit"
               className="btn-contact"
-              disabled={loading}
+              disabled={loading || sessionsLoading || !eligibleSessionOptions.length || !selectedSessionId}
               style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading ? 'Envoi en cours…' : 'Soumettre mon inscription'}

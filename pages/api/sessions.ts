@@ -47,10 +47,24 @@ export default async function handler(
   if (req.method === 'POST') {
     if (!(await authorizeAdminRequest(req, res))) return;
     try {
-      const { formationId, startDate, endDate, location, capacity } = req.body;
+      const { formationId, startDate, endDate, registrationDeadline, location, capacity } = req.body;
 
-      if (!formationId || !startDate || !endDate || !location) {
+      if (!formationId || !startDate || !endDate || !registrationDeadline || !location) {
         return res.status(400).json({ error: 'Champs obligatoires manquants' });
+      }
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
+      const parsedRegistrationDeadline = new Date(registrationDeadline);
+      if (
+        !Number.isFinite(parsedStartDate.getTime()) ||
+        !Number.isFinite(parsedEndDate.getTime()) ||
+        !Number.isFinite(parsedRegistrationDeadline.getTime()) ||
+        parsedEndDate < parsedStartDate ||
+        parsedRegistrationDeadline >= parsedStartDate
+      ) {
+        return res.status(400).json({
+          error: "La date limite d'inscription doit précéder le début de la session, et la date de fin doit être après son début.",
+        });
       }
 
       // Vérifie que la formation existe
@@ -65,8 +79,9 @@ export default async function handler(
       const session = await prisma.sessionFormation.create({
         data: {
           formationId: parseInt(formationId),
-          startDate: new Date(startDate),
-          endDate: new Date(endDate),
+          startDate: parsedStartDate,
+          endDate: parsedEndDate,
+          registrationDeadline: parsedRegistrationDeadline,
           location,
           capacity: capacity || 20,
           available: capacity || 20,

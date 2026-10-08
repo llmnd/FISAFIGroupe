@@ -68,10 +68,11 @@ export interface ISessionFormation {
   formationId: number;
   startDate: Date;
   endDate: Date;
+  registrationDeadline: Date;
   location: string;
   capacity: number;
   available: number;
-  status: 'ouverte' | 'complète' | 'annulée' | 'terminée';
+  status: 'ouverte' | 'complète' | 'fermée' | 'annulée' | 'terminée';
   createdAt: Date;
   updatedAt: Date;
 }

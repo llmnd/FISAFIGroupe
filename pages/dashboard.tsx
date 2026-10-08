@@ -6,6 +6,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import UserDashboardSkeleton from "@/components/UserDashboardSkeleton";
+import { isSessionRegistrationOpen } from "@/backend/lib/sessionAvailability";
 import {
   getMarketDepartmentId,
   getMarketDepartmentName,
@@ -71,6 +72,7 @@ interface SessionFormation {
   formationId: number;
   startDate: string;
   endDate: string;
+  registrationDeadline: string;
   location: string;
   capacity: number;
   available: number;
@@ -242,8 +244,17 @@ const formatNumber = (value: number) => numberFmt.format(value);
 export default function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const [, setRegistrationStatusRefresh] = useState(0);
   const sessionRedirecting = useRef(false);
   const sessionValidationStarted = useRef(false);
+
+  useEffect(() => {
+    const interval = window.setInterval(
+      () => setRegistrationStatusRefresh((value) => value + 1),
+      30_000,
+    );
+    return () => window.clearInterval(interval);
+  }, []);
 
   const expireSession = () => {
     if (sessionRedirecting.current) return;
@@ -2687,9 +2698,7 @@ export default function DashboardPage() {
                           <div className="formation-sessions">
                             <div className="formation-sessions-title">Sessions :</div>
                             {formation.sessions.map((session) => {
-                              const isRegistrationOpen =
-                                session.status === "ouverte" &&
-                                Date.parse(session.startDate) > Date.now();
+                              const isRegistrationOpen = isSessionRegistrationOpen(session);
                               const registrationDisabled =
                                 !isRegistrationOpen ||
                                 session.available <= 0 ||
@@ -2703,6 +2712,10 @@ export default function DashboardPage() {
                                   </div>
                                   <div className="formation-session-location">
                                     {session.location}
+                                  </div>
+                                  <div className="formation-session-date">
+                                    Inscriptions jusqu’au{" "}
+                                    {new Date(session.registrationDeadline).toLocaleString("fr-FR")}
                                   </div>
                                   <div
                                     className={`formation-session-places${

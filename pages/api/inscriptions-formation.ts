@@ -3,6 +3,7 @@ import { UserProfile } from '@prisma/client';
 import { prisma } from '@/backend/lib/db';
 import { getRequestAuthorization } from '@/lib/authCookie';
 import { authenticateMarketUser, MarketAuthError } from '@/lib/marketAuth';
+import { isSessionRegistrationOpen } from '@/backend/lib/sessionAvailability';
 
 type ResponseData = {
   success?: boolean;
@@ -79,8 +80,7 @@ export default async function handler(
       }
       if (
         session.formationId !== parsedFormationId ||
-        session.status !== 'ouverte' ||
-        session.startDate.getTime() <= Date.now()
+        !isSessionRegistrationOpen(session)
       ) {
         return res.status(400).json({ error: 'Cette session n’est pas disponible pour cette formation.' });
       }

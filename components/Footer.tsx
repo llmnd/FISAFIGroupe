@@ -52,7 +52,7 @@ export default function Footer() {
             <li><a href={companyUrl("/#services")}>À propos</a></li>
             <li><a href={companyUrl("/training")}>Formations</a></li>
             <li><a href={companyUrl("/news")}>Actualités</a></li>
-            <li><a href={companyUrl("/#contact")}>Contact</a></li>
+            <li><a href={companyUrl("/contact")}>Contact</a></li>
           </ul>
         </div>
 

@@ -42,6 +42,7 @@ export class SessionService {
     formationId: number;
     startDate: Date;
     endDate: Date;
+    registrationDeadline: Date;
     location: string;
     capacity?: number;
   }) {

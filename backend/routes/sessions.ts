@@ -1,14 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/db';
+import { getSessionLifecycleStatus } from '../lib/sessionAvailability';
 
 export async function sessionRoutes(app: FastifyInstance) {
   // Get all available sessions
   app.get('/sessions', async (request, reply) => {
     try {
       const sessions = await prisma.sessionFormation.findMany({
-        where: {
-          status: { in: ['ouverte', 'complète'] },
-        },
+        where: { status: { not: 'annulée' } },
         include: {
           formation: {
             select: {
@@ -28,10 +27,12 @@ export async function sessionRoutes(app: FastifyInstance) {
         formationTitle: session.formation?.name || 'Formation',
         startDate: session.startDate,
         endDate: session.endDate,
+        registrationDeadline: session.registrationDeadline,
         location: session.location,
         capacity: session.capacity,
         available: session.available,
-        status: session.status,
+        status: getSessionLifecycleStatus(session),
+        registrationOpen: getSessionLifecycleStatus(session) === 'ouverte',
       }));
 
       return reply.send({
@@ -74,10 +75,12 @@ export async function sessionRoutes(app: FastifyInstance) {
           formationTitle: session.formation?.name || 'Formation',
           startDate: session.startDate,
           endDate: session.endDate,
+          registrationDeadline: session.registrationDeadline,
           location: session.location,
           capacity: session.capacity,
           available: session.available,
-          status: session.status,
+          status: getSessionLifecycleStatus(session),
+          registrationOpen: getSessionLifecycleStatus(session) === 'ouverte',
           formation: session.formation,
         },
       });
@@ -98,7 +101,7 @@ export async function sessionRoutes(app: FastifyInstance) {
       const sessions = await prisma.sessionFormation.findMany({
         where: {
           formationId: parseInt(formationId) || 0,
-          status: { in: ['ouverte', 'complète'] },
+          status: { not: 'annulée' },
         },
         orderBy: { startDate: 'asc' },
       });
@@ -108,10 +111,12 @@ export async function sessionRoutes(app: FastifyInstance) {
         formationId: session.formationId,
         startDate: session.startDate,
         endDate: session.endDate,
+        registrationDeadline: session.registrationDeadline,
         location: session.location,
         capacity: session.capacity,
         available: session.available,
-        status: session.status,
+        status: getSessionLifecycleStatus(session),
+        registrationOpen: getSessionLifecycleStatus(session) === 'ouverte',
       }));
 
       return reply.send({
@@ -132,19 +137,37 @@ export async function sessionRoutes(app: FastifyInstance) {
     try {
       await request.jwtVerify();
 
-      const { formationId, startDate, endDate, location, capacity } = request.body as {
+      const { formationId, startDate, endDate, registrationDeadline, location, capacity } = request.body as {
         formationId: number;
         startDate: string;
         endDate: string;
+        registrationDeadline: string;
         location: string;
         capacity: number;
       };
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
+      const parsedRegistrationDeadline = new Date(registrationDeadline);
+      if (
+        !Number.isSafeInteger(formationId) ||
+        !Number.isFinite(parsedStartDate.getTime()) ||
+        !Number.isFinite(parsedEndDate.getTime()) ||
+        !Number.isFinite(parsedRegistrationDeadline.getTime()) ||
+        parsedEndDate < parsedStartDate ||
+        parsedRegistrationDeadline >= parsedStartDate
+      ) {
+        return reply.status(400).send({
+          success: false,
+          error: "La date limite d'inscription doit précéder le début de la session, et la date de fin doit être après son début.",
+        });
+      }
 
       const created = await prisma.sessionFormation.create({
         data: {
           formationId,
-          startDate: new Date(startDate),
-          endDate: new Date(endDate),
+          startDate: parsedStartDate,
+          endDate: parsedEndDate,
+          registrationDeadline: parsedRegistrationDeadline,
           location,
           capacity,
           available: capacity,
@@ -166,20 +189,47 @@ export async function sessionRoutes(app: FastifyInstance) {
       await request.jwtVerify();
 
       const { id } = request.params as { id: string };
-      const { startDate, endDate, location, capacity, available, status } = request.body as {
+      const { startDate, endDate, registrationDeadline, location, capacity, available, status } = request.body as {
         startDate?: string;
         endDate?: string;
+        registrationDeadline?: string;
         location?: string;
         capacity?: number;
         available?: number;
         status?: string;
       };
+      if (startDate || endDate || registrationDeadline) {
+        const existing = await prisma.sessionFormation.findUnique({
+          where: { id: parseInt(id) || 0 },
+        });
+        if (!existing) {
+          return reply.code(404).send({ success: false, error: 'Session not found' });
+        }
+        const nextStart = startDate ? new Date(startDate) : existing.startDate;
+        const nextEnd = endDate ? new Date(endDate) : existing.endDate;
+        const nextDeadline = registrationDeadline
+          ? new Date(registrationDeadline)
+          : existing.registrationDeadline;
+        if (
+          !Number.isFinite(nextStart.getTime()) ||
+          !Number.isFinite(nextEnd.getTime()) ||
+          !Number.isFinite(nextDeadline.getTime()) ||
+          nextEnd < nextStart ||
+          nextDeadline >= nextStart
+        ) {
+          return reply.code(400).send({
+            success: false,
+            error: "La date limite d'inscription doit précéder le début de la session, et la date de fin doit être après son début.",
+          });
+        }
+      }
 
       const session = await prisma.sessionFormation.update({
         where: { id: parseInt(id) || 0 },
         data: {
           ...(startDate && { startDate: new Date(startDate) }),
           ...(endDate && { endDate: new Date(endDate) }),
+          ...(registrationDeadline && { registrationDeadline: new Date(registrationDeadline) }),
           ...(location && { location }),
           ...(capacity && { capacity }),
           ...(available !== undefined && { available }),

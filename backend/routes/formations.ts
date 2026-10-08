@@ -2,6 +2,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/db';
 import { emailService } from '../services/emailService';
+import { isSessionRegistrationOpen } from '../lib/sessionAvailability';
 
 export async function formationRoutes(app: FastifyInstance) {
   // Get all published formations
@@ -160,19 +161,37 @@ export async function formationRoutes(app: FastifyInstance) {
   // Create inscription to formation (public)
   app.post('/inscriptions-formations', async (request, reply) => {
     try {
-      const { firstName, lastName, email, phone, formationId, message } = request.body as any;
+      const { firstName, lastName, email, phone, formationId, sessionId, message } = request.body as any;
 
       // Validate required fields
-      if (!firstName || !lastName || !email || !phone || !formationId) {
+      if (!firstName || !lastName || !email || !phone || !formationId || !sessionId) {
         return reply.status(400).send({
           success: false,
-          error: 'Missing required fields: firstName, lastName, email, phone, formationId',
+          error: 'Missing required fields: firstName, lastName, email, phone, formationId, sessionId',
+        });
+      }
+
+      const parsedFormationId = Number(String(formationId));
+      const parsedSessionId =
+        sessionId === undefined || sessionId === null || sessionId === ''
+          ? null
+          : Number(String(sessionId));
+      if (
+        !Number.isSafeInteger(parsedFormationId) ||
+        parsedFormationId <= 0 ||
+        parsedSessionId === null ||
+        !Number.isSafeInteger(parsedSessionId) ||
+        parsedSessionId <= 0
+      ) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid formation or session',
         });
       }
 
       // Verify formation exists
       const formation = await prisma.formation.findUnique({
-        where: { id: parseInt(formationId) },
+        where: { id: parsedFormationId },
       });
 
       if (!formation) {
@@ -182,32 +201,27 @@ export async function formationRoutes(app: FastifyInstance) {
         });
       }
 
-      // Get or create a pending session for this formation
-      let session = await prisma.sessionFormation.findFirst({
+      // Registration is only allowed for a real, open session with remaining seats.
+      const session = await prisma.sessionFormation.findFirst({
         where: {
-          formationId: parseInt(formationId),
+          id: parsedSessionId,
+          formationId: parsedFormationId,
           status: 'ouverte',
+          available: { gt: 0 },
         },
       });
 
-      if (!session) {
-        session = await prisma.sessionFormation.create({
-          data: {
-            formationId: parseInt(formationId),
-            startDate: new Date(),
-            endDate: new Date(),
-            location: 'À déterminer',
-            capacity: 100,
-            available: 100,
-            status: 'ouverte',
-          },
+      if (!session || !isSessionRegistrationOpen(session)) {
+        return reply.status(409).send({
+          success: false,
+          error: 'Cette session n’est plus disponible. Veuillez choisir une autre session.',
         });
       }
 
-      // Check if email already registered for this formation
+      // Prevent duplicate registrations in the same session.
       const existingInscription = await prisma.inscriptionFormation.findFirst({
         where: {
-          formationId: parseInt(formationId),
+          sessionId: session.id,
           email,
         },
       });
@@ -215,14 +229,14 @@ export async function formationRoutes(app: FastifyInstance) {
       if (existingInscription) {
         return reply.status(400).send({
           success: false,
-          error: 'Email already registered for this formation',
+          error: 'Cette adresse e-mail est déjà inscrite à cette session.',
         });
       }
 
-      // Create inscription
+      // Registrations remain pending until an administrator confirms them.
       const inscription = await prisma.inscriptionFormation.create({
         data: {
-          formationId: parseInt(formationId),
+          formationId: parsedFormationId,
           sessionId: session.id,
           firstName,
           lastName,
@@ -253,6 +267,17 @@ export async function formationRoutes(app: FastifyInstance) {
         message: 'Inscription successfully created. We will contact you soon.',
       });
     } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Cette adresse e-mail est déjà inscrite à cette session.',
+        });
+      }
       console.error('Create inscription error:', error);
       return reply.status(500).send({
         success: false,

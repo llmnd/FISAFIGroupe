@@ -30,6 +30,7 @@ export async function seedRoutes(app: FastifyInstance) {
               formationId: formation.id,
               startDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
               endDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
+              registrationDeadline: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000),
               location: 'Paris',
               capacity: formation.maxParticipants,
               available: formation.maxParticipants,
@@ -39,6 +40,7 @@ export async function seedRoutes(app: FastifyInstance) {
               formationId: formation.id,
               startDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
               endDate: new Date(now.getTime() + 35 * 24 * 60 * 60 * 1000), // 35 days from now
+              registrationDeadline: new Date(now.getTime() + 29 * 24 * 60 * 60 * 1000),
               location: 'Lyon',
               capacity: formation.maxParticipants,
               available: formation.maxParticipants,

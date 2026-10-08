@@ -61,7 +61,7 @@ model Formation {
   published   Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   sessions    SessionFormation[]
   inscriptions InscriptionFormation[]
 
@@ -75,17 +75,18 @@ model SessionFormation {
   id          Int     @id @default(autoincrement())
   formationId Int
   formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
-  
+
   startDate   DateTime
   endDate     DateTime
+  registrationDeadline DateTime
   location    String
   capacity    Int     @default(20)
   available   Int     @default(20)
   status      String  @default("ouverte") // "ouverte", "complète", "annulée", "terminée", "en_attente"
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   inscriptions InscriptionFormation[]
 
   @@index([formationId])
@@ -102,7 +103,7 @@ model InscriptionFormation {
   
   formationId Int
   formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
-  
+
   firstName   String
   lastName    String
   email       String

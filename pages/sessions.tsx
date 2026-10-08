@@ -3,9 +3,13 @@
 
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SessionRegistrationButton from "@/components/SessionRegistrationButton";
+import {
+  getSessionLifecycleStatus,
+  type SessionLifecycleStatus,
+} from "@/backend/lib/sessionAvailability";
 
 interface Session {
   id: string;
@@ -13,12 +17,13 @@ interface Session {
   formationTitle: string;
   startDate: string;
   endDate: string;
+  registrationDeadline: string;
   startTime?: string;
   endTime?: string;
   maxParticipants: number;
   currentParticipants: number;
   location: string;
-  status: "ouverte" | "complète" | "terminée";
+  status: SessionLifecycleStatus;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -34,6 +39,7 @@ function normalizeApiSession(value: unknown): Session {
   const formationId = value.formationId;
   const startDate = value.startDate;
   const endDate = value.endDate;
+  const registrationDeadline = value.registrationDeadline;
   const status = value.status;
   const capacity = Number(value.capacity ?? value.maxParticipants ?? 0);
   const available = Number(value.available ?? capacity);
@@ -55,7 +61,9 @@ function normalizeApiSession(value: unknown): Session {
     Number.isNaN(Date.parse(startDate)) ||
     typeof endDate !== "string" ||
     Number.isNaN(Date.parse(endDate)) ||
-    (status !== "ouverte" && status !== "complète" && status !== "terminée") ||
+    typeof registrationDeadline !== "string" ||
+    Number.isNaN(Date.parse(registrationDeadline)) ||
+    (status !== "ouverte" && status !== "complète" && status !== "fermée" && status !== "terminée" && status !== "annulée") ||
     !Number.isFinite(capacity) ||
     !Number.isFinite(currentParticipants)
   ) {
@@ -68,12 +76,19 @@ function normalizeApiSession(value: unknown): Session {
     formationTitle,
     startDate,
     endDate,
+    registrationDeadline,
     startTime: typeof value.startTime === "string" ? value.startTime : "",
     endTime: typeof value.endTime === "string" ? value.endTime : "",
     maxParticipants: capacity,
     currentParticipants,
     location: typeof value.location === "string" ? value.location : "",
-    status,
+    status: getSessionLifecycleStatus({
+      startDate,
+      endDate,
+      registrationDeadline,
+      status,
+      available,
+    }),
   };
 }
 
@@ -84,7 +99,6 @@ const MONTH_NAMES = [
 const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"];
 
 export default function SessionsPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -92,15 +106,7 @@ export default function SessionsPage() {
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-
-  useEffect(() => {
-    void fetch("/api/auth/me")
-      .then((response) => setIsLoggedIn(response.ok))
-      .catch((error) => {
-        console.error("[Sessions/Auth] Could not check the account session:", error);
-        setIsLoggedIn(false);
-      });
-  }, []);
+  const [, setStatusRefresh] = useState(0);
 
   useEffect(() => {
     fetchSessions();
@@ -129,6 +135,13 @@ export default function SessionsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setStatusRefresh((value) => value + 1);
+    }, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const sessionsOfMonth = sessions.filter((s) => {
     const d = new Date(s.startDate);
@@ -181,10 +194,21 @@ export default function SessionsPage() {
   };
 
   const statusLabel = (status: Session["status"]) => {
-    if (status === "ouverte") return "Ouverte";
-    if (status === "complète") return "Complète";
-    return "Terminée";
+    if (status === "ouverte") return "Ouverte — inscriptions possibles";
+    if (status === "complète") return "Complète — inscriptions closes";
+    if (status === "fermée") return "Fermée — inscriptions closes";
+    if (status === "annulée") return "Annulée — inscriptions closes";
+    return "Terminée — inscriptions closes";
   };
+
+  const effectiveStatus = (session: Session): Session["status"] =>
+    getSessionLifecycleStatus({
+      startDate: session.startDate,
+      endDate: session.endDate,
+      registrationDeadline: session.registrationDeadline,
+      status: session.status,
+      available: placesLibres(session),
+    });
 
   const fillRate = (s: Session) => {
     const max = Number(s.maxParticipants) || 0;
@@ -310,9 +334,9 @@ export default function SessionsPage() {
                       ))}
                       {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                         const daySessions = getSessionsForDay(day);
-                        const hasOpen = daySessions.some((s) => s.status === "ouverte");
-                        const hasFull = daySessions.some((s) => s.status === "complète");
-                        const hasDone = daySessions.some((s) => s.status === "terminée");
+                        const hasOpen = daySessions.some((s) => effectiveStatus(s) === "ouverte");
+                        const hasFull = daySessions.some((s) => effectiveStatus(s) === "complète");
+                        const hasDone = daySessions.some((s) => effectiveStatus(s) === "terminée");
                         const isSelected = selectedDay === day;
 
                         return (
@@ -363,7 +387,7 @@ export default function SessionsPage() {
                         </div>
                         <div className="panel-list">
                           {selectedDaySessions.map((s) => (
-                            <SessionCard key={s.id} s={s} isLoggedIn={isLoggedIn} fillRate={fillRate} statusLabel={statusLabel} placesLibres={placesLibres} />
+                            <SessionCard key={s.id} s={{ ...s, status: effectiveStatus(s) }} fillRate={fillRate} statusLabel={statusLabel} placesLibres={placesLibres} />
                           ))}
                         </div>
                       </>
@@ -400,7 +424,7 @@ export default function SessionsPage() {
                       </div>
                       <div className="sheet-body">
                         {selectedDaySessions.map((s) => (
-                          <SessionCard key={s.id} s={s} isLoggedIn={isLoggedIn} fillRate={fillRate} statusLabel={statusLabel} placesLibres={placesLibres} />
+                          <SessionCard key={s.id} s={{ ...s, status: effectiveStatus(s) }} fillRate={fillRate} statusLabel={statusLabel} placesLibres={placesLibres} />
                         ))}
                       </div>
                     </div>
@@ -446,7 +470,7 @@ export default function SessionsPage() {
                         return (
                           <div
                             key={s.id}
-                            className={`list-card ${s.status === "terminée" ? "terminated" : ""}`}
+                            className={`list-card ${effectiveStatus(s) === "terminée" ? "terminated" : ""}`}
                           >
                             {/* Bloc date */}
                             <div className="list-date-block">
@@ -460,8 +484,8 @@ export default function SessionsPage() {
                             <div className="list-body">
                               <div className="list-top">
                                 <h3 className="list-title">{s.formationTitle}</h3>
-                                <span className={`s-badge ${s.status}`}>
-                                  {statusLabel(s.status)}
+                                <span className={`s-badge ${effectiveStatus(s)}`}>
+                                  {statusLabel(effectiveStatus(s))}
                                 </span>
                               </div>
 
@@ -475,6 +499,12 @@ export default function SessionsPage() {
                                     {s.location}
                                   </span>
                                 )}
+                                {effectiveStatus(s) === "ouverte" && (
+                                  <span className="list-meta-item">
+                                    Inscriptions jusqu’au{" "}
+                                    {new Date(s.registrationDeadline).toLocaleString("fr-FR")}
+                                  </span>
+                                )}
                                 {hasTime && (
                                   <span className="list-meta-item">
                                     <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -486,14 +516,11 @@ export default function SessionsPage() {
                                 )}
                               </div>
 
-                              {s.status === "ouverte" && (
-                                <Link
-                                  href={isLoggedIn ? `/training?sessionId=${s.id}` : "/login"}
-                                  className="list-cta"
-                                  style={{ textDecoration: "none" }}
-                                >
-                                  {isLoggedIn ? "S'inscrire" : "Se connecter pour s'inscrire"}
-                                </Link>
+                              {effectiveStatus(s) === "ouverte" && placesLibres(s) > 0 && (
+                                <SessionRegistrationButton
+                                  session={s}
+                                  placesAvailable={placesLibres(s)}
+                                />
                               )}
                             </div>
                           </div>
@@ -800,6 +827,7 @@ export default function SessionsPage() {
         }
         .s-card.ouverte { border-left: 4px solid #16a34a; }
         .s-card.complete { border-left: 4px solid #dc2626; opacity: 0.85; }
+        .s-card.closed { border-left: 4px solid #f59e0b; }
         .s-card.terminee { border-left: 4px solid #94a3b8; opacity: 0.7; }
         .s-card-top {
           display: flex;
@@ -836,6 +864,8 @@ export default function SessionsPage() {
         }
         .s-badge.ouverte { background: rgba(22,163,74,0.1); color: #15803d; }
         .s-badge.complète { background: rgba(220,38,38,0.1); color: #b91c1c; }
+        .s-badge.fermée,
+        .s-badge.annulée { background: rgba(245,158,11,0.12); color: #92400e; }
         .s-badge.terminée { background: rgba(148,163,184,0.12); color: var(--steel); }
         .s-time {
           font-size: 0.88rem;
@@ -1137,19 +1167,23 @@ export default function SessionsPage() {
 /* ── SessionCard (vue calendrier) ── */
 function SessionCard({
   s,
-  isLoggedIn,
   fillRate,
   statusLabel,
   placesLibres,
 }: {
   s: Session;
-  isLoggedIn: boolean;
   fillRate: (s: Session) => number;
   statusLabel: (status: Session["status"]) => string;
   placesLibres: (s: Session) => number;
 }) {
   const statusClass =
-    s.status === "complète" ? "complete" : s.status === "terminée" ? "terminee" : "ouverte";
+    s.status === "complète"
+      ? "complete"
+      : s.status === "terminée"
+        ? "terminee"
+        : s.status === "fermée" || s.status === "annulée"
+          ? "closed"
+          : "ouverte";
 
   return (
     <div className={`s-card ${statusClass}`}>
@@ -1160,6 +1194,11 @@ function SessionCard({
         )}
       </div>
       <h4 className="s-card-title">{s.formationTitle}</h4>
+      {s.status === "ouverte" && (
+        <p className="s-card-loc">
+          Inscriptions jusqu’au {new Date(s.registrationDeadline).toLocaleString("fr-FR")}
+        </p>
+      )}
       {s.location && (
         <p className="s-card-loc">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
@@ -1179,15 +1218,8 @@ function SessionCard({
           </span>
         </div>
       )}
-      {s.status === "ouverte" && (
-        <Link
-          href={isLoggedIn ? `/training?sessionId=${s.id}` : "/login"}
-          className="s-card-cta"
-        >
-          {isLoggedIn
-            ? `S'inscrire (${placesLibres(s)} place${placesLibres(s) > 1 ? "s" : ""})`
-            : "Se connecter pour s'inscrire"}
-        </Link>
+      {s.status === "ouverte" && placesLibres(s) > 0 && (
+        <SessionRegistrationButton session={s} placesAvailable={placesLibres(s)} />
       )}
     </div>
   );

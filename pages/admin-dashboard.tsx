@@ -5,6 +5,10 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import { ensureAuthSession } from "@/lib/clientAuthSession";
+import {
+  getSessionLifecycleStatus,
+  type SessionLifecycleStatus,
+} from "@/backend/lib/sessionAvailability";
 
 /* ═══════════════════════════════════════════════════════════════════════
    INTERFACES
@@ -41,10 +45,11 @@ interface SessionFormation {
   formationId: number;
   endDate: string;
   startDate: string;
+  registrationDeadline: string;
   location: string;
   capacity: number;
   available: number;
-  status?: "ouverte" | "complète" | "fermée" | "annulée";
+  status?: SessionLifecycleStatus;
 }
 
 interface Formation {
@@ -909,14 +914,24 @@ export default function AdminDashboard() {
 
   const [formations, setFormations] = useState<Formation[]>([]);
   const [sessions, setSessions] = useState<SessionFormation[]>([]);
+  const [, setSessionStatusRefresh] = useState(0);
   const [actionSheetSession, setActionSheetSession] = useState<SessionFormation | null>(null);
   const [loadingFormations, setLoadingFormations] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [showSessionForm, setShowSessionForm] = useState(false);
-  const [sessionFormData, setSessionFormData] = useState({ formationId: "", startDate: "", endDate: "", location: "", capacity: "20" });
+  const [sessionFormData, setSessionFormData] = useState({ formationId: "", startDate: "", endDate: "", registrationDeadline: "", location: "", capacity: "20" });
   const [submittingSession, setSubmittingSession] = useState(false);
   const [sessionError, setSessionError] = useState("");
   const [sessionSuccess, setSessionSuccess] = useState("");
+
+  useEffect(() => {
+    if (activeTab !== "sessions") return;
+    const interval = window.setInterval(
+      () => setSessionStatusRefresh((value) => value + 1),
+      30_000,
+    );
+    return () => window.clearInterval(interval);
+  }, [activeTab]);
 
   const [actionSheetBrochure, setActionSheetBrochure] = useState<any | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
@@ -1326,19 +1341,32 @@ export default function AdminDashboard() {
   const handleCreateSession = async (e: FormEvent) => {
     e.preventDefault();
     setSessionError(""); setSessionSuccess("");
-    if (!sessionFormData.formationId || !sessionFormData.startDate || !sessionFormData.endDate || !sessionFormData.location) {
+    if (!sessionFormData.formationId || !sessionFormData.startDate || !sessionFormData.endDate || !sessionFormData.registrationDeadline || !sessionFormData.location) {
       setSessionError("Tous les champs obligatoires doivent être remplis"); return;
+    }
+    const startDate = new Date(sessionFormData.startDate);
+    const endDate = new Date(sessionFormData.endDate);
+    const registrationDeadline = new Date(sessionFormData.registrationDeadline);
+    if (
+      !Number.isFinite(startDate.getTime()) ||
+      !Number.isFinite(endDate.getTime()) ||
+      !Number.isFinite(registrationDeadline.getTime()) ||
+      registrationDeadline >= startDate ||
+      endDate < startDate
+    ) {
+      setSessionError("La date limite d'inscription doit précéder le début de la session, et la date de fin doit être après son début.");
+      return;
     }
     setSubmittingSession(true);
     try {
       const r = await fetch(buildApiUrl("/api/sessions"), {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ formationId: parseInt(sessionFormData.formationId, 10), startDate: new Date(sessionFormData.startDate).toISOString(), endDate: new Date(sessionFormData.endDate).toISOString(), location: sessionFormData.location, capacity: parseInt(sessionFormData.capacity, 10) })
+        body: JSON.stringify({ formationId: parseInt(sessionFormData.formationId, 10), startDate: startDate.toISOString(), endDate: endDate.toISOString(), registrationDeadline: registrationDeadline.toISOString(), location: sessionFormData.location, capacity: parseInt(sessionFormData.capacity, 10) })
       });
       if (r.ok) {
         setSessionSuccess("Session créée avec succès!");
-        setSessionFormData({ formationId: "", startDate: "", endDate: "", location: "", capacity: "20" });
+        setSessionFormData({ formationId: "", startDate: "", endDate: "", registrationDeadline: "", location: "", capacity: "20" });
         setShowSessionForm(false);
         await fetchSessions();
         setTimeout(() => setSessionSuccess(""), 3000);
@@ -2191,6 +2219,20 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="form-group">
+                      <label className="form-label">Clôture des inscriptions *</label>
+                      <input
+                        type="datetime-local"
+                        className="form-input"
+                        value={sessionFormData.registrationDeadline}
+                        max={sessionFormData.startDate || undefined}
+                        onChange={e => setSessionFormData({...sessionFormData, registrationDeadline: e.target.value})}
+                        required
+                      />
+                      <small className="form-hint">
+                        Avant l’échéance, la session est ouverte aux inscriptions. Après celle-ci, elle est fermée ; après la date de fin, elle est terminée. Cette limite doit précéder le début de la session.
+                      </small>
+                    </div>
+                    <div className="form-group">
                       <label className="form-label">Lieu *</label>
                       <input type="text" className="form-input" value={sessionFormData.location} onChange={e => setSessionFormData({...sessionFormData, location: e.target.value})} placeholder="Dakar, N'Djamena, Abidjan…" required/>
                     </div>
@@ -2212,6 +2254,20 @@ export default function AdminDashboard() {
                       {sessions.map(session => {
                         const formation = formations.find(f => f.id === session.formationId);
                         const fillPct = session.capacity > 0 ? Math.round(((session.capacity - session.available) / session.capacity) * 100) : 0;
+                        const lifecycleStatus = getSessionLifecycleStatus({
+                          startDate: session.startDate,
+                          endDate: session.endDate,
+                          registrationDeadline: session.registrationDeadline,
+                          status: session.status || "ouverte",
+                          available: session.available,
+                        });
+                        const lifecycleLabel: Record<SessionLifecycleStatus, string> = {
+                          ouverte: "Ouverte — inscriptions possibles",
+                          fermée: "Fermée — inscriptions closes",
+                          complète: "Complète — inscriptions closes",
+                          terminée: "Terminée — inscriptions closes",
+                          annulée: "Annulée — inscriptions closes",
+                        };
                         return (
                           <div key={session.id} className="session-card" onClick={() => setActionSheetSession(session)}>
                             <div className="session-card-name">{formation?.name || "Formation"}</div>
@@ -2223,11 +2279,12 @@ export default function AdminDashboard() {
                               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                               {new Date(session.startDate).toLocaleDateString("fr-FR")} — {new Date(session.endDate).toLocaleDateString("fr-FR")}
                             </div>
-                            {session.status && (
-                              <div className={getSessionStatusClass(session.status)}>
-                                {session.status}
-                              </div>
-                            )}
+                            <div className={getSessionStatusClass(lifecycleStatus)}>
+                              {lifecycleLabel[lifecycleStatus]}
+                            </div>
+                            <div className="session-card-row">
+                              Inscriptions jusqu&apos;au {new Date(session.registrationDeadline).toLocaleString("fr-FR")}
+                            </div>
                             <div className="session-capacity">
                               <div className="capacity-bar"><div className="capacity-fill" style={{ width:`${fillPct}%` }}/></div>
                               <span style={{ fontSize:"0.8rem",fontWeight:600,color:"var(--steel)",flexShrink:0 }}>{session.available}/{session.capacity}</span>
