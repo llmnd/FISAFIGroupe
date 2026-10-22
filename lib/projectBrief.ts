@@ -109,7 +109,7 @@ export function isProjectBriefDraft(value: unknown): value is ProjectBriefDraft 
     typeof draft.notes !== "string" ||
     draft.notes.length > 8000 ||
     !Array.isArray(draft.modules) ||
-    draft.modules.length !== DEFAULT_PROJECT_BRIEF.modules.length
+    draft.modules.length > 20
   ) {
     return false;
   }
@@ -120,9 +120,11 @@ export function isProjectBriefDraft(value: unknown): value is ProjectBriefDraft 
     const item = module as Partial<ProjectBriefModule>;
     if (
       typeof item.id !== "string" ||
-      !DEFAULT_PROJECT_BRIEF.modules.some((defaultModule) => defaultModule.id === item.id) ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.id) ||
+      item.id.length > 100 ||
       seenIds.has(item.id) ||
       typeof item.name !== "string" ||
+      item.name.trim().length === 0 ||
       item.name.length > 120 ||
       typeof item.status !== "string" ||
       !MODULE_STATUSES.includes(item.status as ProjectBriefModuleStatus) ||

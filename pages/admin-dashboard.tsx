@@ -1688,7 +1688,7 @@ export default function AdminDashboard() {
       {/* Toast */}
       {toast && <div className={`toast${toast.type === "err" ? " err" : ""}`}>{toast.msg}</div>}
 
-      {navOpen && (
+      {navOpen && activeTab !== "specification" && (
         <button
           type="button"
           className="mob-menu-backdrop"
@@ -1701,7 +1701,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Mobile menu */}
-      {navOpen && (
+      {navOpen && activeTab !== "specification" && (
         <nav
           id="admin-mobile-navigation"
           className="mob-menu open"
@@ -1745,7 +1745,7 @@ export default function AdminDashboard() {
         </nav>
       )}
 
-      <div className="admin-layout">
+      <div className={`admin-layout${activeTab === "specification" ? " admin-layout-presentation" : ""}`}>
         {/* Sidebar desktop */}
         <aside className="admin-sidebar">
           <div className="sidebar-top">
@@ -1838,17 +1838,19 @@ export default function AdminDashboard() {
                 <span>Retour</span>
               </button>
               <div className="mob-avatar">{initials}</div>
-              <button
-                ref={mobileMenuButtonRef}
-                type="button"
-                className={`mob-menu-btn${navOpen ? " open" : ""}`}
-                onClick={() => setNavOpen((isOpen) => !isOpen)}
-                aria-label={navOpen ? "Fermer le menu" : "Ouvrir le menu"}
-                aria-expanded={navOpen}
-                aria-controls="admin-mobile-navigation"
-              >
-                <span/><span/><span/>
-              </button>
+              {activeTab !== "specification" && (
+                <button
+                  ref={mobileMenuButtonRef}
+                  type="button"
+                  className={`mob-menu-btn${navOpen ? " open" : ""}`}
+                  onClick={() => setNavOpen((isOpen) => !isOpen)}
+                  aria-label={navOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                  aria-expanded={navOpen}
+                  aria-controls="admin-mobile-navigation"
+                >
+                  <span/><span/><span/>
+                </button>
+              )}
             </div>
           </header>
 
@@ -2563,7 +2565,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Bottom tab bar */}
-      <nav className="tab-bar" aria-label="Navigation principale">
+      {activeTab !== "specification" && <nav className="tab-bar" aria-label="Navigation principale">
         {([
           { id:"users", label:"Utilisateurs", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, badge: users.length > 0 ? users.length : 0 },
           { id:"articles", label:"Articles", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, badge: 0 },
@@ -2588,7 +2590,7 @@ export default function AdminDashboard() {
             {t.badge > 0 && <div className="tab-badge">{t.badge > 9 ? "9+" : t.badge}</div>}
           </button>
         ))}
-      </nav>
+      </nav>}
 
       {/* ── ACTION SHEETS ── */}
 

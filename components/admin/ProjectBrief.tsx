@@ -8,37 +8,18 @@ import {
   type ProjectBriefStatus,
 } from "@/lib/projectBrief";
 
-interface PreviewProduct {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-}
-
-const INITIAL_PREVIEW_PRODUCTS: PreviewProduct[] = [
-  { id: "PR-001", name: "Audit réseau & diagnostic", category: "Service", price: 118000, stock: 8 },
-  { id: "PR-002", name: "Routeur professionnel", category: "Équipement", price: 175000, stock: 4 },
-  { id: "PR-003", name: "Câble réseau Cat 6 · 10 m", category: "Accessoire", price: 12500, stock: 24 },
-  { id: "PR-004", name: "Switch réseau 8 ports", category: "Équipement", price: 65000, stock: 7 },
-];
-
-const ACCOUNTING_PREVIEW_ROWS = [
-  { date: "02/10/2026", ref: "VT-001", label: "Vente comptoir · exemple", account: "571", accountName: "Caisse", debit: "118 000", credit: "—" },
-  { date: "02/10/2026", ref: "VT-001", label: "Vente de marchandises", account: "701", accountName: "Ventes de marchandises", debit: "—", credit: "100 000" },
-  { date: "02/10/2026", ref: "VT-001", label: "TVA collectée · à valider", account: "4432", accountName: "État, TVA facturée", debit: "—", credit: "18 000" },
-  { date: "04/10/2026", ref: "AC-014", label: "Achat de fournitures · exemple", account: "605", accountName: "Autres achats", debit: "75 000", credit: "—" },
-  { date: "04/10/2026", ref: "AC-014", label: "Règlement fournisseur", account: "521", accountName: "Banques locales", debit: "—", credit: "75 000" },
-  { date: "07/10/2026", ref: "CL-008", label: "Facture client · à encaisser", account: "411", accountName: "Clients", debit: "236 000", credit: "—" },
-  { date: "07/10/2026", ref: "CL-008", label: "Prestation de service", account: "706", accountName: "Services vendus", debit: "—", credit: "200 000" },
-  { date: "07/10/2026", ref: "CL-008", label: "TVA collectée · exemple", account: "4432", accountName: "État, TVA facturée", debit: "—", credit: "36 000" },
-];
-
 const STATUS_LABELS: Record<ProjectBriefStatus, string> = {
   draft: "À cadrer",
   discussion: "En discussion",
   approved: "Validé pour chiffrage",
 };
+
+const BRIEF_STEPS = [
+  { title: "Votre vision", detail: "Vos priorités" },
+  { title: "Les modules", detail: "À la carte" },
+  { title: "Budget & délais", detail: "Vos conditions" },
+  { title: "Récapitulatif", detail: "Relire et partager" },
+] as const;
 
 const CURRENCY_FORMAT = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -47,127 +28,6 @@ function getErrorMessage(payload: unknown, fallback: string): string {
     return payload.error;
   }
   return fallback;
-}
-
-function formatPreviewCurrency(amount: number): string {
-  return `${CURRENCY_FORMAT.format(amount)} FCFA`;
-}
-
-function BriefFunctionalPreview() {
-  const [activePreview, setActivePreview] = useState<"pos" | "products" | "accounting">("pos");
-  const [products, setProducts] = useState(INITIAL_PREVIEW_PRODUCTS);
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [feedback, setFeedback] = useState("");
-
-  const cartTotal = products.reduce((sum, product) => sum + product.price * (cart[product.id] ?? 0), 0);
-  const cartCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
-
-  const addProductToCart = (product: PreviewProduct) => {
-    const currentQuantity = cart[product.id] ?? 0;
-    if (currentQuantity >= product.stock) {
-      setFeedback("Stock fictif atteint : ajustez la quantité avant de continuer.");
-      return;
-    }
-    setCart((current) => ({ ...current, [product.id]: (current[product.id] ?? 0) + 1 }));
-    setFeedback(`${product.name} ajouté au ticket de démonstration.`);
-  };
-
-  const savePreviewProduct = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const values = new FormData(form);
-    const id = String(values.get("reference") ?? "").trim().toUpperCase();
-    const name = String(values.get("name") ?? "").trim();
-    const category = String(values.get("category") ?? "Équipement");
-    const price = Number(values.get("price"));
-    const stock = Number(values.get("stock"));
-    if (!id || !name || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) {
-      setFeedback("Vérifiez la référence, le nom, le prix et le stock du produit.");
-      return;
-    }
-    if (products.some((product) => product.id === id)) {
-      setFeedback(`La référence ${id} existe déjà dans ce catalogue fictif.`);
-      return;
-    }
-    setProducts((current) => [...current, { id, name, category, price, stock }]);
-    form.reset();
-    setFeedback(`${name} a été ajouté au catalogue de démonstration.`);
-  };
-
-  const savePreviewSale = () => {
-    if (cartCount === 0) return;
-    setProducts((current) => current.map((product) => ({
-      ...product,
-      stock: Math.max(0, product.stock - (cart[product.id] ?? 0)),
-    })));
-    setCart({});
-    setFeedback("Vente fictive enregistrée. Seul le stock de cette maquette a été mis à jour.");
-  };
-
-  return (
-    <section className="brief-panel brief-preview-panel">
-      <div className="brief-panel-heading">
-        <div><span className="brief-panel-index">APERÇU · MAQUETTE ODOO-LIKE</span><h3>Explorez les modules proposés</h3><p>Une simulation de présentation pour visualiser les usages avant le développement.</p></div>
-        <span className="brief-preview-badge"><i /> DONNÉES FICTIVES</span>
-      </div>
-      <div className="brief-preview-tabs" role="tablist" aria-label="Aperçu des modules de gestion">
-        <button type="button" role="tab" aria-selected={activePreview === "pos"} className={activePreview === "pos" ? "active" : ""} onClick={() => { setActivePreview("pos"); setFeedback(""); }}>Point de vente</button>
-        <button type="button" role="tab" aria-selected={activePreview === "products"} className={activePreview === "products" ? "active" : ""} onClick={() => { setActivePreview("products"); setFeedback(""); }}>Produits & stock</button>
-        <button type="button" role="tab" aria-selected={activePreview === "accounting"} className={activePreview === "accounting" ? "active" : ""} onClick={() => { setActivePreview("accounting"); setFeedback(""); }}>Comptabilité OHADA</button>
-      </div>
-
-      {activePreview === "pos" && (
-        <div className="brief-preview-pos" role="tabpanel">
-          <div className="brief-preview-products">
-            <div className="brief-preview-subheading"><strong>Catalogue de démonstration</strong><span>{products.length} produits</span></div>
-            <div className="brief-preview-product-grid">
-              {products.slice(0, 8).map((product) => (
-                <button type="button" className="brief-preview-product" key={product.id} onClick={() => addProductToCart(product)} disabled={product.stock === 0}>
-                  <span className="brief-product-mark">◇</span><small>{product.category}</small><strong>{product.name}</strong><span className="brief-product-price">{formatPreviewCurrency(product.price)}</span><span className="brief-product-stock">{product.stock} en stock</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <aside className="brief-preview-cart">
-            <span className="brief-panel-index">COMMANDE EN COURS</span><h4>Ticket de caisse</h4>
-            {cartCount === 0 ? <p className="brief-cart-empty">Sélectionnez un produit pour commencer.</p> : (
-              <div className="brief-cart-items">{products.filter((product) => cart[product.id]).map((product) => (
-                <div key={product.id}><span>{product.name} × {cart[product.id]}</span><strong>{formatPreviewCurrency(product.price * cart[product.id])}</strong></div>
-              ))}</div>
-            )}
-            <div className="brief-cart-total"><span>{cartCount} article{cartCount > 1 ? "s" : ""}</span><strong>{formatPreviewCurrency(cartTotal)}</strong></div>
-            <button className="brief-preview-action" type="button" onClick={savePreviewSale} disabled={cartCount === 0}>Enregistrer la vente fictive <span>→</span></button>
-          </aside>
-        </div>
-      )}
-
-      {activePreview === "products" && (
-        <div className="brief-preview-inventory" role="tabpanel">
-          <div className="brief-preview-subheading"><strong>Catalogue produits</strong><span>Ajout local à la maquette · {products.length} articles</span></div>
-          <div className="brief-preview-table-wrap"><table className="brief-preview-table"><thead><tr><th>RÉFÉRENCE</th><th>PRODUIT</th><th>CATÉGORIE</th><th>PRIX TTC</th><th>STOCK</th></tr></thead><tbody>
-            {products.map((product) => <tr key={product.id}><td><code>{product.id}</code></td><td><strong>{product.name}</strong></td><td>{product.category}</td><td>{formatPreviewCurrency(product.price)}</td><td><span className={`brief-preview-stock${product.stock <= 5 ? " low" : ""}`}>{product.stock} unité{product.stock > 1 ? "s" : ""}</span></td></tr>)}
-          </tbody></table></div>
-          <form className="brief-preview-product-form" onSubmit={savePreviewProduct}>
-            <h4>Ajouter un produit de démonstration</h4>
-            <div><label>Nom du produit<input name="name" required maxLength={80} placeholder="Ex. Point d’accès Wi-Fi" /></label><label>Référence<input name="reference" required maxLength={16} placeholder="WIFI-01" /></label><label>Catégorie<select name="category"><option>Équipement</option><option>Accessoire</option><option>Service</option></select></label><label>Prix TTC · FCFA<input name="price" type="number" min="1" step="1" required placeholder="25000" /></label><label>Stock initial<input name="stock" type="number" min="0" step="1" required placeholder="10" /></label><button type="submit">Ajouter au catalogue <span>＋</span></button></div>
-            <p>Les produits ajoutés sont fictifs et restent dans cette session de démonstration.</p>
-          </form>
-        </div>
-      )}
-
-      {activePreview === "accounting" && (
-        <div className="brief-preview-ledger" role="tabpanel">
-          <div className="brief-ledger-summary"><span>EXEMPLE DE JOURNAL SYSCOHADA RÉVISÉ · OCTOBRE 2026</span><strong>Totaux équilibrés <i>429 000 FCFA</i></strong></div>
-          <div className="brief-preview-table-wrap"><table className="brief-preview-table"><thead><tr><th>DATE</th><th>PIÈCE</th><th>LIBELLÉ</th><th>COMPTE OHADA</th><th>INTITULÉ</th><th>DÉBIT</th><th>CRÉDIT</th></tr></thead><tbody>
-            {ACCOUNTING_PREVIEW_ROWS.map((row) => <tr key={`${row.ref}-${row.account}`}><td>{row.date}</td><td>{row.ref}</td><td>{row.label}</td><td><code>{row.account}</code></td><td>{row.accountName}</td><td>{row.debit}</td><td>{row.credit}</td></tr>)}
-          </tbody></table></div>
-          <p className="brief-ledger-warning"><strong>À valider avec le comptable :</strong> comptes, TVA, libellés et écritures dépendent du régime fiscal et de l’activité. Exemple pédagogique, pas un conseil comptable.</p>
-        </div>
-      )}
-
-      <p className="brief-preview-feedback" role="status" aria-live="polite">{feedback || "Cette maquette est indépendante du cahier enregistré et ne crée aucune vraie vente ni écriture comptable."}</p>
-    </section>
-  );
 }
 
 export default function ProjectBrief() {
@@ -179,6 +39,9 @@ export default function ProjectBrief() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [conflictRecord, setConflictRecord] = useState<ProjectBriefRecord | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+  const [newModuleName, setNewModuleName] = useState("");
   const draftRef = useRef(draft);
   const dirtyRef = useRef(dirty);
   const recordRef = useRef(record);
@@ -189,6 +52,7 @@ export default function ProjectBrief() {
 
   const applyRecord = useCallback((nextRecord: ProjectBriefRecord) => {
     setRecord(nextRecord);
+    setActiveModuleIndex(0);
     setDraft({
       budget: nextRecord.budget,
       targetDate: nextRecord.targetDate,
@@ -233,26 +97,54 @@ export default function ProjectBrief() {
   const updateDraft = (update: Partial<ProjectBriefDraft>) => {
     setDraft((current) => ({ ...current, ...update }));
     setDirty(true);
+    setError("");
     setNotice("");
     setConflictRecord(null);
   };
 
   const updateModule = (
     moduleId: string,
-    update: Partial<Pick<ProjectBriefDraft["modules"][number], "status" | "features">>,
+    update: Partial<Pick<ProjectBriefDraft["modules"][number], "name" | "status" | "features">>,
   ) => {
     setDraft((current) => ({
       ...current,
       modules: current.modules.map((module) => module.id === moduleId ? { ...module, ...update } : module),
     }));
     setDirty(true);
+    setError("");
     setNotice("");
     setConflictRecord(null);
+  };
+
+  const addModule = () => {
+    const name = newModuleName.trim();
+    if (!name || draft.modules.length >= 20) return;
+    const slug = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70).replace(/-$/g, "") || "module";
+    const id = `custom-${slug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    updateDraft({ modules: [...draft.modules, { id, name, status: "optional", features: [] }] });
+    setActiveModuleIndex(draft.modules.length);
+    setNewModuleName("");
+  };
+
+  const removeModule = (moduleId: string) => {
+    const modules = draft.modules.filter((module) => module.id !== moduleId);
+    updateDraft({ modules });
+    setActiveModuleIndex((current) => Math.min(current, Math.max(0, modules.length - 1)));
   };
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!record || saving) return;
+    if (draft.modules.some((module) => !module.name.trim())) {
+      setError("Chaque module doit avoir un nom. Vous pouvez le modifier ou le retirer à l’étape des modules.");
+      setActiveStep(1);
+      return;
+    }
+    if (draft.modules.some((module) => module.features.some((feature) => feature.length > 240))) {
+      setError("Chaque fonctionnalité doit contenir au maximum 240 caractères. Vérifiez les lignes à l’étape des modules.");
+      setActiveStep(1);
+      return;
+    }
     setSaving(true);
     setError("");
     setNotice("");
@@ -290,7 +182,9 @@ export default function ProjectBrief() {
   };
 
   const selectedCount = draft.modules.filter((module) => module.status === "included").length;
+  const activeModule = draft.modules[activeModuleIndex];
   const budgetDisplay = draft.budget === null ? "À définir" : `${CURRENCY_FORMAT.format(draft.budget)} FCFA`;
+  const goToStep = (step: number) => setActiveStep(Math.max(0, Math.min(BRIEF_STEPS.length - 1, step)));
   const updateModuleFeatures = (moduleId: string, event: ChangeEvent<HTMLTextAreaElement>) => {
     updateModule(moduleId, { features: event.target.value.split("\n").slice(0, 20) });
   };
@@ -301,7 +195,7 @@ export default function ProjectBrief() {
         <div className="brief-hero-copy">
           <div className="brief-eyebrow"><span /> PROJET DE TRANSFORMATION · FISAFI GROUPE</div>
           <h1>Le cahier des charges<br /><span>de votre futur outil.</span></h1>
-          <p>Précisez vos priorités, ajustez les modules et indiquez le budget envisagé. Vos changements seront partagés avec l’équipe projet après enregistrement.</p>
+          <p>Définissez votre futur outil pas à pas, à votre rythme. Vous pouvez personnaliser chaque choix et enregistrer vos réponses à tout moment.</p>
           <div className="brief-hero-meta">
             <span className={`brief-status-pill status-${draft.status}`}>{STATUS_LABELS[draft.status]}</span>
             <span className="brief-access-note">Accès limité aux administrateurs</span>
@@ -318,12 +212,12 @@ export default function ProjectBrief() {
           </div>
           <span className="brief-art-badge">✳ À VOUS DE DÉCIDER</span>
         </div>
-        <div className="brief-hero-bottom"><span>01 / EXPRESSION DES BESOINS</span><span>VOTRE PROJET · VOTRE PÉRIMÈTRE</span></div>
+        <div className="brief-hero-bottom"><span>VOTRE PROJET · VOTRE PÉRIMÈTRE</span><span>UN PARCOURS À VOTRE RYTHME</span></div>
       </header>
 
       <div className="brief-workspace">
         <div className="brief-page-heading">
-          <div><span className="brief-section-label">ESPACE PROJET · VERSION {record ? `V${Math.max(1, record.version)}` : "…"}</span><h2>Définissons le périmètre.</h2><p>Modifiez les sections ci-dessous, puis enregistrez vos choix pour les partager.</p></div>
+          <div><span className="brief-section-label">ESPACE PROJET · VERSION {record ? `V${Math.max(1, record.version)}` : "…"}</span><h2>Construisons votre projet, étape par étape.</h2><p>Avancez à votre rythme : vous pouvez passer d’une étape à l’autre et revenir modifier vos choix à tout moment.</p></div>
           <div className={`brief-save-indicator${dirty ? " is-dirty" : ""}`} aria-live="polite"><i />{saving ? "Enregistrement…" : dirty ? "Modifications non enregistrées" : "Données synchronisées"}</div>
         </div>
 
@@ -334,66 +228,106 @@ export default function ProjectBrief() {
           <div className="brief-loading" role="status"><span className="spinner" /> Chargement du cahier des charges…</div>
         ) : (
           <form className="brief-form" onSubmit={handleSave}>
-            <div className="brief-layout">
-              <div className="brief-main-column">
-                <section className="brief-panel brief-overview-panel">
-                  <div className="brief-panel-heading"><div><span className="brief-panel-index">01 / CADRAGE</span><h3>Votre vision du projet</h3><p>Ces informations nous aident à préparer le bon périmètre et le bon devis.</p></div><span className="brief-panel-symbol">✳</span></div>
-                  <div className="brief-fields-grid">
-                    <label className="brief-field"><span>Budget envisagé <small>facultatif</small></span><div className="brief-budget-input"><input aria-label="Budget envisagé en FCFA" type="number" min="0" max="1000000000000" step="10000" placeholder="Ex. 2 500 000" value={draft.budget ?? ""} onChange={(event) => updateDraft({ budget: event.target.value === "" ? null : Number(event.target.value) })} /><b>FCFA</b></div><small>Indiquez une enveloppe approximative ou laissez vide.</small></label>
-                    <label className="brief-field"><span>Date cible souhaitée <small>facultatif</small></span><input aria-label="Date cible souhaitée" type="date" value={draft.targetDate} onChange={(event) => updateDraft({ targetDate: event.target.value })} /><small>La faisabilité sera confirmée au cadrage.</small></label>
-                    <label className="brief-field brief-field-full"><span>Statut du cadrage</span><select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value as ProjectBriefStatus })}><option value="draft">À cadrer</option><option value="discussion">En discussion</option><option value="approved">Validé pour chiffrage</option></select><small>Le statut « validé » confirme le périmètre, pas le lancement des travaux.</small></label>
-                    <label className="brief-field brief-field-full"><span>Vos trois priorités</span><textarea rows={3} maxLength={3000} placeholder="Ex. 1. Suivre les ventes&#10;2. Gérer le stock&#10;3. Maîtriser la comptabilité" value={draft.priorities} onChange={(event) => updateDraft({ priorities: event.target.value })} /><small>Quels problèmes souhaitez-vous résoudre en premier ?</small></label>
-                  </div>
-                </section>
+            <nav className="brief-stepper" aria-label="Étapes du cahier des charges" role="tablist">
+              {BRIEF_STEPS.map((step, index) => (
+                <button
+                  key={step.title}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeStep === index}
+                  aria-controls="brief-step-panel"
+                  className={`brief-step-tab${activeStep === index ? " active" : ""}${activeStep > index ? " complete" : ""}`}
+                  onClick={() => goToStep(index)}
+                >
+                  <span className="brief-step-number">{activeStep > index ? "✓" : `0${index + 1}`}</span>
+                  <span className="brief-step-copy"><strong>{step.title}</strong><small>{step.detail}</small></span>
+                </button>
+              ))}
+            </nav>
 
-                <section className="brief-panel brief-modules-panel">
-                  <div className="brief-panel-heading"><div><span className="brief-panel-index">02 / FONCTIONNALITÉS</span><h3>Les modules à votre mesure</h3><p>Choisissez le niveau de priorité et ajustez les fonctionnalités proposées.</p></div><span className="brief-modules-count">{selectedCount} inclus</span></div>
-                  <div className="brief-module-list">
+            <section className="brief-step-panel" id="brief-step-panel" role="tabpanel" aria-label={BRIEF_STEPS[activeStep].title}>
+              {activeStep === 0 && (
+                <div className="brief-panel brief-step-card">
+                  <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 01 · LE POINT DE DÉPART</span><h3>Qu’aimeriez-vous améliorer ?</h3><p>Parlez-nous de vos besoins avec vos mots. Rien n’est définitif à cette étape.</p></div><span className="brief-panel-symbol">✳</span></div>
+                  <label className="brief-field brief-field-full"><span>Vos priorités <small>facultatif</small></span><textarea rows={6} maxLength={3000} placeholder={"Ex. Mieux suivre les ventes et les encaissements.\nRéduire les erreurs de stock.\nAvoir une vue claire sur la comptabilité."} value={draft.priorities} onChange={(event) => updateDraft({ priorities: event.target.value })} /><small>{draft.priorities.length} / 3 000 caractères · Une idée par ligne, ou écrivez librement.</small></label>
+                  <div className="brief-step-hint"><span>◇</span><p><strong>Pas besoin de tout savoir aujourd’hui.</strong> Vous pourrez ajuster les modules, le budget et les détails aux étapes suivantes.</p></div>
+                </div>
+              )}
+
+              {activeStep === 1 && (
+                <div className="brief-panel brief-step-card">
+                  <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 02 · À LA CARTE</span><h3>Composez votre outil de gestion.</h3><p>Incluez, discutez ou écartez les modules. Renommez-les, adaptez les fonctionnalités ou créez vos propres modules.</p></div><span className="brief-modules-count">{selectedCount} inclus</span></div>
+                  <div className="brief-module-picker" role="tablist" aria-label="Choisir un module à personnaliser">
                     {draft.modules.map((module, index) => (
-                      <article className={`brief-module-card module-${module.status}`} key={module.id}>
-                        <div className="brief-module-top">
-                          <span className="brief-module-icon">{String(index + 1).padStart(2, "0")}</span>
-                          <div className="brief-module-name"><h4>{module.name}</h4><span>{module.features.length} fonctionnalités proposées</span></div>
-                          <label className="brief-module-status"><span className="visually-hidden">Priorité — {module.name}</span><select value={module.status} onChange={(event) => updateModule(module.id, { status: event.target.value as ProjectBriefModuleStatus })}><option value="included">À inclure</option><option value="optional">À discuter</option><option value="excluded">Non prévu</option></select></label>
-                        </div>
-                        <label className="brief-module-features"><span>Fonctionnalités souhaitées <small>une par ligne</small></span><textarea aria-label={`Fonctionnalités souhaitées — ${module.name}`} rows={Math.min(4, Math.max(2, module.features.length))} maxLength={4800} value={module.features.join("\n")} onChange={(event) => updateModuleFeatures(module.id, event)} /></label>
-                      </article>
+                      <button type="button" role="tab" aria-selected={activeModuleIndex === index} className={`brief-module-pick module-pick-${module.status}${activeModuleIndex === index ? " active" : ""}`} key={module.id} onClick={() => setActiveModuleIndex(index)}>
+                        <span className="brief-module-pick-dot" /><span>{module.name || "Module sans nom"}</span>
+                      </button>
                     ))}
+                    {draft.modules.length === 0 && <p className="brief-module-empty">Aucun module pour le moment. Ajoutez-en un juste en dessous.</p>}
                   </div>
-                </section>
-
-                <BriefFunctionalPreview />
-
-                <section className="brief-panel brief-notes-panel">
-                  <div className="brief-panel-heading"><div><span className="brief-panel-index">03 / CONTEXTE</span><h3>Informations complémentaires</h3><p>Ajoutez les particularités de FiSAFi, contraintes ou questions à examiner.</p></div></div>
-                  <label className="brief-field brief-field-full"><span>Vos précisions</span><textarea rows={5} maxLength={8000} placeholder="Ex. Plusieurs points de vente, nombre d’utilisateurs, modes de règlement, logiciels à connecter…" value={draft.notes} onChange={(event) => updateDraft({ notes: event.target.value })} /><small>{draft.notes.length} / 8 000 caractères</small></label>
-                </section>
-              </div>
-
-              <aside className="brief-summary-column">
-                <div className="brief-summary-card">
-                  <div className="brief-summary-heading"><span>VOTRE PROJET</span><span>F.</span></div>
-                  <h3>Un outil de gestion<br />construit pour FiSAFi.</h3>
-                  <div className="brief-summary-stat"><span>Budget envisagé</span><strong>{budgetDisplay}</strong></div>
-                  <div className="brief-summary-stat"><span>Modules à inclure</span><strong>{selectedCount} <small>/ {draft.modules.length}</small></strong></div>
-                  <div className="brief-summary-stat"><span>Statut</span><strong className={`summary-status-text status-text-${draft.status}`}>{STATUS_LABELS[draft.status]}</strong></div>
-                  <div className="brief-summary-divider" />
-                  <p>Le budget n’est pas un devis. L’hébergement, la maintenance et les modalités de livraison seront chiffrés séparément après validation du périmètre.</p>
+                  {activeModule && (
+                    <article className={`brief-module-card brief-module-editor module-${activeModule.status}`}>
+                      <div className="brief-module-top">
+                        <span className="brief-module-icon">{String(activeModuleIndex + 1).padStart(2, "0")}</span>
+                        <label className="brief-module-name brief-module-name-input"><span className="visually-hidden">Nom du module</span><input aria-label="Nom du module" maxLength={120} value={activeModule.name} onChange={(event) => updateModule(activeModule.id, { name: event.target.value })} /></label>
+                        <label className="brief-module-status"><span className="visually-hidden">Décision — {activeModule.name}</span><select value={activeModule.status} onChange={(event) => updateModule(activeModule.id, { status: event.target.value as ProjectBriefModuleStatus })}><option value="included">À inclure</option><option value="optional">À discuter</option><option value="excluded">Pas nécessaire</option></select></label>
+                        <button className="brief-module-remove" type="button" onClick={() => removeModule(activeModule.id)} aria-label={`Retirer le module ${activeModule.name}`}>Retirer</button>
+                      </div>
+                      <label className="brief-module-features brief-module-editor-features"><span>Fonctionnalités souhaitées <small>une par ligne · jusqu’à 20</small></span><textarea aria-label={`Fonctionnalités souhaitées — ${activeModule.name}`} rows={Math.min(8, Math.max(4, activeModule.features.length + 1))} maxLength={4800} placeholder={"Ex. Suivi des ventes par caisse\nExport des rapports en Excel\nGestion des droits par utilisateur"} value={activeModule.features.join("\n")} onChange={(event) => updateModuleFeatures(activeModule.id, event)} /><small>{activeModule.features.length} fonctionnalité{activeModule.features.length > 1 ? "s" : ""} · Modifiez ou supprimez les lignes selon vos besoins.</small></label>
+                    </article>
+                  )}
+                  <div className="brief-add-module">
+                    <label htmlFor="brief-new-module">Créer un module personnalisé</label>
+                    <div><input id="brief-new-module" maxLength={120} placeholder="Ex. Gestion des contrats" value={newModuleName} onChange={(event) => setNewModuleName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addModule(); } }} /><button type="button" onClick={addModule} disabled={!newModuleName.trim() || draft.modules.length >= 20}>＋ Ajouter un module</button></div>
+                    <small>{draft.modules.length} / 20 modules maximum</small>
+                  </div>
                 </div>
+              )}
 
-                <div className="brief-timeline-card">
-                  <span className="brief-panel-index">APRÈS VOTRE RETOUR</span>
-                  <h3>La suite du projet</h3>
-                  <ol><li><i>01</i><span><strong>Revue des besoins</strong><small>Nous analysons vos retours.</small></span></li><li><i>02</i><span><strong>Atelier de cadrage</strong><small>Nous validons les choix ensemble.</small></span></li><li><i>03</i><span><strong>Devis détaillé</strong><small>Budget, étapes et délais.</small></span></li></ol>
+              {activeStep === 2 && (
+                <div className="brief-panel brief-step-card">
+                  <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 03 · VOS CONDITIONS</span><h3>Quel cadre imaginez-vous ?</h3><p>Ces indications sont facultatives et servent à préparer la discussion, pas à fixer un devis.</p></div><span className="brief-panel-symbol">◷</span></div>
+                  <div className="brief-fields-grid">
+                    <label className="brief-field"><span>Budget envisagé <small>facultatif</small></span><div className="brief-budget-input"><input aria-label="Budget envisagé en FCFA" type="number" min="0" max="1000000000000" step="10000" placeholder="Ex. 2 500 000" value={draft.budget ?? ""} onChange={(event) => updateDraft({ budget: event.target.value === "" ? null : Number(event.target.value) })} /><b>FCFA</b></div><small>Vous pouvez ignorer cette question ou indiquer une fourchette dans les précisions.</small></label>
+                    <label className="brief-field"><span>Date cible souhaitée <small>facultatif</small></span><input aria-label="Date cible souhaitée" type="date" value={draft.targetDate} onChange={(event) => updateDraft({ targetDate: event.target.value })} /><small>Nous confirmerons ensemble si ce calendrier est réaliste.</small></label>
+                    <label className="brief-field brief-field-full"><span>État de la réflexion</span><select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value as ProjectBriefStatus })}><option value="draft">Je réfléchis encore</option><option value="discussion">Je souhaite en discuter</option><option value="approved">Prêt pour un chiffrage</option></select><small>« Prêt pour un chiffrage » ne constitue pas un engagement de lancement.</small></label>
+                    <label className="brief-field brief-field-full"><span>Contexte, contraintes ou questions <small>facultatif</small></span><textarea rows={6} maxLength={8000} placeholder="Ex. Nombre de points de vente, collaborateurs concernés, outils à connecter, fonctionnement actuel, questions à clarifier…" value={draft.notes} onChange={(event) => updateDraft({ notes: event.target.value })} /><small>{draft.notes.length} / 8 000 caractères</small></label>
+                  </div>
+                  <div className="brief-step-hint"><span>◇</span><p><strong>Vous pouvez laisser le budget vide.</strong> Le budget final et les éventuels frais d’hébergement ou de maintenance seront détaillés après le cadrage.</p></div>
                 </div>
+              )}
 
-                {record && <div className="brief-last-updated"><span className="brief-sync-dot" /><p>{record.updatedByName ? `Dernière modification par ${record.updatedByName}` : "Cahier des charges initial"}<small>{new Date(record.updatedAt).toLocaleString("fr-FR")}</small></p></div>}
-              </aside>
-            </div>
+              {activeStep === 3 && (
+                <div className="brief-panel brief-step-card brief-review-card">
+                  <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 04 · VOTRE RÉCAPITULATIF</span><h3>Votre projet prend forme.</h3><p>Relisez vos choix. Utilisez « Modifier » pour revenir à une étape, ou enregistrez quand vous le souhaitez.</p></div><span className="brief-panel-symbol">✓</span></div>
+                  <section className="brief-review-section">
+                    <div className="brief-review-heading"><div><span>01</span><h4>Votre vision</h4></div><button type="button" onClick={() => goToStep(0)}>Modifier <span>→</span></button></div>
+                    <p className="brief-review-text">{draft.priorities.trim() || "Aucune priorité précisée pour le moment."}</p>
+                  </section>
+                  <section className="brief-review-section">
+                    <div className="brief-review-heading"><div><span>02</span><h4>Modules choisis</h4></div><button type="button" onClick={() => goToStep(1)}>Modifier <span>→</span></button></div>
+                    {draft.modules.length === 0 ? <p className="brief-review-text">Aucun module sélectionné. Vous pourrez en ajouter à l’étape précédente.</p> : (
+                      <div className="brief-review-modules">{draft.modules.map((module) => (
+                        <div key={module.id}><span className={`brief-review-status review-${module.status}`} /><strong>{module.name || "Module sans nom"}</strong><span>{module.status === "included" ? "À inclure" : module.status === "optional" ? "À discuter" : "Pas nécessaire"}</span><small>{module.features.length} fonctionnalité{module.features.length > 1 ? "s" : ""}</small></div>
+                      ))}</div>
+                    )}
+                  </section>
+                  <section className="brief-review-section">
+                    <div className="brief-review-heading"><div><span>03</span><h4>Budget, calendrier & contexte</h4></div><button type="button" onClick={() => goToStep(2)}>Modifier <span>→</span></button></div>
+                    <div className="brief-review-facts"><div><small>Budget envisagé</small><strong>{budgetDisplay}</strong></div><div><small>Date cible</small><strong>{draft.targetDate || "À définir"}</strong></div><div><small>État de réflexion</small><strong>{STATUS_LABELS[draft.status]}</strong></div></div>
+                    {draft.notes.trim() && <p className="brief-review-text">{draft.notes}</p>}
+                  </section>
+                  <div className="brief-review-privacy"><span>🔒</span><p>Ce cahier reste privé et visible uniquement par les comptes administrateurs. Vos réponses sont partagées avec l’équipe projet après enregistrement.</p></div>
+                </div>
+              )}
+            </section>
 
             <div className="brief-submit-bar">
-              <p><span>🔒</span> Cahier privé · visible uniquement par les comptes administrateurs autorisés</p>
-              <button type="submit" className="brief-save-button" disabled={!dirty || saving || !record}>{saving ? "Enregistrement…" : "Enregistrer mes modifications"} <span>→</span></button>
+              <button type="button" className="brief-step-previous" onClick={() => goToStep(activeStep - 1)} disabled={activeStep === 0}>← <span>Précédent</span></button>
+              <span className="brief-step-counter">ÉTAPE {String(activeStep + 1).padStart(2, "0")} / {String(BRIEF_STEPS.length).padStart(2, "0")}</span>
+              {activeStep < BRIEF_STEPS.length - 1 && <button type="button" className="brief-step-next" onClick={() => goToStep(activeStep + 1)}>Continuer <span>→</span></button>}
+              {activeStep === BRIEF_STEPS.length - 1 && <button type="submit" className="brief-save-button" disabled={!dirty || saving || !record}>{saving ? "Enregistrement…" : dirty ? "Enregistrer mes choix" : "Tout est à jour"} <span>✓</span></button>}
+              {activeStep !== BRIEF_STEPS.length - 1 && <button type="submit" className="brief-step-save" disabled={!dirty || saving || !record}>{saving ? "Enregistrement…" : dirty ? "Enregistrer" : "Enregistré"}</button>}
             </div>
           </form>
         )}
