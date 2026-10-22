@@ -184,3 +184,21 @@ model MarketQuotation {
   @@index([userId, createdAt])
   @@map("MarketQuotation")
 }
+
+model ProjectBrief {
+  id             String   @id
+  budget         Float?
+  targetDate     String?
+  status         String   @default("draft")
+  priorities     String   @default("") @db.Text
+  notes          String   @default("") @db.Text
+  modules        Json
+  version        Int      @default(0)
+  updatedById    String?
+  updatedByEmail String?
+  updatedByName  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("ProjectBrief")
+}

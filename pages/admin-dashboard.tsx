@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import { ensureAuthSession } from "@/lib/clientAuthSession";
+import ProjectBrief from "@/components/admin/ProjectBrief";
 import {
   getSessionLifecycleStatus,
   type SessionLifecycleStatus,
@@ -72,7 +73,7 @@ interface InscriptionFormation {
   session?: SessionFormation;
 }
 
-type AdminTab = "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce";
+type AdminTab = "users" | "articles" | "brochures" | "inscriptions" | "sessions" | "ecommerce" | "specification";
 type MarketOrderState = "draft" | "sent" | "sale" | "done" | "cancel";
 type OdooCompanyType = "groupe" | "market";
 type OdooCompany = { id: number; name: string; type: OdooCompanyType };
@@ -120,7 +121,7 @@ interface MarketStats {
   generatedAt: string;
 }
 
-const VALID_TABS: readonly AdminTab[] = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"];
+const VALID_TABS: readonly AdminTab[] = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce", "specification"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -668,6 +669,7 @@ export default function AdminDashboard() {
       inscriptions: "Inscriptions",
       sessions: "Sessions",
       ecommerce: companyType === "groupe" ? "Ventes Groupe" : "Market",
+      specification: "Cahier des charges",
     };
     return labels[tab] || "";
   };
@@ -1377,8 +1379,8 @@ export default function AdminDashboard() {
 
   const selectedCompany = odooCompanies.find((company) => company.id === selectedCompanyId) ?? null;
   const adminTabs: readonly AdminTab[] = selectedCompany?.type === "market"
-    ? (["users", "articles", "brochures", "ecommerce"] as const)
-    : (["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce"] as const);
+    ? (["users", "articles", "brochures", "ecommerce", "specification"] as const)
+    : (["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce", "specification"] as const);
   const activeProfile: UserProfile | null =
     selectedCompany?.type === "market"
       ? "MARKET_CUSTOMER"
@@ -1782,7 +1784,7 @@ export default function AdminDashboard() {
             </a>
             <span className="sidebar-nav-label">Gestion</span>
             {adminTabs.map(tab => (
-              <button key={tab} className={`sidebar-link${activeTab === tab ? " active" : ""}`} onClick={() => handleSetActiveTab(tab)}>
+              <button key={tab} className={`sidebar-link${activeTab === tab ? " active" : ""}`} aria-current={activeTab === tab ? "page" : undefined} onClick={() => handleSetActiveTab(tab)}>
                 <span className="sidebar-link-left">{getTabLabel(tab, selectedCompany?.type)}</span>
                 {tab === "users" && users.length > 0 && <span className="sidebar-count blue">{users.length}</span>}
                 {tab === "inscriptions" && inscriptionsPending > 0 && <span className="sidebar-count">{inscriptionsPending}</span>}
@@ -2297,6 +2299,7 @@ export default function AdminDashboard() {
             </>)}
 
             {/* ═══ E-COMMERCE ═══ */}
+            {activeTab === "specification" && <ProjectBrief />}
             {activeTab === "ecommerce" && (<>
               <div className="admin-header">
                 <div className="admin-eyebrow">Commerce</div>
@@ -2568,6 +2571,7 @@ export default function AdminDashboard() {
           { id:"inscriptions", label:"Inscrip.", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="10.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>, badge: inscriptionsPending },
           { id:"sessions", label:"Sessions", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: 0 },
           { id:"ecommerce", label:selectedCompany?.type === "groupe" ? "Ventes" : "Market", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>, badge: 0 },
+          { id:"specification", label:"Cahier", icon:<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8m-8 4h8m-8 4h4"/></svg>, badge: 0 },
         ] as const)
           .filter((tab) => (adminTabs as readonly string[]).includes(tab.id))
           .map(t => (
