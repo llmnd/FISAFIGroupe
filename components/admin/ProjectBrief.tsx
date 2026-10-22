@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import Image from "next/image";
 import {
   DEFAULT_PROJECT_BRIEF,
   isProjectBriefRecord,
@@ -220,26 +221,30 @@ export default function ProjectBrief() {
     <section className="project-brief">
       <header className="brief-hero">
         <div className="brief-hero-copy">
-          <div className="brief-eyebrow"><span /> PROJET DE TRANSFORMATION · FISAFI GROUPE</div>
-          <h1>Le cahier des charges<br /><span>de votre futur outil.</span></h1>
-          <p>Définissez votre futur outil pas à pas, à votre rythme. Vous pouvez personnaliser chaque choix et enregistrer vos réponses à tout moment.</p>
+          <div className="brief-eyebrow"><span /> VOTRE PROCHAINE ÉTAPE · FISAFI GROUPE</div>
+          <h1>Du site web<br /><span>au logiciel complet.</span></h1>
+          <p>Un seul outil pour piloter votre activité : ventes, stock, comptabilité et équipe. Définissons ensemble un logiciel qui vous appartient, adapté à votre façon de travailler.</p>
+          <div className="brief-hero-features" aria-label="Fonctions du futur logiciel">
+            <span>Ventes & caisse</span><span>Stock & achats</span><span>Comptabilité</span><span>Pilotage</span>
+          </div>
           <div className="brief-hero-meta">
             <span className={`brief-status-pill status-${draft.status}`}>{STATUS_LABELS[draft.status]}</span>
-            <span className="brief-access-note">Accès limité aux administrateurs</span>
+            <span className="brief-access-note">Votre logiciel · votre site · vos données</span>
           </div>
         </div>
-        <div className="brief-hero-art" aria-hidden="true">
-          <div className="brief-art-orbit orbit-a" /><div className="brief-art-orbit orbit-b" />
-          <div className="brief-art-card">
-            <div className="brief-art-top"><span>PROJET FiSAFi</span><span>↗</span></div>
-            <strong>{String(selectedCount).padStart(2, "0")}<small> / {String(draft.modules.length).padStart(2, "0")}</small></strong>
-            <span>modules à inclure</span>
-            <div className="brief-art-bars"><i /><i /><i /><i /><i /><i /></div>
-            <div className="brief-art-foot"><span><i /> Cadrage en cours</span><span>FCFA</span></div>
+        <div className="brief-hero-art">
+          <div className="brief-hero-image-frame">
+            <Image
+              src="https://i.pinimg.com/736x/01/a9/d1/01a9d1188fb18a5e05dc7fe7bf3f47f2.jpg"
+              alt="Aperçu du projet logiciel FiSAFi : modules de gestion et tableau de bord"
+              fill
+              priority
+              sizes="(max-width: 900px) 90vw, 44vw"
+              className="brief-hero-image"
+            />
           </div>
-          <span className="brief-art-badge">✳ À VOUS DE DÉCIDER</span>
         </div>
-        <div className="brief-hero-bottom"><span>VOTRE PROJET · VOTRE PÉRIMÈTRE</span><span>UN PARCOURS À VOTRE RYTHME</span></div>
+        <div className="brief-hero-bottom"><span>UN SITE QUI DEVIENT UN LOGICIEL MÉTIER</span><span>VOTRE PROJET · VOTRE PÉRIMÈTRE</span></div>
       </header>
 
       <div className="brief-workspace">
