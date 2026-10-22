@@ -285,7 +285,7 @@ export default function ProjectBrief() {
                 <div className="brief-panel brief-step-card">
                   <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 01 · LE POINT DE DÉPART</span><h3>Qu’aimeriez-vous améliorer ?</h3><p>Parlez-nous de vos besoins avec vos mots. Rien n’est définitif à cette étape.</p></div><span className="brief-panel-symbol">✳</span></div>
                   <label className="brief-field brief-field-full"><span>Vos priorités <small>facultatif</small></span><textarea rows={6} maxLength={3000} placeholder={"Ex. Mieux suivre les ventes et les encaissements.\nRéduire les erreurs de stock.\nAvoir une vue claire sur la comptabilité."} value={draft.priorities} onChange={(event) => updateDraft({ priorities: event.target.value })} /><small>{draft.priorities.length} / 3 000 caractères · Une idée par ligne, ou écrivez librement.</small></label>
-                  <div className="brief-step-hint"><span>◇</span><p><strong>Pas besoin de tout savoir aujourd’hui.</strong> Vous pourrez ajuster les modules, le budget et les détails aux étapes suivantes.</p></div>
+                  <div className="brief-step-hint"><span>◇</span><p><strong>Pas besoin de tout savoir aujourd’hui.</strong> Vous pourrez ajuster les modules, le budget et les détails aux étapes suivantes</p></div>
                 </div>
               )}
 
