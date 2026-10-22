@@ -138,11 +138,14 @@ export default function ProjectBrief() {
     if (draft.modules.some((module) => !module.name.trim())) {
       setError("Chaque module doit avoir un nom. Vous pouvez le modifier ou le retirer à l’étape des modules.");
       setActiveStep(1);
+      setActiveModuleIndex(draft.modules.findIndex((module) => !module.name.trim()));
       return;
     }
-    if (draft.modules.some((module) => module.features.some((feature) => feature.length > 240))) {
+    const moduleWithLongFeature = draft.modules.find((module) => module.features.some((feature) => feature.length > 240));
+    if (moduleWithLongFeature) {
       setError("Chaque fonctionnalité doit contenir au maximum 240 caractères. Vérifiez les lignes à l’étape des modules.");
       setActiveStep(1);
+      setActiveModuleIndex(draft.modules.findIndex((module) => module.id === moduleWithLongFeature.id));
       return;
     }
     setSaving(true);

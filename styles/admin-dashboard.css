@@ -156,9 +156,6 @@ body.portal-has-admin textarea{font-family:inherit}
     padding-top:var(--topbar-h-desk);
   }
 }
-.admin-layout-presentation .admin-sidebar{display:none}
-.admin-layout-presentation .admin-main{margin-left:0;width:100%}
-.admin-layout-presentation .admin-content{max-width:104rem;padding:2rem clamp(1rem,3vw,3rem) 4rem}
 .admin-content{
   padding:1.65rem 1.35rem 7.5rem;
   max-width:82rem;
@@ -2129,7 +2126,9 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
 .brief-step-next{min-height:2.65rem;padding:0 1rem;color:#fff;background:#347d78}
 .brief-step-next:hover{background:#40968e}
 .brief-step-save{min-height:2.65rem}
+.brief-hero{min-height:20rem}
 @media(max-width:900px){
+  .brief-hero{min-height:0}
   .brief-stepper{grid-template-columns:repeat(4,minmax(8rem,1fr));overflow-x:auto}
   .brief-module-picker{grid-template-columns:repeat(3,minmax(0,1fr))}
   .brief-module-editor-features{margin-left:0}

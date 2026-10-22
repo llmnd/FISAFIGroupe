@@ -1745,7 +1745,7 @@ export default function AdminDashboard() {
         </nav>
       )}
 
-      <div className={`admin-layout${activeTab === "specification" ? " admin-layout-presentation" : ""}`}>
+      <div className="admin-layout">
         {/* Sidebar desktop */}
         <aside className="admin-sidebar">
           <div className="sidebar-top">
