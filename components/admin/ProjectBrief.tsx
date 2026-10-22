@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 import {
   DEFAULT_PROJECT_BRIEF,
   isProjectBriefRecord,
@@ -132,6 +132,30 @@ export default function ProjectBrief() {
     setActiveModuleIndex((current) => Math.min(current, Math.max(0, modules.length - 1)));
   };
 
+  const moveModule = (moduleId: string, direction: -1 | 1) => {
+    const currentIndex = draft.modules.findIndex((module) => module.id === moduleId);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= draft.modules.length) return;
+    const modules = [...draft.modules];
+    [modules[currentIndex], modules[nextIndex]] = [modules[nextIndex], modules[currentIndex]];
+    updateDraft({ modules });
+    setActiveModuleIndex(nextIndex);
+  };
+
+  const handleStepKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % BRIEF_STEPS.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + BRIEF_STEPS.length) % BRIEF_STEPS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = BRIEF_STEPS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    goToStep(nextIndex);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>("[role='tab']")[nextIndex]
+      ?.focus();
+  };
+
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!record || saving) return;
@@ -237,10 +261,13 @@ export default function ProjectBrief() {
                   key={step.title}
                   type="button"
                   role="tab"
+                  id={`brief-step-tab-${index}`}
                   aria-selected={activeStep === index}
                   aria-controls="brief-step-panel"
+                  tabIndex={activeStep === index ? 0 : -1}
                   className={`brief-step-tab${activeStep === index ? " active" : ""}${activeStep > index ? " complete" : ""}`}
                   onClick={() => goToStep(index)}
+                  onKeyDown={(event) => handleStepKeyDown(event, index)}
                 >
                   <span className="brief-step-number">{activeStep > index ? "✓" : `0${index + 1}`}</span>
                   <span className="brief-step-copy"><strong>{step.title}</strong><small>{step.detail}</small></span>
@@ -248,7 +275,7 @@ export default function ProjectBrief() {
               ))}
             </nav>
 
-            <section className="brief-step-panel" id="brief-step-panel" role="tabpanel" aria-label={BRIEF_STEPS[activeStep].title}>
+            <section className="brief-step-panel" id="brief-step-panel" role="tabpanel" aria-labelledby={`brief-step-tab-${activeStep}`}>
               {activeStep === 0 && (
                 <div className="brief-panel brief-step-card">
                   <div className="brief-panel-heading"><div><span className="brief-panel-index">ÉTAPE 01 · LE POINT DE DÉPART</span><h3>Qu’aimeriez-vous améliorer ?</h3><p>Parlez-nous de vos besoins avec vos mots. Rien n’est définitif à cette étape.</p></div><span className="brief-panel-symbol">✳</span></div>
@@ -274,6 +301,10 @@ export default function ProjectBrief() {
                         <span className="brief-module-icon">{String(activeModuleIndex + 1).padStart(2, "0")}</span>
                         <label className="brief-module-name brief-module-name-input"><span className="visually-hidden">Nom du module</span><input aria-label="Nom du module" maxLength={120} value={activeModule.name} onChange={(event) => updateModule(activeModule.id, { name: event.target.value })} /></label>
                         <label className="brief-module-status"><span className="visually-hidden">Décision — {activeModule.name}</span><select value={activeModule.status} onChange={(event) => updateModule(activeModule.id, { status: event.target.value as ProjectBriefModuleStatus })}><option value="included">À inclure</option><option value="optional">À discuter</option><option value="excluded">Pas nécessaire</option></select></label>
+                        <div className="brief-module-order" aria-label="Ordre du module">
+                          <button type="button" aria-label="Monter le module" disabled={activeModuleIndex === 0} onClick={() => moveModule(activeModule.id, -1)}>↑</button>
+                          <button type="button" aria-label="Descendre le module" disabled={activeModuleIndex === draft.modules.length - 1} onClick={() => moveModule(activeModule.id, 1)}>↓</button>
+                        </div>
                         <button className="brief-module-remove" type="button" onClick={() => removeModule(activeModule.id)} aria-label={`Retirer le module ${activeModule.name}`}>Retirer</button>
                       </div>
                       <label className="brief-module-features brief-module-editor-features"><span>Fonctionnalités souhaitées <small>une par ligne · jusqu’à 20</small></span><textarea aria-label={`Fonctionnalités souhaitées — ${activeModule.name}`} rows={Math.min(8, Math.max(4, activeModule.features.length + 1))} maxLength={4800} placeholder={"Ex. Suivi des ventes par caisse\nExport des rapports en Excel\nGestion des droits par utilisateur"} value={activeModule.features.join("\n")} onChange={(event) => updateModuleFeatures(activeModule.id, event)} /><small>{activeModule.features.length} fonctionnalité{activeModule.features.length > 1 ? "s" : ""} · Modifiez ou supprimez les lignes selon vos besoins.</small></label>
