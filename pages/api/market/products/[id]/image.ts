@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { listFiSafiCompanies } from "@/lib/odooCompanies";
-import { OdooApiError } from "@/lib/marketOdoo";
+import { callOdoo, OdooApiError } from "@/lib/marketOdoo";
 
 const IMAGE_CACHE_CONTROL =
   "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=2592000";
@@ -25,55 +25,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Identifiant produit invalide." });
   }
 
-  const apiKey = process.env.ODOO_API_KEY?.trim();
-  if (!apiKey) {
-    return res.status(503).json({ error: "Le catalogue Market n’est pas configuré." });
-  }
-
-  let odooOrigin: string;
-  try {
-    const configuredUrl = new URL(process.env.ODOO_URL || "https://fisafigroupe.odoo.com");
-    if (configuredUrl.protocol !== "https:" || configuredUrl.username || configuredUrl.password) {
-      throw new Error("ODOO_URL must be an HTTPS URL without embedded credentials.");
-    }
-    odooOrigin = configuredUrl.origin;
-  } catch (error) {
-    console.error("[Market/Odoo] Invalid Odoo URL configuration for product image:", error);
-    return res.status(500).json({ error: "La configuration du catalogue FiSAFi est invalide." });
-  }
-
   try {
     const companies = await listFiSafiCompanies();
     const market = companies.find((company) => company.type === "market");
     if (!market) {
       throw new OdooApiError("La société FiSAFi Market n’est pas configurée.", 503);
     }
-    const response = await fetch(`${odooOrigin}/json/2/product.template/search_read`, {
-      method: "POST",
-      headers: {
-        Authorization: `bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        domain: [
-          ["id", "=", Number(productId)],
-          ["company_id", "in", [false, market.id]],
-          ["active", "=", true],
-          ["sale_ok", "=", true],
-          ["available_in_pos", "=", true],
-        ],
-        fields: ["image_512", "image_128"],
-        limit: 1,
-      }),
-      signal: AbortSignal.timeout(20_000),
+    const payload: unknown = await callOdoo("product.template", "search_read", {
+      domain: [
+        ["id", "=", Number(productId)],
+        ["company_id", "in", [false, market.id]],
+        ["active", "=", true],
+        ["sale_ok", "=", true],
+        ["available_in_pos", "=", true],
+      ],
+      fields: ["image_512", "image_128"],
+      limit: 1,
     });
-
-    if (!response.ok) {
-      console.error(`[Market/Odoo] Product image request failed with HTTP ${response.status}.`);
-      return res.status(502).json({ error: "Impossible de charger l’image du produit." });
-    }
-
-    const payload: unknown = await response.json();
     if (!Array.isArray(payload) || payload.length === 0) {
       res.setHeader("Cache-Control", MISSING_IMAGE_CACHE_CONTROL);
       return res.status(404).json({ error: "Ce produit n’a pas de photo." });
