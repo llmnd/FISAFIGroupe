@@ -383,8 +383,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const posOffset = parseOffset(req.query.posOffset);
     const cursor = { saleOffset, posOffset };
     const now = new Date();
-    const periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const chartStart = getMonthStart(now, -5);
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const periodStart = new Date(todayStart.getTime() - 29 * 24 * 60 * 60 * 1000);
+    const previousPeriodStart = new Date(periodStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const chartStart = getMonthStart(now, -11);
     const chartStartIso = chartStart.toISOString().replace("T", " ").slice(0, 19);
     const salePayload = await fetchRecentOdooRecords(
       "sale.order",
@@ -425,13 +427,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...salePayload.map(toStatsOrder),
       ...posPayload.map(toPOSStatsOrder),
     ].filter((order) => order.date <= now);
-    const monthly = Array.from({ length: 6 }, (_, index) => {
-      const month = getMonthStart(now, index - 5);
+    const monthly = Array.from({ length: 12 }, (_, index) => {
+      const month = getMonthStart(now, index - 11);
       return {
         label: month.toLocaleDateString("fr-FR", { month: "short", timeZone: "UTC" }),
         month: month.getUTCMonth(),
         year: month.getUTCFullYear(),
         orders: 0,
+        confirmedOrders: 0,
         confirmedRevenue: 0,
       };
     });
@@ -441,15 +444,78 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
       if (month) {
         month.orders += 1;
-        if (isConfirmed(order.state)) month.confirmedRevenue += order.amountTotal;
+        if (isConfirmed(order.state)) {
+          month.confirmedOrders += 1;
+          month.confirmedRevenue += order.amountTotal;
+        }
       }
     }
 
     const recentPeriod = statsOrders.filter(({ date }) => date >= periodStart);
+    const previousPeriod = statsOrders.filter(
+      ({ date }) => date >= previousPeriodStart && date < periodStart,
+    );
     const confirmedOrders = recentPeriod.filter(({ state }) => isConfirmed(state));
+    const previousConfirmedOrders = previousPeriod.filter(({ state }) => isConfirmed(state));
     const pendingOrders = recentPeriod.filter(({ state }) => state === "draft" || state === "sent").length;
+    const previousPendingOrders = previousPeriod.filter(
+      ({ state }) => state === "draft" || state === "sent",
+    ).length;
+    const previousCanceledOrders = previousPeriod.filter(({ state }) => state === "cancel").length;
     const confirmedRevenue = confirmedOrders.reduce((total, { amountTotal }) => total + amountTotal, 0);
+    const previousConfirmedRevenue = previousConfirmedOrders.reduce(
+      (total, { amountTotal }) => total + amountTotal,
+      0,
+    );
     const customers = new Set(recentPeriod.map(({ customerId }) => customerId));
+    const previousCustomers = new Set(previousPeriod.map(({ customerId }) => customerId));
+    const dailyStart = new Date(periodStart);
+    const previousStart = new Date(previousPeriodStart);
+    const daily = Array.from({ length: 30 }, (_, index) => {
+      const date = new Date(dailyStart.getTime() + index * 24 * 60 * 60 * 1000);
+      return {
+        label: date.toLocaleDateString("fr-FR", { day: "2-digit", timeZone: "UTC" }),
+        detailLabel: date.toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "UTC",
+        }),
+        date: date.toISOString().slice(0, 10),
+        orders: 0,
+        confirmedOrders: 0,
+        confirmedRevenue: 0,
+        previousOrders: 0,
+        previousConfirmedOrders: 0,
+        previousConfirmedRevenue: 0,
+      };
+    });
+    const dailyIndexByDate = new Map<string, { index: number; previous: boolean }>();
+    for (let index = 0; index < daily.length; index += 1) {
+      dailyIndexByDate.set(daily[index].date, { index, previous: false });
+      const previousDate = new Date(previousStart.getTime() + index * 24 * 60 * 60 * 1000);
+      dailyIndexByDate.set(previousDate.toISOString().slice(0, 10), { index, previous: true });
+    }
+    for (const order of statsOrders) {
+      const key = order.date.toISOString().slice(0, 10);
+      const bucket = dailyIndexByDate.get(key);
+      if (!bucket) continue;
+      const point = daily[bucket.index];
+      const confirmed = isConfirmed(order.state);
+      if (bucket.previous) {
+        point.previousOrders += 1;
+        if (confirmed) {
+          point.previousConfirmedOrders += 1;
+          point.previousConfirmedRevenue += order.amountTotal;
+        }
+      } else {
+        point.orders += 1;
+        if (confirmed) {
+          point.confirmedOrders += 1;
+          point.confirmedRevenue += order.amountTotal;
+        }
+      }
+    }
 
     return res.status(200).json({
       company: { id: company.id, name: company.name, type: companyType },
@@ -459,11 +525,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pendingOrders,
         canceledOrders: recentPeriod.filter(({ state }) => state === "cancel").length,
         confirmedRevenue,
+        previousOrders: previousPeriod.length,
+        previousConfirmedOrders: previousConfirmedOrders.length,
+        previousConfirmedRevenue,
+        previousPendingOrders,
+        previousCanceledOrders,
+        previousCustomers: previousCustomers.size,
+        previousAverageConfirmedOrder: previousConfirmedOrders.length
+          ? previousConfirmedRevenue / previousConfirmedOrders.length
+          : 0,
         averageConfirmedOrder: confirmedOrders.length ? confirmedRevenue / confirmedOrders.length : 0,
         conversionRate: recentPeriod.length ? (confirmedOrders.length / recentPeriod.length) * 100 : 0,
         customers: customers.size,
       },
       monthly,
+      daily,
       transactions: history.transactions,
       hasMore: history.hasMore,
       nextCursor: history.nextCursor,

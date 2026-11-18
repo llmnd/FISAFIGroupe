@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -79,6 +79,16 @@ type OdooCompanyType = "groupe" | "market";
 type OdooCompany = { id: number; name: string; type: OdooCompanyType };
 type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
 type MarketHistoryCursor = { saleOffset: number; posOffset: number };
+type MarketMetricKey = "orders" | "revenue" | "pending" | "customers";
+
+type MarketCurvePoint = {
+  label: string;
+  year: number;
+  value: number;
+  count: number;
+  detailLabel?: string;
+  comparisonValue?: number;
+};
 
 interface MarketTransaction {
   id: number;
@@ -104,6 +114,13 @@ interface MarketStats {
     pendingOrders: number;
     canceledOrders: number;
     confirmedRevenue: number;
+    previousOrders: number;
+    previousConfirmedOrders: number;
+    previousConfirmedRevenue: number;
+    previousPendingOrders: number;
+    previousCanceledOrders: number;
+    previousCustomers: number;
+    previousAverageConfirmedOrder: number;
     averageConfirmedOrder: number;
     conversionRate: number;
     customers: number;
@@ -113,12 +130,38 @@ interface MarketStats {
     month: number;
     year: number;
     orders: number;
+    confirmedOrders: number;
     confirmedRevenue: number;
+  }>;
+  daily: Array<{
+    label: string;
+    detailLabel: string;
+    date: string;
+    orders: number;
+    confirmedOrders: number;
+    confirmedRevenue: number;
+    previousOrders: number;
+    previousConfirmedOrders: number;
+    previousConfirmedRevenue: number;
   }>;
   transactions: MarketTransaction[];
   hasMore: boolean;
   nextCursor: MarketHistoryCursor | null;
   generatedAt: string;
+}
+
+interface MarketDerived {
+  orders: number[];
+  revenues: number[];
+  revenueDelta: number | null;
+  orderDelta: number | null;
+  pendingDelta: number | null;
+  customerDelta: number | null;
+  revenuePoints: MarketCurvePoint[];
+  orderPoints: MarketCurvePoint[];
+  transactionPoints: MarketCurvePoint[];
+  projectedRevenue: number;
+  insights: string[];
 }
 
 const VALID_TABS: readonly AdminTab[] = ["users", "articles", "brochures", "inscriptions", "sessions", "ecommerce", "specification"];
@@ -150,6 +193,13 @@ function isMarketStats(value: unknown): value is MarketStats {
     Number.isFinite(period.pendingOrders) &&
     Number.isFinite(period.canceledOrders) &&
     Number.isFinite(period.confirmedRevenue) &&
+    Number.isFinite(period.previousOrders) &&
+    Number.isFinite(period.previousConfirmedOrders) &&
+    Number.isFinite(period.previousConfirmedRevenue) &&
+    Number.isFinite(period.previousPendingOrders) &&
+    Number.isFinite(period.previousCanceledOrders) &&
+    Number.isFinite(period.previousCustomers) &&
+    Number.isFinite(period.previousAverageConfirmedOrder) &&
     Number.isFinite(period.averageConfirmedOrder) &&
     Number.isFinite(period.conversionRate) &&
     Number.isFinite(period.customers) &&
@@ -160,7 +210,22 @@ function isMarketStats(value: unknown): value is MarketStats {
         Number.isInteger(month.month) &&
         Number.isInteger(month.year) &&
         Number.isFinite(month.orders) &&
+        Number.isFinite(month.confirmedOrders) &&
         Number.isFinite(month.confirmedRevenue),
+    ) &&
+    Array.isArray(stats.daily) &&
+    stats.daily.length === 30 &&
+    stats.daily.every(
+      (day) =>
+        typeof day.label === "string" &&
+        typeof day.detailLabel === "string" &&
+        typeof day.date === "string" &&
+        Number.isFinite(day.orders) &&
+        Number.isFinite(day.confirmedOrders) &&
+        Number.isFinite(day.confirmedRevenue) &&
+        Number.isFinite(day.previousOrders) &&
+        Number.isFinite(day.previousConfirmedOrders) &&
+        Number.isFinite(day.previousConfirmedRevenue),
     ) &&
     Array.isArray(stats.transactions) &&
     stats.transactions.every(
@@ -420,12 +485,17 @@ function ConversionBar({
 function RevenueCurve({
   points,
   height = 240,
+  valueUnit = "currency",
+  comparisonLabel = "Période précédente",
 }: {
-  points: Array<{ label: string; year: number; value: number; count: number }>;
+  points: MarketCurvePoint[];
   height?: number;
+  valueUnit?: "currency" | "count" | "transactions";
+  comparisonLabel?: string;
 }) {
   const [ref, width] = useContainerWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  const gradientId = useId().replace(/:/g, "");
 
   const padL = 44;
   const padR = 16;
@@ -434,7 +504,10 @@ function RevenueCurve({
   const innerW = Math.max(width - padL - padR, 10);
   const innerH = height - padT - padB;
 
-  const maxVal = Math.max(...points.map((p) => p.value), 1);
+  const maxVal = Math.max(...points.flatMap((point) => [
+    point.value,
+    point.comparisonValue ?? 0,
+  ]), 1);
   const niceMax = useMemo(() => {
     const mag = Math.pow(10, Math.floor(Math.log10(maxVal)));
     const norm = maxVal / mag;
@@ -452,7 +525,24 @@ function RevenueCurve({
     [points, innerW, innerH, niceMax],
   );
 
+  const comparisonCoords = useMemo(
+    () =>
+      points.map((point, index) => {
+        const x = padL + (points.length === 1 ? innerW / 2 : (index / (points.length - 1)) * innerW);
+        const y = padT + innerH - ((point.comparisonValue ?? 0) / niceMax) * innerH;
+        return [x, y] as [number, number];
+      }),
+    [points, innerW, innerH, niceMax],
+  );
+
   const linePath = useMemo(() => smoothPath(coords), [coords]);
+  const comparisonPath = useMemo(
+    () => points.some((point) => point.comparisonValue !== undefined)
+      ? smoothPath(comparisonCoords)
+      : "",
+    [comparisonCoords, points],
+  );
+  const labelInterval = Math.ceil(points.length / 6);
   const areaPath = useMemo(
     () =>
       linePath
@@ -495,8 +585,14 @@ function RevenueCurve({
 
   if (!width) return <div ref={ref} style={{ height }} />;
 
-  const fmt = (n: number) =>
-    `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n)} FCFA`;
+  const fmt = (n: number) => {
+    const formatted = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n);
+    if (valueUnit === "currency") return `${formatted} FCFA`;
+    return valueUnit === "transactions"
+      ? `${formatted} transaction${n === 1 ? "" : "s"}`
+      : `${formatted} vente${n === 1 ? "" : "s"}`;
+  };
+  const countKind = valueUnit === "transactions" ? "transaction" : "vente";
 
   return (
     <div ref={ref} className="curve-wrap">
@@ -507,13 +603,21 @@ function RevenueCurve({
         onMouseMove={onMove}
         onMouseLeave={() => setHover(null)}
         className="curve"
+        role="img"
+        aria-label={
+          valueUnit === "currency"
+            ? "Évolution du chiffre d'affaires"
+            : valueUnit === "transactions"
+              ? "Évolution du nombre de transactions"
+              : "Évolution du nombre de ventes"
+        }
       >
         <defs>
-          <linearGradient id="curve-fill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${gradientId}-fill`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--orange)" stopOpacity="0.32" />
             <stop offset="100%" stopColor="var(--orange)" stopOpacity="0" />
           </linearGradient>
-          <linearGradient id="curve-line" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${gradientId}-line`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="var(--blue)" />
             <stop offset="100%" stopColor="var(--orange)" />
           </linearGradient>
@@ -538,13 +642,25 @@ function RevenueCurve({
           className="curve-axis-line"
         />
 
-        {areaPath && <path d={areaPath} fill="url(#curve-fill)" />}
+        {areaPath && <path d={areaPath} fill={`url(#${gradientId}-fill)`} />}
         {linePath && (
           <path
             d={linePath}
             fill="none"
-            stroke="url(#curve-line)"
+            stroke={`url(#${gradientId}-line)`}
             strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {comparisonPath && (
+          <path
+            d={comparisonPath}
+            fill="none"
+            stroke="var(--blue)"
+            strokeOpacity=".7"
+            strokeWidth="1.8"
+            strokeDasharray="5 4"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -568,7 +684,7 @@ function RevenueCurve({
             textAnchor="middle"
             className={`curve-xlabel${hover === i ? " active" : ""}`}
           >
-            {points[i].label}
+            {points.length > 8 && i !== points.length - 1 && i % labelInterval !== 0 ? "" : points[i].label}
           </text>
         ))}
 
@@ -600,11 +716,272 @@ function RevenueCurve({
         >
           <strong>{fmt(points[hover].value)}</strong>
           <span>
-            {points[hover].label} {points[hover].year} · {points[hover].count} transaction
+            {points[hover].detailLabel ?? `${points[hover].label} ${points[hover].year}`} · {points[hover].count} {countKind}
             {points[hover].count === 1 ? "" : "s"}
           </span>
+          {points[hover].comparisonValue !== undefined && (
+            <span>{comparisonLabel} · {fmt(points[hover].comparisonValue)}</span>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function MetricIllustration({ metric }: { metric: MarketMetricKey }) {
+  const paths: Record<MarketMetricKey, ReactNode> = {
+    revenue: <><path d="M4 17l5-5 4 3 7-8"/><path d="M14 7h6v6"/></>,
+    orders: <><path d="M4 5h2l2 10h10l2-7H7"/><circle cx="10" cy="19" r="1"/><circle cx="17" cy="19" r="1"/></>,
+    pending: <><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></>,
+    customers: <><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/><path d="M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v1"/></>,
+  };
+  return (
+    <span className={`market-metric-illustration market-metric-${metric}`} aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        {paths[metric]}
+      </svg>
+    </span>
+  );
+}
+
+function MarketMetricModal({
+  metric,
+  stats,
+  derived,
+  onClose,
+}: {
+  metric: MarketMetricKey;
+  stats: MarketStats;
+  derived: MarketDerived;
+  onClose: () => void;
+}) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const metricDetails: Record<MarketMetricKey, {
+    title: string;
+    description: string;
+    current: number;
+    previous: number;
+  }> = {
+    revenue: {
+      title: "Chiffre d’affaires confirmé",
+      description: "Montant des commandes confirmées et ventes de caisse comptabilisées.",
+      current: stats.period.confirmedRevenue,
+      previous: stats.period.previousConfirmedRevenue,
+    },
+    orders: {
+      title: "Ventes & commandes",
+      description: "Nombre de transactions enregistrées, quel que soit leur statut.",
+      current: stats.period.orders,
+      previous: stats.period.previousOrders,
+    },
+    pending: {
+      title: "Commandes en attente",
+      description: "Devis et transactions qui n’ont pas encore été confirmés ou finalisés.",
+      current: stats.period.pendingOrders,
+      previous: stats.period.previousPendingOrders,
+    },
+    customers: {
+      title: "Clients",
+      description: "Nombre de profils client distincts associés aux commandes et tickets.",
+      current: stats.period.customers,
+      previous: stats.period.previousCustomers,
+    },
+  };
+  const detail = metricDetails[metric];
+  const delta = detail.previous > 0
+    ? ((detail.current - detail.previous) / detail.previous) * 100
+    : detail.current > 0 ? null : 0;
+  const valueLabel = (value: number) =>
+    metric === "revenue"
+      ? formatMarketCurrency(value)
+      : new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value);
+  const advice: Record<MarketMetricKey, string[]> = {
+    revenue: delta !== null && delta < -5
+      ? [
+          "Le chiffre d’affaires est en baisse par rapport aux 30 jours précédents.",
+          "Comparez la courbe du CA avec celle du volume : si le volume tient, vérifiez le panier moyen ; s’il baisse aussi, examinez les jours creux et la disponibilité des articles.",
+          "Ces indicateurs signalent une tendance, pas sa cause. Vérifiez les commandes Odoo avant toute décision.",
+        ]
+      : [
+          "Comparez chaque journée avec la même position dans la période précédente pour repérer les écarts.",
+          "Le chiffre d’affaires ne suffit pas à expliquer une variation : examinez aussi les volumes, les commandes en attente et le panier moyen.",
+        ],
+    orders: delta !== null && delta < -5
+      ? [
+          "Le nombre de transactions est en baisse par rapport aux 30 jours précédents.",
+          "Repérez les jours sans vente et vérifiez les horaires d’ouverture, le trafic et les éventuelles ruptures de stock.",
+        ]
+      : [
+          "Le volume regroupe les commandes confirmées, en attente et annulées.",
+          "Consultez la répartition des statuts pour distinguer les ventes réelles des devis qui restent à traiter.",
+        ],
+    pending: stats.period.pendingOrders > 0
+      ? [
+          `${stats.period.pendingOrders} transaction${stats.period.pendingOrders === 1 ? "" : "s"} en attente sur 30 jours.`,
+          "Examinez les devis récents dans Odoo et confirmez, relancez ou annulez ceux qui ne sont plus d’actualité.",
+        ]
+      : ["Aucune transaction en attente sur la période observée."],
+    customers: [
+      "Le nombre représente les clients distincts associés aux transactions, pas nécessairement les nouveaux clients.",
+      "Les ventes sans fiche client Odoo sont comptées individuellement : associer les tickets à un client améliore la fiabilité du suivi.",
+    ],
+  };
+  const maxCustomerCount = Math.max(stats.period.customers, stats.period.previousCustomers, 1);
+  const previousAverage = stats.period.previousAverageConfirmedOrder;
+  const currentAverage = stats.period.averageConfirmedOrder;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        closeButtonRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="market-metric-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="market-metric-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="market-metric-title"
+        aria-describedby="market-metric-description"
+      >
+        <header className="market-metric-header">
+          <div className="market-metric-heading">
+            <MetricIllustration metric={metric} />
+            <div>
+              <span className="market-insights-eyebrow">Analyse automatique · sans IA générative</span>
+              <h2 id="market-metric-title">{detail.title}</h2>
+              <p id="market-metric-description">{detail.description}</p>
+            </div>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="market-metric-close"
+            onClick={onClose}
+            aria-label="Fermer l’analyse"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18"/>
+            </svg>
+          </button>
+        </header>
+
+        <div className="market-metric-summary">
+          <div className="market-metric-current">
+            <span>30 derniers jours</span>
+            <strong>{valueLabel(detail.current)}{metric === "customers" ? " clients" : ""}</strong>
+            <DeltaBadge delta={delta} label="vs les 30 jours précédents"/>
+          </div>
+          <div className="market-metric-previous">
+            <span>Période précédente</span>
+            <strong>{valueLabel(detail.previous)}{metric === "customers" ? " clients" : ""}</strong>
+          </div>
+          {metric === "revenue" && (
+            <div className="market-metric-previous">
+              <span>Panier moyen confirmé</span>
+              <strong>{formatMarketCurrency(currentAverage)}</strong>
+              <small>Précédent : {formatMarketCurrency(previousAverage)}</small>
+            </div>
+          )}
+        </div>
+
+        <div className="market-metric-body">
+          <div className="market-metric-chart">
+            {metric === "revenue" && (
+              <>
+                <h3>Évolution du chiffre d’affaires</h3>
+                <p>Chaque jour est comparé au jour correspondant de la période précédente.</p>
+                <div className="market-trend-legend" aria-label="Légende">
+                  <span><i className="current"/>30 derniers jours</span>
+                  <span><i className="previous"/>30 jours précédents</span>
+                </div>
+                <RevenueCurve points={derived.revenuePoints} height={280} comparisonLabel="Période précédente"/>
+              </>
+            )}
+            {metric === "orders" && (
+              <>
+                <h3>Transactions par jour</h3>
+                <p>Commandes confirmées, en attente et annulées, comparées jour par jour.</p>
+                <div className="market-trend-legend" aria-label="Légende">
+                  <span><i className="current"/>30 derniers jours</span>
+                  <span><i className="previous"/>30 jours précédents</span>
+                </div>
+                <RevenueCurve
+                  points={derived.transactionPoints}
+                  height={280}
+                  valueUnit="transactions"
+                  comparisonLabel="Période précédente"
+                />
+              </>
+            )}
+            {metric === "pending" && (
+              <>
+                <h3>Répartition des transactions</h3>
+                <p>Statuts observés sur les 30 derniers jours.</p>
+                <Donut
+                  segments={[
+                    { label: "Confirmées", value: stats.period.confirmedOrders, color: "var(--success)" },
+                    { label: "En attente", value: stats.period.pendingOrders, color: "var(--warning)" },
+                    { label: "Annulées", value: stats.period.canceledOrders, color: "var(--danger)" },
+                  ]}
+                />
+                <div className="market-metric-previous-status">
+                  Période précédente : {stats.period.previousPendingOrders} en attente · {stats.period.previousCanceledOrders} annulée{stats.period.previousCanceledOrders === 1 ? "" : "s"}
+                </div>
+              </>
+            )}
+            {metric === "customers" && (
+              <>
+                <h3>Comparaison de la clientèle</h3>
+                <p>Clients distincts repérés dans chaque période.</p>
+                <div className="market-customer-bars">
+                  <div>
+                    <span>30 derniers jours</span>
+                    <strong>{stats.period.customers}</strong>
+                    <i style={{ width: `${(stats.period.customers / maxCustomerCount) * 100}%` }}/>
+                  </div>
+                  <div>
+                    <span>30 jours précédents</span>
+                    <strong>{stats.period.previousCustomers}</strong>
+                    <i className="previous" style={{ width: `${(stats.period.previousCustomers / maxCustomerCount) * 100}%` }}/>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <aside className="market-metric-advice">
+            <span className="market-insights-eyebrow">Lecture &amp; pistes</span>
+            <ul>{advice[metric].map((item) => <li key={item}>{item}</li>)}</ul>
+            <p>Comparaison de périodes calendaires de 30 jours. Les calculs sont déterministes et restent indicatifs.</p>
+          </aside>
+        </div>
+      </section>
     </div>
   );
 }
@@ -632,7 +1009,10 @@ function KpiNumber({
 }
 
 /** Badge de delta discret, sans aplat coloré, avec libellé contextuel. */
-function DeltaBadge({ delta, label = "vs période préc." }: { delta: number; label?: string }) {
+function DeltaBadge({ delta, label = "vs période préc." }: { delta: number | null; label?: string }) {
+  if (delta === null) {
+    return <span className="stat-delta flat"><span>Nouvelle référence</span></span>;
+  }
   if (!isFinite(delta) || Math.abs(delta) < 0.05) {
     return (
       <span className="stat-delta flat">
@@ -771,6 +1151,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [tabStateReady, setTabStateReady] = useState(false);
@@ -783,6 +1164,8 @@ export default function AdminDashboard() {
   const [filterInscriptionStatus, setFilterInscriptionStatus] = useState<"all" | "liste_attente" | "confirme" | "annule">("all");
   const [actionSheetInscription, setActionSheetInscription] = useState<InscriptionFormation | null>(null);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
+  const [selectedMarketMetric, setSelectedMarketMetric] = useState<MarketMetricKey | null>(null);
+  const closeMarketMetric = useCallback(() => setSelectedMarketMetric(null), []);
   const [loadingMarketStats, setLoadingMarketStats] = useState(false);
   const [marketStatsError, setMarketStatsError] = useState("");
   const [receiptDownloadId, setReceiptDownloadId] = useState<number | null>(null);
@@ -1662,15 +2045,97 @@ export default function AdminDashboard() {
   /* ─── E-commerce : dérivés pour les charts ─── */
   const marketDerived = (() => {
     if (!marketStats) return null;
-    const orders = marketStats.monthly.map((m) => m.orders);
+    const orders = marketStats.monthly.map((m) => m.confirmedOrders);
     const revenues = marketStats.monthly.map((m) => m.confirmedRevenue);
-    const lastRevenue = revenues[revenues.length - 1] ?? 0;
-    const prevRevenue = revenues[revenues.length - 2] ?? 0;
-    const revDelta = prevRevenue > 0 ? ((lastRevenue - prevRevenue) / prevRevenue) * 100 : 0;
-    const lastOrders = orders[orders.length - 1] ?? 0;
-    const prevOrders = orders[orders.length - 2] ?? 0;
-    const ordDelta = prevOrders > 0 ? ((lastOrders - prevOrders) / prevOrders) * 100 : 0;
-    return { orders, revenues, revDelta, ordDelta };
+    const getDelta = (current: number, previous: number) =>
+      previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? null : 0;
+    const revenueDelta = getDelta(
+      marketStats.period.confirmedRevenue,
+      marketStats.period.previousConfirmedRevenue,
+    );
+    const orderDelta = getDelta(marketStats.period.orders, marketStats.period.previousOrders);
+    const pendingDelta = getDelta(
+      marketStats.period.pendingOrders,
+      marketStats.period.previousPendingOrders,
+    );
+    const customerDelta = getDelta(marketStats.period.customers, marketStats.period.previousCustomers);
+    const confirmedSalesDelta = getDelta(
+      marketStats.period.confirmedOrders,
+      marketStats.period.previousConfirmedOrders,
+    );
+    const revenuePoints = marketStats.daily.map((day) => ({
+      label: day.label,
+      year: Number(day.date.slice(0, 4)),
+      detailLabel: day.detailLabel,
+      value: day.confirmedRevenue,
+      count: day.confirmedOrders,
+      comparisonValue: day.previousConfirmedRevenue,
+    }));
+    const orderPoints = marketStats.daily.map((day) => ({
+      label: day.label,
+      year: Number(day.date.slice(0, 4)),
+      detailLabel: day.detailLabel,
+      value: day.confirmedOrders,
+      count: day.confirmedOrders,
+      comparisonValue: day.previousConfirmedOrders,
+    }));
+    const transactionPoints = marketStats.daily.map((day) => ({
+      label: day.label,
+      year: Number(day.date.slice(0, 4)),
+      detailLabel: day.detailLabel,
+      value: day.orders,
+      count: day.orders,
+      comparisonValue: day.previousOrders,
+    }));
+    const currentMonth = marketStats.monthly[marketStats.monthly.length - 1];
+    const generatedAt = new Date(marketStats.generatedAt);
+    const daysInMonth = new Date(
+      Date.UTC(generatedAt.getUTCFullYear(), generatedAt.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    const projectedRevenue = currentMonth
+      ? currentMonth.confirmedRevenue * daysInMonth / Math.max(generatedAt.getUTCDate(), 1)
+      : 0;
+    const bestDay = marketStats.daily.reduce<(typeof marketStats.daily)[number] | null>(
+      (best, day) => day.confirmedRevenue > (best?.confirmedRevenue ?? 0) ? day : best,
+      null,
+    );
+    const insights: string[] = [];
+    if (marketStats.period.confirmedRevenue === 0 && marketStats.period.previousConfirmedRevenue === 0) {
+      insights.push("Aucune vente confirmée n’a été enregistrée sur les périodes comparées.");
+    } else if (revenueDelta !== null && revenueDelta <= -5) {
+      insights.push(confirmedSalesDelta !== null && confirmedSalesDelta <= -5
+        ? `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur 30 jours. Le nombre de ventes baisse aussi (${confirmedSalesDelta.toFixed(1)} %) : vérifiez le trafic et la disponibilité des produits.`
+        : `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur 30 jours. Comparez le panier moyen et les commandes en attente pour identifier la cause.`);
+    } else if (revenueDelta !== null && revenueDelta >= 5) {
+      insights.push(
+        `Le chiffre d’affaires confirmé progresse de ${revenueDelta.toFixed(1)} % sur 30 jours. Identifiez les produits et les jours qui contribuent à cette hausse.`,
+      );
+    } else if (revenueDelta === null) {
+      insights.push("Pas encore de ventes confirmées sur la période précédente pour établir une comparaison fiable.");
+    } else {
+      insights.push("Le chiffre d’affaires confirmé reste globalement stable par rapport aux 30 jours précédents.");
+    }
+    if (bestDay && bestDay.confirmedRevenue > 0) {
+      insights.push(
+        `Meilleur jour de la période : ${bestDay.detailLabel}, avec ${formatMarketCurrency(bestDay.confirmedRevenue)} de ventes confirmées.`,
+      );
+    }
+    insights.push(
+      "La projection de fin de mois prolonge le rythme moyen observé à ce jour ; c’est une estimation linéaire, pas une garantie.",
+    );
+    return {
+      orders,
+      revenues,
+      revenueDelta,
+      orderDelta,
+      pendingDelta,
+      customerDelta,
+      revenuePoints,
+      orderPoints,
+      transactionPoints,
+      projectedRevenue,
+      insights,
+    };
   })();
 
   return (
@@ -1745,9 +2210,9 @@ export default function AdminDashboard() {
         </nav>
       )}
 
-      <div className="admin-layout">
+      <div className={`admin-layout${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         {/* Sidebar desktop */}
-        <aside className="admin-sidebar">
+        <aside id="admin-sidebar" className="admin-sidebar" aria-hidden={sidebarCollapsed}>
           <div className="sidebar-top">
             <div className="company-logo-anchor">
               <button
@@ -1829,6 +2294,21 @@ export default function AdminDashboard() {
               {renderCompanyPicker("topbar")}
             </div>
             <div className="mob-topbar-right">
+              <button
+                type="button"
+                className="admin-topbar-back desktop-sidebar-toggle"
+                onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+                aria-label={sidebarCollapsed ? "Afficher le menu latéral" : "Masquer le menu latéral"}
+                aria-expanded={!sidebarCollapsed}
+                aria-controls="admin-sidebar"
+                title={sidebarCollapsed ? "Afficher le menu latéral" : "Masquer le menu latéral"}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="2"/>
+                  <path d={sidebarCollapsed ? "M9 4v16" : "M9 4v16M15 9l-3 3 3 3"}/>
+                </svg>
+                <span>Menu</span>
+              </button>
               <a href="/" className="admin-topbar-back admin-topbar-home" aria-label="Accueil du site">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg>
                 <span>Accueil</span>
@@ -2348,29 +2828,55 @@ export default function AdminDashboard() {
                 <>
                   {/* ── KPI animés avec sparklines et deltas ── */}
                   <div className="stats-row market-stats-grid">
-                    <div className="stat-card">
+                    <button
+                      type="button"
+                      className="stat-card market-kpi-card"
+                      onClick={() => setSelectedMarketMetric("orders")}
+                      aria-haspopup="dialog"
+                      aria-label="Afficher l’analyse des ventes et commandes"
+                    >
                       <div className="stat-label">Ventes &amp; commandes</div>
                       <KpiNumber value={marketStats.period.orders} color="blue" />
-                      <DeltaBadge delta={marketDerived.ordDelta} />
+                      <DeltaBadge delta={marketDerived.orderDelta} />
                       <Sparkline values={marketDerived.orders} stroke="var(--blue)" />
-                    </div>
+                    </button>
 
-                    <div className="stat-card">
+                    <button
+                      type="button"
+                      className="stat-card market-kpi-card"
+                      onClick={() => setSelectedMarketMetric("revenue")}
+                      aria-haspopup="dialog"
+                      aria-label="Afficher l’analyse du chiffre d’affaires confirmé"
+                    >
                       <div className="stat-label">CA confirmé</div>
                       <KpiNumber value={marketStats.period.confirmedRevenue} unit="FCFA" color="green" />
-                      <DeltaBadge delta={marketDerived.revDelta} />
+                      <DeltaBadge delta={marketDerived.revenueDelta} />
                       <Sparkline values={marketDerived.revenues} stroke="var(--orange)" />
-                    </div>
+                    </button>
 
-                    <div className="stat-card">
+                    <button
+                      type="button"
+                      className="stat-card market-kpi-card"
+                      onClick={() => setSelectedMarketMetric("pending")}
+                      aria-haspopup="dialog"
+                      aria-label="Afficher l’analyse des commandes en attente"
+                    >
                       <div className="stat-label">En attente</div>
                       <KpiNumber value={marketStats.period.pendingOrders} color="orange" />
-                    </div>
+                      <DeltaBadge delta={marketDerived.pendingDelta} />
+                    </button>
 
-                    <div className="stat-card">
+                    <button
+                      type="button"
+                      className="stat-card market-kpi-card"
+                      onClick={() => setSelectedMarketMetric("customers")}
+                      aria-haspopup="dialog"
+                      aria-label="Afficher l’analyse des clients"
+                    >
                       <div className="stat-label">Clients</div>
                       <KpiNumber value={marketStats.period.customers} />
-                    </div>
+                      <DeltaBadge delta={marketDerived.customerDelta} />
+                    </button>
                   </div>
 
                   {/* ── Cartes secondaires ── */}
@@ -2390,6 +2896,23 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   </div>
+
+                  <section className="market-insights" aria-labelledby="market-insights-title">
+                    <div className="market-insights-heading">
+                      <div>
+                        <span className="market-insights-eyebrow">Analyse automatique · 30 jours</span>
+                        <h2 id="market-insights-title">Ce que disent vos ventes</h2>
+                      </div>
+                      <div className="market-projection">
+                        <span>Projection du CA à la fin du mois</span>
+                        <strong>{formatMarketCurrency(marketDerived.projectedRevenue)}</strong>
+                        <small>Estimée au rythme confirmé observé ce mois-ci</small>
+                      </div>
+                    </div>
+                    <ul className="market-insight-list">
+                      {marketDerived.insights.map((insight) => <li key={insight}>{insight}</li>)}
+                    </ul>
+                  </section>
 
                   {/* ── Duo : donut + barre de conversion ── */}
                   <div className="chart-duo">
@@ -2426,28 +2949,65 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  <div className="market-trend-grid">
+                    <section className="market-panel" aria-labelledby="market-daily-revenue-title">
+                      <div className="market-panel-heading">
+                        <div>
+                          <h2 id="market-daily-revenue-title">Chiffre d’affaires au quotidien</h2>
+                          <p>30 derniers jours comparés aux 30 jours précédents · ventes confirmées</p>
+                        </div>
+                      </div>
+                      <div className="market-trend-legend" aria-label="Légende">
+                        <span><i className="current"/>30 derniers jours</span>
+                        <span><i className="previous"/>30 jours précédents</span>
+                      </div>
+                      <RevenueCurve
+                        points={marketDerived.revenuePoints}
+                        comparisonLabel="30 jours précédents"
+                      />
+                    </section>
+
+                    <section className="market-panel" aria-labelledby="market-daily-orders-title">
+                      <div className="market-panel-heading">
+                        <div>
+                          <h2 id="market-daily-orders-title">Ventes confirmées par jour</h2>
+                          <p>Évolution du volume, comparée à la période précédente</p>
+                        </div>
+                      </div>
+                      <div className="market-trend-legend" aria-label="Légende">
+                        <span><i className="current"/>30 derniers jours</span>
+                        <span><i className="previous"/>30 jours précédents</span>
+                      </div>
+                      <RevenueCurve
+                        points={marketDerived.orderPoints}
+                        valueUnit="count"
+                        comparisonLabel="30 jours précédents"
+                      />
+                    </section>
+                  </div>
+
                   {/* ── Courbe de CA mensuelle ── */}
                   <section className="market-panel" aria-labelledby="market-monthly-title">
                     <div className="market-panel-heading">
                       <div>
                         <h2 id="market-monthly-title">Ventes confirmées</h2>
-                        <p>{marketStats.company.name} · six derniers mois</p>
+                        <p>{marketStats.company.name} · 12 derniers mois</p>
                       </div>
                       <span className="market-chart-legend"><i/> Chiffre d'affaires</span>
                     </div>
-                    {marketStats.monthly.some((month) => month.orders > 0) ? (
+                    {marketStats.monthly.some((month) => month.confirmedOrders > 0) ? (
                       <RevenueCurve
                         points={marketStats.monthly.map((m) => ({
                           label: m.label,
                           year: m.year,
                           value: m.confirmedRevenue,
-                          count: m.orders,
+                          count: m.confirmedOrders,
                         }))}
                       />
                     ) : (
                       <div className="empty">
                         <p className="empty-text">
-                          Aucune vente ni commande sur les six derniers mois pour {marketStats.company.name}.
+                          Aucune vente ni commande sur les 12 derniers mois pour {marketStats.company.name}.
                         </p>
                       </div>
                     )}
@@ -2723,6 +3283,15 @@ export default function AdminDashboard() {
           <button className="sheet-cancel" onClick={() => setActionSheetSession(null)}>Annuler</button>
         </div>
       </>)}
+
+      {selectedMarketMetric && marketStats && marketDerived && (
+        <MarketMetricModal
+          metric={selectedMarketMetric}
+          stats={marketStats}
+          derived={marketDerived}
+          onClose={closeMarketMetric}
+        />
+      )}
 
       {/* Add/Edit user modal */}
       {showModal && (
