@@ -15,6 +15,7 @@ type OdooSaleOrder = {
   partner_id: OdooRelation;
   user_id: OdooRelation;
   invoice_status: string;
+  order_line?: number[];
 };
 type OdooPOSOrder = {
   id: number;
@@ -28,15 +29,54 @@ type OdooPOSOrder = {
   partner_id: OdooRelation;
   user_id: OdooRelation;
   account_move: OdooRelation;
+  lines?: number[];
 };
 type StatsOrder = {
   id: number;
+  kind: "sale_order" | "pos_order";
   reference: string;
   customer: string;
   customerId: string;
   state: MarketOrderState;
   amountTotal: number;
   date: Date;
+  operator: string | null;
+  pointOfSale: string | null;
+  lineIds: number[];
+};
+type PeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
+type AnalyticsPeriod = {
+  key: PeriodKey;
+  start: Date;
+  endExclusive: Date;
+  previousStart: Date;
+  dayCount: number;
+};
+type OdooSaleOrderLine = {
+  id: number;
+  order_id: OdooRelation;
+  product_id: OdooRelation;
+  product_uom_qty: number;
+  price_total: number;
+};
+type OdooPOSOrderLine = {
+  id: number;
+  order_id: OdooRelation;
+  product_id: OdooRelation;
+  qty: number;
+  price_subtotal_incl: number;
+};
+type OdooProductCategory = { id: number; categ_id: OdooRelation };
+type Breakdown = {
+  id: string;
+  label: string;
+  orders: number;
+  confirmedOrders: number;
+  revenue: number;
+  previousOrders: number;
+  previousConfirmedOrders: number;
+  previousRevenue: number;
+  quantity?: number;
 };
 type CompanyCursor = { saleOffset: number; posOffset: number };
 type Transaction = {
@@ -58,6 +98,8 @@ type Transaction = {
 const ORDER_STATES = new Set<MarketOrderState>(["draft", "sent", "sale", "done", "cancel"]);
 const POS_ORDER_STATES = new Set<OdooPOSOrder["state"]>(["draft", "paid", "done", "invoiced", "cancel"]);
 const STATS_FETCH_SIZE = 1_000;
+const MAX_ANALYTICS_DAYS = 366;
+const MAX_BREAKDOWN_LINES = 50_000;
 const HISTORY_PAGE_SIZE = 50;
 const HISTORY_FETCH_SIZE = HISTORY_PAGE_SIZE + 1;
 
@@ -69,6 +111,10 @@ function isRelation(value: unknown): value is OdooRelation {
       Number.isSafeInteger(value[0]) &&
       typeof value[1] === "string")
   );
+}
+
+function isIdArray(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every((id) => Number.isSafeInteger(id) && Number(id) > 0);
 }
 
 function isOdooSaleOrder(value: unknown): value is OdooSaleOrder {
@@ -84,7 +130,8 @@ function isOdooSaleOrder(value: unknown): value is OdooSaleOrder {
     typeof order.date_order === "string" &&
     isRelation(order.partner_id) &&
     isRelation(order.user_id) &&
-    typeof order.invoice_status === "string"
+    typeof order.invoice_status === "string" &&
+    (order.order_line === undefined || isIdArray(order.order_line))
   );
 }
 
@@ -104,7 +151,8 @@ function isOdooPOSOrder(value: unknown): value is OdooPOSOrder {
     (typeof order.pos_reference === "string" || order.pos_reference === false) &&
     isRelation(order.partner_id) &&
     isRelation(order.user_id) &&
-    isRelation(order.account_move)
+    isRelation(order.account_move) &&
+    (order.lines === undefined || isIdArray(order.lines))
   );
 }
 
@@ -114,6 +162,36 @@ function isOdooCompany(value: unknown): value is OdooCompany {
   return Number.isSafeInteger(company.id) && Number(company.id) > 0 && typeof company.name === "string";
 }
 
+function isOdooSaleOrderLine(value: unknown): value is OdooSaleOrderLine {
+  if (!value || typeof value !== "object") return false;
+  const line = value as Partial<OdooSaleOrderLine>;
+  return Number.isSafeInteger(line.id) &&
+    isRelation(line.order_id) &&
+    isRelation(line.product_id) &&
+    typeof line.product_uom_qty === "number" &&
+    Number.isFinite(line.product_uom_qty) &&
+    typeof line.price_total === "number" &&
+    Number.isFinite(line.price_total);
+}
+
+function isOdooPOSOrderLine(value: unknown): value is OdooPOSOrderLine {
+  if (!value || typeof value !== "object") return false;
+  const line = value as Partial<OdooPOSOrderLine>;
+  return Number.isSafeInteger(line.id) &&
+    isRelation(line.order_id) &&
+    isRelation(line.product_id) &&
+    typeof line.qty === "number" &&
+    Number.isFinite(line.qty) &&
+    typeof line.price_subtotal_incl === "number" &&
+    Number.isFinite(line.price_subtotal_incl);
+}
+
+function isOdooProductCategory(value: unknown): value is OdooProductCategory {
+  if (!value || typeof value !== "object") return false;
+  const product = value as Partial<OdooProductCategory>;
+  return Number.isSafeInteger(product.id) && isRelation(product.categ_id);
+}
+
 function parseOdooDate(value: string): Date | null {
   const date = new Date(`${value.replace(" ", "T")}Z`);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -121,6 +199,86 @@ function parseOdooDate(value: string): Date | null {
 
 function getMonthStart(date: Date, offset: number): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offset, 1));
+}
+
+function getQueryString(value: string | string[] | undefined): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function parseDateOnly(value: string | null): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? date
+    : null;
+}
+
+function getAnalyticsPeriod(
+  query: NextApiRequest["query"],
+  now: Date,
+): AnalyticsPeriod {
+  const rawKey = getQueryString(query.period);
+  if (
+    rawKey !== null &&
+    rawKey !== "7d" &&
+    rawKey !== "30d" &&
+    rawKey !== "90d" &&
+    rawKey !== "12m" &&
+    rawKey !== "custom"
+  ) {
+    throw new OdooApiError("La période d’analyse sélectionnée est invalide.", 400);
+  }
+  const key: PeriodKey =
+    rawKey === "7d" || rawKey === "30d" || rawKey === "90d" ||
+    rawKey === "12m" || rawKey === "custom"
+      ? rawKey
+      : "30d";
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const endExclusive = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  let start: Date;
+  let dayCount: number;
+
+  if (key === "custom") {
+    const from = parseDateOnly(getQueryString(query.from));
+    const to = parseDateOnly(getQueryString(query.to));
+    if (!from || !to || to < from || to > todayStart) {
+      throw new OdooApiError("Choisissez une période personnalisée valide, jusqu’à aujourd’hui.", 400);
+    }
+    start = from;
+    dayCount = Math.floor((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    if (dayCount > MAX_ANALYTICS_DAYS) {
+      throw new OdooApiError("La période personnalisée ne peut pas dépasser 366 jours.", 400);
+    }
+    return {
+      key,
+      start,
+      endExclusive: new Date(to.getTime() + 24 * 60 * 60 * 1000),
+      previousStart: new Date(from.getTime() - dayCount * 24 * 60 * 60 * 1000),
+      dayCount,
+    };
+  }
+
+  if (key === "12m") {
+    start = getMonthStart(now, -11);
+    dayCount = Math.floor((endExclusive.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+  } else {
+    dayCount = key === "7d" ? 7 : key === "90d" ? 90 : 30;
+    start = new Date(endExclusive.getTime() - dayCount * 24 * 60 * 60 * 1000);
+  }
+  return {
+    key,
+    start,
+    endExclusive,
+    previousStart: new Date(start.getTime() - dayCount * 24 * 60 * 60 * 1000),
+    dayCount,
+  };
+}
+
+function toOdooDateTime(date: Date): string {
+  return date.toISOString().replace("T", " ").slice(0, 19);
 }
 
 function getRelationLabel(relation: OdooRelation): string | null {
@@ -144,12 +302,16 @@ function toStatsOrder(order: OdooSaleOrder): StatsOrder {
   if (!date) throw new OdooApiError("FiSAFi a renvoyé une date de commande invalide.");
   return {
     id: order.id,
+    kind: "sale_order",
     reference: order.name,
     customer: getCustomerLabel(order.partner_id),
     customerId: getCustomerId(order.partner_id, order.id),
     state: order.state,
     amountTotal: order.amount_total,
     date,
+    operator: getRelationLabel(order.user_id),
+    pointOfSale: null,
+    lineIds: order.order_line ?? [],
   };
 }
 
@@ -160,12 +322,16 @@ function toPOSStatsOrder(order: OdooPOSOrder): StatsOrder {
     order.state === "draft" ? "draft" : order.state === "cancel" ? "cancel" : "done";
   return {
     id: order.id,
+    kind: "pos_order",
     reference: order.name,
     customer: getCustomerLabel(order.partner_id),
     customerId: getCustomerId(order.partner_id, order.id),
     state,
     amountTotal: order.amount_total,
     date,
+    operator: getRelationLabel(order.user_id),
+    pointOfSale: getRelationLabel(order.config_id),
+    lineIds: order.lines ?? [],
   };
 }
 
@@ -271,19 +437,264 @@ async function fetchRecentOdooRecords<T extends { id: number }>(
   }
 }
 
+async function fetchLinesById<T extends { id: number; order_id: OdooRelation }>(
+  model: "sale.order.line" | "pos.order.line",
+  ids: number[],
+  orderIds: Set<number>,
+  fields: string[],
+  isLine: (value: unknown) => value is T,
+): Promise<T[]> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length > MAX_BREAKDOWN_LINES) {
+    throw new OdooApiError(
+      "La période contient trop de lignes détaillées pour produire une analyse fiable. Réduisez la période.",
+      422,
+    );
+  }
+  const records: T[] = [];
+  const seen = new Set<number>();
+  for (let offset = 0; offset < uniqueIds.length; offset += STATS_FETCH_SIZE) {
+    const batch = uniqueIds.slice(offset, offset + STATS_FETCH_SIZE);
+    const payload: unknown = await callOdoo(model, "search_read", {
+      domain: [["id", "in", batch]],
+      fields,
+      limit: batch.length,
+      order: "id asc",
+    });
+    if (
+      !Array.isArray(payload) ||
+      payload.length !== batch.length ||
+      !payload.every(isLine) ||
+      payload.some((line) =>
+        seen.has(line.id) ||
+        line.order_id === false ||
+        !orderIds.has(line.order_id[0]),
+      )
+    ) {
+      console.error(`[Admin/Market] Odoo returned incomplete or unexpected ${model} detail.`);
+      throw new OdooApiError("FiSAFi a renvoyé des lignes de vente incomplètes pour l’analyse.");
+    }
+    for (const line of payload) {
+      seen.add(line.id);
+      records.push(line);
+    }
+  }
+  return records;
+}
+
+function createBreakdownEntry(id: string, label: string): Breakdown {
+  return {
+    id,
+    label,
+    orders: 0,
+    confirmedOrders: 0,
+    revenue: 0,
+    previousOrders: 0,
+    previousConfirmedOrders: 0,
+    previousRevenue: 0,
+  };
+}
+
+function aggregateOrderBreakdowns(
+  orders: StatsOrder[],
+  dimension: (order: StatsOrder) => { id: string; label: string },
+  start: Date,
+): Breakdown[] {
+  const entries = new Map<string, Breakdown>();
+  const currentOrderSets = new Map<string, Set<string>>();
+  const previousOrderSets = new Map<string, Set<string>>();
+
+  for (const order of orders) {
+    const { id, label } = dimension(order);
+    const entry = entries.get(id) ?? createBreakdownEntry(id, label);
+    entries.set(id, entry);
+    const current = order.date >= start;
+    const orderKey = `${order.kind}:${order.id}`;
+    const sets = current ? currentOrderSets : previousOrderSets;
+    const orderSet = sets.get(id) ?? new Set<string>();
+    orderSet.add(orderKey);
+    sets.set(id, orderSet);
+    if (isConfirmed(order.state)) {
+      if (current) {
+        entry.confirmedOrders += 1;
+        entry.revenue += order.amountTotal;
+      } else {
+        entry.previousConfirmedOrders += 1;
+        entry.previousRevenue += order.amountTotal;
+      }
+    }
+  }
+
+  for (const [id, entry] of entries) {
+    entry.orders = currentOrderSets.get(id)?.size ?? 0;
+    entry.previousOrders = previousOrderSets.get(id)?.size ?? 0;
+  }
+  return [...entries.values()].sort(
+    (first, second) => second.revenue - first.revenue || first.label.localeCompare(second.label, "fr"),
+  ).slice(0, 10);
+}
+
+async function aggregateProductBreakdowns(
+  orders: StatsOrder[],
+  start: Date,
+): Promise<{ products: Breakdown[]; categories: Breakdown[] }> {
+  const confirmedOrders = orders.filter(
+    (order) => isConfirmed(order.state) && order.lineIds.length > 0,
+  );
+  const saleOrders = confirmedOrders.filter((order) => order.kind === "sale_order");
+  const posOrders = confirmedOrders.filter((order) => order.kind === "pos_order");
+  const [saleLines, posLines] = await Promise.all([
+    fetchLinesById(
+      "sale.order.line",
+      saleOrders.flatMap((order) => order.lineIds),
+      new Set(saleOrders.map((order) => order.id)),
+      ["id", "order_id", "product_id", "product_uom_qty", "price_total"],
+      isOdooSaleOrderLine,
+    ),
+    fetchLinesById(
+      "pos.order.line",
+      posOrders.flatMap((order) => order.lineIds),
+      new Set(posOrders.map((order) => order.id)),
+      ["id", "order_id", "product_id", "qty", "price_subtotal_incl"],
+      isOdooPOSOrderLine,
+    ),
+  ]);
+  const ordersByKey = new Map(
+    confirmedOrders.map((order) => [`${order.kind}:${order.id}`, order]),
+  );
+  const productDetails = new Map<number, { label: string; categoryId: string; categoryName: string }>();
+  const productOrderIds = new Map<string, Set<string>>();
+  const productEntries = new Map<string, Breakdown>();
+
+  const addLine = (
+    line: { order_id: OdooRelation; product_id: OdooRelation; quantity: number; revenue: number },
+    kind: StatsOrder["kind"],
+  ) => {
+    if (line.order_id === false || line.product_id === false) return;
+    const order = ordersByKey.get(`${kind}:${line.order_id[0]}`);
+    if (!order) return;
+    const productId = line.product_id[0];
+    const productLabel = line.product_id[1];
+    const details = productDetails.get(productId) ?? {
+      label: productLabel,
+      categoryId: "uncategorized",
+      categoryName: "Catégorie non renseignée",
+    };
+    productDetails.set(productId, details);
+    const current = order.date >= start;
+    const orderKey = `${order.kind}:${order.id}`;
+
+    const productEntry = productEntries.get(String(productId)) ??
+      createBreakdownEntry(String(productId), details.label);
+    productEntries.set(String(productId), productEntry);
+    const productOrders = productOrderIds.get(String(productId)) ?? new Set<string>();
+    productOrders.add(`${current ? "current" : "previous"}:${orderKey}`);
+    productOrderIds.set(String(productId), productOrders);
+    if (current) {
+      productEntry.confirmedOrders += 1;
+      productEntry.revenue += line.revenue;
+      productEntry.quantity = (productEntry.quantity ?? 0) + line.quantity;
+    } else {
+      productEntry.previousConfirmedOrders += 1;
+      productEntry.previousRevenue += line.revenue;
+    }
+
+  };
+
+  for (const line of saleLines) {
+    addLine({
+      order_id: line.order_id,
+      product_id: line.product_id,
+      quantity: line.product_uom_qty,
+      revenue: line.price_total,
+    }, "sale_order");
+  }
+  for (const line of posLines) {
+    addLine({
+      order_id: line.order_id,
+      product_id: line.product_id,
+      quantity: line.qty,
+      revenue: line.price_subtotal_incl,
+    }, "pos_order");
+  }
+
+  const productIds = [...productDetails.keys()];
+  for (let offset = 0; offset < productIds.length; offset += STATS_FETCH_SIZE) {
+    const batch = productIds.slice(offset, offset + STATS_FETCH_SIZE);
+    const payload: unknown = await callOdoo("product.product", "search_read", {
+      domain: [["id", "in", batch]],
+      fields: ["id", "categ_id"],
+      limit: batch.length,
+    });
+    if (!Array.isArray(payload) || !payload.every(isOdooProductCategory)) {
+      console.error("[Admin/Market] Odoo returned invalid product categories for the sales analysis.");
+      throw new OdooApiError("FiSAFi a renvoyé des catégories de produits invalides.");
+    }
+    for (const product of payload) {
+      const details = productDetails.get(product.id);
+      if (!details) continue;
+      details.categoryId = product.categ_id === false ? "uncategorized" : String(product.categ_id[0]);
+      details.categoryName = product.categ_id === false ? "Catégorie non renseignée" : product.categ_id[1];
+    }
+  }
+
+  const categoryEntries = new Map<string, Breakdown>();
+  const categoryOrderIds = new Map<string, Set<string>>();
+  for (const [productId, entry] of productEntries) {
+    const details = productDetails.get(Number(productId));
+    if (!details) continue;
+    const orderIds = productOrderIds.get(productId) ?? new Set<string>();
+    entry.orders = [...orderIds].filter((id) => id.startsWith("current:")).length;
+    entry.confirmedOrders = entry.orders;
+    entry.previousOrders = [...orderIds].filter((id) => id.startsWith("previous:")).length;
+    entry.previousConfirmedOrders = entry.previousOrders;
+    const categoryEntry = categoryEntries.get(details.categoryId) ??
+      createBreakdownEntry(details.categoryId, details.categoryName);
+    categoryEntries.set(details.categoryId, categoryEntry);
+    categoryEntry.revenue += entry.revenue;
+    categoryEntry.previousRevenue += entry.previousRevenue;
+    categoryEntry.quantity = (categoryEntry.quantity ?? 0) + (entry.quantity ?? 0);
+    const categoryOrders = categoryOrderIds.get(details.categoryId) ?? new Set<string>();
+    for (const orderId of orderIds) categoryOrders.add(orderId);
+    categoryOrderIds.set(details.categoryId, categoryOrders);
+  }
+  for (const [categoryId, entry] of categoryEntries) {
+    const orderIds = categoryOrderIds.get(categoryId) ?? new Set<string>();
+    entry.orders = [...orderIds].filter((id) => id.startsWith("current:")).length;
+    entry.confirmedOrders = entry.orders;
+    entry.previousOrders = [...orderIds].filter((id) => id.startsWith("previous:")).length;
+    entry.previousConfirmedOrders = entry.previousOrders;
+  }
+
+  const products = [...productEntries.values()].sort(
+    (first, second) => second.revenue - first.revenue,
+  ).slice(0, 10);
+  const categories = [...categoryEntries.values()].sort(
+    (first, second) => second.revenue - first.revenue,
+  ).slice(0, 10);
+  return { products, categories };
+}
+
 async function fetchHistoryPage(
   companyId: number,
   cursor: CompanyCursor,
+  date?: Date,
 ): Promise<{ transactions: Transaction[]; hasMore: boolean; nextCursor: CompanyCursor | null }> {
+  const dateDomain = date
+    ? [
+        ["date_order", ">=", toOdooDateTime(date)],
+        ["date_order", "<", toOdooDateTime(new Date(date.getTime() + 24 * 60 * 60 * 1000))],
+      ]
+    : [];
   const salePayload: unknown = await callOdoo("sale.order", "search_read", {
-    domain: [["company_id", "=", companyId]],
+    domain: [["company_id", "=", companyId], ...dateDomain],
     fields: ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status"],
     limit: HISTORY_FETCH_SIZE,
     offset: cursor.saleOffset,
     order: "date_order desc, id desc",
   });
   const posPayload: unknown = await callOdoo("pos.order", "search_read", {
-    domain: [["company_id", "=", companyId]],
+    domain: [["company_id", "=", companyId], ...dateDomain],
     fields: [
       "id",
       "name",
@@ -383,16 +794,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const posOffset = parseOffset(req.query.posOffset);
     const cursor = { saleOffset, posOffset };
     const now = new Date();
-    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const periodStart = new Date(todayStart.getTime() - 29 * 24 * 60 * 60 * 1000);
-    const previousPeriodStart = new Date(periodStart.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const chartStart = getMonthStart(now, -11);
-    const chartStartIso = chartStart.toISOString().replace("T", " ").slice(0, 19);
+    const analyticsPeriod = getAnalyticsPeriod(req.query, now);
+    const { start: periodStart, endExclusive: periodEnd, previousStart: previousPeriodStart } = analyticsPeriod;
+    const rawSelectedDate = getQueryString(req.query.date);
+    if (req.query.date !== undefined && rawSelectedDate === null) {
+      throw new OdooApiError("La date de transaction sélectionnée est invalide.", 400);
+    }
+    const selectedDate = parseDateOnly(rawSelectedDate);
+    if (
+      rawSelectedDate !== null &&
+      (!selectedDate || selectedDate < periodStart || selectedDate >= periodEnd)
+    ) {
+      throw new OdooApiError("La date choisie doit être comprise dans la période d’analyse.", 400);
+    }
+    const chartStart = new Date(Math.min(
+      previousPeriodStart.getTime(),
+      getMonthStart(now, -11).getTime(),
+    ));
+    const chartStartIso = toOdooDateTime(chartStart);
     const salePayload = await fetchRecentOdooRecords(
       "sale.order",
       companyId,
       chartStartIso,
-      ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status"],
+      ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status", "order_line"],
       isOdooSaleOrder,
     );
     const posPayload = await fetchRecentOdooRecords(
@@ -411,10 +835,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "partner_id",
         "user_id",
         "account_move",
+        "lines",
       ],
       isOdooPOSOrder,
     );
-    const history = await fetchHistoryPage(companyId, cursor);
+    const history = await fetchHistoryPage(companyId, cursor, selectedDate ?? undefined);
     if (
       new Set(salePayload.map((order) => order.id)).size !== salePayload.length ||
       new Set(posPayload.map((order) => order.id)).size !== posPayload.length
@@ -426,7 +851,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const statsOrders = [
       ...salePayload.map(toStatsOrder),
       ...posPayload.map(toPOSStatsOrder),
-    ].filter((order) => order.date <= now);
+    ].filter((order) => order.date < periodEnd);
     const monthly = Array.from({ length: 12 }, (_, index) => {
       const month = getMonthStart(now, index - 11);
       return {
@@ -471,7 +896,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const previousCustomers = new Set(previousPeriod.map(({ customerId }) => customerId));
     const dailyStart = new Date(periodStart);
     const previousStart = new Date(previousPeriodStart);
-    const daily = Array.from({ length: 30 }, (_, index) => {
+    const daily = Array.from({ length: analyticsPeriod.dayCount }, (_, index) => {
       const date = new Date(dailyStart.getTime() + index * 24 * 60 * 60 * 1000);
       return {
         label: date.toLocaleDateString("fr-FR", { day: "2-digit", timeZone: "UTC" }),
@@ -516,9 +941,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     }
+    const analyzedOrders = statsOrders.filter(
+      (order) => order.date >= previousPeriodStart && order.date < periodEnd,
+    );
+    const { products, categories } = await aggregateProductBreakdowns(analyzedOrders, periodStart);
+    const weekdays = aggregateOrderBreakdowns(
+      analyzedOrders,
+      (order) => {
+        const day = order.date.getUTCDay();
+        return {
+          id: String(day),
+          label: new Date(Date.UTC(2024, 0, 7 + day)).toLocaleDateString("fr-FR", {
+            weekday: "long",
+            timeZone: "UTC",
+          }),
+        };
+      },
+      periodStart,
+    ).sort((first, second) => Number(first.id) - Number(second.id));
+    const pointsOfSale = aggregateOrderBreakdowns(
+      analyzedOrders,
+      (order) => ({
+        id: order.kind === "pos_order" ? `pos:${order.pointOfSale ?? "unknown"}` : "orders",
+        label: order.kind === "pos_order"
+          ? order.pointOfSale ?? "Point de vente non renseigné"
+          : "Devis et commandes",
+      }),
+      periodStart,
+    );
+    const sellers = aggregateOrderBreakdowns(
+      analyzedOrders,
+      (order) => ({
+        id: order.operator ?? "unknown",
+        label: order.operator ?? "Utilisateur non renseigné",
+      }),
+      periodStart,
+    );
 
     return res.status(200).json({
       company: { id: company.id, name: company.name, type: companyType },
+      range: {
+        key: analyticsPeriod.key,
+        from: periodStart.toISOString().slice(0, 10),
+        to: new Date(periodEnd.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        comparisonFrom: previousPeriodStart.toISOString().slice(0, 10),
+        comparisonTo: new Date(periodStart.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        currentDayIncomplete: periodStart <= now && periodEnd > now,
+      },
       period: {
         orders: recentPeriod.length,
         confirmedOrders: confirmedOrders.length,
@@ -538,8 +1007,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         conversionRate: recentPeriod.length ? (confirmedOrders.length / recentPeriod.length) * 100 : 0,
         customers: customers.size,
       },
+      quality: {
+        periodTransactions: recentPeriod.length,
+        transactionsWithoutCustomer: recentPeriod.filter(({ customerId }) => customerId.startsWith("order:")).length,
+      },
       monthly,
       daily,
+      breakdowns: { products, categories, pointsOfSale, sellers, weekdays },
       transactions: history.transactions,
       hasMore: history.hasMore,
       nextCursor: history.nextCursor,

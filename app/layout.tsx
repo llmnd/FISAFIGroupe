@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
-import { Cormorant_Garamond, Outfit, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from "@/context/ThemeContext";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import { ZoomOptimizer } from "@/components/ZoomOptimizer";
@@ -83,24 +82,6 @@ export const viewport = {
   themeColor: "#1e40af",
 };
 
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300','400'],
-  display: 'swap',
-})
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  weight: ['300','400','500'],
-  display: 'swap',
-})
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400','500'],
-  display: 'swap',
-})
-
 export default function RootLayout({
   children,
 }: {
@@ -155,7 +136,7 @@ export default function RootLayout({
   const safeSerialize = (obj: any) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
-    <html lang="fr" className={`${cormorant.className} ${outfit.className} ${dmSans.className}`}>
+    <html lang="fr">
       <head>
         {/* ── Schemas ───────────────────────────────────────────── */}
         <script
@@ -169,7 +150,12 @@ export default function RootLayout({
 
         <link rel="canonical" href="https://fisafigroupe.com" />
 
-        {/* Fonts loaded via next/font/google for optimized delivery */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@400;500&family=Outfit:wght@300;400;500&display=swap"
+          rel="stylesheet"
+        />
 
         {/* ── PWA / Icons ────────────────────────────────────────── */}
         <link rel="icon" href="/favicon.ico" />
