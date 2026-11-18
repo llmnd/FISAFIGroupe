@@ -1,23 +1,52 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import styles from "./MarketScenarioSimulator.module.css";
 
-type PresetId = "current" | "volume" | "basket" | "promotion" | "custom";
+/* ───────────────────────── Types ───────────────────────── */
+
+type PresetId =
+  | "current"
+  | "volume"
+  | "basket"
+  | "promotion"
+  | "flash"
+  | "finish"
+  | "hard"
+  | "custom";
+
+type Lever = "volume" | "basket" | "discount" | "start" | "margin" | "elasticity";
+
+type Params = {
+  volume: number; // % de ventes en plus / en moins
+  basket: number; // % de panier moyen
+  discount: number; // % de remise moyenne
+  start: number; // dans N jours
+  elasticity: number; // points de ventes gagnés par point de remise
+  margin: number; // % de marge brute estimée
+};
+
 type ScenarioPreset = {
   id: Exclude<PresetId, "custom">;
   label: string;
+  hint: string;
   volume: number;
   basket: number;
   discount: number;
+  startRatio: number; // part des jours restants à attendre avant de lancer l’action
+  elasticity: number;
 };
 
-const PRESETS: ScenarioPreset[] = [
-  { id: "current", label: "Rythme actuel", volume: 0, basket: 0, discount: 0 },
-  { id: "volume", label: "Plus de ventes", volume: 15, basket: 0, discount: 0 },
-  { id: "basket", label: "Panier moyen", volume: 0, basket: 10, discount: 0 },
-  { id: "promotion", label: "Test promotion", volume: 20, basket: 0, discount: 5 },
-];
+type Pin = { id: number; label: string; revenue: number; profit: number };
+
+type Context = {
+  currentRevenue: number;
+  currentOrders: number;
+  elapsedDays: number;
+  remainingDays: number;
+  revenueGoal: number | null;
+};
 
 interface MarketScenarioSimulatorProps {
   companyName: string;
@@ -28,13 +57,167 @@ interface MarketScenarioSimulatorProps {
   revenueGoal: number | null;
 }
 
+/* ───────────────────────── Constantes ───────────────────────── */
+
+const PRESETS: ScenarioPreset[] = [
+  { id: "current", label: "Rythme actuel", hint: "Aucun changement", volume: 0, basket: 0, discount: 0, startRatio: 0, elasticity: 0 },
+  { id: "volume", label: "Plus de ventes", hint: "15 % de ventes en plus, dès aujourd’hui", volume: 15, basket: 0, discount: 0, startRatio: 0, elasticity: 0 },
+  { id: "basket", label: "Panier moyen", hint: "Ventes additionnelles : +10 % de panier", volume: 0, basket: 10, discount: 0, startRatio: 0, elasticity: 0 },
+  { id: "promotion", label: "Test promotion", hint: "20 % de ventes en plus pour 5 % de remise", volume: 20, basket: 0, discount: 5, startRatio: 0, elasticity: 0 },
+  { id: "flash", label: "Promo flash", hint: "10 % de remise qui attire des clients", volume: 0, basket: 0, discount: 10, startRatio: 0, elasticity: 1.5 },
+  { id: "finish", label: "Sprint de fin de mois", hint: "Action lancée à mi-parcours, forte et courte", volume: 25, basket: 5, discount: 0, startRatio: 0.5, elasticity: 0 },
+  { id: "hard", label: "Mois difficile", hint: "Test de résistance : ventes et panier en baisse", volume: -25, basket: -10, discount: 0, startRatio: 0, elasticity: 0 },
+];
+
+const DEFAULT_PARAMS: Params = {
+  volume: 15,
+  basket: 0,
+  discount: 0,
+  start: 0,
+  elasticity: 0,
+  margin: 25,
+};
+
+const MAX_PINS = 3;
+
+// géométrie du graphique
+const W = 640;
+const H = 290;
+const PL = 46;
+const PR = 16;
+const PT = 14;
+const PB = 28;
+const INNER_W = W - PL - PR;
+const INNER_H = H - PT - PB;
+
+/* ───────────────────────── Utilitaires ───────────────────────── */
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+const numberFormat = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+const compactFormat = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
+
 function formatCurrency(value: number): string {
-  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(value))} FCFA`;
+  return `${numberFormat.format(Math.round(value))} FCFA`;
+}
+
+function formatSignedCurrency(value: number): string {
+  const rounded = Math.round(value);
+  const sign = rounded > 0 ? "+" : rounded < 0 ? "−" : "";
+  return `${sign}${numberFormat.format(Math.abs(rounded))} FCFA`;
 }
 
 function formatSignedPercent(value: number): string {
-  return `${value > 0 ? "+" : ""}${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value)} %`;
+  return `${value > 0 ? "+" : ""}${numberFormat.format(value)} %`;
 }
+
+function plural(count: number, one: string, many: string): string {
+  return count === 1 ? one : many;
+}
+
+/* ───────────────────────── Moteur de simulation ───────────────────────── */
+
+function simulate(ctx: Context, p: Params) {
+  const elapsed = Math.max(ctx.elapsedDays, 1);
+  const remaining = Math.max(ctx.remainingDays, 0);
+  const total = elapsed + remaining;
+  const dailyRev = ctx.currentRevenue / elapsed;
+  const dailyOrders = ctx.currentOrders / elapsed;
+  const start = clamp(Math.round(p.start), 0, remaining);
+  const active = remaining - start;
+  const m = p.margin / 100;
+  const d = p.discount / 100;
+
+  // la remise peut attirer des clients (élasticité)
+  const volumeBoost = p.volume + p.discount * p.elasticity;
+  const volumeMult = Math.max(0, 1 + volumeBoost / 100);
+  const basketMult = Math.max(0, 1 + p.basket / 100);
+  const net = basketMult * (1 - d);
+
+  const baselineRemaining = dailyRev * remaining;
+  const scenarioRemaining = dailyRev * (start + active * volumeMult * net);
+  const baselineRevenue = ctx.currentRevenue + baselineRemaining;
+  const scenarioRevenue = ctx.currentRevenue + scenarioRemaining;
+  const baselineOrders = ctx.currentOrders + dailyOrders * remaining;
+  const scenarioOrders = ctx.currentOrders + dailyOrders * (start + active * volumeMult);
+
+  // marge : les coûts suivent les quantités vendues, pas la remise
+  const baselineProfit = (ctx.currentRevenue + baselineRemaining) * m;
+  const scenarioProfit =
+    ctx.currentRevenue * m + dailyRev * (start * m + active * volumeMult * basketMult * (m - d));
+
+  const swing = Math.abs(volumeBoost) + Math.abs(p.basket) + p.discount * 0.5;
+  const uncertainty = Math.min(0.06 + (swing / 100) * 0.3, 0.4);
+
+  return {
+    elapsed,
+    remaining,
+    total,
+    dailyRev,
+    dailyOrders,
+    start,
+    active,
+    volumeBoost,
+    volumeMult,
+    basketMult,
+    net,
+    baselineRemaining,
+    scenarioRemaining,
+    baselineRevenue,
+    scenarioRevenue,
+    baselineOrders,
+    scenarioOrders,
+    baselineProfit,
+    scenarioProfit,
+    difference: scenarioRevenue - baselineRevenue,
+    differencePercent: baselineRevenue > 0 ? ((scenarioRevenue - baselineRevenue) / baselineRevenue) * 100 : 0,
+    profitDiff: scenarioProfit - baselineProfit,
+    uncertainty,
+    low: ctx.currentRevenue + scenarioRemaining * (1 - uncertainty),
+    high: ctx.currentRevenue + scenarioRemaining * (1 + uncertainty),
+  };
+}
+
+/* ───────────────────────── Nombre animé ───────────────────────── */
+
+function useCountUp(target: number, duration = 450): number {
+  const [value, setValue] = useState(target);
+  const current = useRef(target);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      current.current = target;
+      setValue(target);
+      return;
+    }
+    const from = current.current;
+    const startedAt = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const next = from + (target - from) * eased;
+      current.current = next;
+      setValue(next);
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+
+  return value;
+}
+
+function AnimatedCurrency({ value }: { value: number }) {
+  const animated = useCountUp(value);
+  return <>{formatCurrency(animated)}</>;
+}
+
+/* ───────────────────────── Composant ───────────────────────── */
 
 export default function MarketScenarioSimulator({
   companyName,
@@ -44,165 +227,277 @@ export default function MarketScenarioSimulator({
   remainingDays,
   revenueGoal,
 }: MarketScenarioSimulatorProps) {
-  const [volumeChange, setVolumeChange] = useState(15);
-  const [basketChange, setBasketChange] = useState(0);
-  const [discount, setDiscount] = useState(0);
+  const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
   const [selectedPreset, setSelectedPreset] = useState<PresetId>("volume");
+  const [scrub, setScrub] = useState<number | null>(null);
+  const [pins, setPins] = useState<Pin[]>([]);
 
-  const simulation = useMemo(() => {
-    const safeElapsedDays = Math.max(elapsedDays, 1);
-    const safeRemainingDays = Math.max(remainingDays, 0);
-    const baselineRemainingRevenue = (currentRevenue / safeElapsedDays) * safeRemainingDays;
-    const baselineProjectedRevenue = currentRevenue + baselineRemainingRevenue;
-    const baselineRemainingOrders = (currentOrders / safeElapsedDays) * safeRemainingDays;
-    const volumeMultiplier = 1 + volumeChange / 100;
-    const basketMultiplier = 1 + basketChange / 100;
-    const netBasketMultiplier = basketMultiplier * (1 - discount / 100);
-    const scenarioRemainingRevenue =
-      baselineRemainingRevenue * volumeMultiplier * netBasketMultiplier;
-    const scenarioProjectedRevenue = currentRevenue + scenarioRemainingRevenue;
-    const scenarioProjectedOrders = currentOrders + baselineRemainingOrders * volumeMultiplier;
-    const difference = scenarioProjectedRevenue - baselineProjectedRevenue;
-    const differencePercent = baselineProjectedRevenue > 0
-      ? (difference / baselineProjectedRevenue) * 100
-      : 0;
-    const averageBasket = currentOrders > 0 ? currentRevenue / currentOrders : 0;
-    const scenarioBasket = averageBasket * netBasketMultiplier;
-    const additionalOrdersToGoal =
-      revenueGoal !== null && revenueGoal > currentRevenue && scenarioBasket > 0
-        ? Math.ceil((revenueGoal - currentRevenue) / scenarioBasket)
-        : null;
-    const additionalOrdersToOffsetDiscount =
-      discount > 0 && averageBasket > 0 && safeRemainingDays > 0
-        ? Math.max(
-            0,
-            Math.ceil(
-              baselineRemainingRevenue / scenarioBasket -
-              baselineRemainingOrders * volumeMultiplier,
-            ),
-          )
-        : null;
+  const ctx = useMemo<Context>(
+    () => ({ currentRevenue, currentOrders, elapsedDays, remainingDays, revenueGoal }),
+    [currentRevenue, currentOrders, elapsedDays, remainingDays, revenueGoal],
+  );
 
-    return {
-      baselineProjectedRevenue,
-      baselineRemainingOrders,
-      scenarioProjectedRevenue,
-      scenarioProjectedOrders,
-      difference,
-      differencePercent,
-      additionalOrdersToGoal,
-      additionalOrdersToOffsetDiscount,
-    };
-  }, [
-    basketChange,
-    currentOrders,
-    currentRevenue,
-    discount,
-    elapsedDays,
-    remainingDays,
-    revenueGoal,
-    volumeChange,
-  ]);
+  const sim = useMemo(() => simulate(ctx, params), [ctx, params]);
 
   const hasReference = currentRevenue > 0 && currentOrders > 0;
-  const canAdjustScenario = remainingDays > 0;
-  const goalScale = Math.max(
-    simulation.baselineProjectedRevenue,
-    simulation.scenarioProjectedRevenue,
-    revenueGoal ?? 0,
-    1,
-  ) * 1.12;
-  const goalProgress = revenueGoal && revenueGoal > 0
-    ? Math.min((simulation.scenarioProjectedRevenue / revenueGoal) * 100, 100)
-    : null;
+  const canAdjust = remainingDays > 0;
+  const hasGoal = revenueGoal !== null && revenueGoal > 0;
+  const goal = hasGoal ? (revenueGoal as number) : 0;
 
+  /* ── Valeurs cumulées par jour ── */
+  const valueAt = (day: number, kind: "baseline" | "scenario"): number => {
+    if (day <= sim.elapsed) return currentRevenue * (day / sim.elapsed);
+    const x = day - sim.elapsed;
+    if (kind === "baseline") return currentRevenue + sim.dailyRev * x;
+    const before = Math.min(x, sim.start);
+    const after = Math.max(0, x - sim.start);
+    return currentRevenue + sim.dailyRev * (before + after * sim.volumeMult * sim.net);
+  };
+
+  const goalDay = (kind: "baseline" | "scenario"): number | null => {
+    if (!hasGoal) return null;
+    if (currentRevenue >= goal) return 0;
+    if (sim.dailyRev <= 0) return null;
+    const need = goal - currentRevenue;
+    let day: number;
+    if (kind === "baseline") {
+      day = sim.elapsed + need / sim.dailyRev;
+    } else {
+      const pre = sim.dailyRev * sim.start;
+      if (need <= pre) {
+        day = sim.elapsed + need / sim.dailyRev;
+      } else {
+        const rate = sim.dailyRev * sim.volumeMult * sim.net;
+        if (rate <= 0) return null;
+        day = sim.elapsed + sim.start + (need - pre) / rate;
+      }
+    }
+    return day <= sim.total + 1e-9 ? Math.max(1, Math.ceil(day - 1e-9)) : null;
+  };
+
+  const scenarioGoalDay = goalDay("scenario");
+  const baselineGoalDay = goalDay("baseline");
+
+  /* ── Géométrie du graphique ── */
+  const yMax = Math.max(sim.baselineRevenue, sim.high, goal, currentRevenue, 1) * 1.1;
+  const x = (day: number) => PL + (day / sim.total) * INNER_W;
+  const y = (value: number) => PT + INNER_H - (value / yMax) * INNER_H;
+
+  const pRealized = `${x(0)},${y(0)} ${x(sim.elapsed)},${y(currentRevenue)}`;
+  const pBaseline = `${x(sim.elapsed)},${y(currentRevenue)} ${x(sim.total)},${y(sim.baselineRevenue)}`;
+  const scenarioPoints = [
+    { day: sim.elapsed, value: currentRevenue, band: 0 },
+    { day: sim.elapsed + sim.start, value: currentRevenue + sim.dailyRev * sim.start, band: sim.uncertainty * sim.dailyRev * sim.start },
+    { day: sim.total, value: sim.scenarioRevenue, band: sim.uncertainty * sim.scenarioRemaining },
+  ];
+  const pScenario = scenarioPoints.map((pt) => `${x(pt.day)},${y(pt.value)}`).join(" ");
+  const pBand = [
+    ...scenarioPoints.map((pt) => `${x(pt.day)},${y(pt.value + pt.band)}`),
+    ...[...scenarioPoints].reverse().map((pt) => `${x(pt.day)},${y(Math.max(pt.value - pt.band, 0))}`),
+  ].join(" ");
+
+  const gridTicks = [0, 1, 2, 3, 4].map((i) => (yMax * i) / 4);
+
+  const focusDay = clamp(scrub ?? sim.total, 1, sim.total);
+  const focusBaseline = valueAt(focusDay, "baseline");
+  const focusScenario = valueAt(focusDay, "scenario");
+
+  const handleChartPointer = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const px = ((event.clientX - rect.left) / rect.width) * W;
+    const day = Math.round(((px - PL) / INNER_W) * sim.total);
+    setScrub(clamp(day, 1, sim.total));
+  };
+
+  const dayState = (day: number): "past" | "wait" | "live" =>
+    day <= sim.elapsed ? "past" : day - sim.elapsed <= sim.start ? "wait" : "live";
+
+  /* ── Lecture intelligente du scénario ── */
+  const hasChange = Math.abs(sim.difference) > 0.5 || Math.abs(sim.profitDiff) > 0.5;
+  const verdict = (() => {
+    if (!hasChange) {
+      return {
+        tone: "neutral",
+        title: "Vous êtes au rythme actuel",
+        text: "Déplacez un curseur ou choisissez un scénario pour voir l’effet sur la fin de mois.",
+      };
+    }
+    if (sim.difference >= 0 && sim.profitDiff >= 0) {
+      return {
+        tone: "good",
+        title: "Scénario gagnant",
+        text: `Vous gagnez ${formatCurrency(sim.difference)} de chiffre d’affaires et ${formatCurrency(sim.profitDiff)} de marge brute estimée.`,
+      };
+    }
+    if (sim.difference >= 0) {
+      return {
+        tone: "warn",
+        title: "Attention à la marge",
+        text: `Le chiffre d’affaires monte de ${formatCurrency(sim.difference)}, mais la marge brute estimée baisse de ${formatCurrency(Math.abs(sim.profitDiff))}. Vous vendez plus pour gagner moins.`,
+      };
+    }
+    if (sim.profitDiff >= 0) {
+      return {
+        tone: "good",
+        title: "Moins de chiffre d’affaires, plus de marge",
+        text: `Le chiffre d’affaires recule de ${formatCurrency(Math.abs(sim.difference))}, mais la marge brute estimée progresse de ${formatCurrency(sim.profitDiff)}.`,
+      };
+    }
+    return {
+      tone: "bad",
+      title: "Scénario défensif",
+      text: `Le chiffre d’affaires recule de ${formatCurrency(Math.abs(sim.difference))} et la marge de ${formatCurrency(Math.abs(sim.profitDiff))}. Utile pour mesurer le risque.`,
+    };
+  })();
+
+  const ambitionScore =
+    Math.abs(sim.volumeBoost) + Math.abs(params.basket) + params.discount + (sim.start > 0 ? 3 : 0);
+  const ambitionLevel = !hasChange ? 0 : ambitionScore < 12 ? 1 : ambitionScore < 30 ? 2 : ambitionScore < 55 ? 3 : 4;
+  const ambitionLabel = ["Rythme actuel", "Prudent", "Équilibré", "Ambitieux", "Audacieux"][ambitionLevel];
+
+  /* ── Que faut-il pour atteindre l’objectif ? ── */
+  const goalPlan = useMemo(() => {
+    if (!hasGoal || sim.scenarioRevenue >= goal || sim.dailyRev <= 0 || sim.active <= 0) return null;
+    const needDays = (goal - currentRevenue) / sim.dailyRev - sim.start;
+    const volume =
+      sim.net > 0
+        ? Math.ceil((needDays / (sim.active * sim.net) - 1) * 100 - params.discount * params.elasticity)
+        : null;
+    const keepDiscount = 1 - params.discount / 100;
+    const basket =
+      sim.volumeMult > 0 && keepDiscount > 0
+        ? Math.ceil((needDays / (sim.active * sim.volumeMult * keepDiscount) - 1) * 100)
+        : null;
+    return { volume, basket };
+  }, [hasGoal, goal, currentRevenue, sim, params.discount, params.elasticity]);
+
+  /* ── Sensibilité : quel levier pèse le plus ? ── */
+  const sensitivity = useMemo(() => {
+    const base = simulate(ctx, params);
+    const variants: { label: string; p: Params }[] = [
+      { label: "+10 pts de volume", p: { ...params, volume: params.volume + 10 } },
+      { label: "+10 pts de panier moyen", p: { ...params, basket: params.basket + 10 } },
+      { label: "+5 pts de remise", p: { ...params, discount: params.discount + 5 } },
+      params.start > 0
+        ? { label: `Lancer ${Math.min(3, params.start)} j plus tôt`, p: { ...params, start: Math.max(0, params.start - 3) } }
+        : { label: "Lancer 3 j plus tard", p: { ...params, start: Math.min(ctx.remainingDays, 3) } },
+    ];
+    const rows = variants.map((variant) => {
+      const result = simulate(ctx, variant.p);
+      return {
+        label: variant.label,
+        revenue: result.scenarioRevenue - base.scenarioRevenue,
+        profit: result.scenarioProfit - base.scenarioProfit,
+      };
+    });
+    const maxAbs = Math.max(...rows.map((row) => Math.abs(row.revenue)), 1);
+    return { rows, maxAbs };
+  }, [ctx, params]);
+
+  /* ── Marge : combien de ventes pour compenser ? ── */
+  const m = params.margin / 100;
+  const d = params.discount / 100;
+  const marginRecovery = (() => {
+    if (sim.profitDiff >= 0 || sim.active <= 0) return null;
+    if (m <= d) return { impossible: true as const, needed: 0 };
+    const needed = (m / (sim.basketMult * (m - d)) - 1) * 100;
+    return { impossible: false as const, needed: Math.ceil(needed) };
+  })();
+
+  /* ── Actions ── */
   const applyPreset = (preset: ScenarioPreset) => {
-    setVolumeChange(preset.volume);
-    setBasketChange(preset.basket);
-    setDiscount(preset.discount);
+    setParams((prev) => ({
+      ...prev,
+      volume: preset.volume,
+      basket: preset.basket,
+      discount: preset.discount,
+      elasticity: preset.elasticity,
+      start: Math.round(preset.startRatio * remainingDays),
+    }));
     setSelectedPreset(preset.id);
   };
 
-  const updateValue = (key: "volume" | "basket" | "discount", value: number) => {
-    if (key === "volume") setVolumeChange(value);
-    if (key === "basket") setBasketChange(value);
-    if (key === "discount") setDiscount(value);
+  const updateValue = (lever: Lever, value: number) => {
+    setParams((prev) => ({ ...prev, [lever]: value }));
+    if (lever !== "margin") setSelectedPreset("custom");
+  };
+
+  const surprise = () => {
+    const rand = (min: number, max: number) => Math.round(min + Math.random() * (max - min));
+    const discount = Math.random() < 0.5 ? 0 : rand(3, 15);
+    setParams((prev) => ({
+      ...prev,
+      volume: rand(-20, 50),
+      basket: rand(-10, 25),
+      discount,
+      elasticity: discount > 0 ? rand(0, 6) / 2 : 0,
+      start: rand(0, Math.floor(remainingDays / 2)),
+    }));
     setSelectedPreset("custom");
   };
 
-  const renderControl = ({
-    id,
-    label,
-    value,
-    min,
-    max,
-    key,
-    suffix,
-  }: {
+  const pinScenario = () => {
+    if (pins.length >= MAX_PINS) return;
+    const preset = PRESETS.find((item) => item.id === selectedPreset);
+    setPins((prev) => [
+      ...prev,
+      {
+        id: Date.now() + prev.length,
+        label: preset ? preset.label : `Perso ${prev.length + 1}`,
+        revenue: sim.scenarioRevenue,
+        profit: sim.scenarioProfit,
+      },
+    ]);
+  };
+
+  const removePin = (id: number) => setPins((prev) => prev.filter((pin) => pin.id !== id));
+
+  /* ── Rendus ── */
+  const renderControl = (config: {
     id: string;
     label: string;
-    value: number;
+    lever: Lever;
     min: number;
     max: number;
-    key: "volume" | "basket" | "discount";
-    suffix: string;
+    step?: number;
+    format: (value: number) => string;
   }) => {
-    const formatControlValue = (amount: number) =>
-      key === "discount" ? `${amount} %` : formatSignedPercent(amount);
-
+    const value = config.lever === "start" ? sim.start : params[config.lever];
     return (
-      <label className={styles.control} htmlFor={id}>
+      <label className={styles.control} htmlFor={config.id}>
         <span className={styles.controlHeading}>
-          <span>{label}</span>
-          <strong>{formatControlValue(value)}{suffix}</strong>
+          <span>{config.label}</span>
+          <strong>{config.format(value)}</strong>
         </span>
         <input
-          id={id}
+          id={config.id}
           type="range"
-          min={min}
-          max={max}
-          step="1"
+          min={config.min}
+          max={config.max}
+          step={config.step ?? 1}
           value={value}
-          disabled={!canAdjustScenario}
-          onChange={(event) => updateValue(key, Number(event.target.value))}
+          disabled={!canAdjust}
+          aria-valuetext={config.format(value)}
+          onChange={(event) => updateValue(config.lever, Number(event.target.value))}
         />
         <span className={styles.rangeLabels}>
-          <span>{formatControlValue(min)}{suffix}</span>
-          <span>{formatControlValue(max)}{suffix}</span>
+          <span>{config.format(config.min)}</span>
+          <span>{config.format(config.max)}</span>
         </span>
       </label>
     );
   };
 
-  const renderProjectionBar = (
-    label: string,
-    amount: number,
-    variant: "baseline" | "scenario",
-  ) => (
-    <div className={styles.projectionRow}>
-      <div className={styles.projectionLabel}>
-        <span>{label}</span>
-        <strong>{formatCurrency(amount)}</strong>
-      </div>
-      <div
-        className={styles.barTrack}
-        role="img"
-        aria-label={`${label} : ${formatCurrency(amount)}${revenueGoal ? `, objectif ${formatCurrency(revenueGoal)}` : ""}`}
-      >
-        <span
-          className={`${styles.bar} ${variant === "scenario" ? styles.scenarioBar : styles.baselineBar}`}
-          style={{ width: `${Math.min((amount / goalScale) * 100, 100)}%` }}
-        />
-        {revenueGoal !== null && revenueGoal > 0 && (
-          <span
-            className={styles.goalMarker}
-            style={{ left: `${Math.min((revenueGoal / goalScale) * 100, 100)}%` }}
-            aria-hidden="true"
-          />
-        )}
-      </div>
-    </div>
-  );
+  const compareMax = Math.max(sim.baselineRevenue, sim.scenarioRevenue, ...pins.map((pin) => pin.revenue), 1);
+  const compareRows: { key: string; label: string; revenue: number; profit: number; variant: "baseline" | "scenario" | "pin"; pinId?: number }[] = [
+    { key: "base", label: "Rythme actuel", revenue: sim.baselineRevenue, profit: sim.baselineProfit, variant: "baseline" },
+    ...pins.map((pin) => ({ key: String(pin.id), label: pin.label, revenue: pin.revenue, profit: pin.profit, variant: "pin" as const, pinId: pin.id })),
+    { key: "now", label: "Scénario en cours", revenue: sim.scenarioRevenue, profit: sim.scenarioProfit, variant: "scenario" },
+  ];
+
+  const goalRemaining = hasGoal ? goal - sim.scenarioRevenue : 0;
+  const goalProgress = hasGoal ? Math.min((sim.scenarioRevenue / goal) * 100, 100) : null;
 
   return (
     <section className={styles.simulator} aria-labelledby="market-simulator-title">
@@ -220,7 +515,10 @@ export default function MarketScenarioSimulator({
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>Laboratoire de scénarios · {companyName}</span>
           <h2 id="market-simulator-title">Et si vos ventes évoluaient ?</h2>
-          <p>Testez plusieurs hypothèses et mesurez leur effet estimé sur le chiffre d’affaires de fin de mois.</p>
+          <p>
+            Composez une hypothèse, voyez la courbe du mois se redessiner et mesurez l’effet sur votre chiffre
+            d’affaires, votre marge et votre objectif.
+          </p>
         </div>
         <span className={styles.simulationBadge}>
           <i aria-hidden="true" />
@@ -242,23 +540,37 @@ export default function MarketScenarioSimulator({
             <article className={styles.metricCard}>
               <span>Déjà réalisé ce mois</span>
               <strong>{formatCurrency(currentRevenue)}</strong>
-              <small>{currentOrders} vente{currentOrders === 1 ? "" : "s"} confirmée{currentOrders === 1 ? "" : "s"}</small>
+              <small>
+                {currentOrders} vente{plural(currentOrders, "", "s")} confirmée{plural(currentOrders, "", "s")}
+              </small>
             </article>
             <article className={styles.metricCard}>
               <span>Projection au rythme actuel</span>
-              <strong>{formatCurrency(simulation.baselineProjectedRevenue)}</strong>
+              <strong>{formatCurrency(sim.baselineRevenue)}</strong>
               <small>Sans changement des habitudes observées</small>
             </article>
             <article className={`${styles.metricCard} ${styles.highlightMetric}`}>
               <span>Avec vos hypothèses</span>
-              <strong>{formatCurrency(simulation.scenarioProjectedRevenue)}</strong>
-              <small className={simulation.difference >= 0 ? styles.positive : styles.negative}>
-                {formatCurrency(Math.abs(simulation.difference))} {simulation.difference >= 0 ? "au-dessus" : "en-dessous"} · {formatSignedPercent(simulation.differencePercent)}
+              <strong>
+                <AnimatedCurrency value={sim.scenarioRevenue} />
+              </strong>
+              <small className={sim.difference >= 0 ? styles.positive : styles.negative}>
+                {formatCurrency(Math.abs(sim.difference))} {sim.difference >= 0 ? "au-dessus" : "en-dessous"} · {formatSignedPercent(sim.differencePercent)}
+              </small>
+            </article>
+            <article className={styles.metricCard}>
+              <span>Marge brute estimée</span>
+              <strong>
+                <AnimatedCurrency value={sim.scenarioProfit} />
+              </strong>
+              <small className={sim.profitDiff >= 0 ? styles.positive : styles.negative}>
+                {formatSignedCurrency(sim.profitDiff)} vs rythme actuel · marge {params.margin} %
               </small>
             </article>
           </div>
 
           <div className={styles.workspace}>
+            {/* ───── 01 · Hypothèses ───── */}
             <section className={styles.controlsCard} aria-labelledby="market-scenario-controls-title">
               <div className={styles.sectionHeading}>
                 <span className={styles.stepNumber}>01</span>
@@ -273,56 +585,110 @@ export default function MarketScenarioSimulator({
                   <button
                     key={preset.id}
                     type="button"
+                    title={preset.hint}
                     className={selectedPreset === preset.id ? styles.presetActive : ""}
                     aria-pressed={selectedPreset === preset.id}
-                    disabled={!canAdjustScenario}
+                    disabled={!canAdjust}
                     onClick={() => applyPreset(preset)}
                   >
                     {preset.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className={styles.surpriseButton}
+                  disabled={!canAdjust}
+                  onClick={surprise}
+                  title="Tirer un scénario au hasard"
+                >
+                  ✦ Surprise
+                </button>
               </div>
 
               <div className={styles.controls}>
                 {renderControl({
                   id: "scenario-volume",
                   label: "Volume de ventes confirmées",
-                  value: volumeChange,
+                  lever: "volume",
                   min: -50,
                   max: 100,
-                  key: "volume",
-                  suffix: "",
+                  format: formatSignedPercent,
                 })}
                 {renderControl({
                   id: "scenario-basket",
                   label: "Panier moyen",
-                  value: basketChange,
+                  lever: "basket",
                   min: -30,
                   max: 50,
-                  key: "basket",
-                  suffix: "",
+                  format: formatSignedPercent,
                 })}
                 {renderControl({
                   id: "scenario-discount",
                   label: "Remise moyenne",
-                  value: discount,
+                  lever: "discount",
                   min: 0,
                   max: 30,
-                  key: "discount",
-                  suffix: "",
+                  format: (value) => `${value} %`,
+                })}
+                {renderControl({
+                  id: "scenario-start",
+                  label: "Début de l’action",
+                  lever: "start",
+                  min: 0,
+                  max: Math.max(remainingDays - 1, 0),
+                  format: (value) => (value === 0 ? "Aujourd’hui" : `Dans ${value} j`),
                 })}
               </div>
 
-              <button
-                type="button"
-                className={styles.resetButton}
-                onClick={() => applyPreset(PRESETS[0])}
-                disabled={!canAdjustScenario}
-              >
-                Repartir du rythme actuel
-              </button>
+              <details className={styles.advanced}>
+                <summary>Réglages avancés</summary>
+                <div className={styles.controls}>
+                  {renderControl({
+                    id: "scenario-elasticity",
+                    label: "Ventes attirées par point de remise",
+                    lever: "elasticity",
+                    min: 0,
+                    max: 3,
+                    step: 0.5,
+                    format: (value) => `+${value.toFixed(1).replace(".", ",")} pt`,
+                  })}
+                  {renderControl({
+                    id: "scenario-margin",
+                    label: "Marge brute estimée",
+                    lever: "margin",
+                    min: 5,
+                    max: 60,
+                    format: (value) => `${value} %`,
+                  })}
+                </div>
+                <p className={styles.advancedNote}>
+                  Avec une sensibilité de +1,5 pt, une remise de 10 % ajoute environ 15 % de ventes. La marge sert au
+                  calcul du gain réel : une remise rogne la marge sur chaque vente.
+                </p>
+              </details>
+
+              <div className={styles.actionsRow}>
+                <button
+                  type="button"
+                  className={styles.resetButton}
+                  onClick={() => applyPreset(PRESETS[0])}
+                  disabled={!canAdjust}
+                >
+                  Repartir du rythme actuel
+                </button>
+                <button
+                  type="button"
+                  className={styles.pinButton}
+                  onClick={pinScenario}
+                  disabled={!canAdjust || pins.length >= MAX_PINS}
+                  title="Garder ce scénario pour le comparer aux autres"
+                >
+                  Épingler ce scénario ({pins.length}/{MAX_PINS})
+                </button>
+              </div>
             </section>
 
+            {/* ───── 02 · Résultats ───── */}
             <section className={styles.resultsCard} aria-labelledby="market-scenario-results-title">
               <div className={styles.sectionHeading}>
                 <span className={`${styles.stepNumber} ${styles.resultStep}`}>02</span>
@@ -330,34 +696,154 @@ export default function MarketScenarioSimulator({
                   <h3 id="market-scenario-results-title">Comparez les résultats</h3>
                   <p>
                     {remainingDays > 0
-                      ? `${remainingDays} jour${remainingDays === 1 ? "" : "s"} restant${remainingDays === 1 ? "" : "s"} dans le mois · ${elapsedDays} jours observés`
+                      ? `${remainingDays} jour${plural(remainingDays, "", "s")} restant${plural(remainingDays, "", "s")} dans le mois · ${elapsedDays} jours observés`
                       : "Le mois est terminé ; les scénarios ne changent plus la projection."}
                   </p>
                 </div>
               </div>
 
-              <div className={styles.chart} aria-label="Comparaison des projections de chiffre d’affaires">
-                {renderProjectionBar("Rythme actuel", simulation.baselineProjectedRevenue, "baseline")}
-                {renderProjectionBar("Votre scénario", simulation.scenarioProjectedRevenue, "scenario")}
-                {revenueGoal !== null && revenueGoal > 0 && (
-                  <div className={styles.chartLegend}>
-                    <span><i className={styles.goalLegend} />Objectif mensuel · {formatCurrency(revenueGoal)}</span>
-                  </div>
-                )}
+              <div className={`${styles.verdict} ${styles[`verdict_${verdict.tone}`]}`} role="status">
+                <div className={styles.ambition} aria-label={`Ambition du scénario : ${ambitionLabel}`}>
+                  <span className={styles.ambitionBars} aria-hidden="true">
+                    {[1, 2, 3, 4].map((level) => (
+                      <i key={level} className={level <= ambitionLevel ? styles.ambitionOn : ""} />
+                    ))}
+                  </span>
+                  <small>{ambitionLabel}</small>
+                </div>
+                <div>
+                  <strong>{verdict.title}</strong>
+                  <p>{verdict.text}</p>
+                </div>
               </div>
 
-              {revenueGoal !== null && revenueGoal > 0 && (
+              <div className={styles.chart} aria-label="Courbe du chiffre d’affaires cumulé sur le mois">
+                <div className={styles.chartLegend}>
+                  <span><i className={styles.legendRealized} />Réalisé</span>
+                  <span><i className={styles.legendBaseline} />Rythme actuel</span>
+                  <span><i className={styles.legendScenario} />Votre scénario</span>
+                  <span><i className={styles.legendBand} />Fourchette probable</span>
+                  {hasGoal && (
+                    <span><i className={styles.goalLegend} />Objectif · {formatCurrency(goal)}</span>
+                  )}
+                </div>
+
+                <svg
+                  className={styles.curve}
+                  viewBox={`0 0 ${W} ${H}`}
+                  role="img"
+                  aria-label={`Au jour ${focusDay} : rythme actuel ${formatCurrency(focusBaseline)}, scénario ${formatCurrency(focusScenario)}`}
+                  onPointerMove={handleChartPointer}
+                  onPointerDown={handleChartPointer}
+                >
+                  {gridTicks.map((tick) => (
+                    <g key={tick}>
+                      <line className={styles.gridLine} x1={PL} x2={W - PR} y1={y(tick)} y2={y(tick)} />
+                      <text className={styles.axisText} x={PL - 8} y={y(tick) + 3} textAnchor="end">
+                        {compactFormat.format(tick)}
+                      </text>
+                    </g>
+                  ))}
+
+                  <line className={styles.todayLine} x1={x(sim.elapsed)} x2={x(sim.elapsed)} y1={PT} y2={PT + INNER_H} />
+                  <text className={styles.axisText} x={x(sim.elapsed)} y={H - 8} textAnchor="middle">Aujourd’hui</text>
+                  <text className={styles.axisText} x={PL} y={H - 8} textAnchor="start">Début</text>
+                  <text className={styles.axisText} x={W - PR} y={H - 8} textAnchor="end">Fin de mois</text>
+
+                  {hasGoal && (
+                    <line className={styles.goalLine} x1={PL} x2={W - PR} y1={y(goal)} y2={y(goal)} />
+                  )}
+
+                  {remainingDays > 0 && <polygon className={styles.bandArea} points={pBand} />}
+                  <polyline className={styles.baselineLine} points={pBaseline} />
+                  <polyline className={styles.scenarioLine} points={pScenario} />
+                  <polyline className={styles.realizedLine} points={pRealized} />
+
+                  {sim.start > 0 && (
+                    <circle className={styles.startDot} cx={x(sim.elapsed + sim.start)} cy={y(scenarioPoints[1].value)} r="4" />
+                  )}
+
+                  {scenarioGoalDay !== null && scenarioGoalDay > 0 && hasGoal && (
+                    <g>
+                      <circle className={styles.goalDot} cx={x(scenarioGoalDay)} cy={y(goal)} r="5" />
+                      <text className={styles.goalText} x={x(scenarioGoalDay)} y={y(goal) - 10} textAnchor="middle">
+                        J{scenarioGoalDay}
+                      </text>
+                    </g>
+                  )}
+
+                  <line className={styles.focusLine} x1={x(focusDay)} x2={x(focusDay)} y1={PT} y2={PT + INNER_H} />
+                  <circle className={styles.focusBaseline} cx={x(focusDay)} cy={y(focusBaseline)} r="4" />
+                  <circle className={styles.focusScenario} cx={x(focusDay)} cy={y(focusScenario)} r="5" />
+                </svg>
+
+                <label className={styles.scrubber} htmlFor="scenario-scrub">
+                  <span>Explorer le mois</span>
+                  <input
+                    id="scenario-scrub"
+                    type="range"
+                    min={1}
+                    max={sim.total}
+                    step={1}
+                    value={focusDay}
+                    aria-valuetext={`Jour ${focusDay}`}
+                    onChange={(event) => setScrub(Number(event.target.value))}
+                  />
+                </label>
+
+                <div className={styles.scrubReadout} aria-live="polite">
+                  <span className={styles.scrubDay}>Jour {focusDay}</span>
+                  <span>Rythme actuel <strong>{formatCurrency(focusBaseline)}</strong></span>
+                  <span>Scénario <strong>{formatCurrency(focusScenario)}</strong></span>
+                  <span className={focusScenario - focusBaseline >= 0 ? styles.positive : styles.negative}>
+                    {formatSignedCurrency(focusScenario - focusBaseline)}
+                  </span>
+                </div>
+
+                <div className={styles.strip} role="group" aria-label="Calendrier du mois">
+                  {Array.from({ length: sim.total }, (_, index) => index + 1).map((day) => {
+                    const state = dayState(day);
+                    const isGoal = scenarioGoalDay === day;
+                    const className = [
+                      styles.cell,
+                      state === "past" ? styles.cellPast : state === "wait" ? styles.cellWait : styles.cellLive,
+                      isGoal ? styles.cellGoal : "",
+                      day === focusDay ? styles.cellFocus : "",
+                    ].join(" ");
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        className={className}
+                        aria-label={`Jour ${day} : ${state === "past" ? "déjà passé" : state === "wait" ? "avant le lancement" : "action en cours"}${isGoal ? ", objectif atteint" : ""}`}
+                        onClick={() => setScrub(day)}
+                      />
+                    );
+                  })}
+                </div>
+                <div className={styles.stripLegend}>
+                  <span><i className={styles.cellPast} />Passé</span>
+                  <span><i className={styles.cellWait} />Avant le lancement</span>
+                  <span><i className={styles.cellLive} />Action en cours</span>
+                </div>
+              </div>
+
+              <p className={styles.rangeLine}>
+                Fourchette probable en fin de mois : <strong>{formatCurrency(sim.low)}</strong> à{" "}
+                <strong>{formatCurrency(sim.high)}</strong> (± {Math.round(sim.uncertainty * 100)} %). Plus l’hypothèse
+                est forte, plus l’incertitude est large.
+              </p>
+
+              {hasGoal && (
                 <div className={styles.goalCard}>
                   <div className={styles.goalCopy}>
                     <strong>
-                      {simulation.scenarioProjectedRevenue >= revenueGoal
-                        ? "Objectif atteint dans ce scénario"
-                        : "Écart restant jusqu’à l’objectif"}
+                      {sim.scenarioRevenue >= goal ? "Objectif atteint dans ce scénario" : "Écart restant jusqu’à l’objectif"}
                     </strong>
                     <span>
-                      {simulation.scenarioProjectedRevenue >= revenueGoal
-                        ? `${Math.round((simulation.scenarioProjectedRevenue / revenueGoal) * 100)} % de l’objectif projeté`
-                        : `${formatCurrency(revenueGoal - simulation.scenarioProjectedRevenue)} à couvrir`}
+                      {sim.scenarioRevenue >= goal
+                        ? `${Math.round((sim.scenarioRevenue / goal) * 100)} % de l’objectif projeté`
+                        : `${formatCurrency(goalRemaining)} à couvrir`}
                     </span>
                   </div>
                   <div
@@ -370,32 +856,154 @@ export default function MarketScenarioSimulator({
                   >
                     <i style={{ width: `${goalProgress ?? 0}%` }} />
                   </div>
-                  {simulation.additionalOrdersToGoal !== null && (
-                    <small>
-                      Il faudrait environ {simulation.additionalOrdersToGoal} vente{simulation.additionalOrdersToGoal === 1 ? "" : "s"} restante{simulation.additionalOrdersToGoal === 1 ? "" : "s"} au panier simulé pour couvrir l’objectif.
-                    </small>
+                  <small>
+                    {scenarioGoalDay === 0
+                      ? "L’objectif est déjà atteint ce mois-ci."
+                      : scenarioGoalDay !== null
+                        ? `Objectif franchi vers le jour ${scenarioGoalDay}${
+                            baselineGoalDay === null
+                              ? ", alors qu’il resterait hors de portée au rythme actuel."
+                              : baselineGoalDay > scenarioGoalDay
+                                ? ` (jour ${baselineGoalDay} au rythme actuel).`
+                                : "."
+                          }`
+                        : "Objectif hors de portée ce mois-ci dans ce scénario."}
+                  </small>
+
+                  {goalPlan && (
+                    <div className={styles.plan}>
+                      <span className={styles.planTitle}>Pour atteindre l’objectif, il faudrait…</span>
+                      <div className={styles.planOptions}>
+                        <button
+                          type="button"
+                          disabled={!canAdjust || goalPlan.volume === null || goalPlan.volume > 100}
+                          onClick={() => goalPlan.volume !== null && updateValue("volume", clamp(goalPlan.volume, -50, 100))}
+                        >
+                          <small>Via le volume</small>
+                          <strong>
+                            {goalPlan.volume === null || goalPlan.volume > 100
+                              ? "Hors limites"
+                              : formatSignedPercent(goalPlan.volume)}
+                          </strong>
+                          <em>{goalPlan.volume !== null && goalPlan.volume <= 100 ? "Appliquer" : "au-delà de +100 %"}</em>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canAdjust || goalPlan.basket === null || goalPlan.basket > 50}
+                          onClick={() => goalPlan.basket !== null && updateValue("basket", clamp(goalPlan.basket, -30, 50))}
+                        >
+                          <small>Via le panier moyen</small>
+                          <strong>
+                            {goalPlan.basket === null || goalPlan.basket > 50
+                              ? "Hors limites"
+                              : formatSignedPercent(goalPlan.basket)}
+                          </strong>
+                          <em>{goalPlan.basket !== null && goalPlan.basket <= 50 ? "Appliquer" : "au-delà de +50 %"}</em>
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
+            </section>
+          </div>
+
+          {/* ───── 03 · Aller plus loin ───── */}
+          <div className={styles.insights}>
+            <section className={styles.resultsCard} aria-labelledby="market-scenario-levers-title">
+              <div className={styles.sectionHeading}>
+                <span className={`${styles.stepNumber} ${styles.resultStep}`}>03</span>
+                <div>
+                  <h3 id="market-scenario-levers-title">Quel levier pèse le plus ?</h3>
+                  <p>Effet d’un petit coup de pouce supplémentaire sur le chiffre d’affaires de fin de mois.</p>
+                </div>
+              </div>
+
+              <ul className={styles.levers}>
+                {sensitivity.rows.map((row) => {
+                  const width = (Math.abs(row.revenue) / sensitivity.maxAbs) * 50;
+                  const positive = row.revenue >= 0;
+                  return (
+                    <li key={row.label}>
+                      <div className={styles.leverLabel}>
+                        <span>{row.label}</span>
+                        <strong className={positive ? styles.positive : styles.negative}>
+                          {formatSignedCurrency(row.revenue)}
+                        </strong>
+                      </div>
+                      <div className={styles.leverTrack} aria-hidden="true">
+                        <i className={styles.leverAxis} />
+                        <span
+                          className={positive ? styles.leverPositive : styles.leverNegative}
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
+                      <small>Marge : {formatSignedCurrency(row.profit)}</small>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {marginRecovery && (
+                <p className={styles.breakEven}>
+                  {marginRecovery.impossible
+                    ? "La remise dépasse votre marge estimée : chaque vente supplémentaire fait perdre de l’argent."
+                    : `Pour retrouver la même marge brute qu’au rythme actuel, il faudrait environ ${formatSignedPercent(marginRecovery.needed)} de ventes (vous êtes à ${formatSignedPercent(Math.round(sim.volumeBoost))}).`}
+                </p>
+              )}
+            </section>
+
+            <section className={styles.resultsCard} aria-labelledby="market-scenario-compare-title">
+              <div className={styles.sectionHeading}>
+                <span className={`${styles.stepNumber} ${styles.resultStep}`}>04</span>
+                <div>
+                  <h3 id="market-scenario-compare-title">Comparez vos scénarios</h3>
+                  <p>Épinglez jusqu’à {MAX_PINS} hypothèses, puis changez de curseurs pour les mettre côte à côte.</p>
+                </div>
+              </div>
+
+              <ul className={styles.compare}>
+                {compareRows.map((row) => (
+                  <li key={row.key}>
+                    <div className={styles.projectionLabel}>
+                      <span>{row.label}</span>
+                      <strong>{formatCurrency(row.revenue)}</strong>
+                    </div>
+                    <div className={styles.barTrack}>
+                      <span
+                        className={`${styles.bar} ${row.variant === "baseline" ? styles.baselineBar : styles.scenarioBar}`}
+                        style={{
+                          width: `${Math.min((row.revenue / compareMax) * 100, 100)}%`,
+                          opacity: row.variant === "pin" ? 0.7 : 1,
+                        }}
+                      />
+                    </div>
+                    <div className={styles.compareMeta}>
+                      <small>Marge brute estimée : {formatCurrency(row.profit)}</small>
+                      {row.pinId !== undefined && (
+                        <button type="button" onClick={() => removePin(row.pinId as number)} aria-label={`Retirer ${row.label}`}>
+                          Retirer
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
 
               <div className={styles.readout}>
                 <span className={styles.readoutIcon} aria-hidden="true">i</span>
                 <div>
                   <strong>Comment lire cette simulation</strong>
                   <p>
-                    Le réalisé est conservé. Volume, panier et remise modifient seulement l’estimation des ventes à venir.
-                    {discount > 0
-                      ? " La remise réduit le CA simulé ; elle ne garantit pas un volume de ventes supplémentaire."
-                      : " Les coûts, marges, stocks et réactions des clients ne sont pas inclus."}
+                    Le réalisé est conservé. Volume, panier, remise et date de lancement modifient seulement
+                    l’estimation des ventes à venir.
+                    {params.discount > 0
+                      ? " La remise réduit le CA simulé ; elle ne garantit un volume supplémentaire que si vous réglez la sensibilité des clients."
+                      : " Les stocks et les réactions des clients ne sont pas inclus."}{" "}
+                    La marge repose sur l’estimation que vous réglez.
                   </p>
                 </div>
               </div>
-
-              {simulation.additionalOrdersToOffsetDiscount !== null && (
-                <p className={styles.breakEven}>
-                  Avec cette remise, il faudrait environ {simulation.additionalOrdersToOffsetDiscount} vente{simulation.additionalOrdersToOffsetDiscount === 1 ? "" : "s"} supplémentaire{simulation.additionalOrdersToOffsetDiscount === 1 ? "" : "s"} par rapport au rythme actuel pour compenser son effet sur le CA restant.
-                </p>
-              )}
             </section>
           </div>
         </>
