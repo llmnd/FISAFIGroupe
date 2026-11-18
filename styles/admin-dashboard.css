@@ -1443,13 +1443,14 @@ tr:last-child td{border-bottom:none}
   gap:.22rem;
   min-width:15rem;
   padding:.75rem 1rem;
-  border:1px solid var(--line-soft);
+  border:1px solid var(--line-strong);
   border-radius:8px;
-  background:rgba(255,255,255,.55);
+  background:linear-gradient(145deg,#171923,#222533);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.18);
 }
-.market-projection span{color:var(--ink-muted);font-size:.7rem;font-weight:650}
-.market-projection strong{color:var(--ink-strong);font-size:1.2rem;font-weight:750}
-.market-projection small{color:var(--ink-muted);font-size:.7rem;line-height:1.4}
+.market-projection span{color:#d0d4df;font-size:.72rem;font-weight:700}
+.market-projection strong{color:#fff;font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+.market-projection small{color:#c0c5d2;font-size:.72rem;line-height:1.45}
 .market-insight-list{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));
@@ -2455,12 +2456,13 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
   width:100%;
   min-width:0;
   padding:.45rem .55rem;
-  border:1px solid var(--line);
+  border:1px solid #52566b;
   border-radius:6px;
-  background:var(--white);
-  color:var(--ink-strong);
+  background:#11131b;
+  color:#fff;
   font:inherit;
 }
+.market-goal-control input:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .market-history-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.45rem}
 .market-data-quality{margin-top:0}
 .market-quality-grid{
