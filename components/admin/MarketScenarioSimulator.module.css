@@ -84,6 +84,33 @@
   line-height: 1.55;
 }
 
+.calculationToggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  margin-top: .75rem;
+  padding: .45rem .75rem;
+  border: 1px solid rgba(105, 215, 199, .3);
+  border-radius: 8px;
+  background: rgba(105, 215, 199, .08);
+  color: #a6f1e5;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.calculationToggle:hover {
+  border-color: rgba(105, 215, 199, .55);
+  background: rgba(105, 215, 199, .14);
+}
+
+.calculationToggle:focus-visible {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 3px;
+}
+
 .simulationBadge {
   display: inline-flex;
   align-items: center;
@@ -106,6 +133,87 @@
   border-radius: 50%;
   background: var(--sim-green);
   box-shadow: 0 0 0 4px rgba(105, 210, 155, .1);
+}
+
+.calculationGuide {
+  display: grid;
+  gap: .9rem;
+  padding: clamp(1rem, 2.4vw, 1.4rem);
+  border: 1px solid rgba(105, 215, 199, .23);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(105, 215, 199, .08), transparent 42%),
+    var(--sim-panel);
+}
+
+.calculationGuide[hidden] {
+  display: none;
+}
+
+.calculationHeading h3 {
+  margin: 0 0 .25rem;
+  color: var(--sim-text);
+  font-size: 1rem;
+}
+
+.calculationHeading p,
+.calculationGrid p {
+  margin: 0;
+  color: var(--sim-muted);
+  font-size: .73rem;
+  line-height: 1.6;
+}
+
+.calculationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+}
+
+.calculationGrid article {
+  display: grid;
+  align-content: start;
+  gap: .55rem;
+  min-width: 0;
+  padding: .85rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.calculationGrid h4 {
+  margin: 0;
+  color: var(--sim-teal);
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.calculationGrid ul {
+  display: grid;
+  gap: .4rem;
+  margin: 0;
+  padding-left: 1.05rem;
+  color: var(--sim-muted);
+  font-size: .71rem;
+  line-height: 1.55;
+}
+
+.calculationGrid strong {
+  color: var(--sim-text);
+}
+
+.calculationGrid code {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: .6rem;
+  border: 1px solid rgba(211, 173, 208, .15);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, .14);
+  color: #e4d6e5;
+  font-family: inherit;
+  font-size: .68rem;
+  line-height: 1.7;
+  white-space: normal;
 }
 
 /* ───── Indicateurs ───── */
@@ -1084,6 +1192,219 @@
   line-height: 1.55;
 }
 
+/* ───── Simulateur commercial connecté à Odoo ───── */
+
+.commercialStatus,
+.commercialFinePrint {
+  color: var(--sim-muted);
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.commercialStatus {
+  margin-bottom: .8rem;
+}
+
+.commercialError,
+.commercialWarning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .7rem .8rem;
+  border: 1px solid rgba(255, 154, 159, .28);
+  border-radius: 8px;
+  background: rgba(255, 154, 159, .06);
+  color: #ffb0b4;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.commercialError button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--sim-teal);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.commercialActuals,
+.commercialMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .6rem;
+}
+
+.commercialActuals {
+  margin-bottom: .9rem;
+}
+
+.commercialActuals > span,
+.commercialMetric {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: var(--sim-muted);
+  font-size: .67rem;
+}
+
+.commercialActuals strong,
+.commercialMetric strong {
+  color: var(--sim-text);
+  font-size: .77rem;
+  overflow-wrap: anywhere;
+}
+
+.commercialMetric small {
+  color: var(--sim-faint);
+  font-size: .62rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.commercialActions,
+.commercialResults {
+  display: grid;
+  gap: .6rem;
+}
+
+.commercialAction {
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.commercialAction > summary {
+  color: var(--sim-text);
+  font-size: .74rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.commercialAction[open] > summary {
+  margin-bottom: .75rem;
+  color: var(--sim-teal);
+}
+
+.commercialActionHeader {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(12rem, 1fr);
+  align-items: center;
+  gap: .7rem;
+  margin-bottom: .7rem;
+}
+
+.commercialActionHeader > label:first-child,
+.commercialConfirmation {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--sim-muted);
+  font-size: .67rem;
+  line-height: 1.45;
+}
+
+.commercialActionHeader input[type="checkbox"],
+.commercialConfirmation input[type="checkbox"] {
+  flex: 0 0 auto;
+  accent-color: var(--sim-teal);
+}
+
+.commercialActionHeader strong {
+  color: var(--sim-text);
+}
+
+.commercialFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .65rem;
+  margin: .7rem 0;
+}
+
+.commercialField {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+  color: var(--sim-muted);
+  font-size: .65rem;
+  line-height: 1.4;
+}
+
+.commercialField input,
+.commercialField select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.2rem;
+  padding: .45rem .55rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  font: inherit;
+}
+
+.commercialField input:focus-visible,
+.commercialField select:focus-visible,
+.commercialConfirmation input:focus-visible,
+.commercialActionHeader input:focus-visible {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 2px;
+}
+
+.commercialConfirmation {
+  margin-top: .65rem;
+}
+
+.commercialCombined {
+  margin-top: 1rem;
+}
+
+.commercialCombined h4,
+.commercialActionResult h4 {
+  margin: 0 0 .6rem;
+  color: var(--sim-text);
+  font-size: .77rem;
+}
+
+.commercialActionResult {
+  min-width: 0;
+  padding: .75rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.commercialNotes {
+  margin: .7rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--sim-faint);
+  font-size: .63rem;
+  line-height: 1.5;
+}
+
+.commercialNotes li + li {
+  margin-top: .2rem;
+}
+
+.commercialFinePrint {
+  margin: .7rem 0;
+}
+
+@media (max-width: 640px) {
+  .commercialActionHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @keyframes appear {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1122,6 +1443,10 @@
 
   .heroCopy {
     flex: 1 1 calc(100% - 4rem);
+  }
+
+  .calculationGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .simulationBadge {
@@ -1174,6 +1499,1021 @@
   .leverNegative,
   .planOptions button,
   .ambitionBars i {
+    animation: none;
+    transition: none;
+  }
+}
+/* ───── Simulateur commercial connecté à Odoo (cm*) ─────
+   À coller dans MarketScenarioSimulator.module.css à la place de l’ancienne
+   section « Simulateur commercial » : supprimez tout ce qui commence par
+   .commercial* (y compris son @media (max-width: 640px)) puis ajoutez ce bloc.
+   Les couleurs restent celles des variables --sim-* existantes. */
+
+.cmStatus {
+  margin-bottom: .8rem;
+  color: var(--sim-muted);
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.cmError,
+.cmWarning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: 0 0 .8rem;
+  padding: .7rem .8rem;
+  border: 1px solid rgba(255, 154, 159, .28);
+  border-radius: 8px;
+  background: rgba(255, 154, 159, .06);
+  color: #ffb0b4;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.cmError button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--sim-teal);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.cmSkeleton {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+.cmSkeleton i {
+  height: 4.2rem;
+  border-radius: 10px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, .03) 30%, rgba(255, 255, 255, .08) 50%, rgba(255, 255, 255, .03) 70%);
+  background-size: 200% 100%;
+  animation: cmShimmer 1.4s linear infinite;
+}
+
+@keyframes cmShimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ── Bandeau de contexte ── */
+
+.cmTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .8rem 1.2rem;
+  margin-bottom: .9rem;
+}
+
+.cmFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.cmFacts > span {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: var(--sim-muted);
+  font-size: .64rem;
+}
+
+.cmFacts strong {
+  color: var(--sim-text);
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmReliability {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.cmReliability svg {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.cmReliability span {
+  display: grid;
+  gap: .1rem;
+}
+
+.cmReliability strong {
+  color: #a6f1e5;
+  font-size: .85rem;
+}
+
+.cmReliability small {
+  color: var(--sim-faint);
+  font-size: .62rem;
+}
+
+.cmRingTrack {
+  fill: none;
+  stroke: rgba(255, 255, 255, .1);
+  stroke-width: 3;
+}
+
+.cmRingValue {
+  fill: none;
+  stroke: var(--sim-teal);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray .35s ease;
+}
+
+.cmRing {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ── Départs rapides ── */
+
+.cmQuick {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  color: var(--sim-muted);
+  font-size: .68rem;
+}
+
+.cmQuick button {
+  min-height: 2rem;
+  padding: .4rem .65rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .025);
+  color: var(--sim-muted);
+  font: inherit;
+  font-size: .65rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.cmQuick button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(105, 215, 199, .4);
+  color: var(--sim-text);
+}
+
+.cmQuick .cmQuickReset {
+  border-style: dashed;
+  color: var(--sim-lilac);
+}
+
+/* ── Mise en page ── */
+
+.cmLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, .9fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.cmLeft {
+  display: grid;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.cmRight {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: .7rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(105, 215, 199, .2);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(105, 215, 199, .08), transparent 50%),
+    rgba(12, 14, 21, .3);
+}
+
+/* ── Plateau de leviers ── */
+
+.cmTiles {
+  display: grid;
+  gap: .5rem;
+}
+
+.cmTile {
+  position: relative;
+  border: 1px solid var(--sim-border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .02);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.cmTileOn {
+  border-color: rgba(105, 215, 199, .3);
+  background:
+    radial-gradient(ellipse at 0 0, rgba(105, 215, 199, .1), transparent 60%),
+    rgba(105, 215, 199, .03);
+}
+
+.cmTileSelected {
+  border-color: rgba(105, 215, 199, .65);
+  box-shadow: 0 0 0 3px rgba(105, 215, 199, .1);
+}
+
+.cmTileMain {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  padding: .7rem 4rem .7rem .75rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--sim-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cmTileMain:focus-visible {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 2px;
+}
+
+.cmTileIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid rgba(211, 173, 208, .26);
+  border-radius: 9px;
+  background: rgba(211, 173, 208, .09);
+  color: var(--sim-lilac);
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.cmTileOn .cmTileIcon {
+  border-color: rgba(105, 215, 199, .35);
+  background: rgba(105, 215, 199, .12);
+  color: var(--sim-teal);
+}
+
+.cmTileIcon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cmTileText {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cmTileText strong {
+  font-size: .8rem;
+}
+
+.cmTileText small {
+  color: var(--sim-muted);
+  font-size: .66rem;
+  line-height: 1.4;
+}
+
+.cmTileOn .cmTileText small {
+  color: #a6f1e5;
+}
+
+/* Interrupteur */
+
+.cmSwitch {
+  position: absolute;
+  top: 50%;
+  right: .75rem;
+  display: inline-block;
+  width: 2.4rem;
+  height: 1.4rem;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.cmSwitch input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cmSwitch span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 999px;
+  background: #11131b;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.cmSwitch span::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.4rem - 8px);
+  height: calc(1.4rem - 8px);
+  border-radius: 50%;
+  background: var(--sim-faint);
+  transition: transform .2s cubic-bezier(.3, .8, .3, 1.2), background .18s ease;
+}
+
+.cmSwitch input:checked + span {
+  border-color: rgba(105, 215, 199, .5);
+  background: rgba(105, 215, 199, .22);
+}
+
+.cmSwitch input:checked + span::after {
+  transform: translateX(1rem);
+  background: var(--sim-teal);
+}
+
+.cmSwitch input:focus-visible + span {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 2px;
+}
+
+/* ── Éditeur ── */
+
+.cmEditor {
+  display: grid;
+  gap: .9rem;
+  padding: 1rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.cmEditorHead {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.cmEditorHead h4 {
+  margin: 0 0 .2rem;
+  color: var(--sim-text);
+  font-size: .88rem;
+}
+
+.cmEditorHead p {
+  margin: 0;
+  color: var(--sim-muted);
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.cmEditorOff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .7rem;
+  padding: .75rem;
+  border: 1px dashed rgba(105, 215, 199, .3);
+  border-radius: 9px;
+  background: rgba(105, 215, 199, .04);
+}
+
+.cmEditorOff p {
+  margin: 0;
+  color: var(--sim-muted);
+  font-size: .7rem;
+}
+
+.cmCta {
+  padding: .5rem .85rem;
+  border: 1px solid rgba(105, 215, 199, .5);
+  border-radius: 999px;
+  background: rgba(105, 215, 199, .16);
+  color: #a6f1e5;
+  font: inherit;
+  font-size: .7rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+
+.cmCta:hover {
+  transform: translateY(-1px);
+  background: rgba(105, 215, 199, .24);
+}
+
+.cmAudience {
+  display: grid;
+  gap: .4rem;
+}
+
+.cmAudience > label,
+.cmFieldHead label {
+  color: var(--sim-muted);
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+.cmIdeas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+
+.cmIdeas button,
+.cmMissing button {
+  padding: .25rem .55rem;
+  border: 1px solid rgba(211, 173, 208, .3);
+  border-radius: 999px;
+  background: rgba(211, 173, 208, .07);
+  color: var(--sim-lilac);
+  font: inherit;
+  font-size: .62rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cmIdeas button:hover,
+.cmMissing button:hover {
+  background: rgba(211, 173, 208, .14);
+}
+
+.cmFields {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.cmField {
+  display: grid;
+  gap: .4rem;
+  min-width: 0;
+}
+
+.cmFieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+}
+
+.cmFieldFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .3rem .7rem;
+}
+
+.cmHint {
+  margin: 0;
+  color: var(--sim-faint);
+  font-size: .63rem;
+  line-height: 1.45;
+}
+
+.cmTag {
+  padding: .1rem .45rem;
+  border: 1px solid rgba(105, 210, 155, .3);
+  border-radius: 999px;
+  background: rgba(105, 210, 155, .08);
+  color: #a5e8c2;
+  font-size: .6rem;
+  font-weight: 750;
+}
+
+.cmLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sim-teal);
+  font: inherit;
+  font-size: .63rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cmInput,
+.cmNumber {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 7px;
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  font: inherit;
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmInput {
+  width: 100%;
+  min-height: 2.3rem;
+  padding: .45rem .6rem;
+}
+
+.cmNumberWrap,
+.cmNumberWrapWide {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cmNumberWrapWide {
+  display: flex;
+}
+
+.cmNumber {
+  width: 5.2rem;
+  min-height: 1.9rem;
+  padding: .25rem 1.5rem .25rem .5rem;
+  text-align: right;
+}
+
+.cmNumberWrap i,
+.cmNumberWrapWide i {
+  position: absolute;
+  right: .55rem;
+  color: var(--sim-faint);
+  font-size: .62rem;
+  font-style: normal;
+  pointer-events: none;
+}
+
+.cmNumberWrapWide .cmInput {
+  padding-right: 3.4rem;
+}
+
+.cmInput:focus-visible,
+.cmNumber:focus-visible,
+.cmSlider:focus-visible,
+.cmConfirm input:focus-visible {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 2px;
+}
+
+.cmSlider {
+  width: 100%;
+  height: .38rem;
+  margin: .2rem 0;
+  border-radius: 999px;
+  accent-color: var(--sim-teal);
+  cursor: pointer;
+}
+
+.cmConfirm {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--sim-muted);
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.cmConfirm input {
+  flex: 0 0 auto;
+  accent-color: var(--sim-teal);
+}
+
+.cmRangeBox {
+  display: grid;
+  gap: .4rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .015);
+}
+
+.cmRangeBox label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+  color: var(--sim-muted);
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+.cmRangeBox strong {
+  color: var(--sim-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Résultat en direct ── */
+
+.cmEmpty {
+  display: grid;
+  justify-items: center;
+  gap: .5rem;
+  padding: 1.2rem .5rem;
+  text-align: center;
+}
+
+.cmEmpty svg {
+  width: 9rem;
+  fill: rgba(105, 215, 199, .14);
+  stroke: rgba(105, 215, 199, .35);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.cmEmpty strong {
+  color: var(--sim-text);
+  font-size: .82rem;
+}
+
+.cmEmpty p {
+  max-width: 17rem;
+  margin: 0;
+  color: var(--sim-muted);
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.cmHero {
+  display: grid;
+  gap: .35rem;
+  padding: .9rem 1rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--sim-panel-raised), var(--sim-panel));
+}
+
+.cmHero > span {
+  color: var(--sim-muted);
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+.cmHero > strong {
+  color: var(--sim-text);
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmHeroGood {
+  border-color: rgba(105, 210, 155, .35);
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(105, 210, 155, .14), transparent 55%),
+    linear-gradient(145deg, #25353a, #202331);
+}
+
+.cmHeroGood > strong {
+  color: #a5e8c2;
+}
+
+.cmHeroBad {
+  border-color: rgba(255, 154, 159, .32);
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(255, 154, 159, .1), transparent 55%),
+    linear-gradient(145deg, #2d2830, #202331);
+}
+
+.cmHeroBad > strong {
+  color: #ffb0b4;
+}
+
+.cmBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+
+.cmBadges em {
+  padding: .15rem .55rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 999px;
+  font-size: .62rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.cmBadgeGood {
+  border-color: rgba(105, 210, 155, .35) !important;
+  background: rgba(105, 210, 155, .1);
+  color: #a5e8c2;
+}
+
+.cmBadgeBad {
+  border-color: rgba(255, 154, 159, .35) !important;
+  background: rgba(255, 154, 159, .08);
+  color: #ffb0b4;
+}
+
+.cmBadgeNeutral {
+  color: var(--sim-muted);
+}
+
+.cmMissing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem;
+  color: var(--sim-muted);
+  font-size: .66rem;
+}
+
+.cmChartTitle {
+  margin: .4rem 0 0;
+  color: var(--sim-text);
+  font-size: .74rem;
+  font-weight: 750;
+}
+
+.cmChart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cmZero {
+  stroke: rgba(245, 244, 250, .25);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.cmBarLilac { fill: #c0a3c4; }
+.cmBarTeal { fill: var(--sim-teal); }
+.cmBarGreen { fill: var(--sim-green); }
+.cmBarRed { fill: var(--sim-red); }
+
+.cmUnknown {
+  fill: rgba(255, 255, 255, .03);
+  stroke: rgba(209, 195, 220, .35);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.cmChartValue {
+  fill: var(--sim-text);
+  font-size: 10.5px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmChartLabel {
+  fill: var(--sim-faint);
+  font-size: 9.5px;
+}
+
+.cmGaugeTrack {
+  fill: #11131b;
+}
+
+.cmGaugeBand {
+  fill: rgba(105, 215, 199, .35);
+}
+
+.cmDot {
+  fill: var(--sim-lilac);
+  stroke: #202331;
+  stroke-width: 2;
+}
+
+.cmDotCentral {
+  fill: var(--sim-teal);
+  stroke: #202331;
+  stroke-width: 2;
+}
+
+.cmLeverBars {
+  display: grid;
+  gap: .6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cmLeverBars li > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+  margin-bottom: .25rem;
+  color: var(--sim-muted);
+  font-size: .68rem;
+}
+
+.cmLeverBars strong {
+  color: var(--sim-text);
+  font-size: .7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmTrack {
+  position: relative;
+  height: .6rem;
+  border-radius: 999px;
+  background: #11131b;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .45);
+}
+
+.cmTrack i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 2px;
+  border-radius: 999px;
+  transition: width .3s cubic-bezier(.2, .75, .2, 1);
+}
+
+.cmTrackPotential {
+  background: linear-gradient(90deg, #81728e, #c0a3c4);
+}
+
+.cmTrackStock {
+  background: linear-gradient(90deg, #318f86, #69d7c7);
+}
+
+.cmLegend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem .5rem;
+  margin: 0;
+  color: var(--sim-faint);
+  font-size: .62rem;
+}
+
+.cmLegend i {
+  display: inline-block;
+  width: 1.1rem;
+  height: .4rem;
+  border-radius: 999px;
+}
+
+.cmLegend i + i {
+  margin-left: .5rem;
+}
+
+.cmStockBanner {
+  padding: .7rem .8rem;
+  border: 1px solid rgba(255, 213, 138, .25);
+  border-radius: 8px;
+  background: rgba(255, 213, 138, .05);
+}
+
+.cmStockBanner strong {
+  color: #ffe0aa;
+  font-size: .72rem;
+}
+
+.cmStockBanner p {
+  margin: .25rem 0 0;
+  color: var(--sim-muted);
+  font-size: .67rem;
+  line-height: 1.5;
+}
+
+/* ── Détails ── */
+
+.cmDetails {
+  margin-top: 1rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .015);
+}
+
+.cmDetails > summary {
+  color: var(--sim-lilac);
+  font-size: .72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.cmDetails[open] > summary {
+  margin-bottom: .8rem;
+}
+
+.cmDetails h4 {
+  margin: 1rem 0 .6rem;
+  color: var(--sim-text);
+  font-size: .77rem;
+}
+
+.cmMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .6rem;
+}
+
+.cmMetric {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: var(--sim-muted);
+  font-size: .67rem;
+}
+
+.cmMetric strong {
+  color: var(--sim-text);
+  font-size: .77rem;
+  overflow-wrap: anywhere;
+}
+
+.cmMetric small {
+  color: var(--sim-faint);
+  font-size: .62rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.cmResults {
+  display: grid;
+  gap: .6rem;
+}
+
+.cmActionResult {
+  min-width: 0;
+  padding: .75rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.cmActionResult h4 {
+  margin: 0 0 .6rem;
+}
+
+.cmNotes {
+  margin: .7rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--sim-faint);
+  font-size: .63rem;
+  line-height: 1.5;
+}
+
+.cmNotes li + li {
+  margin-top: .2rem;
+}
+
+.cmFine {
+  margin: .8rem 0 0;
+  color: var(--sim-muted);
+  font-size: .68rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .cmLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cmRight {
+    position: static;
+  }
+
+  .cmSkeleton {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmSkeleton i,
+  .cmTile,
+  .cmSwitch span,
+  .cmSwitch span::after,
+  .cmTrack i,
+  .cmRingValue,
+  .cmQuick button,
+  .cmCta {
     animation: none;
     transition: none;
   }

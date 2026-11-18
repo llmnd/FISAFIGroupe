@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import CommercialSimulationPanel from "./CommercialSimulationPanel";
 import styles from "./MarketScenarioSimulator.module.css";
 
 /* ───────────────────────── Types ───────────────────────── */
@@ -49,6 +50,7 @@ type Context = {
 };
 
 interface MarketScenarioSimulatorProps {
+  companyId?: number;
   companyName: string;
   currentRevenue: number;
   currentOrders: number;
@@ -178,6 +180,197 @@ function simulate(ctx: Context, p: Params) {
   };
 }
 
+function CalculationGuide({
+  currentRevenue,
+  currentOrders,
+  params,
+  sim,
+  hidden,
+}: {
+  currentRevenue: number;
+  currentOrders: number;
+  params: Params;
+  sim: ReturnType<typeof simulate>;
+  hidden: boolean;
+}) {
+  return (
+    <section
+      className={styles.calculationGuide}
+      id="market-simulator-calculation"
+      hidden={hidden}
+    >
+      <div className={styles.calculationHeading}>
+        <div>
+          <h3>Comment lire et comprendre les calculs</h3>
+          <p>Les montants affichés sont des estimations pour vous aider à comparer des hypothèses, pas des garanties de vente.</p>
+        </div>
+      </div>
+
+      <div className={styles.calculationGrid}>
+        <article>
+          <h4>1. Ce qui vient réellement d’Odoo</h4>
+          <p>
+            Le chiffre d’affaires et les commandes confirmées viennent de la société sélectionnée.
+            Les commandes de vente et les ventes POS sont comptées séparément puis regroupées; les ventes annulées
+            ou non confirmées ne sont pas incluses. Les dates sont regroupées en UTC.
+          </p>
+          <p>
+            Les produits, quantités et prix réellement vendus servent à calculer les moyennes historiques.
+            Les prospects, conversions, budgets et réactions à une promotion ne sont pas enregistrés par ce flux Odoo :
+            vous les saisissez comme hypothèses.
+          </p>
+        </article>
+
+        <article>
+          <h4>2. Projection au rythme actuel</h4>
+          <p>
+            Le simulateur prolonge la moyenne quotidienne du mois en cours. Ici, le rythme est de{" "}
+            <strong>{formatCurrency(sim.dailyRev)} par jour</strong> et d’environ{" "}
+            <strong>{sim.dailyOrders.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} commande(s) par jour</strong>.
+          </p>
+          <code>
+            CA par jour = {formatCurrency(currentRevenue)} ÷ {sim.elapsed} jour(s) observé(s)
+            <br />
+            Projection de base = CA réalisé + CA par jour × jours restants
+            <br />
+            = {formatCurrency(currentRevenue)} + {formatCurrency(sim.dailyRev)} × {sim.remaining}
+            {" "}= {formatCurrency(sim.baselineRevenue)}
+          </code>
+          <p>
+            Le nombre de commandes projeté utilise la même méthode, avec {currentOrders} commande(s)
+            confirmée(s) à ce jour.
+            Cette projection prolonge le rythme observé : elle ne prédit pas une saisonnalité ni un événement futur.
+            L’objectif sert de comparaison et ne modifie pas le calcul du chiffre d’affaires prévu.
+          </p>
+        </article>
+
+        <article>
+          <h4>3. Effet des curseurs de l’ancien scénario</h4>
+          <p>
+            Les changements ne s’appliquent qu’aux jours restant après la date de lancement.
+            La remise peut aussi augmenter le volume si vous avez réglé une élasticité.
+          </p>
+          <code>
+            Volume ajusté (%) = volume saisi (%) + remise (%) × élasticité
+            <br />
+            Coefficient volume = max(0, 1 + volume ajusté (%) ÷ 100)
+            <br />
+            Coefficient panier = max(0, 1 + variation du panier (%) ÷ 100)
+            <br />
+            CA fin de mois = CA réalisé + CA par jour × [jours d’attente + jours d’action ×
+            coefficient volume × coefficient panier × (1 − remise (%) ÷ 100)]
+            <br />
+            Commandes fin de mois = commandes réalisées + commandes par jour ×
+            [jours d’attente + jours d’action × coefficient volume]
+          </code>
+          <p>
+            Vos paramètres actuels donnent un volume ajusté de {formatSignedPercent(sim.volumeBoost)},
+            un panier multiplié par {sim.basketMult.toLocaleString("fr-FR", { maximumFractionDigits: 2 })},
+            et une remise de {params.discount} %.
+          </p>
+          <p>
+            Votre projection avec ces curseurs est de {formatCurrency(sim.scenarioRevenue)} de chiffre d’affaires
+            et {sim.scenarioOrders.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} commande(s) estimée(s).
+          </p>
+          <p>
+            La marge de cet ancien scénario utilise le taux que vous choisissez dans « Réglages avancés ».
+            La formule applique ce taux au CA réalisé, puis l’ajuste selon le volume, le panier et la remise.
+            Ce taux est une hypothèse : ce n’est pas le coût réel calculé produit par produit.
+          </p>
+          <p>
+            La fourchette de ce mode est une marge de prudence mécanique : elle augmente avec l’ampleur des
+            curseurs, est plafonnée à 40 % et n’est pas calculée à partir d’erreurs historiques mesurées.
+          </p>
+          <code>
+            Amplitude = |volume ajusté| + |panier| + 0,5 × remise
+            <br />
+            Incertitude = min(6 % + 0,3 × amplitude %, 40 %)
+            <br />
+            Fourchette = CA réalisé + CA futur estimé × (1 ± incertitude)
+          </code>
+        </article>
+
+        <article>
+          <h4>4. Comment sont estimés les cinq leviers commerciaux</h4>
+          <ul>
+            <li><strong>Prospection :</strong> prospects saisis × conversion attendue = nouveaux clients estimés; ceux-ci sont multipliés par les commandes prévues par client.</li>
+            <li><strong>Marketing :</strong> budget ÷ coût par prospect = prospects estimés, puis conversion et fréquence de commande saisies.</li>
+            <li><strong>Fidélisation :</strong> clients ciblés × hausse attendue du taux de retour = clients qui reviendraient en plus.</li>
+            <li><strong>Promotion :</strong> les ventes prévues sont diminuées de la remise; la remise s’applique aussi aux commandes éligibles qui auraient pu avoir lieu sans promotion.</li>
+            <li><strong>Vente additionnelle :</strong> commandes éligibles × taux d’ajout × unités par ajout = unités demandées.</li>
+          </ul>
+          <p>
+            <code>Panier moyen = chiffre d’affaires confirmé ÷ commandes confirmées</code>
+            <br />
+            Le moteur utilise le mois en cours s’il est complet, sinon l’historique disponible. Les ventes et
+            quantités des douze derniers mois fournissent aussi le mix de produits estimé.
+          </p>
+          <p>
+            Pour la promotion, il compare le revenu réduit des commandes éligibles et supplémentaires au revenu
+            normal des commandes éligibles. Pour l’upsell, il estime le CA avec le prix réellement vendu du produit
+            choisi sur l’historique disponible.
+          </p>
+          <code>
+            Variation promotion = (commandes éligibles + commandes supplémentaires) × panier ×
+            (1 − remise (%) ÷ 100)
+            <br />
+            − commandes éligibles × panier
+          </code>
+        </article>
+
+        <article>
+          <h4>5. Stock, marge et coût de l’action</h4>
+          <p>
+            Les ventes additionnelles estimées sont réparties selon le mix de produits observé. Le stock Odoo
+            disponible aujourd’hui limite les unités pouvant être servies. Quand plusieurs actions sont combinées,
+            le stock commun est réparti une seule fois.
+          </p>
+          <code>
+            Marge brute estimée = unités servies × (prix HT historique − coût unitaire actuel)
+            <br />
+            Contribution = marge brute estimée − coûts directs saisis
+            <br />
+            ROI = contribution ÷ coûts directs × 100
+          </code>
+          <p>
+            Pour la marge combinée, le calcul utilise les unités servies × (prix HT moyen historique − coût unitaire
+            actuel). Pour la prospection, le marketing et la fidélisation, la marge par commande applique le coût
+            actuel au mix historique et n’est pas plafonnée au stock. Le coût produit et le stock Odoo sont des
+            valeurs actuelles, pas des valeurs historiques.
+          </p>
+          <p>
+            Le « CA potentiel » est calculé avant la contrainte de stock; le « CA compatible avec le stock » et la
+            marge combinée tiennent compte du stock disponible aujourd’hui. La remise réduit déjà le CA et la marge :
+            elle n’est pas ajoutée une seconde fois aux coûts de l’action.
+          </p>
+          <p>
+            Le ROI n’est affiché que si la contribution et un coût direct positif sont calculables.
+            Si le coût est inconnu ou nul, le ROI n’a pas de sens exploitable et reste indisponible.
+          </p>
+        </article>
+
+        <article>
+          <h4>6. Combinaisons, scénarios et données manquantes</h4>
+          <p>
+            Si deux actions risquent de viser les mêmes personnes, le total combiné est bloqué tant que vous
+            n’avez pas nommé et confirmé des audiences distinctes. Cela évite de compter deux fois les mêmes clients.
+          </p>
+          <p>
+            Les scénarios prudent et optimiste appliquent la variation que vous saisissez autour de la marge brute
+            combinée, puis retirent les mêmes coûts directs. C’est une fourchette de travail, pas une probabilité
+            statistique.
+          </p>
+          <p>
+            Si le coût, le stock ou l’historique manque, le résultat concerné est indiqué comme indisponible;
+            il n’est pas remplacé par zéro. Une marge ou un ROI absent n’empêche pas d’afficher un chiffre d’affaires
+            estimable.
+          </p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 /* ───────────────────────── Nombre animé ───────────────────────── */
 
 function useCountUp(target: number, duration = 450): number {
@@ -220,6 +413,7 @@ function AnimatedCurrency({ value }: { value: number }) {
 /* ───────────────────────── Composant ───────────────────────── */
 
 export default function MarketScenarioSimulator({
+  companyId,
   companyName,
   currentRevenue,
   currentOrders,
@@ -231,6 +425,7 @@ export default function MarketScenarioSimulator({
   const [selectedPreset, setSelectedPreset] = useState<PresetId>("volume");
   const [scrub, setScrub] = useState<number | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
+  const [showCalculationGuide, setShowCalculationGuide] = useState(false);
 
   const ctx = useMemo<Context>(
     () => ({ currentRevenue, currentOrders, elapsedDays, remainingDays, revenueGoal }),
@@ -519,12 +714,29 @@ export default function MarketScenarioSimulator({
             Composez une hypothèse, voyez la courbe du mois se redessiner et mesurez l’effet sur votre chiffre
             d’affaires, votre marge et votre objectif.
           </p>
+          <button
+            type="button"
+            className={styles.calculationToggle}
+            aria-expanded={showCalculationGuide}
+            aria-controls="market-simulator-calculation"
+            onClick={() => setShowCalculationGuide((visible) => !visible)}
+          >
+            {showCalculationGuide ? "Masquer les explications" : "Comment c’est calculé ?"}
+          </button>
         </div>
         <span className={styles.simulationBadge}>
           <i aria-hidden="true" />
           Simulation uniquement
         </span>
       </header>
+
+      <CalculationGuide
+        currentRevenue={currentRevenue}
+        currentOrders={currentOrders}
+        params={params}
+        sim={sim}
+        hidden={!showCalculationGuide}
+      />
 
       {!hasReference ? (
         <div className={styles.emptyState} role="status">
@@ -1008,6 +1220,7 @@ export default function MarketScenarioSimulator({
           </div>
         </>
       )}
+      <CommercialSimulationPanel companyId={companyId} />
     </section>
   );
 }

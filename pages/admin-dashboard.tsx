@@ -3714,6 +3714,7 @@ export default function AdminDashboard() {
                     )}
                     {marketAnalyticsTab === "simulator" && (
                       <MarketScenarioSimulator
+                        companyId={marketStats.company.id}
                         companyName={marketStats.company.name}
                         currentRevenue={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedRevenue ?? 0}
                         currentOrders={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedOrders ?? 0}
