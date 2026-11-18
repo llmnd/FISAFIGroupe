@@ -2511,6 +2511,47 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
   font-size:.78rem;
 }
 .market-period-hint,.market-period-current{color:var(--ink-muted);font-size:.72rem}
+.market-analytics-tabs{
+  position:sticky;
+  top:calc(var(--topbar-h) + env(safe-area-inset-top) + .35rem);
+  z-index:30;
+  display:flex;
+  gap:.35rem;
+  margin:0 0 1.15rem;
+  padding:.4rem;
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  border:1px solid var(--line-strong);
+  border-radius:10px;
+  background:rgba(27,29,41,.96);
+  box-shadow:0 8px 20px rgba(0,0,0,.2);
+  backdrop-filter:blur(12px);
+  scrollbar-width:thin;
+}
+.market-analytics-tabs button{
+  flex:1 0 auto;
+  min-height:2.55rem;
+  padding:.55rem .85rem;
+  border:1px solid transparent;
+  border-radius:7px;
+  background:transparent;
+  color:var(--ink-muted);
+  font:inherit;
+  font-size:.76rem;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.market-analytics-tabs button:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.market-analytics-tabs button[aria-selected="true"]{
+  border-color:var(--blue-line);
+  background:linear-gradient(110deg,rgba(201,164,195,.2),rgba(89,209,193,.12));
+  color:var(--ink-strong);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.market-analytics-tabs button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+@media(min-width:900px){.market-analytics-tabs{top:calc(var(--topbar-h-desk) + .45rem)}}
 .market-period-notice{
   margin:0 0 1rem;
   padding:.7rem .85rem;
@@ -2565,6 +2606,8 @@ body.admin-dashboard-active ::-webkit-scrollbar-thumb:hover{background:#3a3b50}
 .market-revenue-drivers>div strong{color:var(--ink-strong)}
 .market-revenue-drivers small{display:block;margin-top:.45rem;color:var(--ink-faint);font-size:.68rem;line-height:1.5}
 @media(max-width:560px){
+  .market-analytics-tabs{gap:.2rem;padding:.3rem}
+  .market-analytics-tabs button{min-height:2.4rem;padding:.5rem .7rem;font-size:.7rem}
   .market-history-heading{flex-direction:column}
   .market-history-actions{width:100%;justify-content:flex-start}
   .market-goal-control{grid-template-columns:1fr}

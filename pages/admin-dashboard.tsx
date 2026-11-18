@@ -81,6 +81,15 @@ type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
 type MarketHistoryCursor = { saleOffset: number; posOffset: number };
 type MarketMetricKey = "orders" | "revenue" | "pending" | "customers";
 type MarketPeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
+type MarketAnalyticsTab = "overview" | "trends" | "breakdowns" | "history" | "quality";
+
+const MARKET_ANALYTICS_TABS: Array<{ id: MarketAnalyticsTab; label: string }> = [
+  { id: "overview", label: "Vue d’ensemble" },
+  { id: "trends", label: "Tendances" },
+  { id: "breakdowns", label: "Répartitions" },
+  { id: "history", label: "Historique" },
+  { id: "quality", label: "Données" },
+];
 
 type MarketCurvePoint = {
   label: string;
@@ -1406,6 +1415,7 @@ export default function AdminDashboard() {
   const [selectedMarketMetric, setSelectedMarketMetric] = useState<MarketMetricKey | null>(null);
   const closeMarketMetric = useCallback(() => setSelectedMarketMetric(null), []);
   const [marketPeriod, setMarketPeriod] = useState<MarketPeriodKey>("30d");
+  const [marketAnalyticsTab, setMarketAnalyticsTab] = useState<MarketAnalyticsTab>("overview");
   const [customPeriodFrom, setCustomPeriodFrom] = useState("");
   const [customPeriodTo, setCustomPeriodTo] = useState("");
   const [selectedMarketDate, setSelectedMarketDate] = useState<string | null>(null);
@@ -2288,6 +2298,7 @@ export default function AdminDashboard() {
     marketStatsRequestId.current += 1;
     setSelectedCompanyId(company.id);
     localStorage.setItem("adminOdooCompanyId", String(company.id));
+    setMarketAnalyticsTab("overview");
     setSelectedMarketDate(null);
     setMarketHistoryPage(0);
     setMarketHistoryCursors([{ saleOffset: 0, posOffset: 0 }]);
@@ -3219,6 +3230,43 @@ export default function AdminDashboard() {
                 </section>
               )}
 
+              {marketStats && marketStats.company.id === selectedCompanyId && (
+                <div
+                  className="market-analytics-tabs"
+                  role="tablist"
+                  aria-label="Sections des analyses de ventes"
+                  onKeyDown={(event) => {
+                    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+                    event.preventDefault();
+                    const currentIndex = MARKET_ANALYTICS_TABS.findIndex((tab) => tab.id === marketAnalyticsTab);
+                    const nextIndex = event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? MARKET_ANALYTICS_TABS.length - 1
+                        : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + MARKET_ANALYTICS_TABS.length)
+                          % MARKET_ANALYTICS_TABS.length;
+                    const nextTab = MARKET_ANALYTICS_TABS[nextIndex];
+                    setMarketAnalyticsTab(nextTab.id);
+                    document.getElementById(`market-analytics-tab-${nextTab.id}`)?.focus();
+                  }}
+                >
+                  {MARKET_ANALYTICS_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      id={`market-analytics-tab-${tab.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={marketAnalyticsTab === tab.id}
+                      aria-controls="market-analytics-panel"
+                      tabIndex={marketAnalyticsTab === tab.id ? 0 : -1}
+                      onClick={() => setMarketAnalyticsTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {selectedCompanyId !== null && loadingMarketStats && !marketStats ? (
                 <div className="empty"><div className="spinner"/></div>
               ) : marketStats && marketStats.company.id === selectedCompanyId && marketDerived ? (
@@ -3228,6 +3276,15 @@ export default function AdminDashboard() {
                       La journée en cours est incomplète ; elle peut faire paraître les ventes du jour plus faibles.
                     </p>
                   )}
+                  <div
+                    id="market-analytics-panel"
+                    className="market-analytics-panel"
+                    role="tabpanel"
+                    tabIndex={0}
+                    aria-labelledby={`market-analytics-tab-${marketAnalyticsTab}`}
+                  >
+                    {marketAnalyticsTab === "overview" && (
+                      <>
                   {/* ── KPI animés avec sparklines et deltas ── */}
                   <div className="stats-row market-stats-grid">
                     <button
@@ -3374,6 +3431,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                      </>
+                    )}
+                    {marketAnalyticsTab === "trends" && (
+                      <>
                   <div className="market-trend-grid">
                     <section className="market-panel" aria-labelledby="market-daily-revenue-title">
                       <div className="market-panel-heading">
@@ -3413,6 +3474,9 @@ export default function AdminDashboard() {
                     </section>
                   </div>
 
+                      </>
+                    )}
+                    {marketAnalyticsTab === "breakdowns" && (
                   <section className="market-breakdown-grid" aria-label="Analyse des ventes par source et produit">
                     <BreakdownChart
                       title="Produits les plus vendus"
@@ -3440,7 +3504,10 @@ export default function AdminDashboard() {
                       rows={marketStats.breakdowns.weekdays}
                     />
                   </section>
+                    )}
 
+                    {marketAnalyticsTab === "trends" && (
+                      <>
                   {/* ── Courbe de CA mensuelle ── */}
                   <section className="market-panel" aria-labelledby="market-monthly-title">
                     <div className="market-panel-heading">
@@ -3467,7 +3534,11 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </section>
+                      </>
+                    )}
 
+                    {marketAnalyticsTab === "history" && (
+                      <>
                   {/* ── Historique complet ── */}
                   <section className="market-panel" aria-labelledby="market-recent-title">
                     <div className="market-panel-heading market-history-heading">
@@ -3614,6 +3685,9 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </section>
+                      </>
+                    )}
+                    {marketAnalyticsTab === "quality" && (
                   <section className="market-panel market-data-quality" aria-labelledby="market-quality-title">
                     <div className="market-panel-heading">
                       <div>
@@ -3633,9 +3707,11 @@ export default function AdminDashboard() {
                       {marketStats.range.currentDayIncomplete ? " La journée en cours est partielle." : ""}
                     </p>
                   </section>
+                    )}
                   <p className="market-stats-updated">
                     Actualisé le {new Date(marketStats.generatedAt).toLocaleString("fr-FR")}
                   </p>
+                  </div>
                 </>
               ) : null}
             </>)}
