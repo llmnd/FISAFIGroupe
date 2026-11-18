@@ -868,7 +868,7 @@ function RevenueCurve({
 
       {hover !== null && points[hover] && (
         <div
-          className="curve-tooltip"
+          className={`curve-tooltip${coords[hover][0] < Math.min(150, width * .4) ? " edge-start" : coords[hover][0] > width - Math.min(150, width * .4) ? " edge-end" : ""}`}
           style={{ left: coords[hover][0], top: coords[hover][1] }}
         >
           <strong>{fmt(points[hover].value)}</strong>
@@ -911,52 +911,57 @@ function BreakdownChart({
   rows: MarketBreakdown[];
 }) {
   const maxRevenue = Math.max(...rows.flatMap((row) => [row.revenue, row.previousRevenue]), 1);
-  if (!rows.length) {
-    return (
-      <section className="market-panel market-breakdown-panel">
-        <div className="market-panel-heading">
-          <div><h2>{title}</h2><p>{description}</p></div>
-        </div>
-        <p className="market-breakdown-empty">Aucune vente confirmée à comparer sur cette période.</p>
-      </section>
-    );
-  }
   return (
-    <section className="market-panel market-breakdown-panel">
-      <div className="market-panel-heading">
-        <div><h2>{title}</h2><p>{description}</p></div>
-      </div>
-      <ol className="market-breakdown-list">
-        {rows.map((row) => {
-          const delta = row.previousRevenue > 0
-            ? ((row.revenue - row.previousRevenue) / row.previousRevenue) * 100
-            : row.revenue > 0 ? null : 0;
-          return (
-            <li key={row.id}>
-              <div className="market-breakdown-row-head">
-                <strong title={row.label}>{row.label}</strong>
-                <span>{formatMarketCurrency(row.revenue)}</span>
-              </div>
-              <div className="market-breakdown-bars" aria-label={`${row.label}: période actuelle et précédente`}>
-                <i className="current" style={{ width: `${(row.revenue / maxRevenue) * 100}%` }}/>
-                <i className="previous" style={{ width: `${(row.previousRevenue / maxRevenue) * 100}%` }}/>
-              </div>
-              <div className="market-breakdown-row-foot">
-                <span>{row.confirmedOrders} vente{row.confirmedOrders === 1 ? "" : "s"} confirmée{row.confirmedOrders === 1 ? "" : "s"} · préc. {row.previousConfirmedOrders}</span>
-                <DeltaBadge delta={delta} label="vs période préc."/>
-              </div>
-              {row.quantity !== undefined && (
-                <small className="market-breakdown-quantity">{new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(row.quantity)} unité{row.quantity === 1 ? "" : "s"} vendue{row.quantity === 1 ? "" : "s"}</small>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-      <div className="market-trend-legend market-breakdown-legend">
-        <span><i className="current"/>Période sélectionnée</span>
-        <span><i className="previous"/>Période précédente</span>
-      </div>
-    </section>
+    <details className="market-panel market-breakdown-panel">
+      <summary className="market-breakdown-toggle">
+        <span className="market-breakdown-toggle-copy">
+          <strong>{title}</strong>
+          <small>{description}</small>
+        </span>
+        <span className="market-breakdown-toggle-meta">
+          {rows.length ? `${rows.length} résultat${rows.length === 1 ? "" : "s"}` : "Aucune donnée"}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m7 10 5 5 5-5"/>
+          </svg>
+        </span>
+      </summary>
+      {rows.length ? (
+        <>
+          <ol className="market-breakdown-list">
+            {rows.map((row) => {
+              const delta = row.previousRevenue > 0
+                ? ((row.revenue - row.previousRevenue) / row.previousRevenue) * 100
+                : row.revenue > 0 ? null : 0;
+              return (
+                <li key={row.id}>
+                  <div className="market-breakdown-row-head">
+                    <strong title={row.label}>{row.label}</strong>
+                    <span>{formatMarketCurrency(row.revenue)}</span>
+                  </div>
+                  <div className="market-breakdown-bars" aria-label={`${row.label}: période actuelle et précédente`}>
+                    <i className="current" style={{ width: `${(row.revenue / maxRevenue) * 100}%` }}/>
+                    <i className="previous" style={{ width: `${(row.previousRevenue / maxRevenue) * 100}%` }}/>
+                  </div>
+                  <div className="market-breakdown-row-foot">
+                    <span>{row.confirmedOrders} vente{row.confirmedOrders === 1 ? "" : "s"} confirmée{row.confirmedOrders === 1 ? "" : "s"} · préc. {row.previousConfirmedOrders}</span>
+                    <DeltaBadge delta={delta} label="vs période préc."/>
+                  </div>
+                  {row.quantity !== undefined && (
+                    <small className="market-breakdown-quantity">{new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(row.quantity)} unité{row.quantity === 1 ? "" : "s"} vendue{row.quantity === 1 ? "" : "s"}</small>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          <div className="market-trend-legend market-breakdown-legend">
+            <span><i className="current"/>Période sélectionnée</span>
+            <span><i className="previous"/>Période précédente</span>
+          </div>
+        </>
+      ) : (
+        <p className="market-breakdown-empty">Aucune vente confirmée à comparer sur cette période.</p>
+      )}
+    </details>
   );
 }
 
