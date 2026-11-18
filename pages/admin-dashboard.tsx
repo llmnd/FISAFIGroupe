@@ -6,6 +6,7 @@ import Head from "next/head";
 import Image from "next/image";
 import { ensureAuthSession } from "@/lib/clientAuthSession";
 import ProjectBrief from "@/components/admin/ProjectBrief";
+import MarketScenarioSimulator from "@/components/admin/MarketScenarioSimulator";
 import {
   getSessionLifecycleStatus,
   type SessionLifecycleStatus,
@@ -81,11 +82,12 @@ type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
 type MarketHistoryCursor = { saleOffset: number; posOffset: number };
 type MarketMetricKey = "orders" | "revenue" | "pending" | "customers";
 type MarketPeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
-type MarketAnalyticsTab = "overview" | "trends" | "breakdowns" | "history" | "quality";
+type MarketAnalyticsTab = "overview" | "trends" | "simulator" | "breakdowns" | "history" | "quality";
 
 const MARKET_ANALYTICS_TABS: Array<{ id: MarketAnalyticsTab; label: string }> = [
   { id: "overview", label: "Vue d’ensemble" },
   { id: "trends", label: "Tendances" },
+  { id: "simulator", label: "Simulateur" },
   { id: "breakdowns", label: "Répartitions" },
   { id: "history", label: "Historique" },
   { id: "quality", label: "Données" },
@@ -2467,6 +2469,8 @@ export default function AdminDashboard() {
       projectedLow,
       projectedHigh,
       projectionNote,
+      elapsedDays,
+      remainingDays,
       insights,
     };
   })();
@@ -3707,6 +3711,20 @@ export default function AdminDashboard() {
                       {marketStats.range.currentDayIncomplete ? " La journée en cours est partielle." : ""}
                     </p>
                   </section>
+                    )}
+                    {marketAnalyticsTab === "simulator" && (
+                      <MarketScenarioSimulator
+                        companyName={marketStats.company.name}
+                        currentRevenue={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedRevenue ?? 0}
+                        currentOrders={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedOrders ?? 0}
+                        elapsedDays={marketDerived.elapsedDays}
+                        remainingDays={marketDerived.remainingDays}
+                        revenueGoal={
+                          Number.isFinite(Number(revenueGoal)) && Number(revenueGoal) > 0
+                            ? Number(revenueGoal)
+                            : null
+                        }
+                      />
                     )}
                   <p className="market-stats-updated">
                     Actualisé le {new Date(marketStats.generatedAt).toLocaleString("fr-FR")}
