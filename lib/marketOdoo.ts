@@ -271,19 +271,32 @@ export async function callOdoo<T>(
   }
 
   let response: Response;
-  try {
-    response = await fetch(`${origin}/json/2/${model}/${method}`, {
-      method: "POST",
-      headers: {
-        Authorization: `bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(parameters),
-      signal: AbortSignal.timeout(20_000),
-    });
-  } catch (error) {
-    console.error(`[Market/Odoo] ${model}/${method} request failed:`, error);
-    throw new OdooApiError("Impossible de joindre le service FiSAFi. Réessayez dans quelques instants.");
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      response = await fetch(`${origin}/json/2/${model}/${method}`, {
+        method: "POST",
+        headers: {
+          Authorization: `bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(parameters),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch (error) {
+      console.error(`[Market/Odoo] ${model}/${method} request failed:`, error);
+      throw new OdooApiError("Impossible de joindre le service FiSAFi. Réessayez dans quelques instants.");
+    }
+
+    if (
+      method !== "search_read" ||
+      attempt > 0 ||
+      ![502, 503, 504].includes(response.status)
+    ) {
+      break;
+    }
+    console.warn(`[Market/Odoo] Retrying transient HTTP ${response.status} for ${model}/${method}.`);
+    await response.body?.cancel();
+    await new Promise((resolve) => setTimeout(resolve, 600));
   }
 
   if (response.status === 404) {

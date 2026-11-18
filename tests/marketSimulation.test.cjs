@@ -14,6 +14,9 @@ const { simulateCommercial, simulateLegacy } = require("../lib/marketSimulation/
 let requestAccount = { role: "seller", employeeRole: "seller" };
 let returnedSnapshot = { companyId: 42, companyName: "FiSAFi Market" };
 let requestedCompanyId = null;
+let marketStatsOdooCalls = [];
+let marketStatsOdooRequests = [];
+let marketStatsCallOdoo = async () => [];
 const originalLoad = Module._load;
 
 Module._load = function (request, parent, isMain) {
@@ -34,7 +37,15 @@ Module._load = function (request, parent, isMain) {
     return { listFiSafiCompanies: async () => [{ id: 42, name: "FiSAFi Market", type: "market" }] };
   }
   if (request === "@/lib/marketOdoo") {
-    return { OdooApiError: class OdooApiError extends Error {} };
+    return {
+      callOdoo: (...args) => marketStatsCallOdoo(...args),
+      OdooApiError: class OdooApiError extends Error {
+        constructor(message, statusCode = 502) {
+          super(message);
+          this.statusCode = statusCode;
+        }
+      },
+    };
   }
   if (request === "@/lib/marketSimulation/odooSnapshot") {
     return {
@@ -47,6 +58,7 @@ Module._load = function (request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 const marketSimulationHandler = require("../pages/api/admin/market-simulation.ts").default;
+const marketStatsHandler = require("../pages/api/admin/market-stats.ts").default;
 
 function createResponse() {
   return {
@@ -357,4 +369,81 @@ test("simulation endpoint requires admin permission and an allowed company", asy
   assert.equal(allowed.statusCode, 200);
   assert.equal(requestedCompanyId, 42);
   assert.equal(allowed.body, returnedSnapshot);
+});
+
+test("market history pagination can load without rebuilding the sales summary", async () => {
+  requestAccount = { role: "admin", employeeRole: null };
+  marketStatsOdooCalls = [];
+  marketStatsCallOdoo = async (model) => {
+    marketStatsOdooCalls.push(model);
+    if (model === "res.company") return [{ id: 42, name: "FiSAFi Market" }];
+    return [];
+  };
+
+  const response = createResponse();
+  await marketStatsHandler(
+    {
+      method: "GET",
+      query: {
+        companyId: "42",
+        period: "30d",
+        historyOnly: "1",
+        saleOffset: "0",
+        posOffset: "0",
+      },
+    },
+    response,
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, {
+    transactions: [],
+    hasMore: false,
+    nextCursor: null,
+  });
+  assert.deepEqual(marketStatsOdooCalls, ["res.company", "sale.order", "pos.order"]);
+});
+
+test("market summary omits history-page queries and avoids loading old order lines", async () => {
+  requestAccount = { role: "admin", employeeRole: null };
+  marketStatsOdooCalls = [];
+  marketStatsOdooRequests = [];
+  marketStatsCallOdoo = async (model, method, parameters) => {
+    marketStatsOdooCalls.push(model);
+    marketStatsOdooRequests.push({ model, method, parameters });
+    if (model === "res.company") return [{ id: 42, name: "FiSAFi Market" }];
+    return [];
+  };
+
+  const response = createResponse();
+  await marketStatsHandler(
+    {
+      method: "GET",
+      query: { companyId: "42", period: "30d", summaryOnly: "1" },
+    },
+    response,
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(marketStatsOdooCalls, [
+    "res.company",
+    "sale.order",
+    "pos.order",
+    "sale.order",
+    "pos.order",
+  ]);
+  assert.equal(response.body.transactions.length, 0);
+  const salesHistoryRequest = marketStatsOdooRequests.find(
+    (request) => request.model === "sale.order" && !request.parameters.fields.includes("order_line"),
+  );
+  const salesBreakdownRequest = marketStatsOdooRequests.find(
+    (request) => request.model === "sale.order" && request.parameters.fields.includes("order_line"),
+  );
+  assert.ok(salesHistoryRequest);
+  assert.ok(salesBreakdownRequest);
+  assert.ok(
+    salesBreakdownRequest.parameters.domain.some(
+      ([field, operator]) => field === "date_order" && operator === "<",
+    ),
+  );
 });

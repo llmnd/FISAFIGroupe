@@ -80,6 +80,11 @@ type OdooCompanyType = "groupe" | "market";
 type OdooCompany = { id: number; name: string; type: OdooCompanyType };
 type UserProfile = "MARKET_CUSTOMER" | "TRAINING_PARTICIPANT";
 type MarketHistoryCursor = { saleOffset: number; posOffset: number };
+type MarketHistoryPage = {
+  transactions: MarketTransaction[];
+  hasMore: boolean;
+  nextCursor: MarketHistoryCursor | null;
+};
 type MarketMetricKey = "orders" | "revenue" | "pending" | "customers";
 type MarketPeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
 type MarketAnalyticsTab = "overview" | "trends" | "simulator" | "breakdowns" | "history" | "quality";
@@ -280,6 +285,42 @@ function getUserProfileLabel(profile: UserProfile): string {
   return profile === "MARKET_CUSTOMER" ? "Module e-commerce" : "Module formation";
 }
 
+function isMarketTransaction(value: unknown): value is MarketTransaction {
+  if (!value || typeof value !== "object") return false;
+  const order = value as Partial<MarketTransaction>;
+  return (
+    Number.isSafeInteger(order.id) &&
+    (order.kind === "sale_order" || order.kind === "pos_order") &&
+    typeof order.reference === "string" &&
+    (typeof order.session === "string" || order.session === null) &&
+    (typeof order.pointOfSale === "string" || order.pointOfSale === null) &&
+    (typeof order.receiptNumber === "string" || order.receiptNumber === null) &&
+    typeof order.customer === "string" &&
+    (typeof order.operator === "string" || order.operator === null) &&
+    ["draft", "sent", "sale", "done", "cancel"].includes(order.state ?? "") &&
+    Number.isFinite(order.amountTotal) &&
+    typeof order.date === "string" &&
+    typeof order.statusLabel === "string" &&
+    typeof order.invoiceStatus === "string"
+  );
+}
+
+function isMarketHistoryPage(value: unknown): value is MarketHistoryPage {
+  if (!value || typeof value !== "object") return false;
+  const page = value as Partial<MarketHistoryPage>;
+  return (
+    Array.isArray(page.transactions) &&
+    page.transactions.every(isMarketTransaction) &&
+    typeof page.hasMore === "boolean" &&
+    (page.nextCursor === null ||
+      (!!page.nextCursor &&
+        Number.isSafeInteger(page.nextCursor.saleOffset) &&
+        page.nextCursor.saleOffset >= 0 &&
+        Number.isSafeInteger(page.nextCursor.posOffset) &&
+        page.nextCursor.posOffset >= 0))
+  );
+}
+
 function isMarketStats(value: unknown): value is MarketStats {
   if (!value || typeof value !== "object") return false;
   const stats = value as Partial<MarketStats>;
@@ -360,22 +401,7 @@ function isMarketStats(value: unknown): value is MarketStats {
       ),
     ) &&
     Array.isArray(stats.transactions) &&
-    stats.transactions.every(
-      (order) =>
-        Number.isSafeInteger(order.id) &&
-        (order.kind === "sale_order" || order.kind === "pos_order") &&
-        typeof order.reference === "string" &&
-        (typeof order.session === "string" || order.session === null) &&
-        (typeof order.pointOfSale === "string" || order.pointOfSale === null) &&
-        (typeof order.receiptNumber === "string" || order.receiptNumber === null) &&
-        typeof order.customer === "string" &&
-        (typeof order.operator === "string" || order.operator === null) &&
-        ["draft", "sent", "sale", "done", "cancel"].includes(order.state) &&
-        Number.isFinite(order.amountTotal) &&
-        typeof order.date === "string" &&
-        typeof order.statusLabel === "string" &&
-        typeof order.invoiceStatus === "string",
-    ) &&
+    stats.transactions.every(isMarketTransaction) &&
     typeof stats.hasMore === "boolean" &&
     (stats.nextCursor === null ||
       (stats.nextCursor !== undefined &&
@@ -1425,6 +1451,8 @@ export default function AdminDashboard() {
   const [revenueGoalCompanyId, setRevenueGoalCompanyId] = useState<number | null>(null);
   const [loadingMarketStats, setLoadingMarketStats] = useState(false);
   const [marketStatsError, setMarketStatsError] = useState("");
+  const [loadingMarketHistory, setLoadingMarketHistory] = useState(false);
+  const [marketHistoryError, setMarketHistoryError] = useState("");
   const [marketExportError, setMarketExportError] = useState("");
   const [receiptDownloadId, setReceiptDownloadId] = useState<number | null>(null);
   const [receiptDownloadError, setReceiptDownloadError] = useState("");
@@ -1438,11 +1466,19 @@ export default function AdminDashboard() {
   const [odooCompaniesError, setOdooCompaniesError] = useState("");
   const [companyPickerSource, setCompanyPickerSource] = useState<"sidebar" | "topbar" | null>(null);
   const marketStatsRequestId = useRef(0);
+  const marketHistoryRequestId = useRef(0);
+  const marketStatsAbortController = useRef<AbortController | null>(null);
+  const marketHistoryAbortController = useRef<AbortController | null>(null);
   const authCheckStarted = useRef(false);
   const initialTabScrollHandled = useRef(false);
   const currentTabRef = useRef(activeTab);
   const menuFocusFrameRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    marketStatsAbortController.current?.abort();
+    marketHistoryAbortController.current?.abort();
+  }, []);
 
   useEffect(() => {
     setRevenueGoalCompanyId(null);
@@ -1744,12 +1780,22 @@ export default function AdminDashboard() {
   }, [router.events]);
 
   useEffect(() => {
+    let statsTimer: ReturnType<typeof setTimeout> | null = null;
     if (activeTab === "articles") fetchArticles();
     else if (activeTab === "brochures") fetchBrochures();
     else if (activeTab === "inscriptions") fetchInscriptions();
     else if (activeTab === "sessions") { fetchFormations(); fetchSessions(); }
-    else if (activeTab === "ecommerce" && selectedCompanyId !== null) void fetchMarketStats();
-  }, [activeTab, selectedCompanyId, marketHistoryPage, marketPeriod, customPeriodFrom, customPeriodTo, selectedMarketDate]);
+    else if (activeTab === "ecommerce" && selectedCompanyId !== null) {
+      statsTimer = setTimeout(() => void fetchMarketStats(), 250);
+    }
+    return () => {
+      if (statsTimer) clearTimeout(statsTimer);
+      marketStatsRequestId.current += 1;
+      marketHistoryRequestId.current += 1;
+      marketStatsAbortController.current?.abort();
+      marketHistoryAbortController.current?.abort();
+    };
+  }, [activeTab, selectedCompanyId, marketPeriod, customPeriodFrom, customPeriodTo]);
 
   useEffect(() => {
     if (activeTab === "inscriptions") fetchInscriptions();
@@ -1857,6 +1903,77 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchMarketHistoryPage = async (
+    page = marketHistoryPage,
+    date = selectedMarketDate,
+    expectedStatsRequestId?: number,
+  ) => {
+    if (selectedCompanyId === null) return;
+    const cursor = marketHistoryCursors[page];
+    if (!cursor || (expectedStatsRequestId !== undefined && expectedStatsRequestId !== marketStatsRequestId.current)) {
+      return;
+    }
+
+    const companyId = selectedCompanyId;
+    const requestId = ++marketHistoryRequestId.current;
+    marketHistoryAbortController.current?.abort();
+    const controller = new AbortController();
+    marketHistoryAbortController.current = controller;
+    setLoadingMarketHistory(true);
+    setMarketHistoryError("");
+    try {
+      const query = new URLSearchParams({
+        companyId: String(companyId),
+        saleOffset: String(cursor.saleOffset),
+        posOffset: String(cursor.posOffset),
+        period: marketPeriod,
+        historyOnly: "1",
+      });
+      if (date) query.set("date", date);
+      if (marketPeriod === "custom") {
+        query.set("from", customPeriodFrom);
+        query.set("to", customPeriodTo);
+      }
+      const response = await fetch(`/api/admin/market-stats?${query}`, { signal: controller.signal });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          isRecord(payload) && typeof payload.error === "string"
+            ? payload.error
+            : `Impossible de charger l’historique (HTTP ${response.status}).`;
+        throw new Error(message);
+      }
+      if (!isMarketHistoryPage(payload)) throw new Error("L’historique reçu est invalide.");
+      if (
+        requestId !== marketHistoryRequestId.current ||
+        companyId !== selectedCompanyId ||
+        (expectedStatsRequestId !== undefined && expectedStatsRequestId !== marketStatsRequestId.current)
+      ) {
+        return;
+      }
+      setMarketStats((previous) =>
+        previous?.company.id === companyId
+          ? { ...previous, ...payload }
+          : previous,
+      );
+      setMarketHistoryCursors((cursors) => {
+        const nextCursors = cursors.slice(0, page + 1);
+        if (payload.hasMore && payload.nextCursor) nextCursors[page + 1] = payload.nextCursor;
+        return nextCursors;
+      });
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error("[Admin/Market] Could not load transaction history:", error);
+      if (requestId === marketHistoryRequestId.current) {
+        setMarketHistoryError(
+          error instanceof Error ? error.message : "Erreur réseau : impossible de charger l’historique.",
+        );
+      }
+    } finally {
+      if (requestId === marketHistoryRequestId.current) setLoadingMarketHistory(false);
+    }
+  };
+
   const fetchMarketStats = async () => {
     if (selectedCompanyId === null) {
       setMarketStats(null);
@@ -1867,24 +1984,26 @@ export default function AdminDashboard() {
       setMarketStatsError("Choisissez une date de début et une date de fin pour la période personnalisée.");
       return;
     }
-    const cursor = marketHistoryCursors[marketHistoryPage];
-    if (!cursor) return;
     const requestId = ++marketStatsRequestId.current;
+    marketStatsAbortController.current?.abort();
+    marketHistoryAbortController.current?.abort();
+    marketHistoryRequestId.current += 1;
+    const controller = new AbortController();
+    marketStatsAbortController.current = controller;
     setLoadingMarketStats(true);
     setMarketStatsError("");
+    setMarketHistoryError("");
     try {
       const query = new URLSearchParams({
         companyId: String(selectedCompanyId),
-        saleOffset: String(cursor.saleOffset),
-        posOffset: String(cursor.posOffset),
         period: marketPeriod,
+        summaryOnly: "1",
       });
-      if (selectedMarketDate) query.set("date", selectedMarketDate);
       if (marketPeriod === "custom") {
         query.set("from", customPeriodFrom);
         query.set("to", customPeriodTo);
       }
-      const response = await fetch(`/api/admin/market-stats?${query}`);
+      const response = await fetch(`/api/admin/market-stats?${query}`, { signal: controller.signal });
       const payload: unknown = await response.json();
       if (!response.ok) {
         const message =
@@ -1902,16 +2021,11 @@ export default function AdminDashboard() {
       }
       if (requestId === marketStatsRequestId.current) {
         setMarketStats(payload);
-        setMarketHistoryCursors((cursors) => {
-          const nextCursors = cursors.slice(0, marketHistoryPage + 1);
-          if (payload.hasMore && payload.nextCursor) {
-            nextCursors[marketHistoryPage + 1] = payload.nextCursor;
-          }
-          return nextCursors;
-        });
+        void fetchMarketHistoryPage(marketHistoryPage, selectedMarketDate, requestId);
       }
-    } catch {
-      if (requestId === marketStatsRequestId.current) {
+    } catch (error) {
+      if (!controller.signal.aborted && requestId === marketStatsRequestId.current) {
+        console.error("[Admin/Market] Could not load sales statistics:", error);
         setMarketStatsError("Erreur réseau : impossible de charger les statistiques e-commerce.");
       }
     } finally {
@@ -2479,6 +2593,7 @@ export default function AdminDashboard() {
     setSelectedMarketDate(point.date);
     setMarketHistoryPage(0);
     setMarketHistoryCursors([{ saleOffset: 0, posOffset: 0 }]);
+    void fetchMarketHistoryPage(0, point.date);
   };
 
   return (
@@ -2490,7 +2605,6 @@ export default function AdminDashboard() {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Toast */}
@@ -3562,6 +3676,7 @@ export default function AdminDashboard() {
                               setSelectedMarketDate(null);
                               setMarketHistoryPage(0);
                               setMarketHistoryCursors([{ saleOffset: 0, posOffset: 0 }]);
+                              void fetchMarketHistoryPage(0, null);
                             }}
                           >
                             Effacer le filtre
@@ -3583,7 +3698,7 @@ export default function AdminDashboard() {
                               setMarketExportError("L’export CSV n’a pas pu être créé.");
                             }
                           }}
-                          disabled={!marketStats.transactions.length || loadingMarketStats}
+                          disabled={!marketStats.transactions.length || loadingMarketStats || loadingMarketHistory}
                           title="Exporte les transactions affichées sur cette page."
                         >
                           Exporter cette page CSV
@@ -3591,6 +3706,18 @@ export default function AdminDashboard() {
                     </div>
                     </div>
                     {marketExportError && <p className="market-receipt-error" role="alert">{marketExportError}</p>}
+                    {marketHistoryError && (
+                      <p className="market-receipt-error" role="alert">
+                        {marketHistoryError}
+                        <button
+                          type="button"
+                          className="market-retry"
+                          onClick={() => void fetchMarketHistoryPage()}
+                        >
+                          Réessayer
+                        </button>
+                      </p>
+                    )}
                     {marketStats.transactions.length ? (
                       <>
                         <div className="market-history-table-wrap">
@@ -3663,16 +3790,24 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               className="btn-sm"
-                              onClick={() => setMarketHistoryPage((page) => Math.max(0, page - 1))}
-                              disabled={loadingMarketStats || marketHistoryPage === 0}
+                              onClick={() => {
+                                const page = Math.max(0, marketHistoryPage - 1);
+                                setMarketHistoryPage(page);
+                                void fetchMarketHistoryPage(page);
+                              }}
+                              disabled={loadingMarketStats || loadingMarketHistory || marketHistoryPage === 0}
                             >
                               Précédent
                             </button>
                             <button
                               type="button"
                               className="btn-sm"
-                              onClick={() => setMarketHistoryPage((page) => page + 1)}
-                              disabled={loadingMarketStats || !marketStats.hasMore || !marketStats.nextCursor}
+                              onClick={() => {
+                                const page = marketHistoryPage + 1;
+                                setMarketHistoryPage(page);
+                                void fetchMarketHistoryPage(page);
+                              }}
+                              disabled={loadingMarketStats || loadingMarketHistory || !marketStats.hasMore || !marketStats.nextCursor}
                             >
                               Suivant
                             </button>
@@ -3682,7 +3817,9 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="empty">
                         <p className="empty-text">
-                          {selectedMarketDate
+                          {loadingMarketHistory
+                            ? "Chargement de l’historique…"
+                            : selectedMarketDate
                             ? `Aucune transaction trouvée le ${new Date(`${selectedMarketDate}T00:00:00Z`).toLocaleDateString("fr-FR")}.`
                             : `Aucune vente ni commande pour ${marketStats.company.name}.`}
                         </p>

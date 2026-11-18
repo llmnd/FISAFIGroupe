@@ -410,12 +410,17 @@ async function fetchRecentOdooRecords<T extends { id: number }>(
   chartStartIso: string,
   fields: string[],
   isRecord: (value: unknown) => value is T,
+  endExclusiveIso?: string,
 ): Promise<T[]> {
   const records: T[] = [];
   const seenIds = new Set<number>();
   while (true) {
     const payload: unknown = await callOdoo(model, "search_read", {
-      domain: [["company_id", "=", companyId], ["date_order", ">=", chartStartIso]],
+      domain: [
+        ["company_id", "=", companyId],
+        ["date_order", ">=", chartStartIso],
+        ...(endExclusiveIso ? [["date_order", "<", endExclusiveIso]] : []),
+      ],
       fields,
       limit: STATS_FETCH_SIZE,
       offset: records.length,
@@ -793,6 +798,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const saleOffset = parseOffset(req.query.saleOffset);
     const posOffset = parseOffset(req.query.posOffset);
     const cursor = { saleOffset, posOffset };
+    const historyOnly = req.query.historyOnly === "1";
+    const summaryOnly = req.query.summaryOnly === "1";
+    if (
+      (req.query.historyOnly !== undefined && !historyOnly) ||
+      (req.query.summaryOnly !== undefined && !summaryOnly) ||
+      (historyOnly && summaryOnly)
+    ) {
+      throw new OdooApiError("Le mode de chargement des statistiques est invalide.", 400);
+    }
     const now = new Date();
     const analyticsPeriod = getAnalyticsPeriod(req.query, now);
     const { start: periodStart, endExclusive: periodEnd, previousStart: previousPeriodStart } = analyticsPeriod;
@@ -807,6 +821,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ) {
       throw new OdooApiError("La date choisie doit être comprise dans la période d’analyse.", 400);
     }
+    if (historyOnly) {
+      return res.status(200).json(
+        await fetchHistoryPage(companyId, cursor, selectedDate ?? undefined),
+      );
+    }
     const chartStart = new Date(Math.min(
       previousPeriodStart.getTime(),
       getMonthStart(now, -11).getTime(),
@@ -816,7 +835,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       "sale.order",
       companyId,
       chartStartIso,
-      ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status", "order_line"],
+      ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status"],
       isOdooSaleOrder,
     );
     const posPayload = await fetchRecentOdooRecords(
@@ -835,11 +854,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "partner_id",
         "user_id",
         "account_move",
-        "lines",
       ],
       isOdooPOSOrder,
     );
-    const history = await fetchHistoryPage(companyId, cursor, selectedDate ?? undefined);
+    const breakdownStartIso = toOdooDateTime(previousPeriodStart);
+    const periodEndIso = toOdooDateTime(periodEnd);
+    const detailedSalePayload = await fetchRecentOdooRecords(
+      "sale.order",
+      companyId,
+      breakdownStartIso,
+      ["id", "name", "state", "amount_total", "date_order", "partner_id", "user_id", "invoice_status", "order_line"],
+      isOdooSaleOrder,
+      periodEndIso,
+    );
+    const detailedPosPayload = await fetchRecentOdooRecords(
+      "pos.order",
+      companyId,
+      breakdownStartIso,
+      [
+        "id",
+        "name",
+        "state",
+        "amount_total",
+        "date_order",
+        "session_id",
+        "config_id",
+        "pos_reference",
+        "partner_id",
+        "user_id",
+        "account_move",
+        "lines",
+      ],
+      isOdooPOSOrder,
+      periodEndIso,
+    );
+    const history = summaryOnly
+      ? { transactions: [], hasMore: false, nextCursor: null }
+      : await fetchHistoryPage(companyId, cursor, selectedDate ?? undefined);
     if (
       new Set(salePayload.map((order) => order.id)).size !== salePayload.length ||
       new Set(posPayload.map((order) => order.id)).size !== posPayload.length
@@ -941,9 +992,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     }
-    const analyzedOrders = statsOrders.filter(
-      (order) => order.date >= previousPeriodStart && order.date < periodEnd,
-    );
+    const analyzedOrders = [
+      ...detailedSalePayload.map(toStatsOrder),
+      ...detailedPosPayload.map(toPOSStatsOrder),
+    ].filter((order) => order.date >= previousPeriodStart && order.date < periodEnd);
     const { products, categories } = await aggregateProductBreakdowns(analyzedOrders, periodStart);
     const weekdays = aggregateOrderBreakdowns(
       analyzedOrders,
