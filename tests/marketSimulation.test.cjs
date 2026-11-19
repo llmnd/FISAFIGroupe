@@ -742,4 +742,6 @@ test("custom dates compare matching dates and distinguish transactions from conf
   assert.equal(response.body.period.previousConfirmedOrders, 2);
   assert.equal(response.body.period.confirmedRevenue, 100);
   assert.equal(response.body.period.previousConfirmedRevenue, 50);
+  assert.equal(response.body.period.averageConfirmedOrder, 100);
+  assert.equal(response.body.period.previousAverageConfirmedOrder, 25);
 });

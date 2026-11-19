@@ -205,6 +205,7 @@ interface MarketDerived {
   revenues: number[];
   revenueDelta: number | null;
   confirmedSalesDelta: number | null;
+  averageConfirmedOrderDelta: number | null;
   pendingDelta: number | null;
   customerDelta: number | null;
   revenuePoints: MarketCurvePoint[];
@@ -1059,12 +1060,36 @@ function MarketMetricModal({
   const delta = detail.previous > 0
     ? ((detail.current - detail.previous) / detail.previous) * 100
     : detail.current > 0 ? null : 0;
+  const averageConfirmedOrderDelta = stats.period.previousAverageConfirmedOrder > 0
+    ? ((stats.period.averageConfirmedOrder - stats.period.previousAverageConfirmedOrder) /
+      stats.period.previousAverageConfirmedOrder) * 100
+    : null;
+  const revenueVolumeDivergence = metric === "revenue" &&
+    delta !== null &&
+    delta < -5 &&
+    derived.confirmedSalesDelta !== null &&
+    derived.confirmedSalesDelta > 0 &&
+    averageConfirmedOrderDelta !== null
+    ? {
+        revenueDelta: delta,
+        salesDelta: derived.confirmedSalesDelta,
+        averageDelta: averageConfirmedOrderDelta,
+      }
+    : null;
   const valueLabel = (value: number) =>
     metric === "revenue"
       ? formatMarketCurrency(value)
       : new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value);
   const advice: Record<MarketMetricKey, string[]> = {
-    revenue: delta !== null && delta < -5
+    revenue: revenueVolumeDivergence
+      ? [
+          `Le CA baisse de ${Math.abs(revenueVolumeDivergence.revenueDelta).toFixed(1)} %, alors que le nombre de ventes confirmées augmente de ${revenueVolumeDivergence.salesDelta.toFixed(1)} %.`,
+          `Le panier moyen (CA confirmé ÷ ventes confirmées) est passé de ${formatMarketCurrency(stats.period.previousAverageConfirmedOrder)} à ${formatMarketCurrency(stats.period.averageConfirmedOrder)} (${revenueVolumeDivergence.averageDelta.toFixed(1)} %). Il explique l’écart entre le nombre de ventes et le CA, sans en identifier la cause.`,
+          ...(stats.range.currentDayIncomplete
+            ? ["La journée en cours est incomplète : cette comparaison reste provisoire."]
+            : ["Pour comprendre cette baisse du panier moyen, vérifiez les produits vendus, les quantités et les remises."]),
+        ]
+      : delta !== null && delta < -5
       ? [
           `Le chiffre d’affaires est en baisse par rapport à la période précédente (${previousPeriodLabel}).`,
           "Comparez la courbe du CA avec celle du volume : si le volume tient, vérifiez le panier moyen ; s’il baisse aussi, examinez les jours creux et la disponibilité des articles.",
@@ -2483,6 +2508,10 @@ export default function AdminDashboard() {
       marketStats.period.confirmedOrders,
       marketStats.period.previousConfirmedOrders,
     );
+    const averageConfirmedOrderDelta = getDelta(
+      marketStats.period.averageConfirmedOrder,
+      marketStats.period.previousAverageConfirmedOrder,
+    );
     const revenuePoints = marketStats.daily.map((day) => ({
       label: day.label,
       year: Number(day.date.slice(0, 4)),
@@ -2535,9 +2564,24 @@ export default function AdminDashboard() {
     if (marketStats.period.confirmedRevenue === 0 && marketStats.period.previousConfirmedRevenue === 0) {
       insights.push("Aucune vente confirmée n’a été enregistrée sur les périodes comparées.");
     } else if (revenueDelta !== null && revenueDelta <= -5) {
-      insights.push(confirmedSalesDelta !== null && confirmedSalesDelta <= -5
-        ?         `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur ${formatMarketPeriodLabel(marketStats.range)}. Le nombre de ventes baisse aussi (${confirmedSalesDelta.toFixed(1)} %) : vérifiez le trafic et la disponibilité des produits.`
-        : `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur ${formatMarketPeriodLabel(marketStats.range)}. Comparez le panier moyen et les commandes en attente pour identifier la cause.`);
+      if (
+        confirmedSalesDelta !== null &&
+        confirmedSalesDelta > 0 &&
+        averageConfirmedOrderDelta !== null
+      ) {
+        insights.push(
+          `Le CA confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} %, malgré ${confirmedSalesDelta.toFixed(1)} % de ventes confirmées en plus. Le panier moyen (CA ÷ ventes confirmées) est passé de ${formatMarketCurrency(marketStats.period.previousAverageConfirmedOrder)} à ${formatMarketCurrency(marketStats.period.averageConfirmedOrder)} (${averageConfirmedOrderDelta.toFixed(1)} %).`,
+        );
+        if (marketStats.range.currentDayIncomplete) {
+          insights.push("La journée en cours n’est pas terminée : ces pourcentages sont provisoires et peuvent évoluer.");
+        } else {
+          insights.push("Cette baisse du panier moyen décrit l’écart, mais n’en donne pas la cause. Vérifiez le mix de produits, les quantités et les remises.");
+        }
+      } else {
+        insights.push(confirmedSalesDelta !== null && confirmedSalesDelta <= -5
+          ? `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur ${formatMarketPeriodLabel(marketStats.range)}. Le nombre de ventes baisse aussi (${confirmedSalesDelta.toFixed(1)} %) : vérifiez le trafic et la disponibilité des produits.`
+          : `Le chiffre d’affaires confirmé recule de ${Math.abs(revenueDelta).toFixed(1)} % sur ${formatMarketPeriodLabel(marketStats.range)}. Comparez le panier moyen et les commandes en attente pour identifier la cause.`);
+      }
     } else if (revenueDelta !== null && revenueDelta >= 5) {
       insights.push(
         `Le chiffre d’affaires confirmé progresse de ${revenueDelta.toFixed(1)} % sur ${formatMarketPeriodLabel(marketStats.range)}. Identifiez les produits et les jours qui contribuent à cette hausse.`,
@@ -2570,6 +2614,7 @@ export default function AdminDashboard() {
       revenues,
       revenueDelta,
       confirmedSalesDelta,
+      averageConfirmedOrderDelta,
       pendingDelta,
       customerDelta,
       revenuePoints,
@@ -3416,9 +3461,6 @@ export default function AdminDashboard() {
                       <div className="stat-label">Ventes confirmées</div>
                       <KpiNumber value={marketStats.period.confirmedOrders} color="blue" />
                       <DeltaBadge delta={marketDerived.confirmedSalesDelta} />
-                      <small className="market-secondary-note">
-                        {marketStats.period.orders} transactions tous statuts
-                      </small>
                       <Sparkline values={marketDerived.orders} stroke="var(--blue)" />
                     </button>
 
