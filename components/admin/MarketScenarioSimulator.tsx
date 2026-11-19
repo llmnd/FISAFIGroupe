@@ -3,6 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import CommercialSimulationPanel from "./CommercialSimulationPanel";
+import {
+  calculateBreakEven,
+  getEstimatedExpensesAtRevenue,
+  getEstimatedBalanceAfterExpenses,
+  normalizeMonthlyExpenseList,
+  summarizeMonthlyExpenses,
+} from "@/lib/marketSimulation/expenses";
+import type {
+  ExpenseNature,
+  ExpenseTiming,
+  MonthlyExpense,
+} from "@/lib/marketSimulation/expenses";
 import styles from "./MarketScenarioSimulator.module.css";
 
 /* ───────────────────────── Types ───────────────────────── */
@@ -57,6 +69,7 @@ interface MarketScenarioSimulatorProps {
   elapsedDays: number;
   remainingDays: number;
   revenueGoal: number | null;
+  currentMonthKey?: string;
 }
 
 /* ───────────────────────── Constantes ───────────────────────── */
@@ -81,6 +94,13 @@ const DEFAULT_PARAMS: Params = {
 };
 
 const MAX_PINS = 3;
+const DEFAULT_MONTHLY_EXPENSES: MonthlyExpense[] = [
+  { id: "rent", label: "Loyer", amount: "", nature: "fixed", timing: "forecast" },
+  { id: "salaries", label: "Salaires", amount: "", nature: "fixed", timing: "forecast" },
+  { id: "electricity", label: "Électricité", amount: "", nature: "variable", timing: "forecast" },
+  { id: "internet", label: "Internet / Wi-Fi", amount: "", nature: "fixed", timing: "forecast" },
+  { id: "other", label: "Autres charges", amount: "", nature: "fixed", timing: "forecast" },
+];
 
 // géométrie du graphique
 const W = 640;
@@ -115,6 +135,24 @@ function formatSignedPercent(value: number): string {
 
 function plural(count: number, one: string, many: string): string {
   return count === 1 ? one : many;
+}
+
+function createExpenseId(): string {
+  return `expense-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getPreviousMonthKey(monthKey: string): string {
+  const [year, month] = monthKey.split("-").map(Number);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function getMonthLabel(monthKey: string): string {
+  return new Date(`${monthKey}-01T00:00:00Z`).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 /* ───────────────────────── Moteur de simulation ───────────────────────── */
@@ -350,7 +388,26 @@ function CalculationGuide({
         </article>
 
         <article>
-          <h4>6. Combinaisons, scénarios et données manquantes</h4>
+          <h4>6. Charges de la boutique</h4>
+          <p>
+            Les charges ne viennent pas d’Odoo. Vous séparez les montants déjà payés ou engagés des prévisions,
+            et les charges fixes des variables. Les charges variables prévisionnelles évoluent au même rythme que le CA.
+          </p>
+          <code>
+            Coût estimé = charges engagées + charges fixes prévues + charges variables prévues × (CA scénario ÷ CA de référence)
+            <br />
+            Reste estimé = marge brute estimée − coût estimé
+            <br />
+            Seuil de CA = (charges engagées + charges fixes prévues) ÷ (taux de marge − taux variable prévu)
+          </code>
+          <p>
+            Ce reste est indicatif : il dépend du taux de marge choisi et des seules charges renseignées.
+            Les variables prévues sont rapportées à la projection au rythme actuel. Ce n’est pas un bénéfice net comptable.
+          </p>
+        </article>
+
+        <article>
+          <h4>7. Combinaisons, scénarios et données manquantes</h4>
           <p>
             Si deux actions risquent de viser les mêmes personnes, le total combiné est bloqué tant que vous
             n’avez pas nommé et confirmé des audiences distinctes. Cela évite de compter deux fois les mêmes clients.
@@ -420,12 +477,87 @@ export default function MarketScenarioSimulator({
   elapsedDays,
   remainingDays,
   revenueGoal,
+  currentMonthKey,
 }: MarketScenarioSimulatorProps) {
   const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
   const [selectedPreset, setSelectedPreset] = useState<PresetId>("volume");
   const [scrub, setScrub] = useState<number | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [showCalculationGuide, setShowCalculationGuide] = useState(false);
+  const [showMonthlyExpenses, setShowMonthlyExpenses] = useState(false);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>(DEFAULT_MONTHLY_EXPENSES);
+  const [loadedExpenseKey, setLoadedExpenseKey] = useState<string | null>(null);
+  const [expenseStorageWritable, setExpenseStorageWritable] = useState(false);
+  const [expenseStorageError, setExpenseStorageError] = useState("");
+  const [legacyExpenseKeyToRemove, setLegacyExpenseKeyToRemove] = useState<string | null>(null);
+  const [expenseActionMessage, setExpenseActionMessage] = useState("");
+  const monthKey = currentMonthKey && /^\d{4}-(0[1-9]|1[0-2])$/.test(currentMonthKey)
+    ? currentMonthKey
+    : new Date().toISOString().slice(0, 7);
+  const expenseStorageScope = companyId ?? "unselected";
+  const expenseStorageKey = `market-simulator-expenses:v2:${expenseStorageScope}:${monthKey}`;
+  const legacyExpenseStorageKey = `market-simulator-expenses:v1:${expenseStorageScope}`;
+  const previousMonthKey = getPreviousMonthKey(monthKey);
+  const previousMonthStorageKey = `market-simulator-expenses:v2:${expenseStorageScope}:${previousMonthKey}`;
+
+  useEffect(() => {
+    setLoadedExpenseKey(null);
+    setExpenseStorageWritable(false);
+    setLegacyExpenseKeyToRemove(null);
+    try {
+      let migratedLegacyExpenses = false;
+      const saved = window.localStorage.getItem(expenseStorageKey);
+      if (saved === null) {
+        const legacySaved = window.localStorage.getItem(legacyExpenseStorageKey);
+        if (legacySaved === null) {
+          setMonthlyExpenses(DEFAULT_MONTHLY_EXPENSES);
+        } else {
+          const parsed: unknown = JSON.parse(legacySaved);
+          const normalized = normalizeMonthlyExpenseList(parsed);
+          if (!normalized) throw new Error("Le format des anciennes charges mémorisées est invalide.");
+          setMonthlyExpenses(normalized);
+          setLegacyExpenseKeyToRemove(legacyExpenseStorageKey);
+          migratedLegacyExpenses = true;
+        }
+      } else {
+        const parsed: unknown = JSON.parse(saved);
+        const normalized = normalizeMonthlyExpenseList(parsed);
+        if (!normalized) {
+          throw new Error("Le format des charges mémorisées est invalide.");
+        }
+        setMonthlyExpenses(normalized);
+      }
+      setExpenseStorageError("");
+      setExpenseActionMessage(
+        migratedLegacyExpenses
+          ? "Anciennes charges reprises comme fixes et prévues; vérifiez leur nature et leur statut."
+          : "",
+      );
+      setLoadedExpenseKey(expenseStorageKey);
+      setExpenseStorageWritable(true);
+    } catch (error) {
+      console.error("[MarketSimulator] Could not load saved shop expenses:", error);
+      setMonthlyExpenses(DEFAULT_MONTHLY_EXPENSES);
+      setExpenseStorageError("Les charges ne peuvent pas être lues sur cet appareil.");
+      setLoadedExpenseKey(expenseStorageKey);
+    }
+  }, [expenseStorageKey, legacyExpenseStorageKey]);
+
+  useEffect(() => {
+    if (loadedExpenseKey !== expenseStorageKey || !expenseStorageWritable) return;
+    try {
+      window.localStorage.setItem(expenseStorageKey, JSON.stringify(monthlyExpenses));
+      if (legacyExpenseKeyToRemove) {
+        window.localStorage.removeItem(legacyExpenseKeyToRemove);
+        setLegacyExpenseKeyToRemove(null);
+      }
+      setExpenseStorageError("");
+    } catch (error) {
+      console.error("[MarketSimulator] Could not save shop expenses:", error);
+      setExpenseStorageError("Enregistrement local impossible. Vos saisies resteront visibles jusqu’à la fermeture de cette page.");
+      setExpenseStorageWritable(false);
+    }
+  }, [expenseStorageKey, expenseStorageWritable, legacyExpenseKeyToRemove, loadedExpenseKey, monthlyExpenses]);
 
   const ctx = useMemo<Context>(
     () => ({ currentRevenue, currentOrders, elapsedDays, remainingDays, revenueGoal }),
@@ -433,6 +565,46 @@ export default function MarketScenarioSimulator({
   );
 
   const sim = useMemo(() => simulate(ctx, params), [ctx, params]);
+  const expenseSummary = useMemo(
+    () => summarizeMonthlyExpenses(monthlyExpenses),
+    [monthlyExpenses],
+  );
+  const baselineExpenses = getEstimatedExpensesAtRevenue(
+    expenseSummary,
+    sim.baselineRevenue,
+    sim.baselineRevenue,
+  );
+  const scenarioExpenses = getEstimatedExpensesAtRevenue(
+    expenseSummary,
+    sim.scenarioRevenue,
+    sim.baselineRevenue,
+  );
+  const baselineAfterExpenses = getEstimatedBalanceAfterExpenses(
+    sim.baselineProfit,
+    expenseSummary,
+    sim.baselineRevenue,
+    sim.baselineRevenue,
+  );
+  const scenarioAfterExpenses = getEstimatedBalanceAfterExpenses(
+    sim.scenarioProfit,
+    expenseSummary,
+    sim.scenarioRevenue,
+    sim.baselineRevenue,
+  );
+  const averageOrderValue = sim.baselineOrders > 0
+    ? sim.baselineRevenue / sim.baselineOrders
+    : 0;
+  const breakEven = calculateBreakEven(
+    expenseSummary,
+    params.margin,
+    sim.baselineRevenue,
+    averageOrderValue,
+  );
+  const reliability = elapsedDays >= 14
+    ? "Plus étayée"
+    : elapsedDays >= 7
+      ? "Intermédiaire"
+      : "Limitée";
 
   const hasReference = currentRevenue > 0 && currentOrders > 0;
   const canAdjust = remainingDays > 0;
@@ -618,6 +790,69 @@ export default function MarketScenarioSimulator({
     if (lever !== "margin") setSelectedPreset("custom");
   };
 
+  const updateExpense = (id: string, patch: Partial<MonthlyExpense>) => {
+    setMonthlyExpenses((expenses) =>
+      expenses.map((expense) => expense.id === id ? { ...expense, ...patch } : expense),
+    );
+  };
+
+  const addExpense = () => {
+    setMonthlyExpenses((expenses) =>
+      expenses.length >= 50
+        ? expenses
+        : [...expenses, {
+            id: createExpenseId(),
+            label: "",
+            amount: "",
+            nature: "fixed",
+            timing: "forecast",
+          }],
+    );
+  };
+
+  const removeExpense = (id: string) => {
+    setMonthlyExpenses((expenses) => expenses.filter((expense) => expense.id !== id));
+  };
+
+  const copyPreviousMonthExpenses = () => {
+    setExpenseActionMessage("");
+    setExpenseStorageError("");
+    try {
+      const saved = window.localStorage.getItem(previousMonthStorageKey);
+      if (saved === null) {
+        setExpenseActionMessage(`Aucune charge mémorisée pour ${getMonthLabel(previousMonthKey)}.`);
+        return;
+      }
+      const parsed: unknown = JSON.parse(saved);
+      const previousExpenses = normalizeMonthlyExpenseList(parsed);
+      const reusableExpenses = previousExpenses?.filter((expense) => {
+        const amount = Number(expense.amount);
+        return expense.label.trim() !== "" &&
+          expense.amount.trim() !== "" &&
+          Number.isFinite(amount) &&
+          amount >= 0 &&
+          amount <= 1_000_000_000_000;
+      });
+      if (!reusableExpenses || reusableExpenses.length === 0) {
+        setExpenseActionMessage(`Aucune charge réutilisable pour ${getMonthLabel(previousMonthKey)}.`);
+        return;
+      }
+      setMonthlyExpenses(
+        reusableExpenses.map((expense) => ({
+          ...expense,
+          id: createExpenseId(),
+          timing: "forecast",
+        })),
+      );
+      setExpenseActionMessage(
+        `Charges de ${getMonthLabel(previousMonthKey)} reprises comme prévisions; vérifiez les montants et leur statut.`,
+      );
+    } catch (error) {
+      console.error("[MarketSimulator] Could not copy previous month's expenses:", error);
+      setExpenseStorageError("Impossible de reprendre les charges du mois précédent.");
+    }
+  };
+
   const surprise = () => {
     const rand = (min: number, max: number) => Math.round(min + Math.random() * (max - min));
     const discount = Math.random() < 0.5 ? 0 : rand(3, 15);
@@ -685,10 +920,45 @@ export default function MarketScenarioSimulator({
   };
 
   const compareMax = Math.max(sim.baselineRevenue, sim.scenarioRevenue, ...pins.map((pin) => pin.revenue), 1);
-  const compareRows: { key: string; label: string; revenue: number; profit: number; variant: "baseline" | "scenario" | "pin"; pinId?: number }[] = [
-    { key: "base", label: "Rythme actuel", revenue: sim.baselineRevenue, profit: sim.baselineProfit, variant: "baseline" },
-    ...pins.map((pin) => ({ key: String(pin.id), label: pin.label, revenue: pin.revenue, profit: pin.profit, variant: "pin" as const, pinId: pin.id })),
-    { key: "now", label: "Scénario en cours", revenue: sim.scenarioRevenue, profit: sim.scenarioProfit, variant: "scenario" },
+  const compareRows: {
+    key: string;
+    label: string;
+    revenue: number;
+    profit: number;
+    afterExpenses: number | null;
+    variant: "baseline" | "scenario" | "pin";
+    pinId?: number;
+  }[] = [
+    {
+      key: "base",
+      label: "Rythme actuel",
+      revenue: sim.baselineRevenue,
+      profit: sim.baselineProfit,
+      afterExpenses: baselineAfterExpenses,
+      variant: "baseline",
+    },
+    ...pins.map((pin) => ({
+      key: String(pin.id),
+      label: pin.label,
+      revenue: pin.revenue,
+      profit: pin.profit,
+      afterExpenses: getEstimatedBalanceAfterExpenses(
+        pin.profit,
+        expenseSummary,
+        pin.revenue,
+        sim.baselineRevenue,
+      ),
+      variant: "pin" as const,
+      pinId: pin.id,
+    })),
+    {
+      key: "now",
+      label: "Scénario en cours",
+      revenue: sim.scenarioRevenue,
+      profit: sim.scenarioProfit,
+      afterExpenses: scenarioAfterExpenses,
+      variant: "scenario",
+    },
   ];
 
   const goalRemaining = hasGoal ? goal - sim.scenarioRevenue : 0;
@@ -780,6 +1050,263 @@ export default function MarketScenarioSimulator({
               </small>
             </article>
           </div>
+
+          <section className={styles.expensesCard} aria-labelledby="market-shop-expenses-title">
+            <div className={styles.expenseHeading}>
+              <span className={styles.expenseIcon} aria-hidden="true">{showMonthlyExpenses ? "−" : "+"}</span>
+              <div>
+                <span className={styles.expenseEyebrow}>
+                  Charges mensuelles · {companyName} · {getMonthLabel(monthKey)}
+                </span>
+                <h3 id="market-shop-expenses-title">Qu’est-ce qu’il reste après les charges ?</h3>
+                <p>
+                  Séparez les montants déjà payés ou engagés de ceux prévus. Les exemples sont vides : aucune charge n’est inventée.
+                  Pour une charge variable prévue, saisissez son montant au rythme actuel des ventes.
+                </p>
+              </div>
+              <button
+                type="button"
+                className={styles.expenseToggle}
+                aria-expanded={showMonthlyExpenses}
+                aria-controls="market-shop-expenses-panel"
+                onClick={() => setShowMonthlyExpenses((open) => !open)}
+              >
+                {showMonthlyExpenses ? "Masquer" : "Renseigner les charges"}
+              </button>
+            </div>
+
+            {showMonthlyExpenses && (
+              <div id="market-shop-expenses-panel">
+            {loadedExpenseKey === expenseStorageKey ? (
+              <div className={styles.expenseLayout}>
+              <div className={styles.expenseForm}>
+                {monthlyExpenses.map((expense, index) => (
+                  <div className={styles.expenseRow} key={expense.id}>
+                    <label>
+                      <span>Charge {index + 1}</span>
+                      <input
+                        type="text"
+                        value={expense.label}
+                        maxLength={100}
+                        placeholder="Ex. Loyer"
+                        aria-label={`Nom de la charge ${index + 1}`}
+                        aria-invalid={!expense.label.trim() && expense.amount.trim() !== ""}
+                        onChange={(event) => updateExpense(expense.id, { label: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      <span>Nature</span>
+                      <select
+                        value={expense.nature}
+                        aria-label={`Nature de la charge ${expense.label || index + 1}`}
+                        onChange={(event) =>
+                          updateExpense(expense.id, { nature: event.target.value as ExpenseNature })
+                        }
+                      >
+                        <option value="fixed">Fixe</option>
+                        <option value="variable">Variable</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>État</span>
+                      <select
+                        value={expense.timing}
+                        aria-label={`État de la charge ${expense.label || index + 1}`}
+                        onChange={(event) =>
+                          updateExpense(expense.id, { timing: event.target.value as ExpenseTiming })
+                        }
+                      >
+                        <option value="incurred">Payée / engagée</option>
+                        <option value="forecast">Prévue</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>
+                        {expense.timing === "incurred"
+                          ? "Déjà payé · FCFA"
+                          : expense.nature === "variable"
+                            ? "Prévu au rythme actuel · FCFA"
+                            : "Prévu · FCFA"}
+                      </span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        max="1000000000000"
+                        step="1"
+                        value={expense.amount}
+                        placeholder="À renseigner"
+                        aria-label={`Montant mensuel pour ${expense.label || `la charge ${index + 1}`}`}
+                        aria-invalid={expense.amount.trim() !== "" && (
+                          !Number.isFinite(Number(expense.amount)) ||
+                          Number(expense.amount) < 0 ||
+                          Number(expense.amount) > 1_000_000_000_000
+                        )}
+                        onChange={(event) => updateExpense(expense.id, { amount: event.target.value })}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className={styles.removeExpense}
+                      onClick={() => removeExpense(expense.id)}
+                      aria-label={`Supprimer la charge ${expense.label || index + 1}`}
+                    >
+                      Retirer
+                    </button>
+                  </div>
+                ))}
+                <div className={styles.expenseActionRow}>
+                  <button
+                    type="button"
+                    className={styles.addExpense}
+                    onClick={addExpense}
+                    disabled={monthlyExpenses.length >= 50}
+                  >
+                    <span aria-hidden="true">+</span> Ajouter une charge
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.copyExpenses}
+                    onClick={copyPreviousMonthExpenses}
+                  >
+                    Reprendre les charges de {getMonthLabel(previousMonthKey)}
+                  </button>
+                </div>
+                {expenseActionMessage && (
+                  <p className={styles.expenseActionMessage} role="status">{expenseActionMessage}</p>
+                )}
+              </div>
+
+              <aside className={styles.expenseSummary} aria-live="polite">
+                <div className={styles.expenseTotal}>
+                  <span>
+                    {expenseSummary.complete && baselineExpenses !== null
+                      ? "Total de charges au rythme actuel"
+                      : "Total des montants valides saisis"}
+                  </span>
+                  <strong>
+                    {formatCurrency(
+                      expenseSummary.complete && baselineExpenses !== null
+                        ? baselineExpenses
+                        : expenseSummary.enteredTotal,
+                    )}
+                  </strong>
+                </div>
+                <div className={styles.expenseBreakdown}>
+                  <div>
+                    <span>Payées / engagées{expenseSummary.complete ? "" : " saisies"}</span>
+                    <strong>{formatCurrency(expenseSummary.incurredTotal)}</strong>
+                  </div>
+                  <div>
+                    <span>Fixes prévues{expenseSummary.complete ? "" : " saisies"}</span>
+                    <strong>{formatCurrency(expenseSummary.forecastFixedTotal)}</strong>
+                  </div>
+                  <div>
+                    <span>Variables prévues{expenseSummary.complete ? "" : " saisies"} au rythme actuel</span>
+                    <strong>{formatCurrency(expenseSummary.forecastVariableTotal)}</strong>
+                  </div>
+                  {scenarioExpenses !== null && expenseSummary.complete && (
+                    <div className={styles.expenseScenarioCosts}>
+                      <span>Charges estimées avec le scénario</span>
+                      <strong>{formatCurrency(scenarioExpenses)}</strong>
+                    </div>
+                  )}
+                  <small>
+                    Seules les charges variables prévues sont ajustées selon le CA; les charges déjà engagées restent fixes.
+                  </small>
+                </div>
+                {expenseSummary.complete && baselineAfterExpenses !== null && scenarioAfterExpenses !== null ? (
+                  <div className={styles.expenseBalances}>
+                    <div>
+                      <span>Reste au rythme actuel</span>
+                      <strong className={baselineAfterExpenses >= 0 ? styles.positive : styles.negative}>
+                        {formatCurrency(baselineAfterExpenses)}
+                      </strong>
+                    </div>
+                    <div className={styles.expenseScenarioBalance}>
+                      <span>Reste avec votre scénario</span>
+                      <strong className={scenarioAfterExpenses >= 0 ? styles.positive : styles.negative}>
+                        {formatCurrency(scenarioAfterExpenses)}
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={styles.expenseIncomplete} role={expenseSummary.invalid ? "alert" : "status"}>
+                    {expenseSummary.invalid
+                      ? "Vérifiez les montants : ils doivent être des nombres positifs ou égaux à zéro."
+                      : expenseSummary.complete
+                        ? "Le reste après charges n’est pas calculable sans chiffre d’affaires de référence pour ajuster les charges variables."
+                        : "Nommez chaque charge et renseignez son montant, ou retirez les lignes qui ne s’appliquent pas, pour calculer le reste estimé."}
+                  </p>
+                )}
+                <div className={styles.breakEvenBox}>
+                  <span className={styles.breakEvenEyebrow}>Seuil de rentabilité · estimation</span>
+                  {breakEven.status === "available" ? (
+                    <>
+                      <strong>{formatCurrency(breakEven.revenue)} de CA</strong>
+                      {breakEven.orders !== null && (
+                        <span>Environ {breakEven.orders} commande{breakEven.orders === 1 ? "" : "s"} au panier moyen projeté</span>
+                      )}
+                      <small>
+                        {sim.scenarioRevenue >= breakEven.revenue
+                          ? "Le scénario couvre ce seuil estimé."
+                          : "Le scénario reste sous ce seuil estimé."}
+                        {" "}Charges variables prévues : {(breakEven.variableCostRate * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA de référence.
+                      </small>
+                    </>
+                  ) : breakEven.status === "impossible" ? (
+                    <p className={styles.expenseIncomplete}>
+                      Avec le taux de marge saisi, les charges variables prévues absorbent la marge : aucun seuil de CA positif n’est calculable.
+                    </p>
+                  ) : (
+                    <p className={styles.expenseIncomplete}>
+                      Complétez les charges et la projection de référence pour calculer le seuil.
+                    </p>
+                  )}
+                </div>
+                <div className={styles.reliabilityBox}>
+                  <div>
+                    <span>Fiabilité de la projection</span>
+                    <strong>{reliability}</strong>
+                  </div>
+                  <small>
+                    {elapsedDays} jour{plural(elapsedDays, "", "s")} réel{plural(elapsedDays, "", "s")} observé{plural(elapsedDays, "", "s")} dans Odoo; rythme quotidien prolongé. Le taux de marge ({params.margin} %) est une hypothèse saisie, pas une marge calculée à partir des coûts réels.
+                  </small>
+                  <small>
+                    {expenseSummary.complete
+                      ? "Toutes les charges listées ont un montant renseigné."
+                      : "Les charges sont incomplètes; le reste après charges n’est pas calculé."}
+                  </small>
+                  <small>
+                    Repère limité avant 7 jours observés, intermédiaire de 7 à 13 jours, plus étayé à partir de 14 jours. Ce n’est pas une précision statistique.
+                  </small>
+                </div>
+                <p className={styles.expenseDisclaimer}>
+                  Le reste est basé sur la marge brute estimée et les charges renseignées. Il ne comprend pas les charges omises, impôts ou autres coûts inconnus; ce n’est pas un bénéfice net comptable.
+                </p>
+                {expenseStorageError ? (
+                  <p className={styles.expenseStorageError} role="status">{expenseStorageError}</p>
+                ) : expenseStorageWritable ? (
+                  <p className={styles.expenseSaved}>Charges mémorisées sur cet appareil pour cette société et ce mois.</p>
+                ) : null}
+                {!expenseStorageError && !expenseStorageWritable && (
+                  <p className={styles.expenseStorageError} role="status">
+                    Les montants ne sont pas mémorisés; ils resteront visibles jusqu’à la fermeture de cette page.
+                  </p>
+                )}
+                {monthlyExpenses.length > 0 && (
+                  <p className={styles.expenseDataNote}>
+                    Historique enregistré séparément pour {getMonthLabel(monthKey)}. Les charges reprises du mois précédent sont copiées comme prévisions.
+                  </p>
+                )}
+              </aside>
+            </div>
+            ) : (
+              <p className={styles.expenseIncomplete} role="status">Chargement des charges de cette société…</p>
+            )}
+            </div>
+            )}
+          </section>
 
           <div className={styles.workspace}>
             {/* ───── 01 · Hypothèses ───── */}
@@ -1191,7 +1718,15 @@ export default function MarketScenarioSimulator({
                       />
                     </div>
                     <div className={styles.compareMeta}>
-                      <small>Marge brute estimée : {formatCurrency(row.profit)}</small>
+                      <div className={styles.compareFinancials}>
+                        <small>Marge brute estimée : {formatCurrency(row.profit)}</small>
+                        <small>
+                          Reste après charges :{" "}
+                          {row.afterExpenses === null
+                            ? "non calculable"
+                            : formatCurrency(row.afterExpenses)}
+                        </small>
+                      </div>
                       {row.pinId !== undefined && (
                         <button type="button" onClick={() => removePin(row.pinId as number)} aria-label={`Retirer ${row.label}`}>
                           Retirer

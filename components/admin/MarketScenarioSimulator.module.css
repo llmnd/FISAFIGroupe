@@ -2518,3 +2518,483 @@
     transition: none;
   }
 }
+
+/* ───── Charges mensuelles de la boutique ───── */
+
+.expensesCard {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  container-name: expense-card;
+  container-type: inline-size;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  border: 1px solid rgba(105, 215, 199, .2);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(105, 215, 199, .075), transparent 42%),
+    linear-gradient(145deg, #202733, #1d202c);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .13);
+}
+
+.expenseHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .8rem;
+  margin-bottom: .65rem;
+}
+
+.expenseHeading > div {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.expenseToggle {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  margin-left: auto;
+  padding: .5rem .75rem;
+  border: 1px solid rgba(105, 215, 199, .28);
+  border-radius: 8px;
+  background: rgba(105, 215, 199, .08);
+  color: var(--sim-teal);
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.expenseToggle:hover {
+  border-color: rgba(105, 215, 199, .5);
+  background: rgba(105, 215, 199, .14);
+}
+
+.expenseToggle:focus-visible {
+  outline: 2px solid var(--sim-teal);
+  outline-offset: 2px;
+}
+
+.expenseIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(105, 215, 199, .28);
+  border-radius: 8px;
+  background: rgba(105, 215, 199, .09);
+  color: var(--sim-teal);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.expenseEyebrow {
+  overflow-wrap: anywhere;
+  color: var(--sim-teal);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.expenseHeading h3 {
+  margin: .2rem 0 .3rem;
+  color: var(--sim-text);
+  font-size: clamp(.95rem, 1.4vw, 1.15rem);
+  font-weight: 780;
+  letter-spacing: -.02em;
+}
+
+.expenseHeading p {
+  max-width: 55rem;
+  margin: 0;
+  color: var(--sim-muted);
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.expenseLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .65rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.expenseForm {
+  display: grid;
+  align-content: start;
+  gap: .4rem;
+  min-width: 0;
+}
+
+.expenseRow {
+  display: grid;
+  grid-template-columns:
+    minmax(6.5rem, 1.1fr)
+    minmax(4.5rem, .75fr)
+    minmax(5.25rem, .9fr)
+    minmax(6.25rem, 1fr)
+    auto;
+  gap: .45rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.expenseRow .removeExpense {
+  grid-column: auto;
+}
+
+.expenseRow label {
+  display: grid;
+  gap: .28rem;
+  min-width: 0;
+}
+
+.expenseRow label > span {
+  color: var(--sim-muted);
+  font-size: .62rem;
+  font-weight: 700;
+}
+
+.expenseRow input {
+  width: 100%;
+  min-width: 0;
+  height: 2.45rem;
+  padding: .5rem .65rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 7px;
+  outline: none;
+  background: rgba(12, 14, 21, .5);
+  color: var(--sim-text);
+  font: inherit;
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.expenseRow input::placeholder {
+  color: var(--sim-faint);
+}
+
+.expenseRow input:focus-visible {
+  border-color: var(--sim-teal);
+  box-shadow: 0 0 0 3px rgba(105, 215, 199, .12);
+}
+
+.expenseRow input[aria-invalid="true"] {
+  border-color: var(--sim-red);
+}
+
+.addExpense,
+.removeExpense {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-height: 2.35rem;
+  padding: .45rem .7rem;
+  border-radius: 7px;
+  font: inherit;
+  font-size: .67rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.addExpense {
+  justify-self: start;
+  margin-top: .15rem;
+  border: 1px solid rgba(105, 215, 199, .25);
+  background: rgba(105, 215, 199, .07);
+  color: #a6f1e5;
+}
+
+.addExpense > span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.addExpense:hover:not(:disabled) {
+  border-color: rgba(105, 215, 199, .5);
+  background: rgba(105, 215, 199, .13);
+}
+
+.addExpense:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.removeExpense {
+  min-height: 2.45rem;
+  border: 1px solid rgba(255, 154, 159, .18);
+  background: transparent;
+  color: #ffb0b4;
+}
+
+.removeExpense:hover {
+  border-color: rgba(255, 154, 159, .4);
+  background: rgba(255, 154, 159, .07);
+}
+
+.expenseSummary {
+  order: -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .5rem;
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid rgba(211, 173, 208, .16);
+  border-radius: 9px;
+  background: rgba(12, 14, 21, .3);
+}
+
+.expenseTotal,
+.expenseBalances > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.expenseTotal > span,
+.expenseBalances span {
+  color: var(--sim-muted);
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.expenseTotal > strong {
+  color: var(--sim-text);
+  font-size: .95rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.expenseBalances {
+  display: grid;
+  gap: .6rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--sim-border);
+}
+
+.expenseBalances strong {
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.expenseScenarioBalance {
+  padding: .65rem .7rem;
+  border: 1px solid rgba(105, 215, 199, .18);
+  border-radius: 7px;
+  background: rgba(105, 215, 199, .06);
+}
+
+.expenseIncomplete,
+.expenseDisclaimer,
+.expenseSaved,
+.expenseStorageError {
+  margin: 0;
+  font-size: .63rem;
+  line-height: 1.5;
+}
+
+.expenseIncomplete {
+  color: #ffe0aa;
+}
+
+.expenseDisclaimer,
+.expenseSaved {
+  color: var(--sim-faint);
+}
+
+.expenseStorageError {
+  color: #ffb0b4;
+}
+
+@container expense-card (max-width: 680px) {
+  .expenseRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .expenseRow .removeExpense {
+    grid-column: 1 / -1;
+    justify-self: end;
+    min-height: 2rem;
+  }
+}
+
+@container expense-card (min-width: 760px) {
+  .expenseLayout {
+    grid-template-columns: minmax(0, 1.65fr) minmax(14rem, .85fr);
+    gap: .75rem;
+  }
+
+  .expenseSummary {
+    order: 0;
+    align-self: start;
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .expenseSummary {
+    padding: .75rem;
+  }
+}
+
+.expenseRow select {
+  width: 100%;
+  min-width: 0;
+  height: 2.45rem;
+  padding: .45rem .55rem;
+  border: 1px solid var(--sim-border);
+  border-radius: 7px;
+  outline: none;
+  background: rgba(12, 14, 21, .5);
+  color: var(--sim-text);
+  font: inherit;
+  font-size: .68rem;
+}
+
+.expenseRow select:focus-visible {
+  border-color: var(--sim-teal);
+  box-shadow: 0 0 0 3px rgba(105, 215, 199, .12);
+}
+
+.expenseActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.copyExpenses {
+  min-height: 2.35rem;
+  padding: .45rem .7rem;
+  border: 1px solid rgba(211, 173, 208, .24);
+  border-radius: 7px;
+  background: rgba(211, 173, 208, .06);
+  color: var(--sim-lilac);
+  font: inherit;
+  font-size: .65rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.copyExpenses:hover {
+  border-color: rgba(211, 173, 208, .45);
+  background: rgba(211, 173, 208, .12);
+}
+
+.expenseBreakdown {
+  display: grid;
+  gap: .35rem;
+  padding: .65rem 0;
+  border-top: 1px solid var(--sim-border);
+  border-bottom: 1px solid var(--sim-border);
+}
+
+.expenseBreakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: .6rem;
+}
+
+.expenseBreakdown span,
+.expenseBreakdown strong {
+  color: var(--sim-muted);
+  font-size: .62rem;
+  line-height: 1.4;
+}
+
+.expenseBreakdown strong {
+  flex: 0 0 auto;
+  color: var(--sim-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.expenseBreakdown small {
+  margin-top: .15rem;
+  color: var(--sim-faint);
+  font-size: .59rem;
+  line-height: 1.45;
+}
+
+.expenseScenarioCosts {
+  margin-top: .2rem;
+  padding-top: .4rem;
+  border-top: 1px dashed var(--sim-border);
+}
+
+.breakEvenBox,
+.reliabilityBox {
+  display: grid;
+  gap: .35rem;
+  padding: .7rem;
+  border: 1px solid rgba(105, 215, 199, .17);
+  border-radius: 8px;
+  background: rgba(105, 215, 199, .045);
+}
+
+.breakEvenEyebrow,
+.reliabilityBox > div > span {
+  color: var(--sim-teal);
+  font-size: .59rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.breakEvenBox > strong {
+  color: var(--sim-text);
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakEvenBox > span:not(.breakEvenEyebrow),
+.breakEvenBox > small,
+.reliabilityBox small {
+  color: var(--sim-muted);
+  font-size: .6rem;
+  line-height: 1.5;
+}
+
+.breakEvenBox p {
+  margin: 0;
+}
+
+.reliabilityBox > div {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  align-items: baseline;
+}
+
+.reliabilityBox > div > strong {
+  color: var(--sim-text);
+  font-size: .69rem;
+}
+
+.expenseActionMessage,
+.expenseDataNote {
+  margin: .1rem 0 0;
+  color: var(--sim-muted);
+  font-size: .61rem;
+  line-height: 1.45;
+}
+
+.expenseDataNote {
+  margin-top: .55rem;
+  color: var(--sim-faint);
+}
+
+.compareFinancials {
+  display: grid;
+  gap: .2rem;
+}

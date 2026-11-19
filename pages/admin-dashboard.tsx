@@ -86,7 +86,7 @@ type MarketHistoryPage = {
   nextCursor: MarketHistoryCursor | null;
 };
 type MarketMetricKey = "orders" | "revenue" | "pending" | "customers";
-type MarketPeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
+type MarketPeriodKey = "month-to-date" | "7d" | "30d" | "90d" | "12m" | "custom";
 type MarketAnalyticsTab = "overview" | "trends" | "simulator" | "breakdowns" | "history" | "quality";
 
 const MARKET_ANALYTICS_TABS: Array<{ id: MarketAnalyticsTab; label: string }> = [
@@ -185,6 +185,7 @@ interface MarketStats {
     previousOrders: number;
     previousConfirmedOrders: number;
     previousConfirmedRevenue: number;
+    comparisonAvailable: boolean;
   }>;
   breakdowns: {
     products: MarketBreakdown[];
@@ -203,12 +204,11 @@ interface MarketDerived {
   orders: number[];
   revenues: number[];
   revenueDelta: number | null;
-  orderDelta: number | null;
+  confirmedSalesDelta: number | null;
   pendingDelta: number | null;
   customerDelta: number | null;
   revenuePoints: MarketCurvePoint[];
   orderPoints: MarketCurvePoint[];
-  transactionPoints: MarketCurvePoint[];
   projectedRevenue: number;
   projectedLow: number;
   projectedHigh: number;
@@ -266,6 +266,11 @@ function downloadMarketTransactionsCsv(transactions: MarketTransaction[], compan
 }
 
 function formatMarketPeriodLabel(range: MarketStats["range"]): string {
+  if (range.key === "month-to-date") {
+    const from = new Date(`${range.from}T00:00:00Z`).toLocaleDateString("fr-FR");
+    const to = new Date(`${range.to}T00:00:00Z`).toLocaleDateString("fr-FR");
+    return `du ${from} au ${to} (mois en cours)`;
+  }
   if (range.key === "7d") return "7 derniers jours";
   if (range.key === "30d") return "30 derniers jours";
   if (range.key === "90d") return "90 derniers jours";
@@ -331,7 +336,7 @@ function isMarketStats(value: unknown): value is MarketStats {
     typeof stats.company.name === "string" &&
     (stats.company.type === "groupe" || stats.company.type === "market") &&
     !!stats.range &&
-    ["7d", "30d", "90d", "12m", "custom"].includes(stats.range.key) &&
+    ["month-to-date", "7d", "30d", "90d", "12m", "custom"].includes(stats.range.key) &&
     typeof stats.range.from === "string" &&
     typeof stats.range.to === "string" &&
     typeof stats.range.comparisonFrom === "string" &&
@@ -382,7 +387,8 @@ function isMarketStats(value: unknown): value is MarketStats {
         Number.isFinite(day.confirmedRevenue) &&
         Number.isFinite(day.previousOrders) &&
         Number.isFinite(day.previousConfirmedOrders) &&
-        Number.isFinite(day.previousConfirmedRevenue),
+        Number.isFinite(day.previousConfirmedRevenue) &&
+        typeof day.comparisonAvailable === "boolean",
     ) &&
     !!stats.breakdowns &&
     ["products", "categories", "pointsOfSale", "sellers", "weekdays"].every((key) =>
@@ -1027,10 +1033,10 @@ function MarketMetricModal({
       previous: stats.period.previousConfirmedRevenue,
     },
     orders: {
-      title: "Ventes & commandes",
-      description: "Nombre de transactions enregistrées, quel que soit leur statut.",
-      current: stats.period.orders,
-      previous: stats.period.previousOrders,
+      title: "Ventes confirmées",
+      description: "Commandes confirmées et ventes de caisse terminées.",
+      current: stats.period.confirmedOrders,
+      previous: stats.period.previousConfirmedOrders,
     },
     pending: {
       title: "Commandes en attente",
@@ -1070,12 +1076,12 @@ function MarketMetricModal({
         ],
     orders: delta !== null && delta < -5
       ? [
-          `Le nombre de transactions est en baisse par rapport à la période précédente (${previousPeriodLabel}).`,
+          `Le nombre de ventes confirmées est en baisse par rapport à la période précédente (${previousPeriodLabel}).`,
           "Repérez les jours sans vente et vérifiez les horaires d’ouverture, le trafic et les éventuelles ruptures de stock.",
         ]
       : [
-          "Le volume regroupe les commandes confirmées, en attente et annulées.",
-          "Consultez la répartition des statuts pour distinguer les ventes réelles des devis qui restent à traiter.",
+          "Ce nombre inclut uniquement les commandes confirmées et les ventes de caisse terminées.",
+          "Les devis, commandes en attente et transactions annulées restent visibles dans les indicateurs de statut.",
         ],
     pending: stats.period.pendingOrders > 0
       ? [
@@ -1201,16 +1207,16 @@ function MarketMetricModal({
             )}
             {metric === "orders" && (
               <>
-                <h3>Transactions par jour</h3>
-                <p>Commandes confirmées, en attente et annulées, comparées jour par jour.</p>
+                <h3>Ventes confirmées par jour</h3>
+                <p>Commandes confirmées et ventes de caisse terminées, comparées jour par jour.</p>
                 <div className="market-trend-legend" aria-label="Légende">
                   <span><i className="current"/>{currentPeriodLabel}</span>
                   <span><i className="previous"/>Période précédente</span>
                 </div>
                 <RevenueCurve
-                  points={derived.transactionPoints}
+                  points={derived.orderPoints}
                   height={280}
-                  valueUnit="transactions"
+                  valueUnit="count"
                   comparisonLabel={`Période précédente · ${previousPeriodLabel}`}
                 />
               </>
@@ -1442,7 +1448,7 @@ export default function AdminDashboard() {
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
   const [selectedMarketMetric, setSelectedMarketMetric] = useState<MarketMetricKey | null>(null);
   const closeMarketMetric = useCallback(() => setSelectedMarketMetric(null), []);
-  const [marketPeriod, setMarketPeriod] = useState<MarketPeriodKey>("30d");
+  const [marketPeriod, setMarketPeriod] = useState<MarketPeriodKey>("month-to-date");
   const [marketAnalyticsTab, setMarketAnalyticsTab] = useState<MarketAnalyticsTab>("overview");
   const [customPeriodFrom, setCustomPeriodFrom] = useState("");
   const [customPeriodTo, setCustomPeriodTo] = useState("");
@@ -2468,7 +2474,6 @@ export default function AdminDashboard() {
       marketStats.period.confirmedRevenue,
       marketStats.period.previousConfirmedRevenue,
     );
-    const orderDelta = getDelta(marketStats.period.orders, marketStats.period.previousOrders);
     const pendingDelta = getDelta(
       marketStats.period.pendingOrders,
       marketStats.period.previousPendingOrders,
@@ -2485,7 +2490,7 @@ export default function AdminDashboard() {
       detailLabel: day.detailLabel,
       value: day.confirmedRevenue,
       count: day.confirmedOrders,
-      comparisonValue: day.previousConfirmedRevenue,
+      comparisonValue: day.comparisonAvailable ? day.previousConfirmedRevenue : undefined,
     }));
     const orderPoints = marketStats.daily.map((day) => ({
       label: day.label,
@@ -2494,16 +2499,7 @@ export default function AdminDashboard() {
       detailLabel: day.detailLabel,
       value: day.confirmedOrders,
       count: day.confirmedOrders,
-      comparisonValue: day.previousConfirmedOrders,
-    }));
-    const transactionPoints = marketStats.daily.map((day) => ({
-      label: day.label,
-      year: Number(day.date.slice(0, 4)),
-      date: day.date,
-      detailLabel: day.detailLabel,
-      value: day.orders,
-      count: day.orders,
-      comparisonValue: day.previousOrders,
+      comparisonValue: day.comparisonAvailable ? day.previousConfirmedOrders : undefined,
     }));
     const currentMonth = marketStats.monthly[marketStats.monthly.length - 1];
     const generatedAt = new Date(marketStats.generatedAt);
@@ -2573,12 +2569,11 @@ export default function AdminDashboard() {
       orders,
       revenues,
       revenueDelta,
-      orderDelta,
+      confirmedSalesDelta,
       pendingDelta,
       customerDelta,
       revenuePoints,
       orderPoints,
-      transactionPoints,
       projectedRevenue,
       projectedLow,
       projectedHigh,
@@ -3299,6 +3294,7 @@ export default function AdminDashboard() {
                         }
                       }}
                     >
+                      <option value="month-to-date">Ce mois vs mêmes jours du mois précédent</option>
                       <option value="7d">7 derniers jours</option>
                       <option value="30d">30 derniers jours</option>
                       <option value="90d">90 derniers jours</option>
@@ -3337,12 +3333,17 @@ export default function AdminDashboard() {
                           }}
                         />
                       </label>
-                      <span className="market-period-hint">Maximum 366 jours · comparaison avec la période précédente</span>
+                      <span className="market-period-hint">Maximum 366 jours · comparaison avec les mêmes dates du mois précédent</span>
                     </>
                   )}
                   {marketStats && marketStats.range.key === marketPeriod && (
                     <span className="market-period-current">
                       {new Date(`${marketStats.range.from}T00:00:00Z`).toLocaleDateString("fr-FR")} – {new Date(`${marketStats.range.to}T00:00:00Z`).toLocaleDateString("fr-FR")}
+                    </span>
+                  )}
+                  {marketPeriod === "month-to-date" && (
+                    <span className="market-period-hint">
+                      Comparaison avec les mêmes jours du mois précédent ; si celui-ci est plus court, elle s’arrête à son dernier jour. La journée en cours peut être incomplète.
                     </span>
                   )}
                 </section>
@@ -3410,11 +3411,14 @@ export default function AdminDashboard() {
                       className="stat-card market-kpi-card"
                       onClick={() => setSelectedMarketMetric("orders")}
                       aria-haspopup="dialog"
-                      aria-label="Afficher l’analyse des ventes et commandes"
+                      aria-label="Afficher l’analyse des ventes confirmées"
                     >
-                      <div className="stat-label">Ventes &amp; commandes</div>
-                      <KpiNumber value={marketStats.period.orders} color="blue" />
-                      <DeltaBadge delta={marketDerived.orderDelta} />
+                      <div className="stat-label">Ventes confirmées</div>
+                      <KpiNumber value={marketStats.period.confirmedOrders} color="blue" />
+                      <DeltaBadge delta={marketDerived.confirmedSalesDelta} />
+                      <small className="market-secondary-note">
+                        {marketStats.period.orders} transactions tous statuts
+                      </small>
                       <Sparkline values={marketDerived.orders} stroke="var(--blue)" />
                     </button>
 
@@ -3853,6 +3857,7 @@ export default function AdminDashboard() {
                       <MarketScenarioSimulator
                         companyId={marketStats.company.id}
                         companyName={marketStats.company.name}
+                        currentMonthKey={`${marketStats.monthly[marketStats.monthly.length - 1].year}-${String(marketStats.monthly[marketStats.monthly.length - 1].month + 1).padStart(2, "0")}`}
                         currentRevenue={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedRevenue ?? 0}
                         currentOrders={marketStats.monthly[marketStats.monthly.length - 1]?.confirmedOrders ?? 0}
                         elapsedDays={marketDerived.elapsedDays}

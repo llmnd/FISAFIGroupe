@@ -44,12 +44,13 @@ type StatsOrder = {
   pointOfSale: string | null;
   lineIds: number[];
 };
-type PeriodKey = "7d" | "30d" | "90d" | "12m" | "custom";
+type PeriodKey = "month-to-date" | "7d" | "30d" | "90d" | "12m" | "custom";
 type AnalyticsPeriod = {
   key: PeriodKey;
   start: Date;
   endExclusive: Date;
   previousStart: Date;
+  previousEndExclusive: Date;
   dayCount: number;
 };
 type OdooSaleOrderLine = {
@@ -216,6 +217,24 @@ function parseDateOnly(value: string | null): Date | null {
     : null;
 }
 
+function shiftDateByMonths(date: Date, monthOffset: number): Date {
+  const targetMonth = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + monthOffset,
+    1,
+  ));
+  const lastDayOfTargetMonth = new Date(Date.UTC(
+    targetMonth.getUTCFullYear(),
+    targetMonth.getUTCMonth() + 1,
+    0,
+  )).getUTCDate();
+  return new Date(Date.UTC(
+    targetMonth.getUTCFullYear(),
+    targetMonth.getUTCMonth(),
+    Math.min(date.getUTCDate(), lastDayOfTargetMonth),
+  ));
+}
+
 function getAnalyticsPeriod(
   query: NextApiRequest["query"],
   now: Date,
@@ -223,6 +242,7 @@ function getAnalyticsPeriod(
   const rawKey = getQueryString(query.period);
   if (
     rawKey !== null &&
+    rawKey !== "month-to-date" &&
     rawKey !== "7d" &&
     rawKey !== "30d" &&
     rawKey !== "90d" &&
@@ -232,10 +252,10 @@ function getAnalyticsPeriod(
     throw new OdooApiError("La période d’analyse sélectionnée est invalide.", 400);
   }
   const key: PeriodKey =
-    rawKey === "7d" || rawKey === "30d" || rawKey === "90d" ||
+    rawKey === "month-to-date" || rawKey === "7d" || rawKey === "30d" || rawKey === "90d" ||
     rawKey === "12m" || rawKey === "custom"
       ? rawKey
-      : "30d";
+      : "month-to-date";
   const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const endExclusive = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
   let start: Date;
@@ -252,11 +272,35 @@ function getAnalyticsPeriod(
     if (dayCount > MAX_ANALYTICS_DAYS) {
       throw new OdooApiError("La période personnalisée ne peut pas dépasser 366 jours.", 400);
     }
+    const previousStart = shiftDateByMonths(from, -1);
+    const previousTo = shiftDateByMonths(to, -1);
     return {
       key,
       start,
       endExclusive: new Date(to.getTime() + 24 * 60 * 60 * 1000),
-      previousStart: new Date(from.getTime() - dayCount * 24 * 60 * 60 * 1000),
+      previousStart,
+      previousEndExclusive: new Date(previousTo.getTime() + 24 * 60 * 60 * 1000),
+      dayCount,
+    };
+  }
+
+  if (key === "month-to-date") {
+    start = getMonthStart(now, 0);
+    const previousStart = getMonthStart(now, -1);
+    const previousMonthDays = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      0,
+    )).getUTCDate();
+    dayCount = now.getUTCDate();
+    return {
+      key,
+      start,
+      endExclusive: new Date(start.getTime() + dayCount * 24 * 60 * 60 * 1000),
+      previousStart,
+      previousEndExclusive: new Date(
+        previousStart.getTime() + Math.min(dayCount, previousMonthDays) * 24 * 60 * 60 * 1000,
+      ),
       dayCount,
     };
   }
@@ -273,6 +317,7 @@ function getAnalyticsPeriod(
     start,
     endExclusive,
     previousStart: new Date(start.getTime() - dayCount * 24 * 60 * 60 * 1000),
+    previousEndExclusive: start,
     dayCount,
   };
 }
@@ -809,7 +854,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const now = new Date();
     const analyticsPeriod = getAnalyticsPeriod(req.query, now);
-    const { start: periodStart, endExclusive: periodEnd, previousStart: previousPeriodStart } = analyticsPeriod;
+    const {
+      start: periodStart,
+      endExclusive: periodEnd,
+      previousStart: previousPeriodStart,
+      previousEndExclusive: previousPeriodEnd,
+    } = analyticsPeriod;
     const rawSelectedDate = getQueryString(req.query.date);
     if (req.query.date !== undefined && rawSelectedDate === null) {
       throw new OdooApiError("La date de transaction sélectionnée est invalide.", 400);
@@ -929,7 +979,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const recentPeriod = statsOrders.filter(({ date }) => date >= periodStart);
     const previousPeriod = statsOrders.filter(
-      ({ date }) => date >= previousPeriodStart && date < periodStart,
+      ({ date }) => date >= previousPeriodStart && date < previousPeriodEnd,
     );
     const confirmedOrders = recentPeriod.filter(({ state }) => isConfirmed(state));
     const previousConfirmedOrders = previousPeriod.filter(({ state }) => isConfirmed(state));
@@ -947,6 +997,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const previousCustomers = new Set(previousPeriod.map(({ customerId }) => customerId));
     const dailyStart = new Date(periodStart);
     const previousStart = new Date(previousPeriodStart);
+    const previousDayCount =
+      (previousPeriodEnd.getTime() - previousPeriodStart.getTime()) / (24 * 60 * 60 * 1000);
     const daily = Array.from({ length: analyticsPeriod.dayCount }, (_, index) => {
       const date = new Date(dailyStart.getTime() + index * 24 * 60 * 60 * 1000);
       return {
@@ -964,13 +1016,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         previousOrders: 0,
         previousConfirmedOrders: 0,
         previousConfirmedRevenue: 0,
+        comparisonAvailable: index < previousDayCount,
       };
     });
     const dailyIndexByDate = new Map<string, { index: number; previous: boolean }>();
     for (let index = 0; index < daily.length; index += 1) {
       dailyIndexByDate.set(daily[index].date, { index, previous: false });
-      const previousDate = new Date(previousStart.getTime() + index * 24 * 60 * 60 * 1000);
-      dailyIndexByDate.set(previousDate.toISOString().slice(0, 10), { index, previous: true });
+      if (daily[index].comparisonAvailable) {
+        const previousDate = new Date(previousStart.getTime() + index * 24 * 60 * 60 * 1000);
+        dailyIndexByDate.set(previousDate.toISOString().slice(0, 10), { index, previous: true });
+      }
     }
     for (const order of statsOrders) {
       const key = order.date.toISOString().slice(0, 10);
@@ -995,7 +1050,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const analyzedOrders = [
       ...detailedSalePayload.map(toStatsOrder),
       ...detailedPosPayload.map(toPOSStatsOrder),
-    ].filter((order) => order.date >= previousPeriodStart && order.date < periodEnd);
+    ].filter(
+      (order) =>
+        (order.date >= previousPeriodStart && order.date < previousPeriodEnd) ||
+        (order.date >= periodStart && order.date < periodEnd),
+    );
     const { products, categories } = await aggregateProductBreakdowns(analyzedOrders, periodStart);
     const weekdays = aggregateOrderBreakdowns(
       analyzedOrders,
@@ -1037,7 +1096,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         from: periodStart.toISOString().slice(0, 10),
         to: new Date(periodEnd.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
         comparisonFrom: previousPeriodStart.toISOString().slice(0, 10),
-        comparisonTo: new Date(periodStart.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        comparisonTo: new Date(previousPeriodEnd.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
         currentDayIncomplete: periodStart <= now && periodEnd > now,
       },
       period: {

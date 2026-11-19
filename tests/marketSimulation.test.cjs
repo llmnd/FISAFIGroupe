@@ -11,6 +11,13 @@ require("ts-node").register({
 });
 
 const { simulateCommercial, simulateLegacy } = require("../lib/marketSimulation/engine.ts");
+const {
+  calculateBreakEven,
+  getEstimatedExpensesAtRevenue,
+  getEstimatedBalanceAfterExpenses,
+  normalizeMonthlyExpenseList,
+  summarizeMonthlyExpenses,
+} = require("../lib/marketSimulation/expenses.ts");
 let requestAccount = { role: "seller", employeeRole: "seller" };
 let returnedSnapshot = { companyId: 42, companyName: "FiSAFi Market" };
 let requestedCompanyId = null;
@@ -136,6 +143,74 @@ function createSnapshot() {
     },
   };
 }
+
+test("monthly shop expenses stay incomplete until every amount is explicitly entered", () => {
+  const partial = summarizeMonthlyExpenses([
+    { id: "rent", label: "Loyer", amount: "250000", nature: "fixed", timing: "forecast" },
+    { id: "wifi", label: "Internet", amount: "", nature: "fixed", timing: "forecast" },
+  ]);
+  assert.equal(partial.complete, false);
+  assert.equal(partial.total, null);
+  assert.equal(partial.enteredTotal, 250000);
+  assert.equal(getEstimatedBalanceAfterExpenses(1000000, partial, 1000000, 1000000), null);
+
+  const complete = summarizeMonthlyExpenses([
+    { id: "rent", label: "Loyer", amount: "250000", nature: "fixed", timing: "forecast" },
+    { id: "wifi", label: "Internet", amount: "0", nature: "fixed", timing: "forecast" },
+    { id: "salary", label: "Salaires", amount: "400000", nature: "fixed", timing: "forecast" },
+  ]);
+  assert.equal(complete.complete, true);
+  assert.equal(complete.total, 650000);
+  assert.equal(getEstimatedBalanceAfterExpenses(1000000, complete, 1000000, 1000000), 350000);
+});
+
+test("monthly shop expenses reject negative, non-finite, and malformed saved values", () => {
+  const negative = summarizeMonthlyExpenses([
+    { id: "rent", label: "Loyer", amount: "-1", nature: "fixed", timing: "forecast" },
+  ]);
+  assert.equal(negative.complete, false);
+  assert.equal(negative.invalid, true);
+  assert.equal(negative.total, null);
+
+  const legacy = normalizeMonthlyExpenseList([{ id: "rent", label: "Loyer", amount: 1000 }]);
+  assert.deepEqual(legacy, [{
+    id: "rent",
+    label: "Loyer",
+    amount: "1000",
+    nature: "fixed",
+    timing: "forecast",
+  }]);
+  assert.equal(normalizeMonthlyExpenseList([{ id: "rent", label: "Loyer", amount: {} }]), null);
+  assert.equal(normalizeMonthlyExpenseList([
+    { id: "rent", label: "Loyer", amount: "1000" },
+    { id: "rent", label: "Autre", amount: "200" },
+  ]), null);
+});
+
+test("planned variable expenses scale with revenue and break-even uses the margin after variable costs", () => {
+  const expenses = summarizeMonthlyExpenses([
+    { id: "already-paid", label: "Facture payée", amount: "1000", nature: "variable", timing: "incurred" },
+    { id: "rent", label: "Loyer", amount: "500", nature: "fixed", timing: "forecast" },
+    { id: "fees", label: "Commissions prévues", amount: "300", nature: "variable", timing: "forecast" },
+  ]);
+
+  assert.equal(expenses.complete, true);
+  assert.equal(getEstimatedExpensesAtRevenue(expenses, 10000, 10000), 1800);
+  assert.equal(getEstimatedExpensesAtRevenue(expenses, 12000, 10000), 1860);
+  assert.equal(getEstimatedBalanceAfterExpenses(3000, expenses, 12000, 10000), 1140);
+
+  const breakEven = calculateBreakEven(expenses, 25, 10000, 2000);
+  assert.equal(breakEven.status, "available");
+  if (breakEven.status === "available") {
+    assert.equal(breakEven.orders, 4);
+    assert.equal(Math.round(breakEven.revenue), 6818);
+  }
+  assert.deepEqual(calculateBreakEven(expenses, 2, 10000, 2000), {
+    status: "impossible",
+    variableCostRate: 0.03,
+  });
+  assert.deepEqual(calculateBreakEven(expenses, 25, 0, 2000), { status: "unknown" });
+});
 
 function emptyInputs() {
   const audience = () => ({ enabled: false, audience: "", disjointConfirmed: false });
@@ -446,4 +521,225 @@ test("market summary omits history-page queries and avoids loading old order lin
       ([field, operator]) => field === "date_order" && operator === "<",
     ),
   );
+});
+
+test("month-to-date compares the same calendar days in the previous month", async () => {
+  requestAccount = { role: "admin", employeeRole: null };
+  const now = new Date();
+  const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const previousMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const previousMonthDays = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)).getUTCDate();
+  const currentDays = now.getUTCDate();
+  const comparedDays = Math.min(currentDays, previousMonthDays);
+  const addDays = (date, days) => new Date(date.getTime() + days * 86_400_000);
+  const toOdooDate = (date) => date.toISOString().replace("T", " ").slice(0, 19);
+  const orders = [
+    {
+      id: 501,
+      name: "Current period",
+      state: "sale",
+      amount_total: 100,
+      date_order: toOdooDate(currentMonthStart),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 504,
+      name: "Last current calendar day",
+      state: "sale",
+      amount_total: 10,
+      date_order: toOdooDate(addDays(currentMonthStart, currentDays - 1)),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 502,
+      name: "Previous matching period",
+      state: "sale",
+      amount_total: 20,
+      date_order: toOdooDate(addDays(previousMonthStart, comparedDays - 1)),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 503,
+      name: "Outside previous matching period",
+      state: "sale",
+      amount_total: 999,
+      date_order: toOdooDate(addDays(previousMonthStart, comparedDays)),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+  ];
+  marketStatsCallOdoo = async (model, method, parameters) => {
+    if (model === "res.company") return [{ id: 42, name: "FiSAFi Market" }];
+    if (model !== "sale.order") return [];
+    const start = parameters.domain.find(([field, operator]) => field === "date_order" && operator === ">=");
+    const end = parameters.domain.find(([field, operator]) => field === "date_order" && operator === "<");
+    return orders.filter((order) => {
+      const timestamp = new Date(`${order.date_order.replace(" ", "T")}Z`).getTime();
+      return (!start || timestamp >= new Date(`${start[2].replace(" ", "T")}Z`).getTime()) &&
+        (!end || timestamp < new Date(`${end[2].replace(" ", "T")}Z`).getTime());
+    });
+  };
+
+  const response = createResponse();
+  await marketStatsHandler(
+    {
+      method: "GET",
+      query: { companyId: "42", period: "month-to-date", summaryOnly: "1" },
+    },
+    response,
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.range.key, "month-to-date");
+  assert.equal(response.body.range.from, currentMonthStart.toISOString().slice(0, 10));
+  assert.equal(response.body.range.to, addDays(currentMonthStart, currentDays - 1).toISOString().slice(0, 10));
+  assert.equal(response.body.range.comparisonFrom, previousMonthStart.toISOString().slice(0, 10));
+  assert.equal(response.body.range.comparisonTo, addDays(previousMonthStart, comparedDays - 1).toISOString().slice(0, 10));
+  assert.equal(response.body.period.confirmedRevenue, 110);
+  assert.equal(response.body.period.previousConfirmedRevenue, 20);
+  assert.equal(response.body.period.previousConfirmedOrders, 1);
+  assert.equal(response.body.daily.length, currentDays);
+  assert.equal(response.body.daily[currentDays - 1].comparisonAvailable, currentDays <= previousMonthDays);
+});
+
+test("custom dates compare matching dates and distinguish transactions from confirmed sales", async () => {
+  requestAccount = { role: "admin", employeeRole: null };
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const selectedFrom = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    Math.max(1, today.getUTCDate() - 10),
+  ));
+  const previousMonthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+  const previousMonthDays = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0)).getUTCDate();
+  const previousFrom = new Date(Date.UTC(
+    previousMonthStart.getUTCFullYear(),
+    previousMonthStart.getUTCMonth(),
+    Math.min(selectedFrom.getUTCDate(), previousMonthDays),
+  ));
+  const previousTo = new Date(Date.UTC(
+    previousMonthStart.getUTCFullYear(),
+    previousMonthStart.getUTCMonth(),
+    Math.min(today.getUTCDate(), previousMonthDays),
+  ));
+  const previousEndExclusive = new Date(previousTo.getTime() + 86_400_000);
+  const toOdooDate = (date) => date.toISOString().replace("T", " ").slice(0, 19);
+  const orders = [
+    {
+      id: 601,
+      name: "Custom current range",
+      state: "sale",
+      amount_total: 100,
+      date_order: toOdooDate(selectedFrom),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 602,
+      name: "Matching prior-month range",
+      state: "sale",
+      amount_total: 20,
+      date_order: toOdooDate(previousFrom),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 604,
+      name: "Current draft",
+      state: "draft",
+      amount_total: 5,
+      date_order: toOdooDate(selectedFrom),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "no",
+      order_line: [],
+    },
+    {
+      id: 605,
+      name: "Current sent quotation",
+      state: "sent",
+      amount_total: 6,
+      date_order: toOdooDate(selectedFrom),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "no",
+      order_line: [],
+    },
+    {
+      id: 606,
+      name: "Second prior confirmed sale",
+      state: "sale",
+      amount_total: 30,
+      date_order: toOdooDate(previousFrom),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+    {
+      id: 603,
+      name: "Outside matching prior-month range",
+      state: "sale",
+      amount_total: 999,
+      date_order: toOdooDate(previousEndExclusive),
+      partner_id: false,
+      user_id: false,
+      invoice_status: "invoiced",
+      order_line: [],
+    },
+  ];
+  marketStatsCallOdoo = async (model, method, parameters) => {
+    if (model === "res.company") return [{ id: 42, name: "FiSAFi Market" }];
+    if (model !== "sale.order") return [];
+    const start = parameters.domain.find(([field, operator]) => field === "date_order" && operator === ">=");
+    const end = parameters.domain.find(([field, operator]) => field === "date_order" && operator === "<");
+    return orders.filter((order) => {
+      const timestamp = new Date(`${order.date_order.replace(" ", "T")}Z`).getTime();
+      return (!start || timestamp >= new Date(`${start[2].replace(" ", "T")}Z`).getTime()) &&
+        (!end || timestamp < new Date(`${end[2].replace(" ", "T")}Z`).getTime());
+    });
+  };
+
+  const response = createResponse();
+  await marketStatsHandler(
+    {
+      method: "GET",
+      query: {
+        companyId: "42",
+        period: "custom",
+        from: selectedFrom.toISOString().slice(0, 10),
+        to: today.toISOString().slice(0, 10),
+        summaryOnly: "1",
+      },
+    },
+    response,
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.range.from, selectedFrom.toISOString().slice(0, 10));
+  assert.equal(response.body.range.to, today.toISOString().slice(0, 10));
+  assert.equal(response.body.range.comparisonFrom, previousFrom.toISOString().slice(0, 10));
+  assert.equal(response.body.range.comparisonTo, previousTo.toISOString().slice(0, 10));
+  assert.equal(response.body.period.orders, 3);
+  assert.equal(response.body.period.previousOrders, 2);
+  assert.equal(response.body.period.confirmedOrders, 1);
+  assert.equal(response.body.period.previousConfirmedOrders, 2);
+  assert.equal(response.body.period.confirmedRevenue, 100);
+  assert.equal(response.body.period.previousConfirmedRevenue, 50);
 });
